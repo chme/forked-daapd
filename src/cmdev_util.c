@@ -88,7 +88,7 @@ cmdev_util_new(struct event_base *evbase)
   struct cmdev *cmdev;
   int ret;
 
-  cmdev = (struct cmdev*)calloc(sizeof(struct cmdev), 1);
+  cmdev = (struct cmdev*) calloc(1, sizeof(struct cmdev));
   if (!cmdev)
     {
       DPRINTF(E_LOG, L_MAIN, "Out of memory for cmdev\n");
@@ -167,7 +167,7 @@ cmdev_util_sync_command(struct cmdev *cmdev, cmd_func func, void *arg)
   struct cmdev_command *cmd;
   int ret;
 
-  cmd = (struct cmdev_command*)calloc(sizeof(struct cmdev_command), 1);
+  cmd = (struct cmdev_command*) calloc(1, sizeof(struct cmdev_command));
   cmd->func = func;
   cmd->arg = arg;
   cmd->nonblock = 0;
@@ -197,7 +197,7 @@ cmdev_util_nonblock_command(struct cmdev *cmdev, cmd_func func, void *arg)
   struct cmdev_command *cmd;
   int ret;
 
-  cmd = (struct cmdev_command*)calloc(sizeof(struct cmdev_command), 1);
+  cmd = (struct cmdev_command*) calloc(1, sizeof(struct cmdev_command));
   cmd->func = func;
   cmd->arg = arg;
   cmd->nonblock = 1;

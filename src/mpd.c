@@ -56,6 +56,7 @@
 
 #include "player.h"
 #include "filescanner.h"
+#include "cmdev_util.h"
 
 
 static pthread_t tid_mpd;
@@ -64,25 +65,12 @@ struct event_base *evbase_mpd;
 static int g_exit_pipe[2];
 static struct event *g_exitev;
 
-static int g_cmd_pipe[2];
-static struct event *g_cmdev;
-
-struct mpd_command;
-
-typedef int (*cmd_func)(struct mpd_command *cmd);
-
 struct mpd_command
 {
-  pthread_mutex_t lck;
-  pthread_cond_t cond;
-
-  cmd_func func;
-
   enum listener_event_type arg_evtype;
-  int nonblock;
-
-  int ret;
 };
+
+static struct cmdev *g_cmdev;
 
 #define COMMAND_ARGV_MAX 37
 
@@ -156,40 +144,6 @@ struct idle_client
 
 struct idle_client *idle_clients;
 
-/* ---------------------------- COMMAND EXECUTION -------------------------- */
-
-static int
-send_command(struct mpd_command *cmd)
-{
-  int ret;
-
-  if (!cmd->func)
-    {
-      DPRINTF(E_LOG, L_MPD, "BUG: cmd->func is NULL!\n");
-      return -1;
-    }
-
-  ret = write(g_cmd_pipe[1], &cmd, sizeof(cmd));
-  if (ret != sizeof(cmd))
-    {
-      DPRINTF(E_LOG, L_MPD, "Could not send command: %s\n", strerror(errno));
-      return -1;
-    }
-
-  return 0;
-}
-
-static int
-nonblock_command(struct mpd_command *cmd)
-{
-  int ret;
-
-  ret = send_command(cmd);
-  if (ret < 0)
-    return -1;
-
-  return 0;
-}
 
 static void
 thread_exit(void)
@@ -4090,13 +4044,16 @@ mpd_notify_idle_client(struct idle_client *client, enum listener_event_type type
 }
 
 static int
-mpd_notify_idle(struct mpd_command *cmd)
+mpd_notify_idle(void *arg)
 {
+  struct mpd_command *cmd;
   struct idle_client *client;
   struct idle_client *prev;
   struct idle_client *next;
   int i;
   int ret;
+
+  cmd = (struct mpd_command *) arg;
 
   DPRINTF(E_DBG, L_MPD, "Notify clients waiting for idle results: %d\n", cmd->arg_evtype);
 
@@ -4136,57 +4093,20 @@ mpd_notify_idle(struct mpd_command *cmd)
 static void
 mpd_listener_cb(enum listener_event_type type)
 {
-  DPRINTF(E_DBG, L_MPD, "Listener callback called with event type %d.\n", type);
   struct mpd_command *cmd;
 
-  cmd = (struct mpd_command *)malloc(sizeof(struct mpd_command));
+  DPRINTF(E_DBG, L_MPD, "Listener callback called with event type %d.\n", type);
+
+  cmd = (struct mpd_command *) calloc(1, sizeof(struct mpd_command));
   if (!cmd)
     {
-      DPRINTF(E_LOG, L_MPD, "Could not allocate cache_command\n");
+      DPRINTF(E_LOG, L_MPD, "Could not allocate mpd_command\n");
       return;
     }
 
-  memset(cmd, 0, sizeof(struct mpd_command));
-
-  cmd->nonblock = 1;
-
-  cmd->func = mpd_notify_idle;
   cmd->arg_evtype = type;
 
-  nonblock_command(cmd);
-}
-
-static void
-command_cb(int fd, short what, void *arg)
-{
-  struct mpd_command *cmd;
-  int ret;
-
-  ret = read(g_cmd_pipe[0], &cmd, sizeof(cmd));
-  if (ret != sizeof(cmd))
-    {
-      DPRINTF(E_LOG, L_MPD, "Could not read command! (read %d): %s\n", ret, (ret < 0) ? strerror(errno) : "-no error-");
-      goto readd;
-    }
-
-  if (cmd->nonblock)
-    {
-      cmd->func(cmd);
-
-      free(cmd);
-      goto readd;
-    }
-
-  pthread_mutex_lock(&cmd->lck);
-
-  ret = cmd->func(cmd);
-  cmd->ret = ret;
-
-  pthread_cond_signal(&cmd->cond);
-  pthread_mutex_unlock(&cmd->lck);
-
- readd:
-  event_add(g_cmdev, NULL);
+  cmdev_util_nonblock_command(g_cmdev, mpd_notify_idle, cmd);
 }
 
 
@@ -4223,17 +4143,6 @@ int mpd_init(void)
       goto exit_fail;
     }
 
-# if defined(__linux__)
-  ret = pipe2(g_cmd_pipe, O_CLOEXEC);
-# else
-  ret = pipe(g_cmd_pipe);
-# endif
-  if (ret < 0)
-    {
-      DPRINTF(E_LOG, L_MPD, "Could not create command pipe: %s\n", strerror(errno));
-      goto cmd_fail;
-    }
-
   evbase_mpd = event_base_new();
   if (!evbase_mpd)
     {
@@ -4250,15 +4159,12 @@ int mpd_init(void)
 
   event_add(g_exitev, NULL);
 
-
-  g_cmdev = event_new(evbase_mpd, g_cmd_pipe[0], EV_READ, command_cb, NULL);
+  g_cmdev = cmdev_util_new(evbase_mpd);
   if (!g_cmdev)
     {
-      DPRINTF(E_LOG, L_MPD, "Could not create cmd event\n");
+      DPRINTF(E_LOG, L_MPD, "Could not create cmdev\n");
       goto evnew_fail;
     }
-
-  event_add(g_cmdev, NULL);
 
   if (v6enabled)
     {
@@ -4318,10 +4224,6 @@ int mpd_init(void)
   evbase_mpd = NULL;
 
  evbase_fail:
-  close(g_cmd_pipe[0]);
-  close(g_cmd_pipe[1]);
-
- cmd_fail:
   close(g_exit_pipe[0]);
   close(g_exit_pipe[1]);
 
@@ -4367,6 +4269,5 @@ void mpd_deinit(void)
   // Close pipes
   close(g_exit_pipe[0]);
   close(g_exit_pipe[1]);
-  close(g_cmd_pipe[0]);
-  close(g_cmd_pipe[1]);
+  cmdev_util_free(g_cmdev);
 }
