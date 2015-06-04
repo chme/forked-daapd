@@ -747,6 +747,8 @@ spotify_playlist_save(sp_playlist *pl)
     }
   db_transaction_end();
 
+  db_admin_inc_libversion();
+
   return plid;
 }
 

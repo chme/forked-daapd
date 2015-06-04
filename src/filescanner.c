@@ -1236,6 +1236,7 @@ bulk_scan(int flags)
 
   // Set scan in progress flag to FALSE
   scanning = 0;
+  db_admin_inc_libversion();
 }
 
 
@@ -1764,6 +1765,8 @@ inotify_cb(int fd, short event, void *arg)
   free(buf);
 
   event_add(&inoev, NULL);
+
+  db_admin_inc_libversion();
 }
 #endif /* __linux__ */
 
@@ -1947,6 +1950,8 @@ kqueue_cb(int fd, short event, void *arg)
     }
 
   event_add(&inoev, NULL);
+
+  db_admin_inc_libversion();
 }
 #endif /* __FreeBSD__ || __FreeBSD_kernel__ */
 

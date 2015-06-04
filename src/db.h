@@ -574,6 +574,12 @@ db_admin_update(const char *key, const char *value);
 int
 db_admin_delete(const char *key);
 
+char *
+db_admin_get_libversion();
+
+int
+db_admin_inc_libversion();
+
 /* Speakers */
 int
 db_speaker_save(uint64_t id, int selected, int volume);

@@ -44,6 +44,7 @@
 #include "cache.h"
 #include "misc.h"
 #include "db.h"
+#include "listener.h"
 
 
 #define STR(x) ((x) ? (x) : "")
@@ -3711,6 +3712,44 @@ db_admin_delete(const char *key)
 #undef Q_TMPL
 }
 
+char *
+db_admin_get_libversion()
+{
+  return db_admin_get("lib_version");
+}
+
+int
+db_admin_inc_libversion()
+{
+  char *libversion;
+  char libversion_new[15];
+  int32_t val;
+  int ret;
+
+  libversion = db_admin_get_libversion();
+  if (!libversion)
+    return -1;
+
+  ret = safe_atoi32(libversion, &val);
+  free(libversion);
+  if (ret != 0)
+    return -1;
+
+  val++;
+
+  ret = snprintf(libversion_new, sizeof(libversion_new), "%d", val);
+  if (ret < 0)
+    return -1;
+
+  ret = db_admin_update("lib_version", libversion_new);
+  if (ret != 0)
+    return -1;
+
+  listener_notify(LISTENER_DATABASE);
+
+  return val;
+}
+
 /* Speakers */
 int
 db_speaker_save(uint64_t id, int selected, int volume)
@@ -4649,11 +4688,14 @@ db_perthread_deinit(void)
  * is a major upgrade. In other words minor version upgrades permit downgrading
  * forked-daapd after the database was upgraded. */
 #define SCHEMA_VERSION_MAJOR 18
-#define SCHEMA_VERSION_MINOR 01
+#define SCHEMA_VERSION_MINOR 02
 #define Q_SCVER_MAJOR					\
   "INSERT INTO admin (key, value) VALUES ('schema_version_major', '18');"
 #define Q_SCVER_MINOR					\
-  "INSERT INTO admin (key, value) VALUES ('schema_version_minor', '01');"
+  "INSERT INTO admin (key, value) VALUES ('schema_version_minor', '02');"
+
+#define Q_LIB_VERSION					\
+  "INSERT INTO admin (key, value) VALUES ('lib_version', '0');"
 
 struct db_init_query {
   char *query;
@@ -4685,6 +4727,7 @@ static const struct db_init_query db_init_table_queries[] =
 
     { Q_SCVER_MAJOR, "set schema version major" },
     { Q_SCVER_MINOR, "set schema version minor" },
+    { Q_LIB_VERSION, "set library version" },
   };
 
 
@@ -5935,6 +5978,26 @@ static const struct db_init_query db_upgrade_v1801_queries[] =
     { U_V1801_SCVER_MINOR,    "set schema_version_minor to 01" },
   };
 
+/* Upgrade from schema v18.01 to v19.02 */
+/* Add library version to admin table
+ */
+
+#define U_V1802_INSERT_LIB_VERSION				\
+  "INSERT INTO admin (key, value) VALUES ('lib_version', '0');"
+
+#define U_V1802_SCVER_MAJOR			\
+  "UPDATE admin SET value = '18' WHERE key = 'schema_version_major';"
+#define U_V1802_SCVER_MINOR			\
+  "UPDATE admin SET value = '02' WHERE key = 'schema_version_minor';"
+
+static const struct db_init_query db_upgrade_v1802_queries[] =
+  {
+    { U_V1901_INSERT_LIB_VERSION, "insert library version into admin table" },
+
+    { U_V1901_SCVER_MAJOR,    "set schema_version_major to 18" },
+    { U_V1901_SCVER_MINOR,    "set schema_version_minor to 02" },
+  };
+
 static int
 db_upgrade(int db_ver)
 {
@@ -6031,6 +6094,13 @@ db_upgrade(int db_ver)
 
     case 1800:
       ret = db_generic_upgrade(db_upgrade_v1801_queries, sizeof(db_upgrade_v1801_queries) / sizeof(db_upgrade_v1801_queries[0]));
+      if (ret < 0)
+	return -1;
+
+      /* FALLTHROUGH */
+
+    case 1801:
+      ret = db_generic_upgrade(db_upgrade_v1802_queries, sizeof(db_upgrade_v1802_queries) / sizeof(db_upgrade_v1902_queries[0]));
       if (ret < 0)
 	return -1;
 

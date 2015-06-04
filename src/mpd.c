@@ -4075,6 +4075,10 @@ mpd_notify_idle_client(struct idle_client *client, enum listener_event_type type
 	evbuffer_add(client->evbuffer, "changed: options\n", 17);
 	break;
 
+      case LISTENER_DATABASE:
+	evbuffer_add(client->evbuffer, "changed: database\n", 18);
+	break;
+
       default:
 	DPRINTF(E_WARN, L_MPD, "Unsupported event type (%d) in notify idle clients.\n", type);
 	return -1;
@@ -4302,7 +4306,7 @@ int mpd_init(void)
     }
 
   idle_clients = NULL;
-  listener_add(mpd_listener_cb, LISTENER_PLAYER | LISTENER_PLAYLIST | LISTENER_VOLUME | LISTENER_SPEAKER | LISTENER_OPTIONS);
+  listener_add(mpd_listener_cb, LISTENER_PLAYER | LISTENER_PLAYLIST | LISTENER_VOLUME | LISTENER_SPEAKER | LISTENER_OPTIONS | LISTENER_DATABASE);
 
   return 0;
 
