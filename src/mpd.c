@@ -4367,4 +4367,6 @@ void mpd_deinit(void)
   // Close pipes
   close(g_exit_pipe[0]);
   close(g_exit_pipe[1]);
+  close(g_cmd_pipe[0]);
+  close(g_cmd_pipe[1]);
 }
