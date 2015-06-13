@@ -6007,10 +6007,10 @@ static const struct db_init_query db_upgrade_v1801_queries[] =
 
 static const struct db_init_query db_upgrade_v1802_queries[] =
   {
-    { U_V1901_INSERT_LIB_VERSION, "insert library version into admin table" },
+    { U_V1802_INSERT_LIB_VERSION, "insert library version into admin table" },
 
-    { U_V1901_SCVER_MAJOR,    "set schema_version_major to 18" },
-    { U_V1901_SCVER_MINOR,    "set schema_version_minor to 02" },
+    { U_V1802_SCVER_MAJOR,    "set schema_version_major to 18" },
+    { U_V1802_SCVER_MINOR,    "set schema_version_minor to 02" },
   };
 
 static int
@@ -6115,7 +6115,7 @@ db_upgrade(int db_ver)
       /* FALLTHROUGH */
 
     case 1801:
-      ret = db_generic_upgrade(db_upgrade_v1802_queries, sizeof(db_upgrade_v1802_queries) / sizeof(db_upgrade_v1902_queries[0]));
+      ret = db_generic_upgrade(db_upgrade_v1802_queries, sizeof(db_upgrade_v1802_queries) / sizeof(db_upgrade_v1802_queries[0]));
       if (ret < 0)
 	return -1;
 
