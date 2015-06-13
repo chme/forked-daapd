@@ -61,7 +61,7 @@
 
 static pthread_t tid_mpd;
 
-struct event_base *evbase_mpd;
+static struct event_base *evbase_mpd;
 static int g_exit_pipe[2];
 static struct event *g_exitev;
 
@@ -142,7 +142,7 @@ struct idle_client
   struct idle_client *next;
 };
 
-struct idle_client *idle_clients;
+static struct idle_client *idle_clients;
 
 
 static void
