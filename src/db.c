@@ -3712,32 +3712,47 @@ db_admin_delete(const char *key)
 #undef Q_TMPL
 }
 
-char *
+int
 db_admin_get_libversion()
 {
-  return db_admin_get("lib_version");
+  char *lib_version;
+  int version;
+  int ret;
+
+  lib_version = db_admin_get("lib_version");
+  if (!lib_version)
+    {
+      DPRINTF(E_LOG, L_DACP, "Could not fetch library version\n");
+      return -1;
+    }
+
+  ret = safe_atoi32(lib_version, &version);
+  if (ret < 0)
+    {
+      DPRINTF(E_LOG, L_DACP, "Library version doesn't convert to integer: %s\n", lib_version);
+      free(lib_version);
+      return -1;
+    }
+
+  free(lib_version);
+
+  return version;
 }
 
 int
 db_admin_inc_libversion()
 {
-  char *libversion;
+  int32_t version;
   char libversion_new[15];
-  int32_t val;
   int ret;
 
-  libversion = db_admin_get_libversion();
-  if (!libversion)
+  version = db_admin_get_libversion();
+  if (version < 0)
     return -1;
 
-  ret = safe_atoi32(libversion, &val);
-  free(libversion);
-  if (ret != 0)
-    return -1;
+  version++;
 
-  val++;
-
-  ret = snprintf(libversion_new, sizeof(libversion_new), "%d", val);
+  ret = snprintf(libversion_new, sizeof(libversion_new), "%d", version);
   if (ret < 0)
     return -1;
 
@@ -3747,7 +3762,7 @@ db_admin_inc_libversion()
 
   listener_notify(LISTENER_DATABASE);
 
-  return val;
+  return version;
 }
 
 /* Speakers */

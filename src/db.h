@@ -574,7 +574,7 @@ db_admin_update(const char *key, const char *value);
 int
 db_admin_delete(const char *key);
 
-char *
+int
 db_admin_get_libversion();
 
 int
