@@ -701,7 +701,7 @@ dacp_reply_ctrlint(struct evhttp_request *req, struct evbuffer *evbuf, char **ur
   /* If tags are added or removed container sizes should be adjusted too */
   dmap_add_container(evbuf, "caci", 194); /*  8, unknown dacp container - size of content */
   dmap_add_int(evbuf, "mstt", 200);       /* 12, dmap.status */
-  dmap_add_char(evbuf, "muty", 0);        /*  9, dmap.updatetype */
+  dmap_add_char(evbuf, "muty", 1);        /*  9, dmap.updatetype */
   dmap_add_int(evbuf, "mtco", 1);         /* 12, dmap.specifiedtotalcount */
   dmap_add_int(evbuf, "mrco", 1);         /* 12, dmap.returnedcount */
   dmap_add_container(evbuf, "mlcl", 141); /*  8, dmap.listing - size of content */

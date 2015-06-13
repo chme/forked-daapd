@@ -51,6 +51,8 @@
 #include "daap_query.h"
 #include "dmap_common.h"
 #include "cache.h"
+#include "listener.h"
+#include "cmdev_util.h"
 
 #ifdef HAVE_LIBEVENT2
 # include <event2/event.h>
@@ -66,8 +68,6 @@ extern struct event_base *evbase_httpd;
 #define DAAP_SESSION_TIMEOUT 0 /* By default the session never times out */
 /* We announce this timeout to the client when returning server capabilities */
 #define DAAP_SESSION_TIMEOUT_CAPABILITY 1800 
-/* Update requests refresh interval in seconds */
-#define DAAP_UPDATE_REFRESH  0
 
 /* Database number for the Radio item */
 #define DAAP_DB_RADIO 2
@@ -114,9 +114,8 @@ static struct daap_session *daap_sessions;
 static struct timeval daap_session_timeout_tv = { DAAP_SESSION_TIMEOUT, 0 };
 
 /* Update requests */
-static int current_rev;
 static struct daap_update_request *update_requests;
-static struct timeval daap_update_refresh_tv = { DAAP_UPDATE_REFRESH, 0 };
+static struct cmdev *g_cmdev;
 
 
 /* Session handling */
@@ -321,44 +320,69 @@ update_remove(struct daap_update_request *ur)
 
   update_free(ur);
 }
-
-static void
-update_refresh_cb(int fd, short event, void *arg)
+static int
+update_refresh_cb(void *arg)
 {
   struct daap_update_request *ur;
   struct evhttp_connection *evcon;
   struct evbuffer *evbuf;
+  struct evbuffer *update;
+  int revision;
   int ret;
 
-  ur = (struct daap_update_request *)arg;
+  ret = 0;
+
+  if (!update_requests)
+    return -1;
+
+  revision = db_admin_get_libversion();
+  if (revision < 0)
+    {
+      DPRINTF(E_LOG, L_DAAP, "Could not fetch library version\n");
+
+      return -1;
+    }
 
   evbuf = evbuffer_new();
   if (!evbuf)
     {
-      DPRINTF(E_LOG, L_DAAP, "Could not allocate evbuffer for DAAP update data\n");
+      DPRINTF(E_LOG, L_DAAP, "Could not allocate evbuffer for database update reply\n");
 
-      return;
+      return -1;
     }
 
-  ret = evbuffer_expand(evbuf, 32);
-  if (ret < 0)
+  update = evbuffer_new();
+  if (!update)
     {
-      DPRINTF(E_LOG, L_DAAP, "Could not expand evbuffer for DAAP update data\n");
-
-      return;
+      DPRINTF(E_LOG, L_DAAP, "Could not allocate evbuffer for database update data\n");
+      ret = -1;
+      goto out_free_evbuf;
     }
 
   /* Send back current revision */
-  dmap_add_container(evbuf, "mupd", 24);
-  dmap_add_int(evbuf, "mstt", 200);         /* 12 */
-  dmap_add_int(evbuf, "musr", current_rev); /* 12 */
+  dmap_add_container(update, "mupd", 24);
+  dmap_add_int(update, "mstt", 200);         /* 12 */
+  dmap_add_int(update, "musr", revision);    /* 12 */
 
-  evcon = evhttp_request_get_connection(ur->req);
-  evhttp_connection_set_closecb(evcon, NULL, NULL);
+  for (ur = update_requests; update_requests; ur = update_requests)
+    {
+      update_requests = ur->next;
 
-  httpd_send_reply(ur->req, HTTP_OK, "OK", evbuf);
+      evcon = evhttp_request_get_connection(ur->req);
+      if (evcon)
+	evhttp_connection_set_closecb(evcon, NULL, NULL);
 
-  update_remove(ur);
+      evbuffer_add(evbuf, EVBUFFER_DATA(update), EVBUFFER_LENGTH(update));
+
+      httpd_send_reply(ur->req, HTTP_OK, "OK", evbuf);
+
+      free(ur);
+    }
+
+  evbuffer_free(update);
+ out_free_evbuf:
+  evbuffer_free(evbuf);
+  return ret;
 }
 
 static void
@@ -376,6 +400,17 @@ update_fail_cb(struct evhttp_connection *evcon, void *arg)
     evhttp_connection_set_closecb(evc, NULL, NULL);
 
   update_remove(ur);
+}
+
+/* Thread: player */
+static void
+daap_update_handler(enum listener_event_type type)
+{
+  // Only send update on database change events
+  if (type != LISTENER_DATABASE)
+    return;
+
+  cmdev_util_nonblock_command(g_cmdev, update_refresh_cb, NULL);
 }
 
 
@@ -1024,6 +1059,7 @@ daap_reply_update(struct evhttp_request *req, struct evbuffer *evbuf, char **uri
   struct evhttp_connection *evcon;
   const char *param;
   int reqd_rev;
+  int revision;
   int ret;
 
   s = daap_session_find(req, query, evbuf);
@@ -1060,9 +1096,17 @@ daap_reply_update(struct evhttp_request *req, struct evbuffer *evbuf, char **uri
 	}
 
       /* Send back current revision */
+      revision = db_admin_get_libversion();
+
+      if (revision < 0)
+	{
+	  DPRINTF(E_LOG, L_DAAP, "Could not fetch library version\n");
+	  return -1;
+	}
+
       dmap_add_container(evbuf, "mupd", 24);
       dmap_add_int(evbuf, "mstt", 200);         /* 12 */
-      dmap_add_int(evbuf, "musr", current_rev); /* 12 */
+      dmap_add_int(evbuf, "musr", revision); /* 12 */
 
       httpd_send_reply(req, HTTP_OK, "OK", evbuf);
 
@@ -1079,26 +1123,6 @@ daap_reply_update(struct evhttp_request *req, struct evbuffer *evbuf, char **uri
       return -1;
     }
   memset(ur, 0, sizeof(struct daap_update_request));
-
-#ifdef HAVE_LIBEVENT2
-  if (DAAP_UPDATE_REFRESH > 0)
-    {
-      ur->timeout = evtimer_new(evbase_httpd, update_refresh_cb, ur);
-      if (ur->timeout)
-	ret = evtimer_add(ur->timeout, &daap_update_refresh_tv);
-      else
-	ret = -1;
-
-      if (ret < 0)
-	{
-	  DPRINTF(E_LOG, L_DAAP, "Out of memory for update request event\n");
-
-	  dmap_send_error(req, "mupd", "Could not register timer");	
-	  update_free(ur);
-	  return -1;
-	}
-    }
-#endif
 
   /* NOTE: we may need to keep reqd_rev in there too */
   ur->req = req;
@@ -1209,7 +1233,7 @@ daap_reply_dblist(struct evhttp_request *req, struct evbuffer *evbuf, char **uri
   // Create container
   dmap_add_container(evbuf, "avdb", EVBUFFER_LENGTH(content) + 53);
   dmap_add_int(evbuf, "mstt", 200);     /* 12 */
-  dmap_add_char(evbuf, "muty", 0);      /* 9 */
+  dmap_add_char(evbuf, "muty", 1);      /* 9 */
   dmap_add_int(evbuf, "mtco", 2);       /* 12 */
   dmap_add_int(evbuf, "mrco", 2);       /* 12 */
   dmap_add_container(evbuf, "mlcl", EVBUFFER_LENGTH(content)); /* 8 */
@@ -1465,7 +1489,7 @@ daap_reply_songlist_generic(struct evhttp_request *req, struct evbuffer *evbuf, 
   else
     dmap_add_container(evbuf, tag, EVBUFFER_LENGTH(songlist) + 53);
   dmap_add_int(evbuf, "mstt", 200);    /* 12 */
-  dmap_add_char(evbuf, "muty", 0);     /* 9 */
+  dmap_add_char(evbuf, "muty", 1);     /* 9 */
   dmap_add_int(evbuf, "mtco", qp.results); /* 12 */
   dmap_add_int(evbuf, "mrco", nsongs); /* 12 */
   dmap_add_container(evbuf, "mlcl", EVBUFFER_LENGTH(songlist)); /* 8 */
@@ -1792,7 +1816,7 @@ daap_reply_playlists(struct evhttp_request *req, struct evbuffer *evbuf, char **
   /* Add header to evbuf, add playlistlist to evbuf */
   dmap_add_container(evbuf, "aply", EVBUFFER_LENGTH(playlistlist) + 53);
   dmap_add_int(evbuf, "mstt", 200); /* 12 */
-  dmap_add_char(evbuf, "muty", 0);  /* 9 */
+  dmap_add_char(evbuf, "muty", 1);  /* 9 */
   dmap_add_int(evbuf, "mtco", qp.results); /* 12 */
   dmap_add_int(evbuf,"mrco", npls); /* 12 */
   dmap_add_container(evbuf, "mlcl", EVBUFFER_LENGTH(playlistlist));
@@ -2074,7 +2098,7 @@ daap_reply_groups(struct evhttp_request *req, struct evbuffer *evbuf, char **uri
     dmap_add_container(evbuf, tag, EVBUFFER_LENGTH(grouplist) + 53);
 
   dmap_add_int(evbuf, "mstt", 200); /* 12 */
-  dmap_add_char(evbuf, "muty", 0);  /* 9 */
+  dmap_add_char(evbuf, "muty", 1);  /* 9 */
   dmap_add_int(evbuf, "mtco", qp.results); /* 12 */
   dmap_add_int(evbuf,"mrco", ngrp); /* 12 */
   dmap_add_container(evbuf, "mlcl", EVBUFFER_LENGTH(grouplist)); /* 8 */
@@ -2975,7 +2999,6 @@ daap_init(void)
   int ret;
 
   srand((unsigned)time(NULL));
-  current_rev = 2;
   update_requests = NULL;
 
   for (i = 0; daap_handlers[i].handler; i++)
@@ -2990,7 +3013,29 @@ daap_init(void)
         }
     }
 
+  g_cmdev = cmdev_util_new(evbase_httpd);
+  if (!g_cmdev)
+    {
+      DPRINTF(E_LOG, L_DAAP, "Could not create cmdev\n");
+
+      goto cmdev_fail;
+    }
+
+  ret = listener_add(daap_update_handler, LISTENER_DATABASE);
+  if (ret != 0)
+    {
+      DPRINTF(E_LOG, L_DAAP, "Could not add listener\n");
+
+      goto cmdev_fail;
+    }
   return 0;
+
+  cmdev_util_free(g_cmdev);
+ cmdev_fail:
+  for (i = 0; daap_handlers[i].handler; i++)
+    regfree(&daap_handlers[i].preg);
+
+  return -1;
 }
 
 void
@@ -3000,6 +3045,8 @@ daap_deinit(void)
   struct daap_update_request *ur;
   struct evhttp_connection *evcon;
   int i;
+
+  listener_remove(daap_update_handler);
 
   for (i = 0; daap_handlers[i].handler; i++)
     regfree(&daap_handlers[i].preg);
@@ -3023,4 +3070,6 @@ daap_deinit(void)
 
       update_free(ur);
     }
+
+  cmdev_util_free(g_cmdev);
 }
