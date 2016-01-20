@@ -10,6 +10,7 @@ AC_USE_SYSTEM_EXTENSIONS
 
 dnl Checks for programs.
 AC_PROG_CC
+AC_PROG_CXX
 AM_PROG_CC_C_O
 LT_INIT([disable-static])
 
@@ -220,8 +221,27 @@ if test x$use_oss4 = xtrue; then
 fi
 AM_CONDITIONAL(COND_OSS4, test x$use_oss4 = xtrue)
 
+# Define gtest variables 
+GTEST_VERSION="1.7.0"
+if test "x$have_pthread" = "xyes"; then
+  GTEST_CPPFLAGS="-DGTEST_HAS_PTHREAD=1"
+  GTEST_CXXFLAGS="$PTHREAD_CFLAGS"
+  GTEST_LDFLAGS=
+  GTEST_LIBS="$PTHREAD_LIBS"
+else
+  GTEST_CPPFLAGS="-DGTEST_HAS_PTHREAD=0"
+  GTEST_CXXFLAGS=
+  GTEST_LDFLAGS=
+  GTEST_LIBS=
+fi
+AC_SUBST([GTEST_VERSION])
+AC_SUBST([GTEST_CPPFLAGS])
+AC_SUBST([GTEST_CXXFLAGS])
+AC_SUBST([GTEST_LDFLAGS])
+AC_SUBST([GTEST_LIBS])
+
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 
-AC_OUTPUT(src/Makefile sqlext/Makefile Makefile)
+AC_OUTPUT(src/Makefile sqlext/Makefile lib/Makefile lib/gtest/Makefile tests/Makefile Makefile)
