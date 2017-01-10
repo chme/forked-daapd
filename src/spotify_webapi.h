@@ -42,6 +42,7 @@ struct spotify_album
   const char *album_type;
   bool is_compilation;
   const char *artist;
+  const char *artist_uri;
   const char *genre;
   const char *id;
   const char *label;
@@ -58,8 +59,11 @@ struct spotify_track
   time_t mtime;
 
   const char *album;
+  const char *album_uri;
   const char *album_artist;
+  const char *album_artist_uri;
   const char *artist;
+  const char *artist_uri;
   int disc_number;
   const char *album_type;
   bool is_compilation;
@@ -118,6 +122,12 @@ spotifywebapi_playlisttracks_fetch(struct spotify_request *request, struct spoti
 int
 spotifywebapi_playlist_start(struct spotify_request *request, const char *path, struct spotify_playlist *playlist);
 int
+spotifywebapi_album_start(struct spotify_request *request, const char *path, json_object **jsontracks, int *track_count, struct spotify_album *album);
+int
 spotifywebapi_track_start(struct spotify_request *request, const char *path, struct spotify_track *track);
+int
+spotifywebapi_search_track_fetch(struct spotify_request *request, struct spotify_track *track);
+int
+spotifywebapi_request_search(struct spotify_request *request, const char *uri);
 
 #endif /* SRC_SPOTIFY_WEBAPI_H_ */

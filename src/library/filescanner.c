@@ -1522,4 +1522,6 @@ struct library_source filescanner =
   .initscan = filescanner_initscan,
   .rescan = filescanner_rescan,
   .fullrescan = filescanner_fullrescan,
+  .search_tracks = NULL,
+  .find_tracks = NULL,
 };

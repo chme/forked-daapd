@@ -46,7 +46,9 @@ static const char *spotify_client_secret = "232af95f39014c9ba218285a5c11a239";
 static const char *spotify_auth_uri      = "https://accounts.spotify.com/authorize";
 static const char *spotify_token_uri     = "https://accounts.spotify.com/api/token";
 static const char *spotify_playlist_uri	 = "https://api.spotify.com/v1/users/%s/playlists/%s";
+static const char *spotify_album_uri	 = "https://api.spotify.com/v1/albums/%s";
 static const char *spotify_track_uri     = "https://api.spotify.com/v1/tracks/%s";
+//static const char *spotify_search_uri    = "https://api.spotify.com/v1/search?q=%s&type=%s";
 
 
 /*--------------------- HELPERS FOR SPOTIFY WEB API -------------------------*/
@@ -473,14 +475,17 @@ parse_metadata_track(json_object* jsontrack, struct spotify_track* track)
   if (json_object_object_get_ex(jsontrack, "album", &jsonalbum))
     {
       track->album = jparse_str_from_obj(jsonalbum, "name");
+      track->album_uri = jparse_str_from_obj(jsonalbum, "uri");
       if (json_object_object_get_ex(jsonalbum, "artists", &jsonartists))
 	{
 	  track->album_artist = jparse_str_from_array(jsonartists, 0, "name");
+	  track->album_artist_uri = jparse_str_from_array(jsonartists, 0, "uri");
 	}
     }
   if (json_object_object_get_ex(jsontrack, "artists", &jsonartists))
     {
       track->artist = jparse_str_from_array(jsonartists, 0, "name");
+      track->artist_uri = jparse_str_from_array(jsonartists, 0, "uri");
     }
   track->disc_number = jparse_int_from_obj(jsontrack, "disc_number");
   track->album_type = jparse_str_from_obj(jsonalbum, "album_type");
@@ -516,6 +521,7 @@ parse_metadata_album(json_object *jsonalbum, struct spotify_album *album)
   if (json_object_object_get_ex(jsonalbum, "artists", &jsonartists))
     {
       album->artist = jparse_str_from_array(jsonartists, 0, "name");
+      album->artist_uri = jparse_str_from_array(jsonartists, 0, "uri");
     }
   album->name = jparse_str_from_obj(jsonalbum, "name");
   album->uri = jparse_str_from_obj(jsonalbum, "uri");
@@ -686,6 +692,28 @@ get_owner_plid_from_uri(const char *uri, char **owner, char **plid)
   return 0;
 }
 
+/*
+ * Extracts the id from a spotify album/artist/track uri
+ *
+ * E. g. album-uri has the following format: spotify:album:[id]
+ * The id must be freed by the caller.
+ */
+static int
+get_id_from_uri(const char *uri, char **id)
+{
+  char *tmp;
+  tmp = strrchr(uri, ':');
+  if (!tmp)
+    {
+      return -1;
+    }
+  tmp++;
+
+  *id = strdup(tmp);
+
+  return 0;
+}
+
 int
 spotifywebapi_playlisttracks_fetch(struct spotify_request *request, struct spotify_track *track)
 {
@@ -732,27 +760,68 @@ spotifywebapi_playlist_start(struct spotify_request *request, const char *path, 
     }
 
   ret = snprintf(uri, sizeof(uri), spotify_playlist_uri, owner, id);
+  free(owner);
+  free(id);
   if (ret < 0 || ret >= sizeof(uri))
     {
       DPRINTF(E_LOG, L_SPOTIFY, "Error creating playlist endpoint uri for playlist '%s'\n", path);
-      free(owner);
-      free(id);
       return -1;
     }
 
   ret = request_uri(request, uri);
   if (ret < 0)
     {
-      free(owner);
-      free(id);
       return -1;
     }
 
   request->haystack = json_tokener_parse(request->response_body);
   parse_metadata_playlist(request->haystack, playlist);
 
-  free(owner);
+  return 0;
+}
+
+int
+spotifywebapi_album_start(struct spotify_request *request, const char *path, json_object **jsontracks, int *track_count, struct spotify_album *album)
+{
+  char uri[1024];
+  char *id;
+  json_object *needle;
+  int ret;
+
+  ret = get_id_from_uri(path, &id);
+  if (ret < 0)
+    {
+      DPRINTF(E_LOG, L_SPOTIFY, "Error extracting id from album uri '%s'\n", path);
+      return -1;
+    }
+
+  memset(album, 0, sizeof(struct spotify_album));
+
+  ret = snprintf(uri, sizeof(uri), spotify_album_uri, id);
   free(id);
+  if (ret < 0 || ret >= sizeof(uri))
+    {
+      DPRINTF(E_LOG, L_SPOTIFY, "Error creating playlist endpoint uri for album '%s'\n", path);
+      return -1;
+    }
+
+  ret = request_uri(request, uri);
+  if (ret < 0)
+    {
+      return -1;
+    }
+
+  request->haystack = json_tokener_parse(request->response_body);
+  parse_metadata_album(request->haystack, album);
+
+  if (json_object_object_get_ex(request->haystack, "tracks", &needle))
+    {
+      if (jparse_array_from_obj(needle, "items", jsontracks) == 0)
+      {
+	*track_count = json_object_array_length(*jsontracks);
+      }
+    }
+
   return 0;
 }
 
@@ -763,15 +832,15 @@ spotifywebapi_track_start(struct spotify_request *request, const char *path, str
   char *id;
   int ret;
 
-  id = strrchr(path, ':');
-  if (!id)
+  ret = get_id_from_uri(path, &id);
+  if (ret < 0)
     {
       DPRINTF(E_LOG, L_SPOTIFY, "Error extracting id from track uri '%s'\n", path);
       return -1;
     }
-  id++;
 
   ret = snprintf(uri, sizeof(uri), spotify_track_uri, id);
+  free(id);
   if (ret < 0 || ret >= sizeof(uri))
     {
       DPRINTF(E_LOG, L_SPOTIFY, "Error creating playlist endpoint uri for playlist '%s'\n", path);
@@ -790,3 +859,59 @@ spotifywebapi_track_start(struct spotify_request *request, const char *path, str
   return 0;
 }
 
+int
+spotifywebapi_search_track_fetch(struct spotify_request *request, struct spotify_track *track)
+{
+  json_object *item;
+
+  memset(track, 0, sizeof(struct spotify_track));
+
+  if (request->index >= request->count)
+    {
+      return -1;
+    }
+
+  item = json_object_array_get_idx(request->items, request->index);
+  if (!item)
+    {
+      DPRINTF(E_LOG, L_SPOTIFY, "Unexpected JSON: Item %d did not have 'track'->'uri'\n", request->index);
+      request->index++;
+      return -1;
+    }
+
+  parse_metadata_track(item, track);
+
+  request->index++;
+
+  return 0;
+}
+
+int
+spotifywebapi_request_search(struct spotify_request *request, const char *uri)
+{
+  json_object *jsontracks;
+  int ret;
+
+  ret = request_uri(request, uri);
+  if (ret < 0)
+    return ret;
+
+  if (!json_object_object_get_ex(request->haystack, "tracks", &jsontracks))
+    {
+      DPRINTF(E_LOG, L_SPOTIFY, "Error reading 'tracks from response to '%s'\n", uri);
+      return -1;
+    }
+
+  request->total = jparse_int_from_obj(jsontracks, "total");
+
+  if (jparse_array_from_obj(jsontracks, "items", &request->items) < 0)
+    {
+      DPRINTF(E_LOG, L_SPOTIFY, "No items in reply from Spotify. See:\n%s\n", request->response_body);
+      return -1;
+    }
+
+  request->count = json_object_array_length(request->items);
+
+  DPRINTF(E_DBG, L_SPOTIFY, "Got %d items\n", request->count);
+  return 0;
+}

@@ -26,6 +26,17 @@
 #include "commands.h"
 #include "db.h"
 
+
+typedef void (*library_search_cb)(struct media_file_info *mfi, void *arg);
+
+struct library_search_criteria
+{
+  char *any;
+  char *artist;
+  char *album;
+  char *title;
+};
+
 /*
  * Definition of a library source
  *
@@ -61,6 +72,10 @@ struct library_source
    * Run a full rescan (purge library entries and rescan) (called from the library thread)
    */
   int (*fullrescan)(void);
+
+  void (*search_tracks)(const struct library_search_criteria *search_criteria, library_search_cb cb, void *arg);
+
+  void (*find_tracks)(const struct library_search_criteria *search_criteria, library_search_cb cb, void *arg);
 };
 
 
@@ -72,6 +87,9 @@ library_add_playlist_info(const char *path, const char *title, const char *virtu
 
 struct media_file_info *
 library_scan_media(const char *path);
+
+void
+library_prepare_media(const char *path, struct media_file_info *mfi);
 
 int
 library_add_queue_item(struct media_file_info* mfi);
@@ -90,6 +108,12 @@ library_set_scanning(bool is_scanning);
 
 bool
 library_is_exiting();
+
+void
+library_search_tracks(const struct library_search_criteria *search_criteria, library_search_cb cb, void *arg);
+
+void
+library_find_tracks(const struct library_search_criteria *search_criteria, library_search_cb cb, void *arg);
 
 int
 library_exec_async(command_function func, void *arg);

@@ -555,6 +555,22 @@ library_scan_media(const char *path)
   return mfi;
 }
 
+void
+library_prepare_media(const char *path, struct media_file_info *mfi)
+{
+  enum data_kind data_kind;
+
+  data_kind = parse_data_kind(path);
+  if (!data_kind)
+    {
+      DPRINTF(E_LOG, L_LIB, "Could not determine data kind for path '%s'\n", path);
+      return;
+    }
+
+  scan_media(path, 0, 0, data_kind, 0, false, mfi);
+  mfi->virtual_path = strdup(path);
+}
+
 int
 library_add_playlist_info(const char *path, const char *title, const char *virtual_path, enum pl_type type, int parent_pl_id, int dir_id)
 {
@@ -826,6 +842,44 @@ bool
 library_is_exiting()
 {
   return scan_exit;
+}
+
+void
+library_search_tracks(const struct library_search_criteria *search_criteria, library_search_cb cb, void *arg)
+{
+  int i;
+
+  for (i = 0; sources[i]; i++)
+    {
+      if (!sources[i]->disabled && sources[i]->search_tracks)
+      {
+	DPRINTF(E_DBG, L_LIB, "Search tracks in library source '%s'\n", sources[i]->name);
+	sources[i]->search_tracks(search_criteria, cb, arg);
+      }
+      else
+      {
+	DPRINTF(E_DBG, L_LIB, "Library source '%s' is disabled\n", sources[i]->name);
+      }
+    }
+}
+
+void
+library_find_tracks(const struct library_search_criteria *search_criteria, library_search_cb cb, void *arg)
+{
+  int i;
+
+  for (i = 0; sources[i]; i++)
+    {
+      if (!sources[i]->disabled && sources[i]->find_tracks)
+      {
+	DPRINTF(E_DBG, L_LIB, "Find tracks in library source '%s'\n", sources[i]->name);
+	sources[i]->find_tracks(search_criteria, cb, arg);
+      }
+      else
+      {
+	DPRINTF(E_DBG, L_LIB, "Library source '%s' is disabled\n", sources[i]->name);
+      }
+    }
 }
 
 /*

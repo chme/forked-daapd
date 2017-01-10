@@ -2584,6 +2584,206 @@ webapi_pl_remove(void *arg, int *ret)
   return COMMAND_END;
 }
 
+/* Thread: mpd */
+static void
+search_tracks(const struct library_search_criteria *search_criteria, library_search_cb search_cb, void *arg)
+{
+  struct spotify_request request;
+  struct spotify_track track;
+  struct media_file_info mfi;
+  char search_uri[1024];
+  char search_query[1024];
+  char *tmp;
+  char *ptr;
+  size_t len;
+
+  if (!search_criteria->any
+      && !search_criteria->title
+      && !search_criteria->album
+      && !search_criteria->artist)
+    {
+      return;
+    }
+
+  search_query[0] = '\0';
+  ptr = search_query;
+  len = 0;
+
+  if (search_criteria->any)
+    {
+      tmp = evhttp_encode_uri(search_criteria->any);
+      snprintf(search_query, sizeof(search_query), "%%22%s%%22", tmp);
+      len = strlen(search_query);
+      ptr = search_query + len;
+      free(tmp);
+    }
+  if (search_criteria->title)
+    {
+      tmp = evhttp_encode_uri(search_criteria->title);
+      snprintf(search_query, sizeof(search_query), "title:%%22%s%%22", tmp);
+      len = strlen(search_query);
+      ptr = search_query + len;
+      free(tmp);
+    }
+  if (search_criteria->artist)
+    {
+      tmp = evhttp_encode_uri(search_criteria->artist);
+
+      if (len > 0)
+	snprintf(ptr, sizeof(search_query) - len, "%%20artist:%%22%s%%22", tmp);
+      else
+	snprintf(ptr, sizeof(search_query) - len, "artist:%%22%s%%22", tmp);
+
+      len = strlen(search_query);
+      ptr = search_query + len;
+      free(tmp);
+    }
+  if (search_criteria->album)
+    {
+      tmp = evhttp_encode_uri(search_criteria->album);
+
+      if (len > 0)
+	snprintf(ptr, sizeof(search_query) - len, "%%20album:%%22%s%%22", tmp);
+      else
+	snprintf(ptr, sizeof(search_query) - len, "album:%%22%s%%22", tmp);
+
+      len = strlen(search_query);
+      ptr = search_query + len;
+      free(tmp);
+    }
+
+  snprintf(search_uri, sizeof(search_uri), "https://api.spotify.com/v1/search?q=%s&type=track&limit=50", search_query);
+  DPRINTF(E_LOG, L_SPOTIFY, "Search tracks '%s'\n", search_uri);
+
+  memset(&request, 0, sizeof(struct spotify_request));
+
+  if (0 == spotifywebapi_request_search(&request, search_uri))
+    {
+      DPRINTF(E_LOG, L_SPOTIFY, "Search tracks\n%s\n", request.response_body);
+      while (0 == spotifywebapi_search_track_fetch(&request, &track))
+	{
+	  DPRINTF(E_DBG, L_SPOTIFY, "Found matching track: '%s' (%s) \n", track.name, track.uri);
+
+	  if (track.uri)
+	    {
+	      memset(&mfi, 0, sizeof(struct media_file_info));
+	      map_track_to_mfi(&track, &mfi);
+	      library_prepare_media(track.uri, &mfi);
+
+	      if (asprintf(&tmp, "%s (%s)", mfi.title, track.uri) >= 0)
+		{
+		  free(mfi.title);
+		  mfi.title = tmp;
+		}
+	      if (asprintf(&tmp, "%s (%s)", mfi.album, track.album_uri) >= 0)
+		{
+		  free(mfi.album);
+		  mfi.album = tmp;
+		}
+	      if (asprintf(&tmp, "%s (%s)", mfi.album_artist, track.album_artist_uri) >= 0)
+		{
+		  free(mfi.album_artist);
+		  mfi.album_artist = tmp;
+		}
+	      if (asprintf(&tmp, "%s (%s)", mfi.artist, track.artist_uri) >= 0)
+		{
+		  free(mfi.artist);
+		  mfi.artist = tmp;
+		}
+
+	      search_cb(&mfi, arg);
+
+	      free_mfi(&mfi, 1);
+	    }
+	}
+    }
+
+  spotifywebapi_request_end(&request);
+}
+
+/* Thread: mpd */
+static void
+find_tracks(const struct library_search_criteria *search_criteria, library_search_cb search_cb, void *arg)
+{
+  struct spotify_request request;
+  json_object *jsontracks;
+  int track_count;
+  struct spotify_album album;
+  struct spotify_track track;
+  struct media_file_info mfi;
+  char *tmp;
+  char *uri;
+  int i;
+  int ret;
+
+  if (!search_criteria->title
+      && !search_criteria->album
+      && !search_criteria->artist)
+    {
+      return;
+    }
+
+  if (search_criteria->title)
+    {
+      // TODO find track
+    }
+  else if (search_criteria->album)
+    {
+      tmp = strstr(search_criteria->album, "spotify:album:");
+      if (tmp)
+	{
+	  uri = strdup(tmp);
+	  tmp = strchr(uri, ')');
+	  if (tmp)
+	    *tmp = '\0';
+
+	  ret = spotifywebapi_album_start(&request, uri, &jsontracks, &track_count, &album);
+	  for (i = 0; i < track_count && ret == 0; i++)
+	    {
+	      ret = spotifywebapi_album_track_fetch(jsontracks, i, &track);
+	      if (ret == 0 && track.uri)
+		{
+		  memset(&mfi, 0, sizeof(struct media_file_info));
+		  map_track_to_mfi(&track, &mfi);
+		  map_album_to_mfi(&album, &mfi);
+		  library_prepare_media(track.uri, &mfi);
+
+		  if (asprintf(&tmp, "%s (%s)", mfi.title, track.uri) >= 0)
+		    {
+		      free(mfi.title);
+		      mfi.title = tmp;
+		    }
+		  if (asprintf(&tmp, "%s (%s)", mfi.album, album.uri) >= 0)
+		    {
+		      free(mfi.album);
+		      mfi.album = tmp;
+		    }
+		  if (asprintf(&tmp, "%s (%s)", mfi.album_artist, album.artist_uri) >= 0)
+		    {
+		      free(mfi.album_artist);
+		      mfi.album_artist = tmp;
+		    }
+		  if (asprintf(&tmp, "%s (%s)", mfi.artist, track.artist_uri) >= 0)
+		    {
+		      free(mfi.artist);
+		      mfi.artist = tmp;
+		    }
+
+		  search_cb(&mfi, arg);
+
+		  free_mfi(&mfi, 1);
+		}
+	    }
+	  spotifywebapi_request_end(&request);
+	  free(uri);
+	}
+    }
+  else if (search_criteria->artist)
+    {
+      // TODO find artist
+    }
+}
+
 /* Thread: main */
 int
 spotify_init(void)
@@ -2791,4 +2991,6 @@ struct library_source spotifyscanner =
   .rescan = rescan,
   .initscan = initscan,
   .fullrescan = fullrescan,
+  .search_tracks = search_tracks,
+  .find_tracks = find_tracks,
 };

@@ -397,9 +397,14 @@ static int
 mpd_add_db_queue_item(struct evbuffer *evbuf, struct db_queue_item *queue_item)
 {
   char modified[32];
+  char *virtual_path;
   int ret;
 
   mpd_time(modified, sizeof(modified), queue_item->time_modified);
+
+  virtual_path = queue_item->virtual_path;
+  if (virtual_path[0] == '/')
+    virtual_path++;
 
   ret = evbuffer_add_printf(evbuf,
     "file: %s\n"
@@ -414,24 +419,24 @@ mpd_add_db_queue_item(struct evbuffer *evbuf, struct db_queue_item *queue_item)
     "Track: %d\n"
     "Date: %d\n"
     "Genre: %s\n"
-      "Disc: %d\n"
-      "Pos: %d\n"
-      "Id: %d\n",
-      (queue_item->virtual_path + 1),
+    "Disc: %d\n"
+    "Pos: %d\n"
+    "Id: %d\n",
+    virtual_path,
     modified,
-      (queue_item->song_length / 1000),
-      queue_item->artist,
-      queue_item->album_artist,
-      queue_item->artist_sort,
-      queue_item->album_artist_sort,
-      queue_item->album,
-      queue_item->title,
-      queue_item->track,
-      queue_item->year,
-      queue_item->genre,
-      queue_item->disc,
-      queue_item->pos,
-      queue_item->id);
+    (queue_item->song_length / 1000),
+    queue_item->artist,
+    queue_item->album_artist,
+    queue_item->artist_sort,
+    queue_item->album_artist_sort,
+    queue_item->album,
+    queue_item->title,
+    queue_item->track,
+    queue_item->year,
+    queue_item->genre,
+    queue_item->disc,
+    queue_item->pos,
+    queue_item->id);
 
   return ret;
 }
@@ -511,6 +516,76 @@ mpd_add_db_media_file_info(struct evbuffer *evbuf, struct db_media_file_info *db
       dbmfi->year,
       dbmfi->genre,
       dbmfi->disc);
+
+  return ret;
+}
+
+/*
+ * Adds the informations (path, id, tags, etc.) for the given song to the given buffer
+ *
+ * Example output:
+ *   file: foo/bar/song.mp3
+ *   Last-Modified: 2013-07-14T06:57:59Z
+ *   Time: 172
+ *   Artist: foo
+ *   AlbumArtist: foo
+ *   ArtistSort: foo
+ *   AlbumArtistSort: foo
+ *   Title: song
+ *   Album: bar
+ *   Track: 1/11
+ *   Date: 2012-09-11
+ *   Genre: Alternative
+ *   Disc: 1/1
+ *   MUSICBRAINZ_ALBUMARTISTID: c5c2ea1c-4bde-4f4d-bd0b-47b200bf99d6
+ *   MUSICBRAINZ_ARTISTID: c5c2ea1c-4bde-4f4d-bd0b-47b200bf99d6
+ *   MUSICBRAINZ_ALBUMID: 812f4b87-8ad9-41bd-be79-38151f17a2b4
+ *   MUSICBRAINZ_TRACKID: fde95c39-ee51-48f6-a7f9-b5631c2ed156
+ *
+ * @param evbuf the response event buffer
+ * @param mfi media information
+ * @return the number of bytes added if successful, or -1 if an error occurred.
+ */
+static int
+mpd_add_media_file_info(struct evbuffer *evbuf, struct media_file_info *mfi)
+{
+  char modified[32];
+  char *virtual_path;
+  int ret;
+
+  mpd_time(modified, sizeof(modified), mfi->time_modified);
+
+  virtual_path = mfi->virtual_path;
+  if (virtual_path[0] == '/')
+    virtual_path++;
+
+  ret = evbuffer_add_printf(evbuf,
+    "file: %s\n"
+    "Last-Modified: %s\n"
+    "Time: %d\n"
+    "Artist: %s\n"
+    "AlbumArtist: %s\n"
+    "ArtistSort: %s\n"
+    "AlbumArtistSort: %s\n"
+    "Album: %s\n"
+    "Title: %s\n"
+    "Track: %d\n"
+    "Date: %d\n"
+    "Genre: %s\n"
+    "Disc: %d\n",
+    virtual_path,
+    modified,
+    (mfi->song_length / 1000),
+    mfi->artist,
+    mfi->album_artist,
+    mfi->artist_sort,
+    mfi->album_artist_sort,
+    mfi->album,
+    mfi->title,
+    mfi->track,
+    mfi->year,
+    mfi->genre,
+    mfi->disc);
 
   return ret;
 }
@@ -2338,7 +2413,7 @@ mpd_command_load(struct evbuffer *evbuf, int argc, char **argv, char **errmsg)
 }
 
 static int
-mpd_get_query_params_find(int argc, char **argv, struct query_params *qp)
+mpd_get_query_params_find(int argc, char **argv, struct query_params *qp, struct library_search_criteria *search_criteria)
 {
   char *c1;
   char *c2;
@@ -2356,6 +2431,12 @@ mpd_get_query_params_find(int argc, char **argv, struct query_params *qp)
       if (0 == strcasecmp(argv[i], "any"))
 	{
 	  c1 = sqlite3_mprintf("(f.artist LIKE '%%%q%%' OR f.album LIKE '%%%q%%' OR f.title LIKE '%%%q%%')", argv[i + 1], argv[i + 1], argv[i + 1]);
+	  if (search_criteria)
+	    {
+	      if (search_criteria->any)
+		free(search_criteria->any);
+	      search_criteria->any = strdup(argv[i + 1]);
+	    }
 	}
       else if (0 == strcasecmp(argv[i], "file"))
 	{
@@ -2386,18 +2467,42 @@ mpd_get_query_params_find(int argc, char **argv, struct query_params *qp)
       else if (0 == strcasecmp(argv[i], "artist"))
 	{
 	  c1 = sqlite3_mprintf("(f.artist = '%q')", argv[i + 1]);
+	  if (search_criteria)
+	    {
+	      if (search_criteria->artist)
+		free(search_criteria->artist);
+	      search_criteria->artist = strdup(argv[i + 1]);
+	    }
 	}
       else if (0 == strcasecmp(argv[i], "albumartist"))
 	{
 	  c1 = sqlite3_mprintf("(f.album_artist = '%q')", argv[i + 1]);
+	  if (search_criteria)
+	    {
+	      if (search_criteria->artist)
+		free(search_criteria->artist);
+	      search_criteria->artist = strdup(argv[i + 1]);
+	    }
 	}
       else if (0 == strcasecmp(argv[i], "album"))
 	{
 	  c1 = sqlite3_mprintf("(f.album = '%q')", argv[i + 1]);
+	  if (search_criteria)
+	    {
+	      if (search_criteria->album)
+		free(search_criteria->album);
+	      search_criteria->album = strdup(argv[i + 1]);
+	    }
 	}
       else if (0 == strcasecmp(argv[i], "title"))
 	{
 	  c1 = sqlite3_mprintf("(f.title = '%q')", argv[i + 1]);
+	  if (search_criteria)
+	    {
+	      if (search_criteria->title)
+		free(search_criteria->title);
+	      search_criteria->title = strdup(argv[i + 1]);
+	    }
 	}
       else if (0 == strcasecmp(argv[i], "genre"))
 	{
@@ -2431,6 +2536,12 @@ mpd_get_query_params_find(int argc, char **argv, struct query_params *qp)
 	{
 	  // Special case: a single token is allowed if listing albums for an artist
 	  c1 = sqlite3_mprintf("(f.album_artist = '%q')", argv[i]);
+	  if (search_criteria)
+	    {
+	      if (search_criteria->artist)
+		free(search_criteria->artist);
+	      search_criteria->artist = strdup(argv[i + 1]);
+	    }
 	}
       else
 	{
@@ -2476,7 +2587,7 @@ mpd_command_count(struct evbuffer *evbuf, int argc, char **argv, char **errmsg)
 
   qp.type = Q_COUNT_ITEMS;
 
-  mpd_get_query_params_find(argc - 1, argv + 1, &qp);
+  mpd_get_query_params_find(argc - 1, argv + 1, &qp, NULL);
 
   ret = db_query_start(&qp);
   if (ret < 0)
@@ -2514,9 +2625,18 @@ mpd_command_count(struct evbuffer *evbuf, int argc, char **argv, char **errmsg)
   return 0;
 }
 
+static void
+search_cb(struct media_file_info *mfi, void *arg)
+{
+  struct evbuffer *evbuf = arg;
+
+  mpd_add_media_file_info(evbuf, mfi);
+}
+
 static int
 mpd_command_find(struct evbuffer *evbuf, int argc, char **argv, char **errmsg)
 {
+  struct library_search_criteria search_criteria;
   struct query_params qp;
   struct db_media_file_info dbmfi;
   int ret;
@@ -2529,13 +2649,14 @@ mpd_command_find(struct evbuffer *evbuf, int argc, char **argv, char **errmsg)
       return ACK_ERROR_ARG;
     }
 
+  memset(&search_criteria, 0, sizeof(struct library_search_criteria));
   memset(&qp, 0, sizeof(struct query_params));
 
   qp.type = Q_ITEMS;
   qp.sort = S_NAME;
   qp.idx_type = I_NONE;
 
-  mpd_get_query_params_find(argc - 1, argv + 1, &qp);
+  mpd_get_query_params_find(argc - 1, argv + 1, &qp, &search_criteria);
 
   ret = db_query_start(&qp);
   if (ret < 0)
@@ -2561,12 +2682,21 @@ mpd_command_find(struct evbuffer *evbuf, int argc, char **argv, char **errmsg)
   db_query_end(&qp);
   sqlite3_free(qp.filter);
 
+  library_find_tracks(&search_criteria, search_cb, evbuf);
+
   return 0;
+}
+
+static void
+searchadd_cb(struct media_file_info *mfi, void *arg)
+{
+  library_add_queue_item(mfi);
 }
 
 static int
 mpd_command_findadd(struct evbuffer *evbuf, int argc, char **argv, char **errmsg)
 {
+  struct library_search_criteria search_criteria;
   struct query_params qp;
   struct player_status status;
   int ret;
@@ -2579,13 +2709,14 @@ mpd_command_findadd(struct evbuffer *evbuf, int argc, char **argv, char **errmsg
       return ACK_ERROR_ARG;
     }
 
+  memset(&search_criteria, 0, sizeof(struct library_search_criteria));
   memset(&qp, 0, sizeof(struct query_params));
 
   qp.type = Q_ITEMS;
   qp.sort = S_ARTIST;
   qp.idx_type = I_NONE;
 
-  mpd_get_query_params_find(argc - 1, argv + 1, &qp);
+  mpd_get_query_params_find(argc - 1, argv + 1, &qp, &search_criteria);
 
   player_get_status(&status);
 
@@ -2598,6 +2729,8 @@ mpd_command_findadd(struct evbuffer *evbuf, int argc, char **argv, char **errmsg
 	DPRINTF(E_LOG, L_MPD, "Out of memory\n");
       return ACK_ERROR_UNKNOWN;
     }
+
+  library_find_tracks(&search_criteria, searchadd_cb, NULL);
 
   return 0;
 }
@@ -2683,7 +2816,7 @@ mpd_command_list(struct evbuffer *evbuf, int argc, char **argv, char **errmsg)
 
   if (argc > 2)
     {
-      mpd_get_query_params_find(argc - 2, argv + 2, &qp);
+      mpd_get_query_params_find(argc - 2, argv + 2, &qp, NULL); // TODO Search spotify?
     }
 
   ret = db_query_start(&qp);
@@ -3019,7 +3152,7 @@ mpd_command_lsinfo(struct evbuffer *evbuf, int argc, char **argv, char **errmsg)
 }
 
 static int
-mpd_get_query_params_search(int argc, char **argv, struct query_params *qp)
+mpd_get_query_params_search(int argc, char **argv, struct query_params *qp, struct library_search_criteria *search_criteria)
 {
   char *c1;
   char *c2;
@@ -3037,6 +3170,12 @@ mpd_get_query_params_search(int argc, char **argv, struct query_params *qp)
       if (0 == strcasecmp(argv[i], "any"))
 	{
 	  c1 = sqlite3_mprintf("(f.artist LIKE '%%%q%%' OR f.album LIKE '%%%q%%' OR f.title LIKE '%%%q%%')", argv[i + 1], argv[i + 1], argv[i + 1]);
+	  if (search_criteria)
+	    {
+	      if (search_criteria->any)
+		free(search_criteria->any);
+	      search_criteria->any = strdup(argv[i + 1]);
+	    }
 	}
       else if (0 == strcasecmp(argv[i], "file"))
 	{
@@ -3067,18 +3206,42 @@ mpd_get_query_params_search(int argc, char **argv, struct query_params *qp)
       else if (0 == strcasecmp(argv[i], "artist"))
 	{
 	  c1 = sqlite3_mprintf("(f.artist LIKE '%%%q%%')", argv[i + 1]);
+	  if (search_criteria)
+	    {
+	      if (search_criteria->artist)
+		free(search_criteria->artist);
+	      search_criteria->artist = strdup(argv[i + 1]);
+	    }
 	}
       else if (0 == strcasecmp(argv[i], "albumartist"))
 	{
 	  c1 = sqlite3_mprintf("(f.album_artist LIKE '%%%q%%')", argv[i + 1]);
+	  if (search_criteria)
+	    {
+	      if (search_criteria->artist)
+		free(search_criteria->artist);
+	      search_criteria->artist = strdup(argv[i + 1]);
+	    }
 	}
       else if (0 == strcasecmp(argv[i], "album"))
 	{
 	  c1 = sqlite3_mprintf("(f.album LIKE '%%%q%%')", argv[i + 1]);
+	  if (search_criteria)
+	    {
+	      if (search_criteria->album)
+		free(search_criteria->album);
+	      search_criteria->album = strdup(argv[i + 1]);
+	    }
 	}
       else if (0 == strcasecmp(argv[i], "title"))
 	{
 	  c1 = sqlite3_mprintf("(f.title LIKE '%%%q%%')", argv[i + 1]);
+	  if (search_criteria)
+	    {
+	      if (search_criteria->title)
+		free(search_criteria->title);
+	      search_criteria->title = strdup(argv[i + 1]);
+	    }
 	}
       else if (0 == strcasecmp(argv[i], "genre"))
 	{
@@ -3150,6 +3313,7 @@ mpd_get_query_params_search(int argc, char **argv, struct query_params *qp)
 static int
 mpd_command_search(struct evbuffer *evbuf, int argc, char **argv, char **errmsg)
 {
+  struct library_search_criteria search_criteria;
   struct query_params qp;
   struct db_media_file_info dbmfi;
   int ret;
@@ -3162,13 +3326,14 @@ mpd_command_search(struct evbuffer *evbuf, int argc, char **argv, char **errmsg)
       return ACK_ERROR_ARG;
     }
 
+  memset(&search_criteria, 0, sizeof(struct library_search_criteria));
   memset(&qp, 0, sizeof(struct query_params));
 
   qp.type = Q_ITEMS;
   qp.sort = S_NAME;
   qp.idx_type = I_NONE;
 
-  mpd_get_query_params_search(argc - 1, argv + 1, &qp);
+  mpd_get_query_params_search(argc - 1, argv + 1, &qp, &search_criteria);
 
   ret = db_query_start(&qp);
   if (ret < 0)
@@ -3194,12 +3359,15 @@ mpd_command_search(struct evbuffer *evbuf, int argc, char **argv, char **errmsg)
   db_query_end(&qp);
   sqlite3_free(qp.filter);
 
+  library_search_tracks(&search_criteria, search_cb, evbuf);
+
   return 0;
 }
 
 static int
 mpd_command_searchadd(struct evbuffer *evbuf, int argc, char **argv, char **errmsg)
 {
+  struct library_search_criteria search_criteria;
   struct query_params qp;
   struct player_status status;
   int ret;
@@ -3218,7 +3386,8 @@ mpd_command_searchadd(struct evbuffer *evbuf, int argc, char **argv, char **errm
   qp.sort = S_ARTIST;
   qp.idx_type = I_NONE;
 
-  mpd_get_query_params_search(argc - 1, argv + 1, &qp);
+  memset(&search_criteria, 0, sizeof(struct library_search_criteria));
+  mpd_get_query_params_search(argc - 1, argv + 1, &qp, &search_criteria);
 
   player_get_status(&status);
 
@@ -3231,6 +3400,8 @@ mpd_command_searchadd(struct evbuffer *evbuf, int argc, char **argv, char **errm
 	DPRINTF(E_LOG, L_MPD, "Out of memory\n");
       return ACK_ERROR_UNKNOWN;
     }
+
+  library_search_tracks(&search_criteria, searchadd_cb, evbuf);
 
   return 0;
 }
