@@ -172,6 +172,11 @@ AM_PATH_GPG_ERROR([1.6])
 FORK_FUNC_REQUIRE([FORKED], [GNUPG Error Values], [GPG_ERROR_MT], [gpg-error],
 	[gpg_err_init], [gpg-error.h])
 
+AC_CHECK_LIB([ssl], [SSL_library_init], [], [AC_MSG_FAILURE([could not find 
+ssl])])
+AC_CHECK_LIB([crypto], [EVP_EncryptInit], [],
+             [AC_MSG_FAILURE([can't find openssl crypto lib])])
+
 AC_CHECK_HEADER([sys/eventfd.h], [AC_CHECK_FUNCS([eventfd])])
 
 AC_CHECK_HEADER([sys/timerfd.h], [AC_CHECK_FUNC([timerfd_create],
@@ -298,6 +303,10 @@ dnl Build with libevent_pthreads
 FORK_ARG_WITH_CHECK([FORKED_OPTS], [libevent_pthreads support],
 	[libevent_pthreads], [LIBEVENT_PTHREADS], [libevent_pthreads],
 	[evthread_use_pthreads], [event2/thread.h])
+FORK_ARG_WITH_CHECK([FORKED_OPTS], [libevent_openssl support],
+	[libevent_openssl], [LIBEVENT_OPENSSL], [libevent_openssl])
+
+
 
 dnl Build with Avahi (or Bonjour if not)
 FORK_ARG_WITH_CHECK([FORKED_OPTS], [Avahi mDNS], [avahi], [AVAHI],

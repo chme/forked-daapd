@@ -37,6 +37,9 @@ general {
 
 	# Enable/disable IPv6
 	ipv6 = yes
+	
+#	private_key_path = ""
+#	certificate_path = ""
 
 	# Location of cache database
 #	cache_path = "@localstatedir@/cache/@PACKAGE@/cache.db"

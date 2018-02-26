@@ -49,6 +49,20 @@
 # include <event2/bufferevent.h>
 # include <event2/bufferevent_struct.h>
 #endif
+
+
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
+
+#include <event2/bufferevent.h>
+#include <event2/bufferevent_ssl.h>
+#include <event2/event.h>
+#include <event2/http.h>
+#include <event2/buffer.h>
+#include <event2/util.h>
+#include <event2/keyvalq_struct.h>
+
 #include <zlib.h>
 
 #include "logger.h"
@@ -127,6 +141,7 @@ static int exit_pipe[2];
 static int httpd_exit;
 static struct event *exitev;
 static struct evhttp *evhttpd;
+static struct evhttp *evhttpsd;
 static pthread_t tid_httpd;
 
 static const char *allow_origin;
@@ -136,6 +151,7 @@ static int httpd_port;
 struct stream_ctx *g_st;
 #endif
 
+static SSL_CTX *ctx;
 
 /* -------------------------------- HELPERS --------------------------------- */
 
@@ -1619,12 +1635,79 @@ httpd_basic_auth(struct evhttp_request *req, const char *user, const char *passw
   return -1;
 }
 
+
+
+/**
+ * This callback is responsible for creating a new SSL connection
+ * and wrapping it in an OpenSSL bufferevent.  This is the way
+ * we implement an https server instead of a plain old http server.
+ */
+static struct bufferevent*
+bevcb(struct event_base *base, void *arg)
+{
+  struct bufferevent* r;
+  SSL_CTX *ctx = (SSL_CTX *) arg;
+
+  r = bufferevent_openssl_socket_new(base,
+				     -1,
+				     SSL_new(ctx),
+				     BUFFEREVENT_SSL_ACCEPTING,
+				     BEV_OPT_CLOSE_ON_FREE);
+  return r;
+}
+
+static void init_openssl()
+{
+    SSL_load_error_strings();
+    OpenSSL_add_ssl_algorithms();
+}
+
+static void cleanup_openssl()
+{
+    EVP_cleanup();
+}
+
+SSL_CTX *create_context()
+{
+    const SSL_METHOD *method;
+    SSL_CTX *ctx;
+
+    method = SSLv23_server_method();
+
+    ctx = SSL_CTX_new(method);
+    if (!ctx) {
+	perror("Unable to create SSL context");
+	ERR_print_errors_fp(stderr);
+	exit(EXIT_FAILURE);
+    }
+
+    return ctx;
+}
+
+static void configure_context(SSL_CTX *ctx, const char *cert_path, const char *key_path)
+{
+    SSL_CTX_set_ecdh_auto(ctx, 1);
+
+    /* Set the key and cert */
+    if (SSL_CTX_use_certificate_file(ctx, cert_path, SSL_FILETYPE_PEM) <= 0) {
+        ERR_print_errors_fp(stderr);
+	exit(EXIT_FAILURE);
+    }
+
+    if (SSL_CTX_use_PrivateKey_file(ctx, key_path, SSL_FILETYPE_PEM) <= 0 ) {
+        ERR_print_errors_fp(stderr);
+	exit(EXIT_FAILURE);
+    }
+}
+
 /* Thread: main */
 int
 httpd_init(const char *webroot)
 {
   struct stat sb;
   int v6enabled;
+  const char *cert_path;
+  const char *key_path;
   int ret;
 
   httpd_exit = 0;
@@ -1794,6 +1877,38 @@ httpd_init(const char *webroot)
 
   evhttp_set_gencb(evhttpd, httpd_gen_cb, NULL);
 
+
+  // Setup https support
+  cert_path = cfg_getstr(cfg_getsec(cfg, "general"), "certificate_path");
+  key_path = cfg_getstr(cfg_getsec(cfg, "general"), "private_key_path");
+  if (cert_path && key_path)
+    {
+      init_openssl();
+      ctx = create_context();
+
+      configure_context(ctx, cert_path, key_path);
+
+      // Create a new evhttp object to handle https requests
+      evhttpsd = evhttp_new(evbase_httpd);
+      if (!evhttpsd)
+	{
+	  fprintf(stderr, "could not create evhttpsd. Exiting.\n");
+	  return -1;
+	}
+
+      // This is the magic that lets evhttpsd use SSL
+      evhttp_set_bevcb(evhttpsd, bevcb, ctx);
+      evhttp_set_gencb(evhttpsd, httpd_gen_cb, NULL);
+
+      // Now we tell the evhttp what port to listen on
+      ret = evhttp_bind_socket(evhttpsd, "0.0.0.0", 6610);
+      if (ret < 0)
+	{
+	  DPRINTF(E_LOG, L_HTTPD, "Could not bind to https port %d\n", 6610);
+	}
+    }
+
+  // Create and start httpd thread
   ret = pthread_create(&tid_httpd, NULL, httpd, NULL);
   if (ret != 0)
     {
@@ -1895,4 +2010,7 @@ httpd_deinit(void)
 #endif
   evhttp_free(evhttpd);
   event_base_free(evbase_httpd);
+
+  SSL_CTX_free(ctx);
+  cleanup_openssl();
 }
