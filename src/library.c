@@ -384,7 +384,7 @@ library_rescan()
     }
 
   scanning = true; // TODO Guard "scanning" with a mutex
-  commands_exec_async(cmdbase, rescan, NULL);
+  commands_exec_async(cmdbase, rescan, NULL, NULL);
 }
 
 void
@@ -397,7 +397,7 @@ library_fullrescan()
     }
 
   scanning = true; // TODO Guard "scanning" with a mutex
-  commands_exec_async(cmdbase, fullrescan, NULL);
+  commands_exec_async(cmdbase, fullrescan, NULL, NULL);
 }
 
 static void
@@ -493,7 +493,7 @@ library_update_trigger(short update_events)
     {
       events = malloc(sizeof(short));
       *events = update_events;
-      commands_exec_async(cmdbase, update_trigger, events);
+      commands_exec_async(cmdbase, update_trigger, NULL, events);
     }
 }
 
@@ -637,7 +637,7 @@ library_queue_save(char *path)
 int
 library_exec_async(command_function func, void *arg)
 {
-  return commands_exec_async(cmdbase, func, arg);
+  return commands_exec_async(cmdbase, func, NULL, arg);
 }
 
 static void *

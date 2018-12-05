@@ -48,7 +48,7 @@ int
 commands_exec_sync(struct commands_base *cmdbase, command_function func, command_function func_bh, void *arg);
 
 int
-commands_exec_async(struct commands_base *cmdbase, command_function func, void *arg);
+commands_exec_async(struct commands_base *cmdbase, command_function func, command_function funcfunc_bh, void *arg);
 
 void
 commands_base_destroy(struct commands_base *cmdbase);

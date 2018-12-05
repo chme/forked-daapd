@@ -168,7 +168,7 @@ worker_execute(void (*cb)(void *), void *cb_arg, size_t arg_size, int delay)
   cmdarg->cb_arg = argcpy;
   cmdarg->delay = delay;
 
-  commands_exec_async(cmdbase, execute, cmdarg);
+  commands_exec_async(cmdbase, execute, NULL, cmdarg);
 }
 
 int

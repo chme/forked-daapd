@@ -3284,7 +3284,7 @@ player_device_add(void *device)
 
   cmdarg->device = device;
 
-  ret = commands_exec_async(cmdbase, device_add, cmdarg);
+  ret = commands_exec_async(cmdbase, device_add, NULL, cmdarg);
   return ret;
 }
 
@@ -3303,7 +3303,7 @@ player_device_remove(void *device)
 
   cmdarg->device = device;
 
-  ret = commands_exec_async(cmdbase, device_remove_family, cmdarg);
+  ret = commands_exec_async(cmdbase, device_remove_family, NULL, cmdarg);
   return ret;
 }
 
@@ -3322,7 +3322,7 @@ player_device_auth_kickoff(enum output_types type, char **arglist)
   cmdarg->auth.type = type;
   memcpy(cmdarg->auth.pin, arglist[0], 4);
 
-  commands_exec_async(cmdbase, device_auth_kickoff, cmdarg);
+  commands_exec_async(cmdbase, device_auth_kickoff, NULL, cmdarg);
 }
 
 

@@ -235,14 +235,14 @@ static void
 pulse_status(struct pulse_session *ps)
 {
   // async to avoid risk of deadlock if the player should make calls back to Pulseaudio
-  commands_exec_async(pulse.cmdbase, send_status, ps);
+  commands_exec_async(pulse.cmdbase, send_status, NULL, ps);
 }
 
 static void
 pulse_session_shutdown(struct pulse_session *ps)
 {
   // async to avoid risk of deadlock if the player should make calls back to Pulseaudio
-  commands_exec_async(pulse.cmdbase, session_shutdown, ps);
+  commands_exec_async(pulse.cmdbase, session_shutdown, NULL, ps);
 }
 
 static void

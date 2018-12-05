@@ -4611,7 +4611,7 @@ mpd_listener_cb(short event_mask)
   ptr = (short *)malloc(sizeof(short));
   *ptr = event_mask;
   DPRINTF(E_DBG, L_MPD, "Asynchronous listener callback called with event type %d.\n", event_mask);
-  commands_exec_async(cmdbase, mpd_notify_idle, ptr);
+  commands_exec_async(cmdbase, mpd_notify_idle, NULL, ptr);
 }
 
 /*

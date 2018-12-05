@@ -61,13 +61,33 @@ command_cb_async(struct commands_base *cmdbase, struct command *cmd)
   // Command is executed asynchronously
   cmdstate = cmd->func(cmd->arg, &cmd->ret);
 
-  // Only free arg if there are no pending events (used in worker.c)
-  if (cmdstate != COMMAND_PENDING && cmd->arg)
-    free(cmd->arg);
+  if (cmdstate == COMMAND_PENDING)
+    {
+      if (cmd->func_bh)
+	{
+	  // Command execution is waiting for pending events before the bottom half function can be executed
+	  cmdbase->current_cmd = cmd;
+	  cmd->pending = cmd->ret;
+	}
+      else
+	{
+	  // Command execution is not finished but we do not have a bottom half function, keep the argument but free the command
+	  free(cmd);
 
-  free(cmd);
+	  event_add(cmdbase->command_event, NULL);
+	}
+    }
+  else
+    {
+      // Command execution finished, execute the bottom half function
+      if (cmd->ret == 0 && cmd->func_bh)
+	cmd->func_bh(cmd->arg, &cmd->ret);
 
-  event_add(cmdbase->command_event, NULL);
+      free(cmd->arg);
+      free(cmd);
+
+      event_add(cmdbase->command_event, NULL);
+    }
 }
 
 /*
@@ -357,14 +377,14 @@ commands_exec_sync(struct commands_base *cmdbase, command_function func, command
  * @return 0 if triggering the function execution succeeded, -1 on failure.
  */
 int
-commands_exec_async(struct commands_base *cmdbase, command_function func, void *arg)
+commands_exec_async(struct commands_base *cmdbase, command_function func, command_function func_bh, void *arg)
 {
   struct command *cmd;
   int ret;
 
   cmd = calloc(1, sizeof(struct command));
   cmd->func = func;
-  cmd->func_bh = NULL;
+  cmd->func_bh = func_bh;
   cmd->arg = arg;
   cmd->nonblock = 1;
 

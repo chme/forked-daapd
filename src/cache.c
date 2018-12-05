@@ -894,7 +894,7 @@ cache_daap_update(void *arg, int *retval)
 static void
 cache_daap_listener_cb(short event_mask)
 {
-  commands_exec_async(cmdbase, cache_daap_update, NULL);
+  commands_exec_async(cmdbase, cache_daap_update, NULL, NULL);
 }
 
 
@@ -1369,7 +1369,7 @@ cache_daap_add(const char *query, const char *ua, int is_remote, int msec)
   cmdarg->is_remote = is_remote;
   cmdarg->msec = msec;
 
-  commands_exec_async(cmdbase, cache_daap_query_add, cmdarg);
+  commands_exec_async(cmdbase, cache_daap_query_add, NULL, cmdarg);
 }
 
 int
@@ -1412,7 +1412,7 @@ cache_artwork_ping(const char *path, time_t mtime, int del)
   cmdarg->mtime = mtime;
   cmdarg->del = del;
 
-  commands_exec_async(cmdbase, cache_artwork_ping_impl, cmdarg);
+  commands_exec_async(cmdbase, cache_artwork_ping_impl, NULL, cmdarg);
 }
 
 /*

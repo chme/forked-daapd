@@ -788,7 +788,7 @@ pipe_listener_cb(short event_mask)
   if (!tid_pipe)
     pipe_thread_start();
 
-  commands_exec_async(cmdbase, pipe_watch_update, cmdarg);
+  commands_exec_async(cmdbase, pipe_watch_update, NULL, cmdarg);
 }
 
 
@@ -880,7 +880,7 @@ stop(struct player_source *ps)
   if (pipe_autostart && (cmdarg = malloc(sizeof(union pipe_arg))))
     {
       cmdarg->id = pipe->id;
-      commands_exec_async(cmdbase, pipe_watch_reset, cmdarg);
+      commands_exec_async(cmdbase, pipe_watch_reset, NULL, cmdarg);
     }
 
   if (pipe_metadata)

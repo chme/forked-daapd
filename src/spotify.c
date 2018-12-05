@@ -1102,7 +1102,7 @@ static void end_of_track(sp_session *sess)
 {
   DPRINTF(E_DBG, L_SPOTIFY, "End of track\n");
 
-  commands_exec_async(cmdbase, playback_eot, NULL);
+  commands_exec_async(cmdbase, playback_eot, NULL, NULL);
 }
 
 /**
@@ -1248,7 +1248,7 @@ spotify_playback_pause_nonblock(void)
 {
   DPRINTF(E_DBG, L_SPOTIFY, "Nonblock pause request\n");
 
-  commands_exec_async(cmdbase, playback_pause, NULL);
+  commands_exec_async(cmdbase, playback_pause, NULL, NULL);
 }
 
 /* Thread: player and libspotify */
@@ -1266,7 +1266,7 @@ spotify_playback_stop_nonblock(void)
 {
   DPRINTF(E_DBG, L_SPOTIFY, "Nonblock stop request\n");
 
-  commands_exec_async(cmdbase, playback_stop, NULL);
+  commands_exec_async(cmdbase, playback_stop, NULL, NULL);
 }
 
 /* Thread: player */
@@ -1325,7 +1325,7 @@ spotify_uri_register(const char *uri)
   char *tmp;
 
   tmp = strdup(uri);
-  commands_exec_async(cmdbase, uri_register, tmp);
+  commands_exec_async(cmdbase, uri_register, NULL, tmp);
 }
 
 void
