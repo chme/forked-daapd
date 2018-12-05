@@ -1464,7 +1464,7 @@ device_command_cb(struct output_device *device, struct output_session *session, 
     {
       player_flush_pending--;
       if (player_flush_pending == 0)
-	input_buffer_full_cb(player_playback_start);
+	input_buffer_full_cb(player_playback_start_nonblock);
     }
 
   commands_exec_end(cmdbase, 0);
@@ -1775,7 +1775,7 @@ playback_suspend(void)
 
   // No devices to wait for, just set the restart cb right away
   if (player_flush_pending == 0)
-    input_buffer_full_cb(player_playback_start);
+    input_buffer_full_cb(player_playback_start_nonblock);
 }
 
 
@@ -3010,6 +3010,15 @@ player_playback_start(void)
 
   ret = commands_exec_sync(cmdbase, playback_start, playback_start_bh, NULL);
   return ret;
+}
+
+/*
+ * Starts/resumes playback (non blocking)
+ */
+void
+player_playback_start_nonblock(void)
+{
+  commands_exec_async(cmdbase, playback_start, playback_start_bh, NULL);
 }
 
 /*

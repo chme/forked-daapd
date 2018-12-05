@@ -107,6 +107,9 @@ player_speaker_status_trigger(void);
 int
 player_playback_start(void);
 
+void
+player_playback_start_nonblock(void);
+
 int
 player_playback_start_byitem(struct db_queue_item *queue_item);
 

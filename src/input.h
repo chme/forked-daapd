@@ -79,7 +79,7 @@ struct player_source
   struct player_source *play_next;
 };
 
-typedef int (*input_cb)(void);
+typedef void (*input_cb)(void);
 
 struct input_metadata
 {
