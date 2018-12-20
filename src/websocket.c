@@ -295,7 +295,7 @@ static struct lws_protocols protocols[] =
 {
   // The first protocol must always be the HTTP handler
   {
-    "http-only",	// Protocol name
+    "http",		// Protocol name
     callback_http,	// Callback function
     0,			// Size of per session data
     0,			// Frame size / rx buffer (0 = max frame size)
@@ -368,6 +368,8 @@ int
 websocket_init(void)
 {
   struct lws_context_creation_info info;
+  const char *cert_path;
+  const char *key_path;
   int ret;
 
   websocket_port = cfg_getint(cfg_getsec(cfg, "general"), "websocket_port");
@@ -383,6 +385,17 @@ websocket_init(void)
   info.protocols = protocols;
   info.gid = -1;
   info.uid = -1;
+  info.vhost_name = "localhost";
+  info.options = 0;
+
+  cert_path = cfg_getstr(cfg_getsec(cfg, "general"), "certificate_path");
+  key_path = cfg_getstr(cfg_getsec(cfg, "general"), "private_key_path");
+  if (cert_path && key_path)
+    {
+      info.options = LWS_SERVER_OPTION_ALLOW_NON_SSL_ON_SSL_PORT | LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
+      info.ssl_cert_filepath = cert_path;
+      info.ssl_private_key_filepath = key_path;
+    }
 
   // Log levels below NOTICE are only emmited if libwebsockets was built with DEBUG defined
   lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG,
