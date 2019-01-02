@@ -47,7 +47,7 @@
 #include "commands.h"
 
 
-#define CACHE_VERSION 3
+#define CACHE_VERSION 4
 
 
 struct cache_arg
