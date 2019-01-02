@@ -403,16 +403,16 @@ static const struct db_init_query db_init_index_queries[] =
 #define TRG_FILES_INSERT_SONGIDS									\
   "CREATE TRIGGER trg_files_insert_songids AFTER INSERT ON files FOR EACH ROW"				\
   " BEGIN"												\
-  "   UPDATE files SET songartistid = daap_songalbumid(LOWER(NEW.album_artist), ''), "			\
-  "     songalbumid = daap_songalbumid(LOWER(NEW.album_artist), LOWER(NEW.album))"			\
+  "   UPDATE files SET songartistid = daap_persistentid(LOWER(NEW.album_artist)), "			\
+  "     songalbumid = daap_persistentid(LOWER(NEW.album_artist), LOWER(NEW.album), NEW.data_kind)"	\
   "   WHERE id = NEW.id;"										\
   " END;"
 
 #define TRG_FILES_UPDATE_SONGIDS									\
-  "CREATE TRIGGER trg_files_update_songids AFTER UPDATE OF album_artist, album ON files FOR EACH ROW"	\
+  "CREATE TRIGGER trg_files_update_songids AFTER UPDATE OF album_artist, album, data_kind ON files FOR EACH ROW"	\
   " BEGIN"												\
-  "   UPDATE files SET songartistid = daap_songalbumid(LOWER(NEW.album_artist), ''), "			\
-  "     songalbumid = daap_songalbumid(LOWER(NEW.album_artist), LOWER(NEW.album))"			\
+  "   UPDATE files SET songartistid = daap_persistentid(LOWER(NEW.album_artist)), "			\
+  "     songalbumid = daap_persistentid(LOWER(NEW.album_artist), LOWER(NEW.album), NEW.data_kind)"	\
   "   WHERE id = NEW.id;"										\
   " END;"
 

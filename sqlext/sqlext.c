@@ -170,33 +170,53 @@ murmur_hash64(const void *key, int len, uint32_t seed)
 #endif
 
 static void
-sqlext_daap_songalbumid_xfunc(sqlite3_context *pv, int n, sqlite3_value **ppv)
+sqlext_daap_persistentid_xfunc(sqlite3_context *pv, int n, sqlite3_value **ppv)
 {
   const char *album_artist;
   const char *album;
+  int data_kind;
   char *hashbuf;
   sqlite3_int64 result;
 
-  if (n != 2)
+  if (n < 1 || n > 3)
     {
-      sqlite3_result_error(pv, "daap_songalbumid() requires 2 parameters, album_artist and album", -1);
+      sqlite3_result_error(pv, "daap_persistentid() requires at least one parameter and maximum 3 parameters (album_artist, album, data_kind)", -1);
       return;
     }
 
   if ((sqlite3_value_type(ppv[0]) != SQLITE_TEXT)
-      || (sqlite3_value_type(ppv[1]) != SQLITE_TEXT))
+      || (n > 1 && sqlite3_value_type(ppv[1]) != SQLITE_TEXT)
+      || (n > 2 && sqlite3_value_type(ppv[2]) != SQLITE_INTEGER))
     {
-      sqlite3_result_error(pv, "daap_songalbumid() requires 2 text parameters", -1);
+      sqlite3_result_error(pv, "daap_persistentid() requires the first two parameters to be text and the third to be an integer", -1);
       return;
     }
 
-  album_artist = (const char *)sqlite3_value_text(ppv[0]);
-  album = (const char *)sqlite3_value_text(ppv[1]);
+  if (n < 2)
+    {
+      album_artist = (const char *)sqlite3_value_text(ppv[0]);
 
-  hashbuf = sqlite3_mprintf("%s==%s", (album_artist) ? album_artist : "", (album) ? album : "");
+      hashbuf = sqlite3_mprintf("%s==", (album_artist) ? album_artist : "");
+    }
+  else if (n < 3)
+    {
+      album_artist = (const char *)sqlite3_value_text(ppv[0]);
+      album = (const char *)sqlite3_value_text(ppv[1]);
+
+      hashbuf = sqlite3_mprintf("%s==%s", (album_artist) ? album_artist : "", (album) ? album : "");
+    }
+  else
+    {
+      album_artist = (const char *)sqlite3_value_text(ppv[0]);
+      album = (const char *)sqlite3_value_text(ppv[1]);
+      data_kind = sqlite3_value_int(ppv[2]);
+
+      hashbuf = sqlite3_mprintf("%s==%s==%d", (album_artist) ? album_artist : "", (album) ? album : "", data_kind);
+    }
+
   if (!hashbuf)
     {
-      sqlite3_result_error(pv, "daap_songalbumid() out of memory for hashbuf", -1);
+      sqlite3_result_error(pv, "daap_persistentid() out of memory for hashbuf", -1);
       return;
     }
 
@@ -278,7 +298,7 @@ sqlite3_extension_init(sqlite3 *db, char **pzErrMsg, const sqlite3_api_routines 
   SQLITE_EXTENSION_INIT2(pApi);
   int ret;
 
-  ret = sqlite3_create_function(db, "daap_songalbumid", 2, SQLITE_UTF8, NULL, sqlext_daap_songalbumid_xfunc, NULL, NULL);
+  ret = sqlite3_create_function(db, "daap_persistentid", -1, SQLITE_UTF8, NULL, sqlext_daap_persistentid_xfunc, NULL, NULL);
   if (ret != SQLITE_OK)
     {
       if (pzErrMsg)

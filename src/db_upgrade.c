@@ -984,6 +984,34 @@ static const struct db_upgrade_query db_upgrade_v2001_queries[] =
   };
 
 
+// Upgrade from schema v20.01 to v20.02
+// Updates the persistent id for album to include the data_kind
+
+#define U_V2002_CREATE_TRG_GROUPS_UPDATE										\
+  "CREATE TRIGGER trg_groups_update AFTER UPDATE OF songartistid, songalbumid ON files FOR EACH ROW"	\
+  " WHEN (NEW.songartistid != 0 AND NEW.songalbumid != 0)"						\
+  " BEGIN"												\
+  "   INSERT OR IGNORE INTO groups (type, name, persistentid) VALUES (1, NEW.album, NEW.songalbumid);"	\
+  " END;"
+
+#define U_V2002_UPDATE_FILES_SONGALBUMID \
+  "UPDATE files SET songalbumid = daap_persistentid(LOWER(album_artist), LOWER(album), data_kind);"
+
+#define U_V2002_SCVER_MINOR \
+  "UPDATE admin SET value = '02' WHERE key = 'schema_version_minor';"
+
+#define U_V2002_DROP_TRG_GROUPS_UPDATE										\
+  "DROP TRIGGER trg_groups_update;"
+
+static const struct db_upgrade_query db_upgrade_v2002_queries[] =
+  {
+    { U_V2002_CREATE_TRG_GROUPS_UPDATE,    "create temporary trigger to update groups table" },
+    { U_V2002_UPDATE_FILES_SONGALBUMID,    "update songalbumid in files table" },
+    { U_V2002_DROP_TRG_GROUPS_UPDATE,      "drop temporary trigger to update groups table" },
+
+    { U_V2002_SCVER_MINOR,                  "set schema_version_minor to 02" },
+  };
+
 int
 db_upgrade(sqlite3 *hdl, int db_ver)
 {
@@ -1121,6 +1149,13 @@ db_upgrade(sqlite3 *hdl, int db_ver)
 
     case 2000:
       ret = db_generic_upgrade(hdl, db_upgrade_v2001_queries, ARRAY_SIZE(db_upgrade_v2001_queries));
+      if (ret < 0)
+	return -1;
+
+      /* FALLTHROUGH */
+
+    case 2001:
+      ret = db_generic_upgrade(hdl, db_upgrade_v2002_queries, ARRAY_SIZE(db_upgrade_v2002_queries));
       if (ret < 0)
 	return -1;
 
