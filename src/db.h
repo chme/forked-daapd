@@ -515,6 +515,9 @@ void
 free_pli(struct playlist_info *pli, int content_only);
 
 void
+free_gri(struct group_info *gri, int content_only);
+
+void
 free_di(struct directory_info *di, int content_only);
 
 void
@@ -709,6 +712,11 @@ db_groups_cleanup();
 int
 db_group_persistentid_byid(int id, int64_t *persistentid);
 
+struct group_info *
+db_group_fetch_byid(int id);
+
+struct group_info *
+db_group_fetch_bypersistentid(int64_t persistentid);
 
 /* Directories */
 int
