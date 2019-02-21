@@ -72,10 +72,6 @@
 #define Q_PL_SELECT "SELECT f.*, COUNT(pi.id), SUM(pi.filepath NOT NULL AND pi.filepath LIKE 'http%%')" \
                     " FROM playlists f LEFT JOIN playlistitems pi ON (f.id = pi.playlistid)"
 
-enum group_type {
-  G_ALBUMS = 1,
-  G_ARTISTS = 2,
-};
 
 enum fixup_type {
   DB_FIXUP_STANDARD = 0,
@@ -261,6 +257,7 @@ static const struct col_type_map gri_cols_map[] =
     { "songalbumartist",    gri_offsetof(songalbumartist),   DB_TYPE_STRING },
     { "songartistid",       gri_offsetof(songartistid),      DB_TYPE_INT64 },
     { "song_length",        gri_offsetof(song_length),       DB_TYPE_INT },
+    { "type",               gri_offsetof(type),              DB_TYPE_INT },
   };
 
 /* This list must be kept in sync with
@@ -413,6 +410,7 @@ static const ssize_t dbgri_cols_map[] =
     dbgri_offsetof(songalbumartist),
     dbgri_offsetof(songartistid),
     dbgri_offsetof(song_length),
+    dbgri_offsetof(type),
   };
 
 /* This list must be kept in sync with
@@ -1913,7 +1911,7 @@ db_build_query_group_albums(struct query_params *qp, struct query_clause *qc)
   char *query;
 
   count = sqlite3_mprintf("SELECT COUNT(DISTINCT f.songalbumid) FROM files f %s;", qc->where);
-  query = sqlite3_mprintf("SELECT g.id, g.persistentid, f.album, f.album_sort, COUNT(f.id) as track_count, 1 as album_count, f.album_artist, f.songartistid, SUM(f.song_length) FROM files f JOIN groups g ON f.songalbumid = g.persistentid %s GROUP BY f.songalbumid %s %s %s;", qc->where, qc->having, qc->order, qc->index);
+  query = sqlite3_mprintf("SELECT g.id, g.persistentid, f.album, f.album_sort, COUNT(f.id) as track_count, 1 as album_count, f.album_artist, f.songartistid, SUM(f.song_length), g.type FROM files f JOIN groups g ON f.songalbumid = g.persistentid %s GROUP BY f.songalbumid %s %s %s;", qc->where, qc->having, qc->order, qc->index);
 
   return db_build_query_check(qp, count, query);
 }
@@ -1925,7 +1923,7 @@ db_build_query_group_artists(struct query_params *qp, struct query_clause *qc)
   char *query;
 
   count = sqlite3_mprintf("SELECT COUNT(DISTINCT f.songartistid) FROM files f %s;", qc->where);
-  query = sqlite3_mprintf("SELECT g.id, g.persistentid, f.album_artist, f.album_artist_sort, COUNT(f.id) as track_count, COUNT(DISTINCT f.songalbumid) as album_count, f.album_artist, f.songartistid, SUM(f.song_length) FROM files f JOIN groups g ON f.songartistid = g.persistentid %s GROUP BY f.songartistid %s %s %s;", qc->where, qc->having, qc->order, qc->index);
+  query = sqlite3_mprintf("SELECT g.id, g.persistentid, f.album_artist, f.album_artist_sort, COUNT(f.id) as track_count, COUNT(DISTINCT f.songalbumid) as album_count, f.album_artist, f.songartistid, SUM(f.song_length), g.type FROM files f JOIN groups g ON f.songartistid = g.persistentid %s GROUP BY f.songartistid %s %s %s;", qc->where, qc->having, qc->order, qc->index);
 
   return db_build_query_check(qp, count, query);
 }
@@ -3976,12 +3974,12 @@ db_group_fetch_byid(int id)
   switch (type)
     {
       case G_ALBUMS:
-	query = sqlite3_mprintf("SELECT g.id, g.persistentid, f.album, f.album_sort, COUNT(f.id) as track_count, 1 as album_count, f.album_artist, f.songartistid, SUM(f.song_length) " \
+	query = sqlite3_mprintf("SELECT g.id, g.persistentid, f.album, f.album_sort, COUNT(f.id) as track_count, 1 as album_count, f.album_artist, f.songartistid, SUM(f.song_length), g.type " \
 				"FROM files f JOIN groups g ON f.songalbumid = g.persistentid WHERE g.id = %d GROUP BY f.songalbumid;", id);
 	break;
 
       case G_ARTISTS:
-	query = sqlite3_mprintf("SELECT g.id, g.persistentid, f.album_artist, f.album_artist_sort, COUNT(f.id) as track_count, COUNT(DISTINCT f.songalbumid) as album_count, f.album_artist, f.songartistid, SUM(f.song_length) " \
+	query = sqlite3_mprintf("SELECT g.id, g.persistentid, f.album_artist, f.album_artist_sort, COUNT(f.id) as track_count, COUNT(DISTINCT f.songalbumid) as album_count, f.album_artist, f.songartistid, SUM(f.song_length), g.type " \
 				"FROM files f JOIN groups g ON f.songartistid = g.persistentid WHERE g.id = %d GROUP BY f.songartistid;", id);
 	break;
 
@@ -4006,8 +4004,6 @@ db_group_fetch_byid(int id)
 struct group_info *
 db_group_fetch_bypersistentid(int64_t persistentid)
 {
-#define Q_TMPL "SELECT g.id, g.persistentid, f.album, f.album_sort, COUNT(f.id) as track_count, 1 as album_count, f.album_artist, f.songartistid, SUM(f.song_length) " \
-		"FROM files f JOIN groups g ON f.songalbumid = g.persistentid WHERE f.songalbumid = %" PRIi64 " GROUP BY f.songalbumid;"
   struct group_info *gri;
   enum group_type type;
   char *query;
@@ -4018,12 +4014,12 @@ db_group_fetch_bypersistentid(int64_t persistentid)
   switch (type)
     {
       case G_ALBUMS:
-	query = sqlite3_mprintf("SELECT g.id, g.persistentid, f.album, f.album_sort, COUNT(f.id) as track_count, 1 as album_count, f.album_artist, f.songartistid, SUM(f.song_length) " \
+	query = sqlite3_mprintf("SELECT g.id, g.persistentid, f.album, f.album_sort, COUNT(f.id) as track_count, 1 as album_count, f.album_artist, f.songartistid, SUM(f.song_length), g.type " \
 				"FROM files f JOIN groups g ON f.songalbumid = g.persistentid WHERE f.songalbumid = %" PRIi64 " GROUP BY f.songalbumid;", persistentid);
 	break;
 
       case G_ARTISTS:
-	query = sqlite3_mprintf("SELECT g.id, g.persistentid, f.album_artist, f.album_artist_sort, COUNT(f.id) as track_count, COUNT(DISTINCT f.songalbumid) as album_count, f.album_artist, f.songartistid, SUM(f.song_length) " \
+	query = sqlite3_mprintf("SELECT g.id, g.persistentid, f.album_artist, f.album_artist_sort, COUNT(f.id) as track_count, COUNT(DISTINCT f.songalbumid) as album_count, f.album_artist, f.songartistid, SUM(f.song_length), g.type " \
 				"FROM files f JOIN groups g ON f.songartistid = g.persistentid WHERE f.songartistid = %" PRIi64 " GROUP BY f.songartistid;", persistentid);
 	break;
 
@@ -4032,11 +4028,9 @@ db_group_fetch_bypersistentid(int64_t persistentid)
 	return NULL;
     }
 
-  query = sqlite3_mprintf(Q_TMPL, persistentid);
   if (!query)
     {
       DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
-
       return NULL;
     }
 
@@ -4045,8 +4039,6 @@ db_group_fetch_bypersistentid(int64_t persistentid)
   sqlite3_free(query);
 
   return gri;
-
-#undef Q_TMPL
 }
 
 
