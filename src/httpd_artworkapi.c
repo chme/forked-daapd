@@ -139,11 +139,33 @@ artworkapi_reply_group(struct httpd_request *hreq)
   return response_process(hreq, ret);
 }
 
+static int
+artworkapi_reply_queueitem(struct httpd_request *hreq)
+{
+  uint32_t max_w;
+  uint32_t max_h;
+  uint32_t id;
+  int ret;
+
+  ret = request_process(hreq, &max_w, &max_h);
+  if (ret != 0)
+    return ret;
+
+  ret = safe_atou32(hreq->uri_parsed->path_parts[2], &id);
+  if (ret != 0)
+    return HTTP_BADREQUEST;
+
+  ret = artwork_get_queueitem(hreq->reply, id, max_w, max_h);
+
+  return response_process(hreq, ret);
+}
+
 static struct httpd_uri_map artworkapi_handlers[] =
 {
   { EVHTTP_REQ_GET, "^/artwork/nowplaying$",         artworkapi_reply_nowplaying },
   { EVHTTP_REQ_GET, "^/artwork/item/[[:digit:]]+$",  artworkapi_reply_item },
   { EVHTTP_REQ_GET, "^/artwork/group/[[:digit:]]+$", artworkapi_reply_group },
+  { EVHTTP_REQ_GET, "^/artwork/queueitem/[[:digit:]]+$",  artworkapi_reply_queueitem },
   { 0, NULL, NULL }
 };
 
