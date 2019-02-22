@@ -34,6 +34,9 @@ artwork_get_item(struct evbuffer *evbuf, int id, int max_w, int max_h);
 int
 artwork_get_group(struct evbuffer *evbuf, int id, int max_w, int max_h);
 
+int
+artwork_get_queueitem(struct evbuffer *evbuf, int id, int max_w, int max_h);
+
 /*
  * Checks if the file is an artwork file (based on user config)
  *

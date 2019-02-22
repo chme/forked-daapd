@@ -109,6 +109,20 @@ struct artwork_group_source {
 };
 
 /*
+ * Definition of an artwork source.
+ */
+struct artwork_queue_item_source {
+  // Name of the source, e.g. "cache"
+  const char *name;
+
+  // The handler
+  int (*handler)(struct evbuffer *evbuf, char *artwork_path, struct db_queue_item *queue_item, int max_w, int max_h);
+
+  // What data_kinds the handler can work with, combined with (1 << A) | (1 << B)
+  int data_kinds;
+};
+
+/*
  * File extensions that we look for or accept
  */
 static const char *cover_extension[] = { "jpg", "png" };
@@ -128,6 +142,9 @@ static int source_item_own_get(struct evbuffer *evbuf, char *artwork_path, struc
 static int source_item_stream_get(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h);
 static int source_item_spotifywebapi_get(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h);
 static int source_item_ownpl_get(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h);
+
+/* Forward - queue item handlers */
+static int source_queueitem_artworkurl_get(struct evbuffer *evbuf, char *artwork_path, struct db_queue_item *queue_item, int max_w, int max_h);
 
 /* List of sources that can provide artwork for a group (i.e. usually an album
  * identified by a persistentid). The source handlers will be called in the
@@ -205,6 +222,26 @@ static struct artwork_media_file_source artwork_item_source[] =
     }
   };
 
+
+
+/* List of sources that can provide artwork for an queue item (a track in the
+ * queue). The source handlers will be called in the order of this list.
+ * The handler will only be called if the data_kind matches. Must be terminated
+ * by a NULL struct.
+ */
+static struct artwork_queue_item_source artwork_queue_item_source[] =
+  {
+    {
+      .name = "stream",
+      .handler = source_queueitem_artworkurl_get,
+      .data_kinds = (1 << DATA_KIND_HTTP) | (1 << DATA_KIND_SPOTIFY),
+    },
+    {
+      .name = NULL,
+      .handler = NULL,
+      .data_kinds = 0,
+    }
+  };
 
 /* -------------------------------- HELPERS -------------------------------- */
 
@@ -1025,6 +1062,40 @@ source_item_ownpl_get(struct evbuffer *evbuf, char *artwork_path, struct media_f
 }
 
 
+static int
+source_queueitem_artworkurl_get(struct evbuffer *evbuf, char *artwork_path, struct db_queue_item *queue_item, int max_w, int max_h)
+{
+  int len;
+  int ret;
+
+  DPRINTF(E_SPAM, L_ART, "Trying artwork url in queue item with path '%s'\n", queue_item->path);
+
+  ret = ART_E_NONE;
+
+  if (!queue_item->artwork_url)
+    goto out_url;
+
+  len = strlen(queue_item->artwork_url);
+  if ((len < 14) || (len > PATH_MAX)) // Can't be shorter than http://a/1.jpg
+    goto out_url;
+
+  cache_artwork_read(evbuf, queue_item->artwork_url, &ret);
+  if (ret > 0)
+    goto out_url;
+
+  ret = artwork_url_read(evbuf, queue_item->artwork_url);
+
+  if (ret > 0)
+    {
+      DPRINTF(E_SPAM, L_ART, "Found artwork in %s (%d)\n", queue_item->artwork_url, ret);
+      cache_artwork_stash(evbuf, queue_item->artwork_url, ret);
+    }
+
+ out_url:
+  return ret;
+}
+
+
 /* ------------------------------ ARTWORK API ------------------------------ */
 
 static int
@@ -1221,6 +1292,61 @@ artwork_get_group(struct evbuffer *evbuf, int id, int max_w, int max_h)
   ret = artwork_get_groupinfo(evbuf, gri, max_w, max_h);
 
   free_gri(gri, 0);
+  return ret;
+}
+
+int
+artwork_get_queueitem(struct evbuffer *evbuf, int id, int max_w, int max_h)
+{
+  char artwork_path[PATH_MAX];
+  struct db_queue_item *queue_item;
+  int i;
+  int ret;
+
+  DPRINTF(E_DBG, L_ART, "Artwork request for queue item %d (w=%d, h=%d)\n", id, max_w, max_h);
+
+
+  queue_item = db_queue_fetch_byitemid(id);
+  if (!queue_item)
+    return -1;
+
+  if (queue_item->file_id != DB_MEDIA_FILE_NON_PERSISTENT_ID)
+    {
+      ret = artwork_get_item(evbuf, queue_item->file_id, max_w, max_h);
+
+      if (ret > 0)
+	goto out;
+    }
+
+  ret = ART_E_NONE;
+
+  for (i = 0; artwork_queue_item_source[i].handler; i++)
+    {
+      if ((artwork_queue_item_source[i].data_kinds & (1 << queue_item->data_kind)) == 0)
+	continue;
+
+      DPRINTF(E_SPAM, L_ART, "Checking queue item source '%s'\n", artwork_queue_item_source[i].name);
+
+      ret = artwork_queue_item_source[i].handler(evbuf, artwork_path, queue_item, max_w, max_h);
+
+      if (ret > 0)
+        {
+	  DPRINTF(E_DBG, L_ART, "Artwork for '%s' found in source '%s'\n", queue_item->title, artwork_queue_item_source[i].name);
+	  break;
+	}
+      else if (ret == ART_E_ABORT)
+        {
+	  DPRINTF(E_DBG, L_ART, "Source '%s' stopped search for artwork for '%s'\n", artwork_queue_item_source[i].name, queue_item->title);
+	  break;
+	}
+      else if (ret == ART_E_ERROR)
+        {
+	  DPRINTF(E_LOG, L_ART, "Source '%s' returned an error for '%s'\n", artwork_queue_item_source[i].name, queue_item->title);
+	}
+    }
+
+ out:
+  free_queue_item(queue_item, 0);
   return ret;
 }
 
