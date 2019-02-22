@@ -1977,9 +1977,15 @@ queue_item_to_json(struct db_queue_item *queue_item, char shuffle)
     {
       safe_json_add_string(item, "artwork_url", queue_item->artwork_url);
     }
-  else if (queue_item->file_id > 0 && queue_item->file_id != DB_MEDIA_FILE_NON_PERSISTENT_ID)
+  else if (queue_item->file_id > 0 && queue_item->file_id != DB_MEDIA_FILE_NON_PERSISTENT_ID && queue_item->data_kind != DATA_KIND_HTTP)
     {
       ret = snprintf(artwork_url, sizeof(artwork_url), "/artwork/item/%d", queue_item->file_id);
+      if (ret < sizeof(artwork_url))
+	json_object_object_add(item, "artwork_url", json_object_new_string(artwork_url));
+    }
+  else
+    {
+      ret = snprintf(artwork_url, sizeof(artwork_url), "/artwork/queueitem/%d", queue_item->id);
       if (ret < sizeof(artwork_url))
 	json_object_object_add(item, "artwork_url", json_object_new_string(artwork_url));
     }
