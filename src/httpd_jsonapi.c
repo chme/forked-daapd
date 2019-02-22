@@ -1985,7 +1985,7 @@ queue_item_to_json(struct db_queue_item *queue_item, char shuffle)
     }
   else
     {
-      ret = snprintf(artwork_url, sizeof(artwork_url), "/artwork/queueitem/%d", queue_item->id);
+      ret = snprintf(artwork_url, sizeof(artwork_url), "/artwork/queueitem/%d?v=%d", queue_item->id, queue_item->queue_version);
       if (ret < sizeof(artwork_url))
 	json_object_object_add(item, "artwork_url", json_object_new_string(artwork_url));
     }
