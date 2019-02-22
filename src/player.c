@@ -1838,6 +1838,23 @@ playing_now(void *arg, int *retval)
 }
 
 static enum command_state
+playing_now_itemid(void *arg, int *retval)
+{
+  uint32_t *id = arg;
+
+  if (player_state == PLAY_STOPPED)
+    {
+      *retval = -1;
+      return COMMAND_END;
+    }
+
+  *id = pb_session.playing_now->item_id;
+
+  *retval = 0;
+  return COMMAND_END;
+}
+
+static enum command_state
 playback_stop(void *arg, int *retval)
 {
   if (player_state == PLAY_STOPPED)
@@ -2830,6 +2847,21 @@ player_playing_now(uint32_t *id)
   int ret;
 
   ret = commands_exec_sync(cmdbase, playing_now, NULL, id);
+  return ret;
+}
+
+/*
+ * Stores the now playing media item queue item-id in the given id pointer.
+ *
+ * @param id Pointer will hold the playing item (queue item) id if the function returns 0
+ * @return 0 on success, -1 on failure (e. g. no playing item found)
+ */
+int
+player_playing_now_itemid(uint32_t *item_id)
+{
+  int ret;
+
+  ret = commands_exec_sync(cmdbase, playing_now_itemid, NULL, item_id);
   return ret;
 }
 
