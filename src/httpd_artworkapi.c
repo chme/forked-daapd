@@ -88,11 +88,11 @@ artworkapi_reply_nowplaying(struct httpd_request *hreq)
   if (ret != 0)
     return ret;
 
-  ret = player_playing_now(&id);
+  ret = player_playing_now_itemid(&id);
   if (ret != 0)
     return HTTP_NOTFOUND;
 
-  ret = artwork_get_item(hreq->reply, id, max_w, max_h);
+  ret = artwork_get_queueitem(hreq->reply, id, max_w, max_h);
 
   return response_process(hreq, ret);
 }
