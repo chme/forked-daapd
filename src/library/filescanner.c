@@ -475,11 +475,16 @@ process_regular_file(const char *file, struct stat *sb, int type, int flags, int
   char virtual_path[PATH_MAX];
   int ret;
 
+  DPRINTF(E_SPAM, L_SCAN, "Process regular file: %s\n", file);
+
   // Will return 0 if file is not in library or if file mtime is newer than library timestamp
   // - note if mtime is 0 then we always scan the file
   ret = db_file_ping_bypath(file, sb->st_mtime);
   if ((sb->st_mtime != 0) && (ret != 0))
-    return;
+    {
+      DPRINTF(E_SPAM, L_SCAN, "Unmodified file: %s (ret=%d, st_mtime=%d)\n", file, ret, (int) sb->st_mtime);
+      return;
+    }
 
   // File is new or modified - (re)scan metadata and update file in library
   memset(&mfi, 0, sizeof(struct media_file_info));
