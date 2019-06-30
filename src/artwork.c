@@ -43,7 +43,6 @@
 
 #ifdef HAVE_SPOTIFY_H
 # include "spotify_webapi.h"
-# include "spotify.h"
 #endif
 
 /* This artwork module will look for artwork by consulting a set of sources one
@@ -51,9 +50,13 @@
  * art database. For each source there is a handler function, which will do the
  * actual work of getting the artwork.
  *
- * There are two types of handlers: item and group. Item handlers are capable of
- * finding artwork for a single item (a dbmfi), while group handlers can get for
- * an album or artist (a persistentid).
+ * There are three types of handlers:
+ * - item (media file info)
+ * - group (group info for album or artist)
+ * - queue item
+ * Item handlers are capable of finding artwork for a single item, while group
+ * handlers can find artwork for an album or artist. Queue item handlers can
+ * find artwork for items not in the library using online APIs.
  *
  * An artwork source handler must return one of the following:
  *
