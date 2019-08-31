@@ -43,7 +43,6 @@
 
 #ifdef HAVE_SPOTIFY_H
 # include "spotify_webapi.h"
-# include "spotify.h"
 #endif
 
 /* This artwork module will look for artwork by consulting a set of sources one
@@ -139,7 +138,6 @@ static int source_item_embedded_get(struct artwork_ctx *ctx);
 static int source_item_own_get(struct artwork_ctx *ctx);
 static int source_item_stream_get(struct artwork_ctx *ctx);
 static int source_item_pipe_get(struct artwork_ctx *ctx);
-static int source_item_spotify_get(struct artwork_ctx *ctx);
 static int source_item_spotifywebapi_get(struct artwork_ctx *ctx);
 static int source_item_ownpl_get(struct artwork_ctx *ctx);
 
@@ -202,12 +200,6 @@ static struct artwork_source artwork_item_source[] =
       .handler = source_item_pipe_get,
       .data_kinds = (1 << DATA_KIND_PIPE),
       .cache = NEVER,
-    },
-    {
-      .name = "Spotify",
-      .handler = source_item_spotify_get,
-      .data_kinds = (1 << DATA_KIND_SPOTIFY),
-      .cache = ON_SUCCESS,
     },
     {
       .name = "Spotify web api",
@@ -872,75 +864,6 @@ source_item_pipe_get(struct artwork_ctx *ctx)
 }
 
 #ifdef HAVE_SPOTIFY_H
-static int
-source_item_spotify_get(struct artwork_ctx *ctx)
-{
-  struct evbuffer *raw;
-  struct evbuffer *evbuf;
-  int ret;
-
-  raw = evbuffer_new();
-  evbuf = evbuffer_new();
-  if (!raw || !evbuf)
-    {
-      DPRINTF(E_LOG, L_ART, "Out of memory for Spotify evbuf\n");
-      return ART_E_ERROR;
-    }
-
-  ret = spotify_artwork_get(raw, ctx->dbmfi->path, ctx->max_w, ctx->max_h);
-  if (ret < 0)
-    {
-      DPRINTF(E_WARN, L_ART, "No artwork from Spotify for %s\n", ctx->dbmfi->path);
-      evbuffer_free(raw);
-      evbuffer_free(evbuf);
-      return ART_E_NONE;
-    }
-
-  // Make a refbuf of raw for ffmpeg image size probing and possibly rescaling.
-  // We keep raw around in case rescaling is not necessary.
-#ifdef HAVE_LIBEVENT2_OLD
-  uint8_t *buf = evbuffer_pullup(raw, -1);
-  if (!buf)
-    {
-      DPRINTF(E_LOG, L_ART, "Could not pullup raw artwork\n");
-      goto out_free_evbuf;
-    }
-
-  ret = evbuffer_add_reference(evbuf, buf, evbuffer_get_length(raw), NULL, NULL);
-#else
-  ret = evbuffer_add_buffer_reference(evbuf, raw);
-#endif
-  if (ret < 0)
-    {
-      DPRINTF(E_LOG, L_ART, "Could not copy/ref raw image for ffmpeg\n");
-      goto out_free_evbuf;
-    }
-
-  // For non-file input, artwork_get() will also fail if no rescaling is required
-  ret = artwork_get(ctx->evbuf, NULL, evbuf, ctx->max_w, ctx->max_h, false);
-  if (ret == ART_E_ERROR)
-    {
-      DPRINTF(E_DBG, L_ART, "Not rescaling Spotify image\n");
-      ret = evbuffer_add_buffer(ctx->evbuf, raw);
-      if (ret < 0)
-	{
-	  DPRINTF(E_LOG, L_ART, "Could not add or rescale image to output evbuf\n");
-	  goto out_free_evbuf;
-	}
-    }
-
-  evbuffer_free(evbuf);
-  evbuffer_free(raw);
-
-  return ART_FMT_JPEG;
-
- out_free_evbuf:
-  evbuffer_free(evbuf);
-  evbuffer_free(raw);
-
-  return ART_E_ERROR;
-}
-
 static int
 source_item_spotifywebapi_get(struct artwork_ctx *ctx)
 {
