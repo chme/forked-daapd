@@ -50,9 +50,13 @@
  * art database. For each source there is a handler function, which will do the
  * actual work of getting the artwork.
  *
- * There are two types of handlers: item and group. Item handlers are capable of
- * finding artwork for a single item (a dbmfi), while group handlers can get for
- * an album or artist (a persistentid).
+ * There are three types of handlers:
+ * - item (media file info)
+ * - group (group info for album or artist)
+ * - queue item
+ * Item handlers are capable of finding artwork for a single item, while group
+ * handlers can find artwork for an album or artist. Queue item handlers can
+ * find artwork for items not in the library using online APIs.
  *
  * An artwork source handler must return one of the following:
  *
@@ -73,44 +77,15 @@ enum artwork_cache
   ON_FAILURE = 2,  // Cache if artwork not found (so we don't keep asking)
 };
 
-/* This struct contains the data available to the handler, as well as a char
- * buffer where the handler should output the path to the artwork (if it is
- * local - otherwise the buffer can be left empty). The purpose of supplying the
- * path is that the filescanner can then clear the cache in case the file
- * changes.
+/*
+ * Definition of an artwork source.
  */
-struct artwork_ctx {
-  // Handler should output path here if artwork is local
-  char path[PATH_MAX];
-  // Handler should output artwork data to this evbuffer
-  struct evbuffer *evbuf;
-
-  // Input data to handler, requested width and height
-  int max_w;
-  int max_h;
-  // Input data to handler, did user configure to look for individual artwork
-  int individual;
-
-  // Input data for item handlers
-  struct db_media_file_info *dbmfi;
-  int id;
-  // Input data for group handlers
-  int64_t persistentid;
-
-  // Not to be used by handler - query for item or group
-  struct query_params qp;
-  // Not to be used by handler - should the result be cached
-  enum artwork_cache cache;
-};
-
-/* Definition of an artwork source. Covers both item and group sources.
- */
-struct artwork_source {
+struct artwork_media_file_source {
   // Name of the source, e.g. "cache"
   const char *name;
 
   // The handler
-  int (*handler)(struct artwork_ctx *ctx);
+  int (*handler)(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h);
 
   // What data_kinds the handler can work with, combined with (1 << A) | (1 << B)
   int data_kinds;
@@ -119,42 +94,83 @@ struct artwork_source {
   enum artwork_cache cache;
 };
 
-/* File extensions that we look for or accept
+/*
+ * Definition of an artwork source.
  */
-static const char *cover_extension[] =
-  {
-    "jpg", "png",
-  };
+struct artwork_group_source {
+  // Name of the source, e.g. "cache"
+  const char *name;
+
+  // The handler
+  int (*handler)(struct evbuffer *evbuf, char *artwork_path, struct group_info *group_info, int max_w, int max_h);
+
+  // What group_type the handler can work with
+  int group_types;
+
+  // When should results from the source be cached?
+  enum artwork_cache cache;
+};
+
+/*
+ * Definition of an artwork source.
+ */
+struct artwork_queue_item_source {
+  // Name of the source, e.g. "cache"
+  const char *name;
+
+  // The handler
+  int (*handler)(struct evbuffer *evbuf, char *artwork_path, struct db_queue_item *queue_item, int max_w, int max_h);
+
+  // What data_kinds the handler can work with, combined with (1 << A) | (1 << B)
+  int data_kinds;
+};
+
+/*
+ * File extensions that we look for or accept
+ */
+static const char *cover_extension[] = { "jpg", "png" };
+
 
 
 /* ----------------- DECLARE AND CONFIGURE SOURCE HANDLERS ----------------- */
 
 /* Forward - group handlers */
-static int source_group_cache_get(struct artwork_ctx *ctx);
-static int source_group_dir_get(struct artwork_ctx *ctx);
+static int source_group_dir_get(struct evbuffer *evbuf, char *artwork_path, struct group_info *group_info, int max_w, int max_h);
+static int source_group_embedded_get(struct evbuffer *evbuf, char *artwork_path, struct group_info *group_info, int max_w, int max_h);
+static int source_group_spotifywebapi_get(struct evbuffer *evbuf, char *artwork_path, struct group_info *group_info, int max_w, int max_h);
+
 /* Forward - item handlers */
-static int source_item_cache_get(struct artwork_ctx *ctx);
-static int source_item_embedded_get(struct artwork_ctx *ctx);
-static int source_item_own_get(struct artwork_ctx *ctx);
-static int source_item_stream_get(struct artwork_ctx *ctx);
-static int source_item_pipe_get(struct artwork_ctx *ctx);
-static int source_item_spotifywebapi_get(struct artwork_ctx *ctx);
-static int source_item_ownpl_get(struct artwork_ctx *ctx);
+static int source_item_embedded_get(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h);
+static int source_item_own_get(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h);
+static int source_item_stream_get(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h);
+static int source_item_spotifywebapi_get(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h);
+static int source_item_ownpl_get(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h);
+
+/* Forward - queue item handlers */
+static int source_queueitem_artworkurl_get(struct evbuffer *evbuf, char *artwork_path, struct db_queue_item *queue_item, int max_w, int max_h);
 
 /* List of sources that can provide artwork for a group (i.e. usually an album
  * identified by a persistentid). The source handlers will be called in the
  * order of this list. Must be terminated by a NULL struct.
  */
-static struct artwork_source artwork_group_source[] =
+static struct artwork_group_source artwork_group_source[] =
   {
-    {
-      .name = "cache",
-      .handler = source_group_cache_get,
-      .cache = ON_FAILURE,
-    },
     {
       .name = "directory",
       .handler = source_group_dir_get,
+      .group_types = G_ARTISTS | G_ALBUMS,
+      .cache = ON_SUCCESS | ON_FAILURE,
+    },
+    {
+      .name = "embedded",
+      .handler = source_group_embedded_get,
+      .group_types = G_ARTISTS | G_ALBUMS,
+      .cache = ON_SUCCESS | ON_FAILURE,
+    },
+    {
+      .name = "Spotify web api",
+      .handler = source_group_spotifywebapi_get,
+      .group_types = G_ARTISTS | G_ALBUMS,
       .cache = ON_SUCCESS | ON_FAILURE,
     },
     {
@@ -169,14 +185,8 @@ static struct artwork_source artwork_group_source[] =
  * The handler will only be called if the data_kind matches. Must be terminated
  * by a NULL struct.
  */
-static struct artwork_source artwork_item_source[] =
+static struct artwork_media_file_source artwork_item_source[] =
   {
-    {
-      .name = "cache",
-      .handler = source_item_cache_get,
-      .data_kinds = (1 << DATA_KIND_FILE) | (1 << DATA_KIND_SPOTIFY),
-      .cache = ON_FAILURE,
-    },
     {
       .name = "embedded",
       .handler = source_item_embedded_get,
@@ -193,12 +203,6 @@ static struct artwork_source artwork_item_source[] =
       .name = "stream",
       .handler = source_item_stream_get,
       .data_kinds = (1 << DATA_KIND_HTTP),
-      .cache = NEVER,
-    },
-    {
-      .name = "pipe",
-      .handler = source_item_pipe_get,
-      .data_kinds = (1 << DATA_KIND_PIPE),
       .cache = NEVER,
     },
     {
@@ -223,9 +227,28 @@ static struct artwork_source artwork_item_source[] =
 
 
 
+/* List of sources that can provide artwork for an queue item (a track in the
+ * queue). The source handlers will be called in the order of this list.
+ * The handler will only be called if the data_kind matches. Must be terminated
+ * by a NULL struct.
+ */
+static struct artwork_queue_item_source artwork_queue_item_source[] =
+  {
+    {
+      .name = "stream",
+      .handler = source_queueitem_artworkurl_get,
+      .data_kinds = (1 << DATA_KIND_HTTP) | (1 << DATA_KIND_SPOTIFY),
+    },
+    {
+      .name = NULL,
+      .handler = NULL,
+      .data_kinds = 0,
+    }
+  };
+
 /* -------------------------------- HELPERS -------------------------------- */
 
-/* Reads an artwork file from the given http url straight into an evbuf
+/* Reads an artwork file from the given url straight into an evbuf
  *
  * @out evbuf     Image data
  * @in  url       URL for the image
@@ -531,7 +554,7 @@ find_dir_image(const char *dir, char *out_path)
   for (i = 0; i < nbasenames; i++)
     {
       for (j = 0; j < nextensions; j++)
-	{
+        {
 	  ret = snprintf(path + len, sizeof(path) - len, "/%s.%s", cfg_getnstr(lib, "artwork_basenames", i), cover_extension[j]);
 	  if ((ret < 0) || (ret >= sizeof(path) - len))
 	    {
@@ -637,283 +660,29 @@ artwork_get_dir_image(struct evbuffer *evbuf, char *dir, int max_w, int max_h, c
   return ART_E_NONE;
 }
 
-
-/* ---------------------- SOURCE HANDLER IMPLEMENTATION -------------------- */
-
-/* Looks in the cache for group artwork
- */
-static int
-source_group_cache_get(struct artwork_ctx *ctx)
-{
-  int format;
-  int cached;
-  int ret;
-
-  ret = cache_artwork_get(CACHE_ARTWORK_GROUP, ctx->persistentid, ctx->max_w, ctx->max_h, &cached, &format, ctx->evbuf);
-  if (ret < 0)
-    return ART_E_ERROR;
-
-  if (!cached)
-    return ART_E_NONE;
-
-  if (!format)
-    return ART_E_ABORT;
-
-  return format;
-}
-
-/* Looks for cover files in a directory, so if dir is /foo/bar and the user has
- * configured the cover file names "cover" and "artwork" it will look for
- * /foo/bar/cover.{png,jpg}, /foo/bar/artwork.{png,jpg} and also
- * /foo/bar/bar.{png,jpg} (so-called parentdir artwork)
- */
-static int
-source_group_dir_get(struct artwork_ctx *ctx)
-{
-  struct query_params qp;
-  char *dir;
-  int ret;
-
-  /* Image is not in the artwork cache. Try directory artwork first */
-  memset(&qp, 0, sizeof(struct query_params));
-
-  qp.type = Q_GROUP_DIRS;
-  qp.persistentid = ctx->persistentid;
-
-  ret = db_query_start(&qp);
-  if (ret < 0)
-    {
-      DPRINTF(E_LOG, L_ART, "Could not start Q_GROUP_DIRS query\n");
-      return ART_E_ERROR;
-    }
-
-  while (((ret = db_query_fetch_string(&qp, &dir)) == 0) && (dir))
-    {
-      /* The db query may return non-directories (eg if item is an internet stream or Spotify) */
-      if (access(dir, F_OK) < 0)
-	continue;
-
-      ret = artwork_get_dir_image(ctx->evbuf, dir, ctx->max_w, ctx->max_h, ctx->path);
-      if (ret > 0)
-	{
-	  db_query_end(&qp);
-	  return ret;
-	}
-    }
-
-  db_query_end(&qp);
-
-  if (ret < 0)
-    {
-      DPRINTF(E_LOG, L_ART, "Error fetching Q_GROUP_DIRS results\n");
-      return ART_E_ERROR;
-    }
-
-  return ART_E_NONE;
-}
-
-/* Looks in the cache for item artwork. Only relevant if configured to look for
- * individual artwork.
- */
-static int
-source_item_cache_get(struct artwork_ctx *ctx)
-{
-  int format;
-  int cached;
-  int ret;
-
-  if (!ctx->individual)
-    return ART_E_NONE;
-
-  ret = cache_artwork_get(CACHE_ARTWORK_INDIVIDUAL, ctx->id, ctx->max_w, ctx->max_h, &cached, &format, ctx->evbuf);
-  if (ret < 0)
-    return ART_E_ERROR;
-
-  if (!cached)
-    return ART_E_NONE;
-
-  if (!format)
-    return ART_E_ABORT;
-
-  return format;
-}
-
-/* Get an embedded artwork file from a media file. Will rescale if needed.
- */
-static int
-source_item_embedded_get(struct artwork_ctx *ctx)
-{
-  DPRINTF(E_SPAM, L_ART, "Trying embedded artwork in %s\n", ctx->dbmfi->path);
-
-  snprintf(ctx->path, sizeof(ctx->path), "%s", ctx->dbmfi->path);
-
-  return artwork_get(ctx->evbuf, ctx->path, NULL, ctx->max_w, ctx->max_h, true);
-}
-
-/* Looks for basename(in_path).{png,jpg}, so if in_path is /foo/bar.mp3 it
- * will look for /foo/bar.png and /foo/bar.jpg
- */
-static int
-source_item_own_get(struct artwork_ctx *ctx)
-{
-  char path[PATH_MAX];
-  char *ptr;
-  int len;
-  int nextensions;
-  int i;
-  int ret;
-
-  ret = snprintf(path, sizeof(path), "%s", ctx->dbmfi->path);
-  if ((ret < 0) || (ret >= sizeof(path)))
-    {
-      DPRINTF(E_LOG, L_ART, "Artwork path exceeds PATH_MAX (%s)\n", ctx->dbmfi->path);
-      return ART_E_ERROR;
-    }
-
-  ptr = strrchr(path, '.');
-  if (ptr)
-    *ptr = '\0';
-
-  len = strlen(path);
-
-  nextensions = sizeof(cover_extension) / sizeof(cover_extension[0]);
-
-  for (i = 0; i < nextensions; i++)
-    {
-      ret = snprintf(path + len, sizeof(path) - len, ".%s", cover_extension[i]);
-      if ((ret < 0) || (ret >= sizeof(path) - len))
-	{
-	  DPRINTF(E_LOG, L_ART, "Artwork path will exceed PATH_MAX (%s)\n", ctx->dbmfi->path);
-	  continue;
-	}
-
-      DPRINTF(E_SPAM, L_ART, "Trying own artwork file %s\n", path);
-
-      ret = access(path, F_OK);
-      if (ret < 0)
-	continue;
-
-      break;
-    }
-
-  if (i == nextensions)
-    return ART_E_NONE;
-
-  snprintf(ctx->path, sizeof(ctx->path), "%s", path);
-
-  return artwork_get(ctx->evbuf, path, NULL, ctx->max_w, ctx->max_h, false);
-}
-
-/*
- * Downloads the artwork pointed to by the ICY metadata tag in an internet radio
- * stream (the StreamUrl tag). The path will be converted back to the id, which
- * is given to the player. If the id is currently being played, and there is a
- * valid ICY metadata artwork URL available, it will be returned to this
- * function, which will then use the http client to get the artwork. Notice: No
- * rescaling is done.
- */
-static int
-source_item_stream_get(struct artwork_ctx *ctx)
-{
-  struct db_queue_item *queue_item;
-  char *url;
-  char *ext;
-  int len;
-  int ret;
-
-  DPRINTF(E_SPAM, L_ART, "Trying internet stream artwork in %s\n", ctx->dbmfi->path);
-
-  ret = ART_E_NONE;
-
-  queue_item = db_queue_fetch_byfileid(ctx->id);
-  if (!queue_item || !queue_item->artwork_url)
-    {
-      free_queue_item(queue_item, 0);
-      return ART_E_NONE;
-    }
-
-  url = strdup(queue_item->artwork_url);
-  free_queue_item(queue_item, 0);
-
-  len = strlen(url);
-  if ((len < 14) || (len > PATH_MAX)) // Can't be shorter than http://a/1.jpg
-    goto out_url;
-
-  ext = strrchr(url, '.');
-  if (!ext)
-    goto out_url;
-  if ((strcmp(ext, ".jpg") != 0) && (strcmp(ext, ".png") != 0))
-    goto out_url;
-
-  cache_artwork_read(ctx->evbuf, url, &ret);
-  if (ret > 0)
-    goto out_url;
-
-  ret = artwork_url_read(ctx->evbuf, url);
-
-  if (ret > 0)
-    {
-      DPRINTF(E_SPAM, L_ART, "Found internet stream artwork in %s (%d)\n", url, ret);
-      cache_artwork_stash(ctx->evbuf, url, ret);
-    }
-
- out_url:
-  free(url);
-
-  return ret;
-}
-
-/*
- * If we are playing a pipe and there is also a metadata pipe, then input/pipe.c
- * may have saved the incoming artwork in a tmp file
- *
- */
-static int
-source_item_pipe_get(struct artwork_ctx *ctx)
-{
-  struct db_queue_item *queue_item;
-  const char *proto = "file:";
-  char *path;
-
-  DPRINTF(E_SPAM, L_ART, "Trying pipe metadata from %s.metadata\n", ctx->dbmfi->path);
-
-  queue_item = db_queue_fetch_byfileid(ctx->id);
-  if (!queue_item || !queue_item->artwork_url || strncmp(queue_item->artwork_url, proto, strlen(proto)) != 0)
-    {
-      free_queue_item(queue_item, 0);
-      return ART_E_NONE;
-    }
-
-  path = queue_item->artwork_url + strlen(proto);
-
-  snprintf(ctx->path, sizeof(ctx->path), "%s", path);
-
-  return artwork_get(ctx->evbuf, path, NULL, ctx->max_w, ctx->max_h, false);
-}
-
 #ifdef HAVE_SPOTIFY_H
 static int
-source_item_spotifywebapi_get(struct artwork_ctx *ctx)
+artwork_spotifywebapi_get(struct evbuffer *evbuf, char *artwork_path, const char *spotify_track_uri, int max_w, int max_h)
 {
   struct evbuffer *raw;
-  struct evbuffer *evbuf;
+  struct evbuffer *evbuf2;
   char *artwork_url;
   int content_type;
   int ret;
 
   artwork_url = NULL;
   raw = evbuffer_new();
-  evbuf = evbuffer_new();
-  if (!raw || !evbuf)
+  evbuf2 = evbuffer_new();
+  if (!raw || !evbuf2)
     {
       DPRINTF(E_LOG, L_ART, "Out of memory for Spotify evbuf\n");
       return ART_E_ERROR;
     }
 
-  artwork_url = spotifywebapi_artwork_url_get(ctx->dbmfi->path, ctx->max_w, ctx->max_h);
+  artwork_url = spotifywebapi_artwork_url_get(spotify_track_uri, max_w, max_h);
   if (!artwork_url)
     {
-      DPRINTF(E_WARN, L_ART, "No artwork from Spotify for %s\n", ctx->dbmfi->path);
+      DPRINTF(E_WARN, L_ART, "No artwork from Spotify for %s\n", spotify_track_uri);
       return ART_E_NONE;
     }
 
@@ -933,9 +702,9 @@ source_item_spotifywebapi_get(struct artwork_ctx *ctx)
       goto out_free_evbuf;
     }
 
-  ret = evbuffer_add_reference(evbuf, buf, evbuffer_get_length(raw), NULL, NULL);
+  ret = evbuffer_add_reference(evbuf2, buf, evbuffer_get_length(raw), NULL, NULL);
 #else
-  ret = evbuffer_add_buffer_reference(evbuf, raw);
+  ret = evbuffer_add_buffer_reference(evbuf2, raw);
 #endif
   if (ret < 0)
     {
@@ -944,11 +713,11 @@ source_item_spotifywebapi_get(struct artwork_ctx *ctx)
     }
 
   // For non-file input, artwork_get() will also fail if no rescaling is required
-  ret = artwork_get(ctx->evbuf, NULL, evbuf, ctx->max_w, ctx->max_h, false);
+  ret = artwork_get(evbuf, NULL, evbuf2, max_w, max_h, false);
   if (ret == ART_E_ERROR)
     {
       DPRINTF(E_DBG, L_ART, "Not rescaling Spotify image\n");
-      ret = evbuffer_add_buffer(ctx->evbuf, raw);
+      ret = evbuffer_add_buffer(evbuf, raw);
       if (ret < 0)
 	{
 	  DPRINTF(E_LOG, L_ART, "Could not add or rescale image to output evbuf\n");
@@ -956,18 +725,279 @@ source_item_spotifywebapi_get(struct artwork_ctx *ctx)
 	}
     }
 
-  evbuffer_free(evbuf);
+  evbuffer_free(evbuf2);
   evbuffer_free(raw);
   free(artwork_url);
 
   return content_type;
 
  out_free_evbuf:
-  evbuffer_free(evbuf);
+  evbuffer_free(evbuf2);
   evbuffer_free(raw);
   free(artwork_url);
 
   return ART_E_ERROR;
+}
+#endif
+
+
+/* ---------------------- SOURCE HANDLER IMPLEMENTATION -------------------- */
+
+/* Looks for cover files in a directory, so if dir is /foo/bar and the user has
+ * configured the cover file names "cover" and "artwork" it will look for
+ * /foo/bar/cover.{png,jpg}, /foo/bar/artwork.{png,jpg} and also
+ * /foo/bar/bar.{png,jpg} (so-called parentdir artwork)
+ */
+static int
+source_group_dir_get(struct evbuffer *evbuf, char *artwork_path, struct group_info *group_info, int max_w, int max_h)
+{
+  struct query_params qp;
+  char *dir;
+  int ret;
+
+  /* Image is not in the artwork cache. Try directory artwork first */
+  memset(&qp, 0, sizeof(struct query_params));
+
+  qp.type = Q_GROUP_DIRS;
+  qp.persistentid = group_info->persistentid;
+
+  ret = db_query_start(&qp);
+  if (ret < 0)
+    {
+      DPRINTF(E_LOG, L_ART, "Could not start Q_GROUP_DIRS query\n");
+      return ART_E_ERROR;
+    }
+
+  while (((ret = db_query_fetch_string(&qp, &dir)) == 0) && (dir))
+    {
+      /* The db query may return non-directories (eg if item is an internet stream or Spotify) */
+      if (access(dir, F_OK) < 0)
+	continue;
+
+      ret = artwork_get_dir_image(evbuf, dir, max_w, max_h, artwork_path);
+      if (ret > 0)
+	{
+	  db_query_end(&qp);
+	  return ret;
+	}
+    }
+
+  db_query_end(&qp);
+
+  if (ret < 0)
+    {
+      DPRINTF(E_LOG, L_ART, "Error fetching Q_GROUP_DIRS results\n");
+      return ART_E_ERROR;
+    }
+
+  return ART_E_NONE;
+}
+
+static int
+source_group_embedded_get(struct evbuffer *evbuf, char *artwork_path, struct group_info *group_info, int max_w, int max_h)
+{
+  struct query_params qp;
+  struct db_media_file_info dbmfi;
+  int ret;
+
+  memset(&qp, 0, sizeof(struct query_params));
+
+  qp.type = Q_GROUP_ITEMS;
+  qp.filter = "f.artwork = 2"; // 2 = ARTWORK_EMBEDDED
+  qp.persistentid = group_info->persistentid;
+  ret = db_query_start(&qp);
+  if (ret < 0)
+    {
+      DPRINTF(E_LOG, L_ART, "Could not start query (type=%d)\n", qp.type);
+      return -1;
+    }
+
+  while (((ret = db_query_fetch_file(&qp, &dbmfi)) == 0) && (dbmfi.id))
+    {
+      snprintf(artwork_path, PATH_MAX, "%s", dbmfi.path);
+      ret = artwork_get(evbuf, artwork_path, NULL, max_w, max_h, true);
+      if (ret > 0)
+        {
+	  db_query_end(&qp);
+	  return ret;
+	}
+    }
+
+  db_query_end(&qp);
+  return ret;
+}
+
+
+static int
+source_group_spotifywebapi_get(struct evbuffer *evbuf, char *artwork_path, struct group_info *group_info, int max_w, int max_h)
+{
+  struct query_params qp;
+  struct db_media_file_info dbmfi;
+  int ret;
+
+  memset(&qp, 0, sizeof(struct query_params));
+
+  qp.type = Q_GROUP_ITEMS;
+  qp.filter = "f.data_kind = 2"; // 2 = DATA_KIND_SPOTIFY
+  qp.persistentid = group_info->persistentid;
+  ret = db_query_start(&qp);
+  if (ret < 0)
+    {
+      DPRINTF(E_LOG, L_ART, "Could not start query (type=%d)\n", qp.type);
+      return -1;
+    }
+
+  while (((ret = db_query_fetch_file(&qp, &dbmfi)) == 0) && (dbmfi.id))
+    {
+      snprintf(artwork_path, PATH_MAX, "%s", dbmfi.path);
+      ret = artwork_spotifywebapi_get(evbuf, artwork_path, dbmfi.path, max_w, max_h);
+      if (ret > 0)
+        {
+	  db_query_end(&qp);
+	  return ret;
+	}
+    }
+
+  db_query_end(&qp);
+  return ret;
+}
+
+/* Get an embedded artwork file from a media file. Will rescale if needed.
+ */
+static int
+source_item_embedded_get(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h)
+{
+  DPRINTF(E_SPAM, L_ART, "Trying embedded artwork in %s\n", mfi->path);
+
+  if (mfi->artwork != ARTWORK_EMBEDDED)
+    return ART_E_NONE;
+
+  snprintf(artwork_path, PATH_MAX, "%s", mfi->path);
+
+  return artwork_get(evbuf, artwork_path, NULL, max_w, max_h, true);
+}
+
+/* Looks for basename(in_path).{png,jpg}, so if in_path is /foo/bar.mp3 it
+ * will look for /foo/bar.png and /foo/bar.jpg
+ */
+static int
+source_item_own_get(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h)
+{
+  char path[PATH_MAX];
+  char *ptr;
+  int len;
+  int nextensions;
+  int i;
+  int ret;
+
+  ret = snprintf(path, sizeof(path), "%s", mfi->path);
+  if ((ret < 0) || (ret >= sizeof(path)))
+    {
+      DPRINTF(E_LOG, L_ART, "Artwork path exceeds PATH_MAX (%s)\n", mfi->path);
+      return ART_E_ERROR;
+    }
+
+  ptr = strrchr(path, '.');
+  if (ptr)
+    *ptr = '\0';
+
+  len = strlen(path);
+
+  nextensions = sizeof(cover_extension) / sizeof(cover_extension[0]);
+
+  for (i = 0; i < nextensions; i++)
+    {
+      ret = snprintf(path + len, sizeof(path) - len, ".%s", cover_extension[i]);
+      if ((ret < 0) || (ret >= sizeof(path) - len))
+	{
+	  DPRINTF(E_LOG, L_ART, "Artwork path will exceed PATH_MAX (%s)\n", mfi->path);
+	  continue;
+	}
+
+      DPRINTF(E_SPAM, L_ART, "Trying own artwork file %s\n", path);
+
+      ret = access(path, F_OK);
+      if (ret < 0)
+	continue;
+
+      break;
+    }
+
+  if (i == nextensions)
+    return ART_E_NONE;
+
+  snprintf(artwork_path, PATH_MAX, "%s", path);
+
+  return artwork_get(evbuf, path, NULL, max_w, max_h, false);
+}
+
+/*
+ * Downloads the artwork pointed to by the ICY metadata tag in an internet radio
+ * stream (the StreamUrl tag). The path will be converted back to the id, which
+ * is given to the player. If the id is currently being played, and there is a
+ * valid ICY metadata artwork URL available, it will be returned to this
+ * function, which will then use the http client to get the artwork. Notice: No
+ * rescaling is done.
+ */
+static int
+source_item_stream_get(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h)
+{
+  struct db_queue_item *queue_item;
+  char *url;
+  char *ext;
+  int len;
+  int ret;
+
+  DPRINTF(E_SPAM, L_ART, "Trying internet stream artwork in %s\n", mfi->path);
+
+  ret = ART_E_NONE;
+
+  queue_item = db_queue_fetch_byfileid(mfi->id);
+  if (!queue_item || !queue_item->artwork_url)
+    {
+      free_queue_item(queue_item, 0);
+      return ART_E_NONE;
+    }
+
+  url = strdup(queue_item->artwork_url);
+  free_queue_item(queue_item, 0);
+
+  len = strlen(url);
+  if ((len < 14) || (len > PATH_MAX)) // Can't be shorter than http://a/1.jpg
+    goto out_url;
+
+  ext = strrchr(url, '.');
+  if (!ext)
+    goto out_url;
+  if ((strcmp(ext, ".jpg") != 0) && (strcmp(ext, ".png") != 0))
+    goto out_url;
+
+  cache_artwork_read(evbuf, url, &ret);
+  if (ret > 0)
+    goto out_url;
+
+  ret = artwork_url_read(evbuf, url);
+
+  if (ret > 0)
+    {
+      DPRINTF(E_SPAM, L_ART, "Found internet stream artwork in %s (%d)\n", url, ret);
+      cache_artwork_stash(evbuf, url, ret);
+    }
+
+ out_url:
+  free(url);
+
+  return ret;
+}
+
+#ifdef HAVE_SPOTIFY_H
+static int
+source_item_spotifywebapi_get(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h)
+{
+  if (mfi->data_kind != DATA_KIND_SPOTIFY)
+    return ART_E_NONE;
+
+  return artwork_spotifywebapi_get(evbuf, artwork_path, mfi->path, max_w, max_h);
 }
 #else
 static int
@@ -988,7 +1018,7 @@ source_item_spotifywebapi_get(struct artwork_ctx *ctx)
  * playlist is /foo/bar.m3u it will look for /foo/bar.png and /foo/bar.jpg.
  */
 static int
-source_item_ownpl_get(struct artwork_ctx *ctx)
+source_item_ownpl_get(struct evbuffer *evbuf, char *artwork_path, struct media_file_info *mfi, int max_w, int max_h)
 {
   struct query_params qp;
   struct db_playlist_info dbpli;
@@ -997,10 +1027,10 @@ source_item_ownpl_get(struct artwork_ctx *ctx)
   int format;
   int ret;
 
-  ret = db_snprintf(filter, sizeof(filter), "filepath = '%q'", ctx->dbmfi->path);
+  ret = db_snprintf(filter, sizeof(filter), "filepath = '%q'", mfi->path);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_ART, "Artwork path is too long: '%s'\n", ctx->dbmfi->path);
+      DPRINTF(E_LOG, L_ART, "Artwork path is too long: '%s'\n", mfi->path);
       return ART_E_ERROR;
     }
 
@@ -1015,7 +1045,7 @@ source_item_ownpl_get(struct artwork_ctx *ctx)
       return ART_E_ERROR;
     }
 
-  mfi_path = ctx->dbmfi->path;
+  mfi_path = mfi->path;
 
   format = ART_E_NONE;
   while (((ret = db_query_fetch_pl(&qp, &dbpli)) == 0) && (dbpli.id) && (format == ART_E_NONE))
@@ -1023,11 +1053,11 @@ source_item_ownpl_get(struct artwork_ctx *ctx)
       if (!dbpli.path)
 	continue;
 
-      ctx->dbmfi->path = dbpli.path;
-      format = source_item_own_get(ctx);
+      mfi->path = dbpli.path;
+      format = source_item_own_get(evbuf, artwork_path, mfi, max_w, max_h);
     }
 
-  ctx->dbmfi->path = mfi_path;
+  mfi->path = mfi_path;
 
   if ((ret < 0) || (format < 0))
     format = ART_E_ERROR;
@@ -1038,240 +1068,292 @@ source_item_ownpl_get(struct artwork_ctx *ctx)
 }
 
 
-/* --------------------------- SOURCE PROCESSING --------------------------- */
-
 static int
-process_items(struct artwork_ctx *ctx, int item_mode)
+source_queueitem_artworkurl_get(struct evbuffer *evbuf, char *artwork_path, struct db_queue_item *queue_item, int max_w, int max_h)
 {
-  struct db_media_file_info dbmfi;
-  uint32_t data_kind;
-  int i;
+  int len;
   int ret;
 
-  ret = db_query_start(&ctx->qp);
-  if (ret < 0)
+  DPRINTF(E_SPAM, L_ART, "Trying artwork url in queue item with path '%s'\n", queue_item->path);
+
+  ret = ART_E_NONE;
+
+  if (!queue_item->artwork_url)
+    goto out_url;
+
+  len = strlen(queue_item->artwork_url);
+  if ((len < 14) || (len > PATH_MAX)) // Can't be shorter than http://a/1.jpg
+    goto out_url;
+
+  cache_artwork_read(evbuf, queue_item->artwork_url, &ret);
+  if (ret > 0)
+    goto out_url;
+
+  ret = artwork_url_read(evbuf, queue_item->artwork_url);
+
+  if (ret > 0)
     {
-      DPRINTF(E_LOG, L_ART, "Could not start query (type=%d)\n", ctx->qp.type);
-      ctx->cache = NEVER;
-      return -1;
+      DPRINTF(E_SPAM, L_ART, "Found artwork in %s (%d)\n", queue_item->artwork_url, ret);
+      cache_artwork_stash(evbuf, queue_item->artwork_url, ret);
     }
 
-  while (((ret = db_query_fetch_file(&ctx->qp, &dbmfi)) == 0) && (dbmfi.id))
-    {
-      // Save the first songalbumid, might need it for process_group() if this search doesn't give anything
-      if (!ctx->persistentid)
-	safe_atoi64(dbmfi.songalbumid, &ctx->persistentid);
-
-      if (item_mode && !ctx->individual)
-	goto no_artwork;
-
-      ret = (safe_atoi32(dbmfi.id, &ctx->id) < 0) ||
-            (safe_atou32(dbmfi.data_kind, &data_kind) < 0) ||
-            (data_kind > 30);
-      if (ret)
-	{
-	  DPRINTF(E_LOG, L_ART, "Error converting dbmfi id or data_kind to number\n");
-	  continue;
-	}
-
-      for (i = 0; artwork_item_source[i].handler; i++)
-	{
-	  if ((artwork_item_source[i].data_kinds & (1 << data_kind)) == 0)
-	    continue;
-
-	  // If just one handler says we should not cache a negative result then we obey that
-	  if ((artwork_item_source[i].cache & ON_FAILURE) == 0)
-	    ctx->cache = NEVER;
-
-	  DPRINTF(E_SPAM, L_ART, "Checking item source '%s'\n", artwork_item_source[i].name);
-
-	  ctx->dbmfi = &dbmfi;
-	  ret = artwork_item_source[i].handler(ctx);
-	  ctx->dbmfi = NULL;
-
-	  if (ret > 0)
-	    {
-	      DPRINTF(E_DBG, L_ART, "Artwork for '%s' found in source '%s'\n", dbmfi.title, artwork_item_source[i].name);
-	      ctx->cache = (artwork_item_source[i].cache & ON_SUCCESS);
-	      db_query_end(&ctx->qp);
-	      return ret;
-	    }
-	  else if (ret == ART_E_ABORT)
-	    {
-	      DPRINTF(E_DBG, L_ART, "Source '%s' stopped search for artwork for '%s'\n", artwork_item_source[i].name, dbmfi.title);
-	      ctx->cache = NEVER;
-	      break;
-	    }
-	  else if (ret == ART_E_ERROR)
-	    {
-	      DPRINTF(E_LOG, L_ART, "Source '%s' returned an error for '%s'\n", artwork_item_source[i].name, dbmfi.title);
-	      ctx->cache = NEVER;
-	    }
-	}
-    }
-
-  if (ret < 0)
-    {
-      DPRINTF(E_LOG, L_ART, "Error fetching results\n");
-      ctx->cache = NEVER;
-    }
-
- no_artwork:
-  db_query_end(&ctx->qp);
-
-  return -1;
-}
-
-static int
-process_group(struct artwork_ctx *ctx)
-{
-  int i;
-  int ret;
-
-  if (!ctx->persistentid)
-    {
-      DPRINTF(E_LOG, L_ART, "Bug! No persistentid in call to process_group()\n");
-      ctx->cache = NEVER;
-      return -1;
-    }
-
-  for (i = 0; artwork_group_source[i].handler; i++)
-    {
-      // If just one handler says we should not cache a negative result then we obey that
-      if ((artwork_group_source[i].cache & ON_FAILURE) == 0)
-	ctx->cache = NEVER;
-
-      DPRINTF(E_SPAM, L_ART, "Checking group source '%s'\n", artwork_group_source[i].name);
-
-      ret = artwork_group_source[i].handler(ctx);
-      if (ret > 0)
-	{
-	  DPRINTF(E_DBG, L_ART, "Artwork for group %" PRIi64 " found in source '%s'\n", ctx->persistentid, artwork_group_source[i].name);
-	  ctx->cache = (artwork_group_source[i].cache & ON_SUCCESS);
-	  return ret;
-	}
-      else if (ret == ART_E_ABORT)
-	{
-	  DPRINTF(E_DBG, L_ART, "Source '%s' stopped search for artwork for group %" PRIi64 "\n", artwork_group_source[i].name, ctx->persistentid);
-	  ctx->cache = NEVER;
-	  return -1;
-	}
-      else if (ret == ART_E_ERROR)
-	{
-	  DPRINTF(E_LOG, L_ART, "Source '%s' returned an error for group %" PRIi64 "\n", artwork_group_source[i].name, ctx->persistentid);
-	  ctx->cache = NEVER;
-	}
-    }
-
-  ret = process_items(ctx, 0);
-
+ out_url:
   return ret;
 }
 
 
 /* ------------------------------ ARTWORK API ------------------------------ */
 
+static int
+artwork_get_groupinfo(struct evbuffer *evbuf, struct group_info *gri, int max_w, int max_h)
+{
+  int format;
+  int cached;
+  char artwork_path[PATH_MAX];
+  int i;
+  enum artwork_cache cache_result;
+  int ret;
+
+  ret = cache_artwork_get(CACHE_ARTWORK_GROUP, gri->persistentid, max_w, max_h, &cached, &format, evbuf);
+  if (ret < 0)
+    return -1;
+
+  if (cached)
+    {
+      if (!format)
+	return ART_E_ABORT;
+
+      return format;
+    }
+
+  cache_result = ON_FAILURE;
+
+  for (i = 0; artwork_group_source[i].handler; i++)
+    {
+      if ((artwork_group_source[i].group_types & gri->type) == 0)
+	continue;
+
+      // If just one handler says we should not cache a negative result then we obey that
+      if ((artwork_group_source[i].cache & ON_FAILURE) == 0)
+	cache_result = NEVER;
+
+      DPRINTF(E_SPAM, L_ART, "Checking item source '%s'\n", artwork_item_source[i].name);
+
+      ret = artwork_group_source[i].handler(evbuf, artwork_path, gri, max_w, max_h);
+
+      if (ret > 0)
+        {
+	  DPRINTF(E_DBG, L_ART, "Artwork for '%s' found in source '%s'\n", gri->itemname, artwork_group_source[i].name);
+	  cache_result = (artwork_group_source[i].cache & ON_SUCCESS);
+	  break;
+	}
+      else if (ret == ART_E_ABORT)
+        {
+	  DPRINTF(E_DBG, L_ART, "Source '%s' stopped search for artwork for '%s'\n", artwork_group_source[i].name, gri->itemname);
+	  cache_result = NEVER;
+	  break;
+	}
+      else if (ret == ART_E_ERROR)
+        {
+	  DPRINTF(E_LOG, L_ART, "Source '%s' returned an error for '%s'\n", artwork_group_source[i].name, gri->itemname);
+	  cache_result = NEVER;
+	}
+    }
+
+  if (ret > 0)
+    {
+      if (cache_result == ON_SUCCESS)
+	cache_artwork_add(CACHE_ARTWORK_GROUP, gri->persistentid, max_w, max_h, ret, artwork_path, evbuf);
+    }
+  else
+    {
+      DPRINTF(E_DBG, L_ART, "No artwork found for group %d\n", gri->id);
+
+      if (cache_result == ON_FAILURE)
+        cache_artwork_add(CACHE_ARTWORK_GROUP, gri->persistentid, max_w, max_h, 0, "", evbuf);
+    }
+
+  return ret;
+}
+
 int
 artwork_get_item(struct evbuffer *evbuf, int id, int max_w, int max_h)
 {
-  struct artwork_ctx ctx;
-  char filter[32];
+  bool individual;
+  int format;
+  int cached;
+  char artwork_path[PATH_MAX];
+  struct media_file_info *mfi;
+  struct group_info *gri;
+  int i;
+  enum artwork_cache cache_result;
   int ret;
 
-  DPRINTF(E_DBG, L_ART, "Artwork request for item %d\n", id);
+  DPRINTF(E_DBG, L_ART, "Artwork request for item %d (w=%d, h=%d)\n", id, max_w, max_h);
 
   if (id == DB_MEDIA_FILE_NON_PERSISTENT_ID)
-    return  -1;
+    return -1;
 
-  memset(&ctx, 0, sizeof(struct artwork_ctx));
+  individual = cfg_getbool(cfg_getsec(cfg, "library"), "artwork_individual");
 
-  ctx.qp.type = Q_ITEMS;
-  ctx.qp.filter = filter;
-  ctx.evbuf = evbuf;
-  ctx.max_w = max_w;
-  ctx.max_h = max_h;
-  ctx.cache = ON_FAILURE;
-  ctx.individual = cfg_getbool(cfg_getsec(cfg, "library"), "artwork_individual");
+  mfi = db_file_fetch_byid(id);
+  if (!mfi)
+    return -1;
 
-  ret = db_snprintf(filter, sizeof(filter), "id = %d", id);
+  if (!individual)
+    {
+      gri = db_group_fetch_bypersistentid(mfi->songalbumid);
+      if (!gri)
+        return -1;
+
+      ret = artwork_get_groupinfo(evbuf, gri, max_w, max_h);
+
+      free_gri(gri, 0);
+
+      if (ret > 0)
+	goto out;
+    }
+
+  ret = cache_artwork_get(CACHE_ARTWORK_INDIVIDUAL, id, max_w, max_h, &cached, &format, evbuf);
   if (ret < 0)
+    goto out;
+
+  if (cached)
     {
-      DPRINTF(E_LOG, L_ART, "Could not build filter for file id %d; no artwork will be sent\n", id);
-      return -1;
+      if (!format)
+	ret = ART_E_ABORT;
+      else
+	ret = format;
+
+      goto out;
     }
 
-  // Note: process_items will set ctx.persistentid for the following process_group()
-  // - and do nothing else if artwork_individual is not configured by user
-  ret = process_items(&ctx, 1);
+  cache_result = ON_FAILURE;
+
+  for (i = 0; artwork_item_source[i].handler; i++)
+    {
+      if ((artwork_item_source[i].data_kinds & (1 << mfi->data_kind)) == 0)
+	continue;
+
+      // If just one handler says we should not cache a negative result then we obey that
+      if ((artwork_item_source[i].cache & ON_FAILURE) == 0)
+	cache_result = NEVER;
+
+      DPRINTF(E_SPAM, L_ART, "Checking item source '%s'\n", artwork_item_source[i].name);
+
+      ret = artwork_item_source[i].handler(evbuf, artwork_path, mfi, max_w, max_h);
+
+      if (ret > 0)
+        {
+	  DPRINTF(E_DBG, L_ART, "Artwork for '%s' found in source '%s'\n", mfi->title, artwork_item_source[i].name);
+	  cache_result = (artwork_item_source[i].cache & ON_SUCCESS);
+	  break;
+	}
+      else if (ret == ART_E_ABORT)
+        {
+	  DPRINTF(E_DBG, L_ART, "Source '%s' stopped search for artwork for '%s'\n", artwork_item_source[i].name, mfi->title);
+	  cache_result = NEVER;
+	  break;
+	}
+      else if (ret == ART_E_ERROR)
+        {
+	  DPRINTF(E_LOG, L_ART, "Source '%s' returned an error for '%s'\n", artwork_item_source[i].name, mfi->title);
+	  cache_result = NEVER;
+	}
+    }
+
   if (ret > 0)
     {
-      if (ctx.cache == ON_SUCCESS)
-	cache_artwork_add(CACHE_ARTWORK_INDIVIDUAL, id, max_w, max_h, ret, ctx.path, evbuf);
-
-      return ret;
+      if (cache_result == ON_SUCCESS)
+	cache_artwork_add(CACHE_ARTWORK_INDIVIDUAL, id, max_w, max_h, ret, artwork_path, evbuf);
     }
-
-  ctx.qp.type = Q_GROUP_ITEMS;
-  ctx.qp.persistentid = ctx.persistentid;
-
-  ret = process_group(&ctx);
-  if (ret > 0)
+  else
     {
-      if (ctx.cache == ON_SUCCESS)
-	cache_artwork_add(CACHE_ARTWORK_GROUP, ctx.persistentid, max_w, max_h, ret, ctx.path, evbuf);
+      DPRINTF(E_DBG, L_ART, "No artwork found for item %d\n", id);
 
-      return ret;
+      if (cache_result == ON_FAILURE)
+        cache_artwork_add(CACHE_ARTWORK_INDIVIDUAL, id, max_w, max_h, 0, "", evbuf);
     }
 
-  DPRINTF(E_DBG, L_ART, "No artwork found for item %d\n", id);
-
-  if (ctx.cache == ON_FAILURE)
-    cache_artwork_add(CACHE_ARTWORK_GROUP, ctx.persistentid, max_w, max_h, 0, "", evbuf);
-
-  return -1;
+ out:
+  free_mfi(mfi, 0);
+  return ret;
 }
 
 int
 artwork_get_group(struct evbuffer *evbuf, int id, int max_w, int max_h)
 {
-  struct artwork_ctx ctx;
+  struct group_info *gri;
   int ret;
 
-  DPRINTF(E_DBG, L_ART, "Artwork request for group %d\n", id);
+  DPRINTF(E_DBG, L_ART, "Artwork request for group %d (w=%d, h=%d)\n", id, max_w, max_h);
 
-  memset(&ctx, 0, sizeof(struct artwork_ctx));
+  if (id <= 0)
+    return -1;
 
-  /* Get the persistent id for the given group id */
-  ret = db_group_persistentid_byid(id, &ctx.persistentid);
-  if (ret < 0)
+  gri = db_group_fetch_byid(id);
+  if (!gri)
+    return -1;
+
+  ret = artwork_get_groupinfo(evbuf, gri, max_w, max_h);
+
+  free_gri(gri, 0);
+  return ret;
+}
+
+int
+artwork_get_queueitem(struct evbuffer *evbuf, int id, int max_w, int max_h)
+{
+  char artwork_path[PATH_MAX];
+  struct db_queue_item *queue_item;
+  int i;
+  int ret;
+
+  DPRINTF(E_DBG, L_ART, "Artwork request for queue item %d (w=%d, h=%d)\n", id, max_w, max_h);
+
+
+  queue_item = db_queue_fetch_byitemid(id);
+  if (!queue_item)
+    return -1;
+
+  if (queue_item->file_id != DB_MEDIA_FILE_NON_PERSISTENT_ID)
     {
-      DPRINTF(E_LOG, L_ART, "Error fetching persistent id for group id %d\n", id);
-      return -1;
+      ret = artwork_get_item(evbuf, queue_item->file_id, max_w, max_h);
+
+      if (ret > 0)
+	goto out;
     }
 
-  ctx.qp.type = Q_GROUP_ITEMS;
-  ctx.qp.persistentid = ctx.persistentid;
-  ctx.evbuf = evbuf;
-  ctx.max_w = max_w;
-  ctx.max_h = max_h;
-  ctx.cache = ON_FAILURE;
-  ctx.individual = cfg_getbool(cfg_getsec(cfg, "library"), "artwork_individual");
+  ret = ART_E_NONE;
 
-  ret = process_group(&ctx);
-  if (ret > 0)
+  for (i = 0; artwork_queue_item_source[i].handler; i++)
     {
-      if (ctx.cache == ON_SUCCESS)
-	cache_artwork_add(CACHE_ARTWORK_GROUP, ctx.persistentid, max_w, max_h, ret, ctx.path, evbuf);
+      if ((artwork_queue_item_source[i].data_kinds & (1 << queue_item->data_kind)) == 0)
+	continue;
 
-      return ret;
+      DPRINTF(E_SPAM, L_ART, "Checking queue item source '%s'\n", artwork_queue_item_source[i].name);
+
+      ret = artwork_queue_item_source[i].handler(evbuf, artwork_path, queue_item, max_w, max_h);
+
+      if (ret > 0)
+        {
+	  DPRINTF(E_DBG, L_ART, "Artwork for '%s' found in source '%s'\n", queue_item->title, artwork_queue_item_source[i].name);
+	  break;
+	}
+      else if (ret == ART_E_ABORT)
+        {
+	  DPRINTF(E_DBG, L_ART, "Source '%s' stopped search for artwork for '%s'\n", artwork_queue_item_source[i].name, queue_item->title);
+	  break;
+	}
+      else if (ret == ART_E_ERROR)
+        {
+	  DPRINTF(E_LOG, L_ART, "Source '%s' returned an error for '%s'\n", artwork_queue_item_source[i].name, queue_item->title);
+	}
     }
 
-  DPRINTF(E_DBG, L_ART, "No artwork found for group %d\n", id);
-
-  if (ctx.cache == ON_FAILURE)
-    cache_artwork_add(CACHE_ARTWORK_GROUP, ctx.persistentid, max_w, max_h, 0, "", evbuf);
-
-  return -1;
+ out:
+  free_queue_item(queue_item, 0);
+  return ret;
 }
 
 /* Checks if the file is an artwork file */
@@ -1309,3 +1391,5 @@ artwork_file_is_artwork(const char *filename)
 
   return 0;
 }
+
+
