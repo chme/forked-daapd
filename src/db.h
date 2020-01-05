@@ -223,6 +223,9 @@ struct media_file_info {
   char *album_sort;
   char *album_artist_sort;
   char *composer_sort;
+
+  char *source;
+  char *library_directory;
 };
 
 #define mfi_offsetof(field) offsetof(struct media_file_info, field)
@@ -258,6 +261,8 @@ struct playlist_info {
   uint32_t query_limit;  /* limit, used by e.g. smart playlists */
   uint32_t media_kind;
   char *artwork_url;     /* optional artwork */
+  char *source;
+  char *library_directory;
   uint32_t items;        /* number of items (mimc) */
   uint32_t streams;      /* number of internet streams */
 };
@@ -281,6 +286,8 @@ struct db_playlist_info {
   char *query_limit;
   char *media_kind;
   char *artwork_url;
+  char *source;
+  char *library_directory;
   char *items;
   char *streams;
 };
@@ -393,6 +400,8 @@ struct db_media_file_info {
   char *album_artist_sort;
   char *composer_sort;
   char *channels;
+  char *source;
+  char *library_directory;
 };
 
 #define dbmfi_offsetof(field) offsetof(struct db_media_file_info, field)
@@ -441,6 +450,8 @@ struct directory_info {
   uint32_t db_timestamp;
   int64_t disabled;
   uint32_t parent_id;
+  char *source;
+  char *library_directory;
 };
 
 struct directory_enum {

@@ -96,7 +96,9 @@
   "   album_sort         VARCHAR(1024) DEFAULT NULL COLLATE DAAP,"	\
   "   album_artist_sort  VARCHAR(1024) DEFAULT NULL COLLATE DAAP,"	\
   "   composer_sort      VARCHAR(1024) DEFAULT NULL COLLATE DAAP,"	\
-  "   channels           INTEGER DEFAULT 0"		\
+  "   channels           INTEGER DEFAULT 0,"	\
+  "   source             VARCHAR(255),"			\
+  "   library_directory  VARCHAR(255)"			\
   ");"
 
 #define T_PL					\
@@ -116,7 +118,9 @@
   "   query_order    VARCHAR(1024),"			\
   "   query_limit    INTEGER DEFAULT 0,"		\
   "   media_kind     INTEGER DEFAULT 1,"		\
-  "   artwork_url    VARCHAR(4096) DEFAULT NULL"	\
+  "   artwork_url    VARCHAR(4096) DEFAULT NULL,"	\
+  "   source             VARCHAR(255),"			\
+  "   library_directory  VARCHAR(255)"			\
   ");"
 
 #define T_PLITEMS				\
@@ -165,7 +169,9 @@
   "   db_timestamp        INTEGER DEFAULT 0,"			\
   "   disabled            INTEGER DEFAULT 0,"			\
   "   parent_id           INTEGER DEFAULT 0,"			\
-  "   path                VARCHAR(4096) DEFAULT NULL"		\
+  "   path                VARCHAR(4096) DEFAULT NULL,"		\
+  "   source              VARCHAR(255),"			\
+  "   library_directory   VARCHAR(255)"				\
   ");"
 
 #define T_QUEUE								\

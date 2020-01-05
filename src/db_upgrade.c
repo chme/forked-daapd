@@ -1161,6 +1161,36 @@ static const struct db_upgrade_query db_upgrade_v2106_queries[] =
   };
 
 
+/* ---------------------------- 21.06 -> 21.07 ------------------------------ */
+
+#define U_v2107_ALTER_FILES_ADD_SOURCE \
+  "ALTER TABLE files ADD COLUMN source VARCHAR(255);"
+#define U_v2107_ALTER_FILES_ADD_LIBRARY_DIR \
+  "ALTER TABLE files ADD COLUMN library_directory VARCHAR(255);"
+#define U_v2107_ALTER_PLAYLISTS_ADD_SOURCE \
+  "ALTER TABLE playlists ADD COLUMN source VARCHAR(255);"
+#define U_v2107_ALTER_PLAYLISTS_ADD_LIBRARY_DIR \
+  "ALTER TABLE playlists ADD COLUMN library_directory VARCHAR(255);"
+#define U_v2107_ALTER_DIR_ADD_SOURCE \
+  "ALTER TABLE directories ADD COLUMN source VARCHAR(255);"
+#define U_v2107_ALTER_DIR_ADD_LIBRARY_DIR \
+  "ALTER TABLE directories ADD COLUMN library_directory VARCHAR(255);"
+
+#define U_v2107_SCVER_MINOR                    \
+  "UPDATE admin SET value = '07' WHERE key = 'schema_version_minor';"
+
+static const struct db_upgrade_query db_upgrade_v2107_queries[] =
+  {
+    { U_v2107_ALTER_FILES_ADD_SOURCE, "alter table files add column source" },
+    { U_v2107_ALTER_FILES_ADD_LIBRARY_DIR, "alter table files add column library_directory" },
+    { U_v2107_ALTER_PLAYLISTS_ADD_SOURCE, "alter table playlists add column source" },
+    { U_v2107_ALTER_PLAYLISTS_ADD_LIBRARY_DIR, "alter table playlists add column library_directory" },
+    { U_v2107_ALTER_DIR_ADD_SOURCE, "alter table directories add column source" },
+    { U_v2107_ALTER_DIR_ADD_LIBRARY_DIR, "alter table directories add column library_directory" },
+
+    { U_v2107_SCVER_MINOR,    "set schema_version_minor to 07" },
+  };
+
 /* -------------------------- Main upgrade handler -------------------------- */
 
 int
@@ -1354,6 +1384,13 @@ db_upgrade(sqlite3 *hdl, int db_ver)
 	return -1;
 
       ret = db_generic_upgrade(hdl, db_upgrade_v2106_queries, ARRAY_SIZE(db_upgrade_v2106_queries));
+      if (ret < 0)
+	return -1;
+
+      /* FALLTHROUGH */
+
+    case 2106:
+      ret = db_generic_upgrade(hdl, db_upgrade_v2107_queries, ARRAY_SIZE(db_upgrade_v2107_queries));
       if (ret < 0)
 	return -1;
 

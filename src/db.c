@@ -227,6 +227,8 @@ static const struct col_type_map mfi_cols_map[] =
     { "album_artist_sort",  mfi_offsetof(album_artist_sort),  DB_TYPE_STRING, DB_FIXUP_ALBUM_ARTIST_SORT },
     { "composer_sort",      mfi_offsetof(composer_sort),      DB_TYPE_STRING, DB_FIXUP_COMPOSER_SORT },
     { "channels",           mfi_offsetof(channels),           DB_TYPE_INT },
+    { "source",             mfi_offsetof(source),             DB_TYPE_STRING },
+    { "library_directory",  mfi_offsetof(library_directory),  DB_TYPE_STRING },
   };
 
 /* This list must be kept in sync with
@@ -251,6 +253,8 @@ static const struct col_type_map pli_cols_map[] =
     { "query_limit",        pli_offsetof(query_limit),        DB_TYPE_INT },
     { "media_kind",         pli_offsetof(media_kind),         DB_TYPE_INT,    DB_FIXUP_MEDIA_KIND },
     { "artwork_url",        pli_offsetof(artwork_url),        DB_TYPE_STRING, DB_FIXUP_NO_SANITIZE },
+    { "source",             pli_offsetof(source),             DB_TYPE_STRING },
+    { "library_directory",  pli_offsetof(library_directory),  DB_TYPE_STRING },
 
     // Not in the database, but returned via the query's COUNT()/SUM()
     { "items",              pli_offsetof(items),              DB_TYPE_INT,    DB_FIXUP_STANDARD, DB_FLAG_NO_BIND },
@@ -365,6 +369,8 @@ static const ssize_t dbmfi_cols_map[] =
     dbmfi_offsetof(album_artist_sort),
     dbmfi_offsetof(composer_sort),
     dbmfi_offsetof(channels),
+    dbmfi_offsetof(source),
+    dbmfi_offsetof(library_directory),
   };
 
 /* This list must be kept in sync with
@@ -389,6 +395,8 @@ static const ssize_t dbpli_cols_map[] =
     dbpli_offsetof(query_limit),
     dbpli_offsetof(media_kind),
     dbpli_offsetof(artwork_url),
+    dbpli_offsetof(source),
+    dbpli_offsetof(library_directory),
 
     dbpli_offsetof(items),
     dbpli_offsetof(streams),
@@ -4134,6 +4142,8 @@ db_directory_enum_fetch(struct directory_enum *de, struct directory_info *di)
   di->disabled = sqlite3_column_int64(de->stmt, 3);
   di->parent_id = sqlite3_column_int(de->stmt, 4);
   di->path = (char *)sqlite3_column_text(de->stmt, 5);
+  di->source = (char *)sqlite3_column_text(de->stmt, 6);
+  di->library_directory = (char *)sqlite3_column_text(de->stmt, 7);
 
   return 0;
 }
@@ -4152,7 +4162,7 @@ static int
 db_directory_add(struct directory_info *di, int *id)
 {
 #define QADD_TMPL "INSERT INTO directories (virtual_path, db_timestamp, disabled, parent_id, path)" \
-                  " VALUES (TRIM(%Q), %d, %" PRIi64 ", %d, TRIM(%Q));"
+                  " VALUES (TRIM(%Q), %d, %" PRIi64 ", %d, TRIM(%Q), TRIM(%Q));"
 
   char *query;
   char *errmsg;
@@ -4167,7 +4177,7 @@ db_directory_add(struct directory_info *di, int *id)
       DPRINTF(E_LOG, L_DB, "Directory name ends with space: '%s'\n", di->virtual_path);
     }
 
-  query = sqlite3_mprintf(QADD_TMPL, di->virtual_path, di->db_timestamp, di->disabled, di->parent_id, di->path);
+  query = sqlite3_mprintf(QADD_TMPL, di->virtual_path, di->db_timestamp, di->disabled, di->parent_id, di->path, di->source, di->library_directory);
 
   if (!query)
     {
@@ -4206,14 +4216,14 @@ db_directory_add(struct directory_info *di, int *id)
 static int
 db_directory_update(struct directory_info *di)
 {
-#define QADD_TMPL "UPDATE directories SET virtual_path = TRIM(%Q), db_timestamp = %d, disabled = %" PRIi64 ", parent_id = %d, path = TRIM(%Q)" \
+#define QADD_TMPL "UPDATE directories SET virtual_path = TRIM(%Q), db_timestamp = %d, disabled = %" PRIi64 ", parent_id = %d, path = TRIM(%Q), source = TRIM(%Q), library_directory = TRIM(%Q)" \
                   " WHERE id = %d;"
   char *query;
   char *errmsg;
   int ret;
 
   /* Add */
-  query = sqlite3_mprintf(QADD_TMPL, di->virtual_path, di->db_timestamp, di->disabled, di->parent_id, di->path, di->id);
+  query = sqlite3_mprintf(QADD_TMPL, di->virtual_path, di->db_timestamp, di->disabled, di->parent_id, di->path, di->source, di->library_directory, di->id);
 
   if (!query)
     {
