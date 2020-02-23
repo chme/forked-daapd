@@ -248,7 +248,7 @@ static const struct col_type_map pli_cols_map[] =
  */
 static const struct col_type_map gri_cols_map[] =
   {
-    { "id",                 gri_offsetof(id),                DB_TYPE_INT,    DB_FIXUP_STANDARD, DB_FLAG_AUTO },
+    { "id",                 gri_offsetof(id),                DB_TYPE_INT,    DB_FIXUP_STANDARD, DB_FLAG_NO_BIND },
     { "persistentid",       gri_offsetof(persistentid),      DB_TYPE_INT64 },
     { "itemname",           gri_offsetof(itemname),          DB_TYPE_STRING },
     { "itemname_sort",      gri_offsetof(itemname_sort),     DB_TYPE_STRING },
