@@ -2,7 +2,7 @@ name: MacOS
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, web-makefile2 ]
   pull_request:
     branches: [ master ]
 
