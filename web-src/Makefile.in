@@ -40,7 +40,7 @@ web_src := \
 	$(web_conf)
 package_json_src := \
 	package.json \
-	package-lock.json
+	npm-shrinkwrap.json
 @COND_WEBINTERFACE_TRUE@htdocs_src_dir := \
 @COND_WEBINTERFACE_TRUE@	htdocs
 
@@ -253,9 +253,13 @@ serve: node_modules
 # after changes to `package.json` or `package-lock.json`, and instructs `make` 
 # on how to install modules to get back up-to-date.
 node_modules: $(package_json_src)
-@COND_WEBINTERFACE_TRUE@	$(if $(NPM),$(NPM) install)
+	if test -w $(srcdir); then \
+		$(if $(NPM),$(NPM) install --prefix $(srcdir)); \
+	fi;
 
 htdocs: node_modules $(web_src)
-@COND_WEBINTERFACE_TRUE@	$(if $(NPM),$(NPM) run build)
+	if test -w $(srcdir); then \
+		$(if $(NPM),$(NPM) run build --prefix $(srcdir)); \
+	fi;
 
 
