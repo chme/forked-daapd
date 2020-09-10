@@ -1,0 +1,4781 @@
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      <link rel="shortcut icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-5.5.12">
+    
+    
+      
+        <title>JSON API - forked-daapd</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.4dd2dd8d.min.css">
+      
+      
+    
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#forked-daapd-api-endpoint-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href=".." title="forked-daapd" class="md-header-nav__button md-logo" aria-label="forked-daapd">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            forked-daapd
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              JSON API
+            
+          </span>
+        </div>
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active">
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+        
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="forked-daapd" class="md-nav__button md-logo" aria-label="forked-daapd">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    forked-daapd
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href=".." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        JSON API
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+    
+    <a href="./" title="JSON API" class="md-nav__link md-nav__link--active">
+      JSON API
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#player" class="md-nav__link">
+    Player
+  </a>
+  
+    <nav class="md-nav" aria-label="Player">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-player-status" class="md-nav__link">
+    Get player status
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#control-playback" class="md-nav__link">
+    Control playback
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skip-tracks" class="md-nav__link">
+    Skip tracks
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-shuffle-mode" class="md-nav__link">
+    Set shuffle mode
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-consume-mode" class="md-nav__link">
+    Set consume mode
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-repeat-mode" class="md-nav__link">
+    Set repeat mode
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-volume" class="md-nav__link">
+    Set volume
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#seek" class="md-nav__link">
+    Seek
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs-speakers" class="md-nav__link">
+    Outputs / Speakers
+  </a>
+  
+    <nav class="md-nav" aria-label="Outputs / Speakers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-a-list-of-available-outputs" class="md-nav__link">
+    Get a list of available outputs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-enabled-outputs" class="md-nav__link">
+    Set enabled outputs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-an-output" class="md-nav__link">
+    Get an output
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-an-output" class="md-nav__link">
+    Change an output
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#toggle-an-output" class="md-nav__link">
+    Toggle an output
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#queue" class="md-nav__link">
+    Queue
+  </a>
+  
+    <nav class="md-nav" aria-label="Queue">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-queue-items" class="md-nav__link">
+    List queue items
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clearing-the-queue" class="md-nav__link">
+    Clearing the queue
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-items-to-the-queue" class="md-nav__link">
+    Adding items to the queue
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#moving-a-queue-item" class="md-nav__link">
+    Moving a queue item
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removing-a-queue-item" class="md-nav__link">
+    Removing a queue item
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#library" class="md-nav__link">
+    Library
+  </a>
+  
+    <nav class="md-nav" aria-label="Library">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#library-information" class="md-nav__link">
+    Library information
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-playlists" class="md-nav__link">
+    List playlists
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-a-playlist" class="md-nav__link">
+    Get a playlist
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-playlist-tracks" class="md-nav__link">
+    List playlist tracks
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-artists" class="md-nav__link">
+    List artists
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-an-artist" class="md-nav__link">
+    Get an artist
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-artist-albums" class="md-nav__link">
+    List artist albums
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-albums" class="md-nav__link">
+    List albums
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-an-album" class="md-nav__link">
+    Get an album
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-album-tracks" class="md-nav__link">
+    List album tracks
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-a-track" class="md-nav__link">
+    Get a track
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-track-properties" class="md-nav__link">
+    Update track properties
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-genres" class="md-nav__link">
+    List genres
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-albums-for-genre" class="md-nav__link">
+    List albums for genre
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-count-of-tracks-artists-and-albums" class="md-nav__link">
+    Get count of tracks, artists and albums
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-local-directories" class="md-nav__link">
+    List local directories
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trigger-rescan" class="md-nav__link">
+    Trigger rescan
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trigger-metadata-rescan" class="md-nav__link">
+    Trigger metadata rescan
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#search" class="md-nav__link">
+    Search
+  </a>
+  
+    <nav class="md-nav" aria-label="Search">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#search-by-search-term" class="md-nav__link">
+    Search by search term
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-by-query-language" class="md-nav__link">
+    Search by query language
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#server-info" class="md-nav__link">
+    Server info
+  </a>
+  
+    <nav class="md-nav" aria-label="Server info">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#config" class="md-nav__link">
+    Config
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    Settings
+  </a>
+  
+    <nav class="md-nav" aria-label="Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-categories" class="md-nav__link">
+    List categories
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-a-category" class="md-nav__link">
+    Get a category
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-a-option" class="md-nav__link">
+    Get a option
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-a-option-value" class="md-nav__link">
+    Change a option value
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#push-notifications" class="md-nav__link">
+    Push notifications
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#object-model" class="md-nav__link">
+    Object model
+  </a>
+  
+    <nav class="md-nav" aria-label="Object model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#queue-item-object" class="md-nav__link">
+    queue item object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#playlist-object" class="md-nav__link">
+    playlist object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#artist-object" class="md-nav__link">
+    artist object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#album-object" class="md-nav__link">
+    album object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#track-object" class="md-nav__link">
+    track object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#paging-object" class="md-nav__link">
+    paging object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genre-object" class="md-nav__link">
+    genre object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#directory-object" class="md-nav__link">
+    directory object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#category-object" class="md-nav__link">
+    category object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-object" class="md-nav__link">
+    option object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#artwork-urls" class="md-nav__link">
+    Artwork urls
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../README_PLAYER_WEBINTERFACE/" title="WEBINTERFACE" class="md-nav__link">
+      WEBINTERFACE
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../README_SMARTPL/" title="SMARTPL" class="md-nav__link">
+      SMARTPL
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../README_ALSA/" title="ALSA" class="md-nav__link">
+      ALSA
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../README_PULSE/" title="PULSE" class="md-nav__link">
+      PULSE
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../cheat-sheet/" title="Specimen" class="md-nav__link">
+      Specimen
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#player" class="md-nav__link">
+    Player
+  </a>
+  
+    <nav class="md-nav" aria-label="Player">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-player-status" class="md-nav__link">
+    Get player status
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#control-playback" class="md-nav__link">
+    Control playback
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skip-tracks" class="md-nav__link">
+    Skip tracks
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-shuffle-mode" class="md-nav__link">
+    Set shuffle mode
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-consume-mode" class="md-nav__link">
+    Set consume mode
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-repeat-mode" class="md-nav__link">
+    Set repeat mode
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-volume" class="md-nav__link">
+    Set volume
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#seek" class="md-nav__link">
+    Seek
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs-speakers" class="md-nav__link">
+    Outputs / Speakers
+  </a>
+  
+    <nav class="md-nav" aria-label="Outputs / Speakers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get-a-list-of-available-outputs" class="md-nav__link">
+    Get a list of available outputs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#set-enabled-outputs" class="md-nav__link">
+    Set enabled outputs
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-an-output" class="md-nav__link">
+    Get an output
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-an-output" class="md-nav__link">
+    Change an output
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#toggle-an-output" class="md-nav__link">
+    Toggle an output
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#queue" class="md-nav__link">
+    Queue
+  </a>
+  
+    <nav class="md-nav" aria-label="Queue">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-queue-items" class="md-nav__link">
+    List queue items
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#clearing-the-queue" class="md-nav__link">
+    Clearing the queue
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-items-to-the-queue" class="md-nav__link">
+    Adding items to the queue
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#moving-a-queue-item" class="md-nav__link">
+    Moving a queue item
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removing-a-queue-item" class="md-nav__link">
+    Removing a queue item
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#library" class="md-nav__link">
+    Library
+  </a>
+  
+    <nav class="md-nav" aria-label="Library">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#library-information" class="md-nav__link">
+    Library information
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-playlists" class="md-nav__link">
+    List playlists
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-a-playlist" class="md-nav__link">
+    Get a playlist
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-playlist-tracks" class="md-nav__link">
+    List playlist tracks
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-artists" class="md-nav__link">
+    List artists
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-an-artist" class="md-nav__link">
+    Get an artist
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-artist-albums" class="md-nav__link">
+    List artist albums
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-albums" class="md-nav__link">
+    List albums
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-an-album" class="md-nav__link">
+    Get an album
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-album-tracks" class="md-nav__link">
+    List album tracks
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-a-track" class="md-nav__link">
+    Get a track
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update-track-properties" class="md-nav__link">
+    Update track properties
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-genres" class="md-nav__link">
+    List genres
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-albums-for-genre" class="md-nav__link">
+    List albums for genre
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-count-of-tracks-artists-and-albums" class="md-nav__link">
+    Get count of tracks, artists and albums
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#list-local-directories" class="md-nav__link">
+    List local directories
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trigger-rescan" class="md-nav__link">
+    Trigger rescan
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trigger-metadata-rescan" class="md-nav__link">
+    Trigger metadata rescan
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#search" class="md-nav__link">
+    Search
+  </a>
+  
+    <nav class="md-nav" aria-label="Search">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#search-by-search-term" class="md-nav__link">
+    Search by search term
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-by-query-language" class="md-nav__link">
+    Search by query language
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#server-info" class="md-nav__link">
+    Server info
+  </a>
+  
+    <nav class="md-nav" aria-label="Server info">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#config" class="md-nav__link">
+    Config
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    Settings
+  </a>
+  
+    <nav class="md-nav" aria-label="Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-categories" class="md-nav__link">
+    List categories
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-a-category" class="md-nav__link">
+    Get a category
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get-a-option" class="md-nav__link">
+    Get a option
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-a-option-value" class="md-nav__link">
+    Change a option value
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#push-notifications" class="md-nav__link">
+    Push notifications
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#object-model" class="md-nav__link">
+    Object model
+  </a>
+  
+    <nav class="md-nav" aria-label="Object model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#queue-item-object" class="md-nav__link">
+    queue item object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#playlist-object" class="md-nav__link">
+    playlist object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#artist-object" class="md-nav__link">
+    artist object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#album-object" class="md-nav__link">
+    album object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#track-object" class="md-nav__link">
+    track object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#paging-object" class="md-nav__link">
+    paging object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#genre-object" class="md-nav__link">
+    genre object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#directory-object" class="md-nav__link">
+    directory object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#category-object" class="md-nav__link">
+    category object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-object" class="md-nav__link">
+    option object
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#artwork-urls" class="md-nav__link">
+    Artwork urls
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                  
+                
+                
+                <h1 id="forked-daapd-api-endpoint-reference">forked-daapd API Endpoint Reference</h1>
+<p>Available API endpoints:</p>
+<ul>
+<li><a href="#player">Player</a>: control playback, volume, shuffle/repeat modes</li>
+<li><a href="#outputs--speakers">Outputs / Speakers</a>: list available outputs and enable/disable outputs</li>
+<li><a href="#queue">Queue</a>: list, add or modify the current queue</li>
+<li><a href="#library">Library</a>: list playlists, artists, albums and tracks from your library or trigger library rescan</li>
+<li><a href="#search">Search</a>: search for playlists, artists, albums and tracks</li>
+<li><a href="#server-info">Server info</a>: get server information</li>
+<li><a href="#settings">Settings</a>: list and change settings for the player web interface</li>
+<li><a href="#push-notifications">Push notifications</a>: receive push notifications</li>
+</ul>
+<p>JSON-Object model:</p>
+<ul>
+<li><a href="#queue-item-object">Queue item</a></li>
+<li><a href="#playlist-object">Playlist</a></li>
+<li><a href="#artist-object">Artist</a></li>
+<li><a href="#album-object">Album</a></li>
+<li><a href="#track-object">Track</a></li>
+</ul>
+<h2 id="player">Player</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><a href="#get-player-status">/api/player</a></td>
+<td>Get player status</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#control-playback">/api/player/play, /api/player/pause, /api/player/stop, /api/player/toggle</a></td>
+<td>Start, pause or stop playback</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#skip-tracks">/api/player/next, /api/player/previous</a></td>
+<td>Skip forward or backward</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#set-shuffle-mode">/api/player/shuffle</a></td>
+<td>Set shuffle mode</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#set-consume-mode">/api/player/consume</a></td>
+<td>Set consume mode</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#set-repeat-mode">/api/player/repeat</a></td>
+<td>Set repeat mode</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#set-volume">/api/player/volume</a></td>
+<td>Set master volume or volume for a specific output</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#seek">/api/player/seek</a></td>
+<td>Seek to a position in the currently playing track</td>
+</tr>
+</tbody>
+</table>
+<h3 id="get-player-status">Get player status</h3>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/player</span>
+</code></pre></div>
+
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>state</td>
+<td>string</td>
+<td><code>play</code>, <code>pause</code> or <code>stop</code></td>
+</tr>
+<tr>
+<td>repeat</td>
+<td>string</td>
+<td><code>off</code>, <code>all</code> or <code>single</code></td>
+</tr>
+<tr>
+<td>consume</td>
+<td>boolean</td>
+<td><code>true</code> if consume mode is enabled</td>
+</tr>
+<tr>
+<td>shuffle</td>
+<td>boolean</td>
+<td><code>true</code> if shuffle mode is enabled</td>
+</tr>
+<tr>
+<td>volume</td>
+<td>integer</td>
+<td>Master volume in percent (0 - 100)</td>
+</tr>
+<tr>
+<td>item_id</td>
+<td>integer</td>
+<td>The current playing queue item <code>id</code></td>
+</tr>
+<tr>
+<td>item_length_ms</td>
+<td>integer</td>
+<td>Total length in milliseconds of the current queue item</td>
+</tr>
+<tr>
+<td>item_progress_ms</td>
+<td>integer</td>
+<td>Progress into the current queue item in milliseconds</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/player&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;state&quot;</span><span class="p">:</span> <span class="s2">&quot;pause&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;repeat&quot;</span><span class="p">:</span> <span class="s2">&quot;off&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;consume&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nt">&quot;shuffle&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nt">&quot;volume&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+  <span class="nt">&quot;item_id&quot;</span><span class="p">:</span> <span class="mi">269</span><span class="p">,</span>
+  <span class="nt">&quot;item_length_ms&quot;</span><span class="p">:</span> <span class="mi">278093</span><span class="p">,</span>
+  <span class="nt">&quot;item_progress_ms&quot;</span><span class="p">:</span> <span class="mi">3674</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="control-playback">Control playback</h3>
+<p>Start or resume, pause, stop playback.</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/play</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/pause</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/stop</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/toggle</span>
+</code></pre></div>
+
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/play&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/pause&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/stop&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/toggle&quot;</span>
+</code></pre></div>
+
+<h3 id="skip-tracks">Skip tracks</h3>
+<p>Skip forward or backward</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/next</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/previous</span>
+</code></pre></div>
+
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/next&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/previous&quot;</span>
+</code></pre></div>
+
+<h3 id="set-shuffle-mode">Set shuffle mode</h3>
+<p>Enable or disable shuffle mode</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/shuffle</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>state</td>
+<td>The new shuffle state, should be either <code>true</code> or <code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/shuffle?state=true&quot;</span>
+</code></pre></div>
+
+<h3 id="set-consume-mode">Set consume mode</h3>
+<p>Enable or disable consume mode</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/consume</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>state</td>
+<td>The new consume state, should be either <code>true</code> or <code>false</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/consume?state=true&quot;</span>
+</code></pre></div>
+
+<h3 id="set-repeat-mode">Set repeat mode</h3>
+<p>Change repeat mode</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/repeat</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>state</td>
+<td>The new repeat mode, should be either <code>off</code>, <code>all</code> or <code>single</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/repeat?state=all&quot;</span>
+</code></pre></div>
+
+<h3 id="set-volume">Set volume</h3>
+<p>Change master volume or volume of a specific output.</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/volume</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>volume</td>
+<td>The new volume (0 - 100)</td>
+</tr>
+<tr>
+<td>step</td>
+<td>The increase or decrease volume by the given amount (-100 - 100)</td>
+</tr>
+<tr>
+<td>output_id</td>
+<td><em>(Optional)</em> If an output id is given, only the volume of this output will be changed. If parameter is omited, the master volume will be changed.</td>
+</tr>
+</tbody>
+</table>
+<p>Either <code>volume</code> or <code>step</code> must be present as query parameter</p>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/volume?volume=50&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/volume?step=-5&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/volume?volume=50&amp;output_id=0&quot;</span>
+</code></pre></div>
+
+<h3 id="seek">Seek</h3>
+<p>Seek to a position in the currently playing track.</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/seek</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>position_ms</td>
+<td>The new position in milliseconds to seek to</td>
+</tr>
+<tr>
+<td>seek_ms</td>
+<td>A relative amount of milliseconds to seek to</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<p>Seek to position:</p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/seek?position_ms=2000&quot;</span>
+</code></pre></div>
+
+<p>Relative seeking (skip 30 seconds backwards):</p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/seek?seek_ms=-30000&quot;</span>
+</code></pre></div>
+
+<h2 id="outputs-speakers">Outputs / Speakers</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><a href="#get-a-list-of-available-outputs">/api/outputs</a></td>
+<td>Get a list of available outputs</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#set-enabled-outputs">/api/outputs/set</a></td>
+<td>Set enabled outputs</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#get-an-output">/api/outputs/{id}</a></td>
+<td>Get an output</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#change-an-output">/api/outputs/{id}</a></td>
+<td>Change an output (enable/disable or volume)</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#toggle-an-output">/api/outputs/{id}/toggle</a></td>
+<td>Enable or disable an output, depending on the current state</td>
+</tr>
+</tbody>
+</table>
+<h3 id="get-a-list-of-available-outputs">Get a list of available outputs</h3>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/outputs</span>
+</code></pre></div>
+
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>outputs</td>
+<td>array</td>
+<td>Array of <code>output</code> objects</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>output</code> object</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>string</td>
+<td>Output id</td>
+</tr>
+<tr>
+<td>name</td>
+<td>string</td>
+<td>Output name</td>
+</tr>
+<tr>
+<td>type</td>
+<td>string</td>
+<td>Type of the output: <code>AirPlay</code>, <code>Chromecast</code>, <code>ALSA</code>, <code>Pulseaudio</code>, <code>fifo</code></td>
+</tr>
+<tr>
+<td>selected</td>
+<td>boolean</td>
+<td><code>true</code> if output is enabled</td>
+</tr>
+<tr>
+<td>has_password</td>
+<td>boolean</td>
+<td><code>true</code> if output is password protected</td>
+</tr>
+<tr>
+<td>requires_auth</td>
+<td>boolean</td>
+<td><code>true</code> if output requires authentication</td>
+</tr>
+<tr>
+<td>needs_auth_key</td>
+<td>boolean</td>
+<td><code>true</code> if output requires an authorization key (device verification)</td>
+</tr>
+<tr>
+<td>volume</td>
+<td>integer</td>
+<td>Volume in percent (0 - 100)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/outputs&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;outputs&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;123456789012345&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;kitchen&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;AirPlay&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;selected&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+      <span class="nt">&quot;has_password&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nt">&quot;requires_auth&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nt">&quot;needs_auth_key&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nt">&quot;volume&quot;</span><span class="p">:</span> <span class="mi">0</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Computer&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;ALSA&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;selected&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+      <span class="nt">&quot;has_password&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nt">&quot;requires_auth&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nt">&quot;needs_auth_key&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nt">&quot;volume&quot;</span><span class="p">:</span> <span class="mi">19</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;100&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;daapd-fifo&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;fifo&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;selected&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nt">&quot;has_password&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nt">&quot;requires_auth&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nt">&quot;needs_auth_key&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nt">&quot;volume&quot;</span><span class="p">:</span> <span class="mi">0</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="set-enabled-outputs">Set enabled outputs</h3>
+<p>Set the enabled outputs by passing an array of output ids. forked-daapd enables all outputs
+with the given ids and disables the remaining outputs.</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/outputs/set</span>
+</code></pre></div>
+
+<p><strong>Body parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>outputs</td>
+<td>array</td>
+<td>Array of output ids</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/outputs/set&quot;</span> --data <span class="s2">&quot;{\&quot;outputs\&quot;:[\&quot;198018693182577\&quot;,\&quot;0\&quot;]}&quot;</span>
+</code></pre></div>
+
+<h3 id="get-an-output">Get an output</h3>
+<p>Get an output</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/outputs/{id}</span>
+</code></pre></div>
+
+<p><strong>Path parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Output id</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>200 OK</code> success status response code. With the response body holding the <strong><code>output</code> object</strong>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/outputs/0&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Computer&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;ALSA&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;selected&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nt">&quot;has_password&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nt">&quot;requires_auth&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nt">&quot;needs_auth_key&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nt">&quot;volume&quot;</span><span class="p">:</span> <span class="mi">3</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="change-an-output">Change an output</h3>
+<p>Enable or disable an output and change its volume.</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/outputs/{id}</span>
+</code></pre></div>
+
+<p><strong>Path parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Output id</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Body parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>selected</td>
+<td>boolean</td>
+<td><em>(Optional)</em> <code>true</code> to enable and <code>false</code> to disable the output</td>
+</tr>
+<tr>
+<td>volume</td>
+<td>integer</td>
+<td><em>(Optional)</em> Volume in percent (0 - 100)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/outputs/0&quot;</span> --data <span class="s2">&quot;{\&quot;selected\&quot;:true, \&quot;volume\&quot;: 50}&quot;</span>
+</code></pre></div>
+
+<h3 id="toggle-an-output">Toggle an output</h3>
+<p>Enable or disable an output, depending on its current state</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/outputs/{id}/toggle</span>
+</code></pre></div>
+
+<p><strong>Path parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Output id</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/outputs/0/toggle&quot;</span>
+</code></pre></div>
+
+<h2 id="queue">Queue</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><a href="#list-queue-items">/api/queue</a></td>
+<td>Get a list of queue items</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#clearing-the-queue">/api/queue/clear</a></td>
+<td>Remove all items from the queue</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><a href="#adding-items-to-the-queue">/api/queue/items/add</a></td>
+<td>Add items to the queue</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#moving-a-queue-item">/api/queue/items/{id}</a></td>
+<td>Move a queue item in the queue</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><a href="#removing-a-queue-item">/api/queue/items/{id}</a></td>
+<td>Remove a queue item form the queue</td>
+</tr>
+</tbody>
+</table>
+<h3 id="list-queue-items">List queue items</h3>
+<p>Lists the items in the current queue</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/queue</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td><em>(Optional)</em> If a queue item id is given, only the item with the id will be returend.</td>
+</tr>
+<tr>
+<td>start</td>
+<td><em>(Optional)</em> If a <code>start</code>and an <code>end</code> position is given, only the items from <code>start</code> (included) to <code>end</code> (excluded) will be returned. If only a <code>start</code> position is given, only the item at this position will be returned.</td>
+</tr>
+<tr>
+<td>end</td>
+<td><em>(Optional)</em> See <code>start</code> parameter</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>version</td>
+<td>integer</td>
+<td>Version number of the current queue</td>
+</tr>
+<tr>
+<td>count</td>
+<td>integer</td>
+<td>Number of items in the current queue</td>
+</tr>
+<tr>
+<td>items</td>
+<td>array</td>
+<td>Array of <a href="#queue-item-object"><code>queue item</code></a> objects</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/queue&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="mi">833</span><span class="p">,</span>
+  <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+  <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">12122</span><span class="p">,</span>
+      <span class="nt">&quot;position&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+      <span class="nt">&quot;track_id&quot;</span><span class="p">:</span> <span class="mi">10749</span><span class="p">,</span>
+      <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Angels&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;The xx&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;artist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;xx, The&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;album&quot;</span><span class="p">:</span> <span class="s2">&quot;Coexist&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;album_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Coexist&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;albumartist&quot;</span><span class="p">:</span> <span class="s2">&quot;The xx&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;albumartist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;xx, The&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;genre&quot;</span><span class="p">:</span> <span class="s2">&quot;Indie Rock&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;year&quot;</span><span class="p">:</span> <span class="mi">2012</span><span class="p">,</span>
+      <span class="nt">&quot;track_number&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="nt">&quot;disc_number&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">171735</span><span class="p">,</span>
+      <span class="nt">&quot;media_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;music&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;data_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/The xx/Coexist/01 Angels.mp3&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:track:10749&quot;</span>
+    <span class="p">},</span>
+    <span class="err">...</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="clearing-the-queue">Clearing the queue</h3>
+<p>Remove all items form the current queue</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/queue/clear</span>
+</code></pre></div>
+
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/queue/clear&quot;</span>
+</code></pre></div>
+
+<h3 id="adding-items-to-the-queue">Adding items to the queue</h3>
+<p>Add tracks, playlists artists or albums to the current queue</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">POST /api/queue/items/add</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>uris</td>
+<td>Comma seperated list of resource identifiers (<code>track</code>, <code>playlist</code>, <code>artist</code> or <code>album</code> object <code>uri</code>)</td>
+</tr>
+<tr>
+<td>expression</td>
+<td>A smart playlist query expression identifying the tracks that will be added to the queue.</td>
+</tr>
+<tr>
+<td>position</td>
+<td><em>(Optional)</em> If a position is given, new items are inserted starting from this position into the queue.</td>
+</tr>
+<tr>
+<td>playback</td>
+<td><em>(Optional)</em> If the <code>playback</code> parameter is set to <code>start</code>, playback will be started after adding the new items.</td>
+</tr>
+<tr>
+<td>playback_from_position</td>
+<td><em>(Optional)</em> If the <code>playback</code> parameter is set to <code>start</code>, playback will be started with the queue item at the position given in <code>playback_from_position</code>.</td>
+</tr>
+<tr>
+<td>clear</td>
+<td><em>(Optional)</em> If the <code>clear</code> parameter is set to <code>true</code>, the queue will be cleared before adding the new items.</td>
+</tr>
+<tr>
+<td>shuffle</td>
+<td><em>(Optional)</em> If the <code>shuffle</code> parameter is set to <code>true</code>, the shuffle mode is activated. If it is set to something else, the shuffle mode is deactivated. To leave the shuffle mode untouched the parameter should be ommited.</td>
+</tr>
+</tbody>
+</table>
+<p>Either the <code>uris</code> or the <code>expression</code> parameter must be set. If both are set the <code>uris</code> parameter takes presedence and the <code>expression</code> parameter will be ignored.</p>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>200 OK</code> success status response code.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>count</td>
+<td>integer</td>
+<td>number of tracks added to the queue</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<p>Add new items by uri:</p>
+<div class="highlight"><pre><span></span><code>curl -X POST <span class="s2">&quot;http://localhost:3689/api/queue/items/add?uris=library:playlist:68,library:artist:2932599850102967727&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">42</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Add new items by query language:</p>
+<div class="highlight"><pre><span></span><code>curl -X POST <span class="s2">&quot;http://localhost:3689/api/queue/items/add?expression=media_kind+is+music&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">42</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="moving-a-queue-item">Moving a queue item</h3>
+<p>Move a queue item in the current queue</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/queue/items/{id}</span>
+</code></pre></div>
+
+<p><strong>Path parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Queue item id</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>new_position</td>
+<td>The new position for the queue item in the current queue.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/queue/items/3?new_position=0&quot;</span>
+</code></pre></div>
+
+<h3 id="removing-a-queue-item">Removing a queue item</h3>
+<p>Remove a queue item from the current queue</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">DELETE /api/queue/items/{id}</span>
+</code></pre></div>
+
+<p><strong>Path parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Queue item id</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/queue/items/2&quot;</span>
+</code></pre></div>
+
+<h2 id="library">Library</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><a href="#library-information">/api/library</a></td>
+<td>Get library information</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#list-playlists">/api/library/playlists</a></td>
+<td>Get a list of playlists</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#get-a-playlist">/api/library/playlists/{id}</a></td>
+<td>Get a playlist</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#list-playlist-tracks">/api/library/playlists/{id}/tracks</a></td>
+<td>Get list of tracks for a playlist</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#list-artists">/api/library/artists</a></td>
+<td>Get a list of artists</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#get-an-artist">/api/library/artists/{id}</a></td>
+<td>Get an artist</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#list-artist-albums">/api/library/artists/{id}/albums</a></td>
+<td>Get list of albums for an artist</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#list-albums">/api/library/albums</a></td>
+<td>Get a list of albums</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#get-an-album">/api/library/albums/{id}</a></td>
+<td>Get an album</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#list-album-tracks">/api/library/albums/{id}/tracks</a></td>
+<td>Get list of tracks for an album</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#get-a-track">/api/library/tracks/{id}</a></td>
+<td>Get a track</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#update-track-properties">/api/library/tracks/{id}</a></td>
+<td>Update a tracks properties (rating, play_count)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#list-genres">/api/library/genres</a></td>
+<td>Get list of genres</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#get-count-of-tracks-artists-and-albums">/api/library/count</a></td>
+<td>Get count of tracks, artists and albums</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#list-local-directories">/api/library/files</a></td>
+<td>Get list of directories in the local library</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#trigger-rescan">/api/update</a></td>
+<td>Trigger a library rescan</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#trigger-meta-rescan">/api/rescan</a></td>
+<td>Trigger a library metadata rescan</td>
+</tr>
+</tbody>
+</table>
+<h3 id="library-information">Library information</h3>
+<p>List some library stats</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library</span>
+</code></pre></div>
+
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>songs</td>
+<td>integer</td>
+<td>Array of <a href="#playlist-object"><code>playlist</code></a> objects</td>
+</tr>
+<tr>
+<td>db_playtime</td>
+<td>integer</td>
+<td>Total playtime of all songs in the library</td>
+</tr>
+<tr>
+<td>artists</td>
+<td>integer</td>
+<td>Number of album artists in the library</td>
+</tr>
+<tr>
+<td>albums</td>
+<td>integer</td>
+<td>Number of albums in the library</td>
+</tr>
+<tr>
+<td>started_at</td>
+<td>string</td>
+<td>Server startup time (timestamp in <code>ISO 8601</code> format)</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>string</td>
+<td>Last library update (timestamp in <code>ISO 8601</code> format)</td>
+</tr>
+<tr>
+<td>updating</td>
+<td>boolean</td>
+<td><code>true</code> if library rescan is in progress</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;songs&quot;</span><span class="p">:</span> <span class="mi">217</span><span class="p">,</span>
+  <span class="nt">&quot;db_playtime&quot;</span><span class="p">:</span> <span class="mi">66811</span><span class="p">,</span>
+  <span class="nt">&quot;artists&quot;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+  <span class="nt">&quot;albums&quot;</span><span class="p">:</span> <span class="mi">19</span><span class="p">,</span>
+  <span class="nt">&quot;started_at&quot;</span><span class="p">:</span> <span class="s2">&quot;2018-11-19T19:06:08Z&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;updated_at&quot;</span><span class="p">:</span> <span class="s2">&quot;2018-11-19T19:06:16Z&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;updating&quot;</span><span class="p">:</span> <span class="kc">false</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="list-playlists">List playlists</h3>
+<p>Lists the playlists in your library</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library/playlists</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>offset</td>
+<td><em>(Optional)</em> Offset of the first playlist to return</td>
+</tr>
+<tr>
+<td>limit</td>
+<td><em>(Optional)</em> Maximum number of playlists to return</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>items</td>
+<td>array</td>
+<td>Array of <a href="#playlist-object"><code>playlist</code></a> objects</td>
+</tr>
+<tr>
+<td>total</td>
+<td>integer</td>
+<td>Total number of playlists in the library</td>
+</tr>
+<tr>
+<td>offset</td>
+<td>integer</td>
+<td>Requested offset of the first playlist</td>
+</tr>
+<tr>
+<td>limit</td>
+<td>integer</td>
+<td>Requested maximum number of playlists</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/playlists&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;radio&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/radio.m3u&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;smart_playlist&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:playlist:1&quot;</span>
+    <span class="p">},</span>
+    <span class="err">...</span>
+  <span class="p">],</span>
+  <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+  <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="get-a-playlist">Get a playlist</h3>
+<p>Get a specific playlists in your library</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library/playlists/{id}</span>
+</code></pre></div>
+
+<p><strong>Path parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Playlist id</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>200 OK</code> success status response code. With the response body holding the <strong><a href="#playlist-object"><code>playlist</code></a> object</strong>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/playlists/1&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;radio&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/radio.m3u&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;smart_playlist&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:playlist:1&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="list-playlist-tracks">List playlist tracks</h3>
+<p>Lists the tracks in a playlists</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library/playlists/{id}/tracks</span>
+</code></pre></div>
+
+<p><strong>Path parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Playlist id</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>offset</td>
+<td><em>(Optional)</em> Offset of the first track to return</td>
+</tr>
+<tr>
+<td>limit</td>
+<td><em>(Optional)</em> Maximum number of tracks to return</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>items</td>
+<td>array</td>
+<td>Array of <a href="#track-object"><code>track</code></a> objects</td>
+</tr>
+<tr>
+<td>total</td>
+<td>integer</td>
+<td>Total number of tracks in the playlist</td>
+</tr>
+<tr>
+<td>offset</td>
+<td>integer</td>
+<td>Requested offset of the first track</td>
+</tr>
+<tr>
+<td>limit</td>
+<td>integer</td>
+<td>Requested maximum number of tracks</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/playlists/1/tracks&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">10766</span><span class="p">,</span>
+      <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Solange wir tanzen&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Heinrich&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;artist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Heinrich&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;album&quot;</span><span class="p">:</span> <span class="s2">&quot;Solange wir tanzen&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;album_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Solange wir tanzen&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;albumartist&quot;</span><span class="p">:</span> <span class="s2">&quot;Heinrich&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;albumartist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Heinrich&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;genre&quot;</span><span class="p">:</span> <span class="s2">&quot;Electronica&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;year&quot;</span><span class="p">:</span> <span class="mi">2014</span><span class="p">,</span>
+      <span class="nt">&quot;track_number&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="nt">&quot;disc_number&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">223085</span><span class="p">,</span>
+      <span class="nt">&quot;play_count&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+      <span class="nt">&quot;skip_count&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="nt">&quot;time_played&quot;</span><span class="p">:</span> <span class="s2">&quot;2018-02-23T10:31:20Z&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;media_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;music&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;data_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/Heinrich/Solange wir tanzen/01 Solange wir tanzen.mp3&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:track:10766&quot;</span>
+    <span class="p">},</span>
+    <span class="err">...</span>
+  <span class="p">],</span>
+  <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+  <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="list-artists">List artists</h3>
+<p>Lists the artists in your library</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library/artists</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>offset</td>
+<td><em>(Optional)</em> Offset of the first artist to return</td>
+</tr>
+<tr>
+<td>limit</td>
+<td><em>(Optional)</em> Maximum number of artists to return</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>items</td>
+<td>array</td>
+<td>Array of <a href="#artist-object"><code>artist</code></a> objects</td>
+</tr>
+<tr>
+<td>total</td>
+<td>integer</td>
+<td>Total number of artists in the library</td>
+</tr>
+<tr>
+<td>offset</td>
+<td>integer</td>
+<td>Requested offset of the first artist</td>
+</tr>
+<tr>
+<td>limit</td>
+<td>integer</td>
+<td>Requested maximum number of artists</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/artists&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;3815427709949443149&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;ABAY&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;ABAY&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;album_count&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="nt">&quot;track_count&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+      <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">2951554</span><span class="p">,</span>
+      <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:artist:3815427709949443149&quot;</span>
+    <span class="p">},</span>
+    <span class="err">...</span>
+  <span class="p">],</span>
+  <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+  <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="get-an-artist">Get an artist</h3>
+<p>Get a specific artist in your library</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library/artists/{id}</span>
+</code></pre></div>
+
+<p><strong>Path parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Artist id</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>200 OK</code> success status response code. With the response body holding the <strong><a href="#artist-object"><code>artist</code></a> object</strong>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/artists/3815427709949443149&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;3815427709949443149&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;ABAY&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;name_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;ABAY&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;album_count&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="nt">&quot;track_count&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+  <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">2951554</span><span class="p">,</span>
+  <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:artist:3815427709949443149&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="list-artist-albums">List artist albums</h3>
+<p>Lists the albums of an artist</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library/artists/{id}/albums</span>
+</code></pre></div>
+
+<p><strong>Path parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Artist id</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>offset</td>
+<td><em>(Optional)</em> Offset of the first album to return</td>
+</tr>
+<tr>
+<td>limit</td>
+<td><em>(Optional)</em> Maximum number of albums to return</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>items</td>
+<td>array</td>
+<td>Array of <a href="#album-object"><code>album</code></a> objects</td>
+</tr>
+<tr>
+<td>total</td>
+<td>integer</td>
+<td>Total number of albums of this artist</td>
+</tr>
+<tr>
+<td>offset</td>
+<td>integer</td>
+<td>Requested offset of the first album</td>
+</tr>
+<tr>
+<td>limit</td>
+<td>integer</td>
+<td>Requested maximum number of albums</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/artists/32561671101664759/albums&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;8009851123233197743&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Add Violence&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Add Violence&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Nine Inch Nails&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;artist_id&quot;</span><span class="p">:</span> <span class="s2">&quot;32561671101664759&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;track_count&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+      <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">1634961</span><span class="p">,</span>
+      <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:album:8009851123233197743&quot;</span>
+    <span class="p">},</span>
+    <span class="err">...</span>
+  <span class="p">],</span>
+  <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+  <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="list-albums">List albums</h3>
+<p>Lists the albums in your library</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library/albums</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>offset</td>
+<td><em>(Optional)</em> Offset of the first album to return</td>
+</tr>
+<tr>
+<td>limit</td>
+<td><em>(Optional)</em> Maximum number of albums to return</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>items</td>
+<td>array</td>
+<td>Array of <a href="#album-object"><code>album</code></a> objects</td>
+</tr>
+<tr>
+<td>total</td>
+<td>integer</td>
+<td>Total number of albums in the library</td>
+</tr>
+<tr>
+<td>offset</td>
+<td>integer</td>
+<td>Requested offset of the first albums</td>
+</tr>
+<tr>
+<td>limit</td>
+<td>integer</td>
+<td>Requested maximum number of albums</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/albums&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;8009851123233197743&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Add Violence&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Add Violence&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Nine Inch Nails&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;artist_id&quot;</span><span class="p">:</span> <span class="s2">&quot;32561671101664759&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;track_count&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+      <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">1634961</span><span class="p">,</span>
+      <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:album:8009851123233197743&quot;</span>
+    <span class="p">},</span>
+    <span class="err">...</span>
+  <span class="p">],</span>
+  <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+  <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="get-an-album">Get an album</h3>
+<p>Get a specific album in your library</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library/albums/{id}</span>
+</code></pre></div>
+
+<p><strong>Path parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Album id</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>200 OK</code> success status response code. With the response body holding the <strong><a href="#album-object"><code>album</code></a> object</strong>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/albums/8009851123233197743&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;8009851123233197743&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Add Violence&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;name_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Add Violence&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Nine Inch Nails&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;artist_id&quot;</span><span class="p">:</span> <span class="s2">&quot;32561671101664759&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;track_count&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+  <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">1634961</span><span class="p">,</span>
+  <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:album:8009851123233197743&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="list-album-tracks">List album tracks</h3>
+<p>Lists the tracks in an album</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library/albums/{id}/tracks</span>
+</code></pre></div>
+
+<p><strong>Path parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Album id</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>offset</td>
+<td><em>(Optional)</em> Offset of the first track to return</td>
+</tr>
+<tr>
+<td>limit</td>
+<td><em>(Optional)</em> Maximum number of tracks to return</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>items</td>
+<td>array</td>
+<td>Array of <a href="#track-object"><code>track</code></a> objects</td>
+</tr>
+<tr>
+<td>total</td>
+<td>integer</td>
+<td>Total number of tracks</td>
+</tr>
+<tr>
+<td>offset</td>
+<td>integer</td>
+<td>Requested offset of the first track</td>
+</tr>
+<tr>
+<td>limit</td>
+<td>integer</td>
+<td>Requested maximum number of tracks</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/albums/1/tracks&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">10766</span><span class="p">,</span>
+      <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Solange wir tanzen&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Heinrich&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;artist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Heinrich&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;album&quot;</span><span class="p">:</span> <span class="s2">&quot;Solange wir tanzen&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;album_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Solange wir tanzen&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;albumartist&quot;</span><span class="p">:</span> <span class="s2">&quot;Heinrich&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;albumartist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Heinrich&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;genre&quot;</span><span class="p">:</span> <span class="s2">&quot;Electronica&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;year&quot;</span><span class="p">:</span> <span class="mi">2014</span><span class="p">,</span>
+      <span class="nt">&quot;track_number&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="nt">&quot;disc_number&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">223085</span><span class="p">,</span>
+      <span class="nt">&quot;play_count&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+      <span class="nt">&quot;last_time_played&quot;</span><span class="p">:</span> <span class="s2">&quot;2018-02-23T10:31:20Z&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;media_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;music&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;data_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/Heinrich/Solange wir tanzen/01 Solange wir tanzen.mp3&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:track:10766&quot;</span>
+    <span class="p">},</span>
+    <span class="err">...</span>
+  <span class="p">],</span>
+  <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+  <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="get-a-track">Get a track</h3>
+<p>Get a specific track in your library</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library/tracks/{id}</span>
+</code></pre></div>
+
+<p><strong>Path parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Track id</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>200 OK</code> success status response code. With the response body holding the <strong><a href="#track-object"><code>track</code></a> object</strong>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/track/1&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Pardon Me&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;title_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Pardon Me&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Incubus&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;artist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Incubus&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;album&quot;</span><span class="p">:</span> <span class="s2">&quot;Make Yourself&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;album_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Make Yourself&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;album_id&quot;</span><span class="p">:</span> <span class="s2">&quot;6683985628074308431&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;album_artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Incubus&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;album_artist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Incubus&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;album_artist_id&quot;</span><span class="p">:</span> <span class="s2">&quot;4833612337650426236&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;composer&quot;</span><span class="p">:</span> <span class="s2">&quot;Alex Katunich/Brandon Boyd/Chris Kilmore/Jose Antonio Pasillas II/Mike Einziger&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;genre&quot;</span><span class="p">:</span> <span class="s2">&quot;Alternative Rock&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;year&quot;</span><span class="p">:</span> <span class="mi">2001</span><span class="p">,</span>
+  <span class="nt">&quot;track_number&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span>
+  <span class="nt">&quot;disc_number&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">223170</span><span class="p">,</span>
+  <span class="nt">&quot;rating&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="nt">&quot;play_count&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="nt">&quot;skip_count&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="nt">&quot;time_added&quot;</span><span class="p">:</span> <span class="s2">&quot;2019-01-20T11:58:29Z&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;date_released&quot;</span><span class="p">:</span> <span class="s2">&quot;2001-05-27&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;seek_ms&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="nt">&quot;media_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;music&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;data_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/Incubus/Make Yourself/12 Pardon Me.mp3&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:track:1&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;artwork_url&quot;</span><span class="p">:</span> <span class="s2">&quot;/artwork/item/1&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="update-track-properties">Update track properties</h3>
+<p>Change properties of a specific track (supported properties are "rating" and "play_count")</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/library/tracks/{id}</span>
+</code></pre></div>
+
+<p><strong>Path parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Track id</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>rating</td>
+<td>The new rating (0 - 100)</td>
+</tr>
+<tr>
+<td>play_count</td>
+<td>Either <code>increment</code> or <code>reset</code>. <code>increment</code> will increment <code>play_count</code> and update <code>time_played</code>, <code>reset</code> will set <code>play_count</code> and <code>skip_count</code> to zero and delete <code>time_played</code> and <code>time_skipped</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/library/tracks/1?rating=100&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/library/tracks/1?play_count=increment&quot;</span>
+</code></pre></div>
+
+<h3 id="list-genres">List genres</h3>
+<p>Get list of genres</p>
+<p><strong>Endpoint</strong></p>
+<p><div class="highlight"><pre><span></span><code><span class="err">GET /api/library/genres</span>
+</code></pre></div>
+<strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>items</td>
+<td>array</td>
+<td>Array of <a href="#genre-object"><code>genre</code></a> objects</td>
+</tr>
+<tr>
+<td>total</td>
+<td>integer</td>
+<td>Total number of genres in the library</td>
+</tr>
+<tr>
+<td>offset</td>
+<td>integer</td>
+<td>Requested offset of the first genre</td>
+</tr>
+<tr>
+<td>limit</td>
+<td>integer</td>
+<td>Requested maximum number of genres</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/genres&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Classical&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Drum &amp; Bass&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Pop&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Rock/Pop&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;&#39;90s Alternative&quot;</span>
+    <span class="p">}</span>
+  <span class="p">],</span>
+  <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+  <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="list-albums-for-genre">List albums for genre</h3>
+<p>Lists the albums in a genre</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET api/search?type=albums&amp;expression=genre+is+\&quot;{genre name}\&quot;&quot;</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>genre</td>
+<td>genre name (uri encoded and html esc seq for chars: '/&amp;)</td>
+</tr>
+<tr>
+<td>offset</td>
+<td><em>(Optional)</em> Offset of the first album to return</td>
+</tr>
+<tr>
+<td>limit</td>
+<td><em>(Optional)</em> Maximum number of albums to return</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>items</td>
+<td>array</td>
+<td>Array of <a href="#album-object"><code>album</code></a> objects</td>
+</tr>
+<tr>
+<td>total</td>
+<td>integer</td>
+<td>Total number of albums in the library</td>
+</tr>
+<tr>
+<td>offset</td>
+<td>integer</td>
+<td>Requested offset of the first albums</td>
+</tr>
+<tr>
+<td>limit</td>
+<td>integer</td>
+<td>Requested maximum number of albums</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=albums&amp;expression=genre+is+\&quot;Pop\&quot;&quot;</span>
+curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=albums&amp;expression=genre+is+\&quot;Rock%2FPop\&quot;&quot;</span>            <span class="c1"># Rock/Pop</span>
+curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=albums&amp;expression=genre+is+\&quot;Drum%20%26%20Bass\&quot;&quot;</span>     <span class="c1"># Drum &amp; Bass</span>
+curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=albums&amp;expression=genre+is+\&quot;%2790s%20Alternative\&quot;&quot;</span>  <span class="c1"># &#39;90 Alternative</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;albums&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;320189328729146437&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Best Ever&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;name_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Best Ever&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;ABC&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist_id&quot;</span><span class="p">:</span> <span class="s2">&quot;8760559201889050080&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;track_count&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">3631</span><span class="p">,</span>
+        <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:album:320189328729146437&quot;</span>
+      <span class="p">},</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;7964595866631625723&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Greatest Hits&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;name_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Greatest Hits&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Marvin Gaye&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist_id&quot;</span><span class="p">:</span> <span class="s2">&quot;5261930703203735930&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;track_count&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">7262</span><span class="p">,</span>
+        <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:album:7964595866631625723&quot;</span>
+      <span class="p">},</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;3844610748145176456&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;The Very Best of Etta&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;name_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Very Best of Etta&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Etta James&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist_id&quot;</span><span class="p">:</span> <span class="s2">&quot;2627182178555864595&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;track_count&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">177926</span><span class="p">,</span>
+        <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:album:3844610748145176456&quot;</span>
+      <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="get-count-of-tracks-artists-and-albums">Get count of tracks, artists and albums</h3>
+<p>Get information about the number of tracks, artists and albums and the total playtime</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library/count</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>expression</td>
+<td><em>(Optional)</em> The smart playlist query expression, if this parameter is omitted returns the information for the whole library</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tracks</td>
+<td>integer</td>
+<td>Number of tracks matching the expression</td>
+</tr>
+<tr>
+<td>artists</td>
+<td>integer</td>
+<td>Number of artists matching the expression</td>
+</tr>
+<tr>
+<td>albums</td>
+<td>integer</td>
+<td>Number of albums matching the expression</td>
+</tr>
+<tr>
+<td>db_playtime</td>
+<td>integer</td>
+<td>Total playtime in milliseconds of all tracks matching the expression</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/count?expression=data_kind+is+file&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;tracks&quot;</span><span class="p">:</span> <span class="mi">6811</span><span class="p">,</span>
+  <span class="nt">&quot;artists&quot;</span><span class="p">:</span> <span class="mi">355</span><span class="p">,</span>
+  <span class="nt">&quot;albums&quot;</span><span class="p">:</span> <span class="mi">646</span><span class="p">,</span>
+  <span class="nt">&quot;db_playtime&quot;</span><span class="p">:</span> <span class="mi">1590767</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="list-local-directories">List local directories</h3>
+<p>List the local directories and the directory contents (tracks and playlists)</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library/files</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>directory</td>
+<td><em>(Optional)</em> A path to a directory in your local library.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>directories</td>
+<td>array</td>
+<td>Array of <a href="#directory-object"><code>directory</code></a> objects containing the sub directories</td>
+</tr>
+<tr>
+<td>tracks</td>
+<td>object</td>
+<td><a href="#paging-object"><code>paging</code></a> object containing <a href="#track-object"><code>track</code></a> objects that matches the <code>directory</code></td>
+</tr>
+<tr>
+<td>playlists</td>
+<td>object</td>
+<td><a href="#paging-object"><code>paging</code></a> object containing <a href="#playlist-object"><code>playlist</code></a> objects that matches the <code>directory</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/files?directory=/music/srv&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;directories&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/Audiobooks&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/Music&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/Playlists&quot;</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/Podcasts&quot;</span>
+    <span class="p">}</span>
+  <span class="p">],</span>
+  <span class="nt">&quot;tracks&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;input.pipe&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Unknown artist&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Unknown artist&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album&quot;</span><span class="p">:</span> <span class="s2">&quot;Unknown album&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Unknown album&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_id&quot;</span><span class="p">:</span> <span class="s2">&quot;4201163758598356043&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Unknown artist&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_artist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Unknown artist&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_artist_id&quot;</span><span class="p">:</span> <span class="s2">&quot;4187901437947843388&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;genre&quot;</span><span class="p">:</span> <span class="s2">&quot;Unknown genre&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;year&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;track_number&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;disc_number&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;play_count&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;skip_count&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;time_added&quot;</span><span class="p">:</span> <span class="s2">&quot;2018-11-24T08:41:35Z&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;seek_ms&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;media_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;music&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;data_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;pipe&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/input.pipe&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:track:1&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artwork_url&quot;</span><span class="p">:</span> <span class="s2">&quot;/artwork/item/1&quot;</span>
+      <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
+  <span class="p">},</span>
+  <span class="nt">&quot;playlists&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;radio&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/radio.m3u&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;smart_playlist&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+        <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:playlist:8&quot;</span>
+      <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="trigger-rescan">Trigger rescan</h3>
+<p>Trigger a library rescan</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/update</span>
+</code></pre></div>
+
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/update&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;songs&quot;</span><span class="p">:</span> <span class="mi">217</span><span class="p">,</span>
+  <span class="nt">&quot;db_playtime&quot;</span><span class="p">:</span> <span class="mi">66811</span><span class="p">,</span>
+  <span class="nt">&quot;artists&quot;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+  <span class="nt">&quot;albums&quot;</span><span class="p">:</span> <span class="mi">19</span><span class="p">,</span>
+  <span class="nt">&quot;started_at&quot;</span><span class="p">:</span> <span class="s2">&quot;2018-11-19T19:06:08Z&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;updated_at&quot;</span><span class="p">:</span> <span class="s2">&quot;2018-11-19T19:06:16Z&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;updating&quot;</span><span class="p">:</span> <span class="kc">false</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="trigger-metadata-rescan">Trigger metadata rescan</h3>
+<p>Trigger a library metadata rescan even if files have not been updated.  Maintenence method.</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/rescan</span>
+</code></pre></div>
+
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/rescan&quot;</span>
+</code></pre></div>
+
+<h2 id="search">Search</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><a href="#search-by-search-term">/api/search</a></td>
+<td>Search for playlists, artists, albums, tracks,genres by a simple search term</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#search-by-query-language">/api/search</a></td>
+<td>Search by complex query expression</td>
+</tr>
+</tbody>
+</table>
+<h3 id="search-by-search-term">Search by search term</h3>
+<p>Search for playlists, artists, albums, tracks, genres that include the given query in their title (case insensitive matching).</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/search</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>query</td>
+<td>The search keyword</td>
+</tr>
+<tr>
+<td>type</td>
+<td>Comma separated list of the result types (<code>playlist</code>, <code>artist</code>, <code>album</code>, <code>track</code>, <code>genre</code>)</td>
+</tr>
+<tr>
+<td>media_kind</td>
+<td><em>(Optional)</em> Filter results by media kind (<code>music</code>, <code>movie</code>, <code>podcast</code>, <code>audiobook</code>, <code>musicvideo</code>, <code>tvshow</code>). Filter only applies to artist, album and track result types.</td>
+</tr>
+<tr>
+<td>offset</td>
+<td><em>(Optional)</em> Offset of the first item to return for each type</td>
+</tr>
+<tr>
+<td>limit</td>
+<td><em>(Optional)</em> Maximum number of items to return for each type</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tracks</td>
+<td>object</td>
+<td><a href="#paging-object"><code>paging</code></a> object containing <a href="#track-object"><code>track</code></a> objects that matches the <code>query</code></td>
+</tr>
+<tr>
+<td>artists</td>
+<td>object</td>
+<td><a href="#paging-object"><code>paging</code></a> object containing <a href="#artist-object"><code>artist</code></a> objects that matches the <code>query</code></td>
+</tr>
+<tr>
+<td>albums</td>
+<td>object</td>
+<td><a href="#paging-object"><code>paging</code></a> object containing <a href="#album-object"><code>album</code></a> objects that matches the <code>query</code></td>
+</tr>
+<tr>
+<td>playlists</td>
+<td>object</td>
+<td><a href="#paging-object"><code>paging</code></a> object containing <a href="#playlist-object"><code>playlist</code></a> objects that matches the <code>query</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<p>Search for all tracks, artists, albums and playlists that contain "the" in their title and return the first two results for each type:</p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=tracks,artists,albums,playlists&amp;query=the&amp;offset=0&amp;limit=2&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;tracks&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">35</span><span class="p">,</span>
+        <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Another Love&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Tom Odell&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Tom Odell&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album&quot;</span><span class="p">:</span> <span class="s2">&quot;Es is was es is&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Es is was es is&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_id&quot;</span><span class="p">:</span> <span class="s2">&quot;6494853621007413058&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_artist&quot;</span><span class="p">:</span> <span class="s2">&quot;Various artists&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_artist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Various artists&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_artist_id&quot;</span><span class="p">:</span> <span class="s2">&quot;8395563705718003786&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;genre&quot;</span><span class="p">:</span> <span class="s2">&quot;Singer/Songwriter&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;year&quot;</span><span class="p">:</span> <span class="mi">2013</span><span class="p">,</span>
+        <span class="nt">&quot;track_number&quot;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+        <span class="nt">&quot;disc_number&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">251030</span><span class="p">,</span>
+        <span class="nt">&quot;play_count&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;media_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;music&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;data_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/Compilations/Es is was es is/07 Another Love.m4a&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:track:35&quot;</span>
+      <span class="p">},</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="mi">215</span><span class="p">,</span>
+        <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;Away From the Sun&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;3 Doors Down&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;3 Doors Down&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album&quot;</span><span class="p">:</span> <span class="s2">&quot;Away From the Sun&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Away From the Sun&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_id&quot;</span><span class="p">:</span> <span class="s2">&quot;8264078270267374619&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_artist&quot;</span><span class="p">:</span> <span class="s2">&quot;3 Doors Down&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_artist_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;3 Doors Down&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_artist_id&quot;</span><span class="p">:</span> <span class="s2">&quot;5030128490104968038&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;genre&quot;</span><span class="p">:</span> <span class="s2">&quot;Rock&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;year&quot;</span><span class="p">:</span> <span class="mi">2002</span><span class="p">,</span>
+        <span class="nt">&quot;track_number&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="nt">&quot;disc_number&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">233278</span><span class="p">,</span>
+        <span class="nt">&quot;play_count&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="nt">&quot;media_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;music&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;data_kind&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;path&quot;</span><span class="p">:</span> <span class="s2">&quot;/music/srv/Away From the Sun/02 Away From the Sun.mp3&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:track:215&quot;</span>
+      <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">14</span><span class="p">,</span>
+    <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">2</span>
+  <span class="p">},</span>
+  <span class="nt">&quot;artists&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;8737690491750445895&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;The xx&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;name_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;xx, The&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;album_count&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="nt">&quot;track_count&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+        <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">5229196</span><span class="p">,</span>
+        <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:artist:8737690491750445895&quot;</span>
+      <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">2</span>
+  <span class="p">},</span>
+  <span class="nt">&quot;albums&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;8264078270267374619&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Away From the Sun&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;name_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Away From the Sun&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;3 Doors Down&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist_id&quot;</span><span class="p">:</span> <span class="s2">&quot;5030128490104968038&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;track_count&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span>
+        <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">2818174</span><span class="p">,</span>
+        <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:album:8264078270267374619&quot;</span>
+      <span class="p">},</span>
+      <span class="p">{</span>
+        <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;6835720495312674468&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;The Better Life&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;name_sort&quot;</span><span class="p">:</span> <span class="s2">&quot;Better Life&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist&quot;</span><span class="p">:</span> <span class="s2">&quot;3 Doors Down&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;artist_id&quot;</span><span class="p">:</span> <span class="s2">&quot;5030128490104968038&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;track_count&quot;</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span>
+        <span class="nt">&quot;length_ms&quot;</span><span class="p">:</span> <span class="mi">2393332</span><span class="p">,</span>
+        <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:album:6835720495312674468&quot;</span>
+      <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">2</span>
+  <span class="p">},</span>
+  <span class="nt">&quot;playlists&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="nt">&quot;items&quot;</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="nt">&quot;total&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="nt">&quot;offset&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">2</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="search-by-query-language">Search by query language</h3>
+<p>Search for artists, albums, tracks by a smart playlist query expression (see <a href="https://github.com/ejurgensen/forked-daapd/blob/master/README_SMARTPL.md">README_SMARTPL.md</a> for the expression syntax).</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/search</span>
+</code></pre></div>
+
+<p><strong>Query parameters</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>expression</td>
+<td>The smart playlist query expression</td>
+</tr>
+<tr>
+<td>type</td>
+<td>Comma separated list of the result types (<code>artist</code>, <code>album</code>, <code>track</code></td>
+</tr>
+<tr>
+<td>offset</td>
+<td><em>(Optional)</em> Offset of the first item to return for each type</td>
+</tr>
+<tr>
+<td>limit</td>
+<td><em>(Optional)</em> Maximum number of items to return for each type</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tracks</td>
+<td>object</td>
+<td><a href="#paging-object"><code>paging</code></a> object containing <a href="#track-object"><code>track</code></a> objects that matches the <code>query</code></td>
+</tr>
+<tr>
+<td>artists</td>
+<td>object</td>
+<td><a href="#paging-object"><code>paging</code></a> object containing <a href="#artist-object"><code>artist</code></a> objects that matches the <code>query</code></td>
+</tr>
+<tr>
+<td>albums</td>
+<td>object</td>
+<td><a href="#paging-object"><code>paging</code></a> object containing <a href="#album-object"><code>album</code></a> objects that matches the <code>query</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<p>Search for music tracks ordered descending by the time added to the library and limit result to 2 items:</p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=tracks&amp;expression=media_kind+is+music+order+by+time_added+desc&amp;offset=0&amp;limit=2&quot;</span>
+</code></pre></div>
+
+<h2 id="server-info">Server info</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><a href="#config">/api/config</a></td>
+<td>Get configuration information</td>
+</tr>
+</tbody>
+</table>
+<h3 id="config">Config</h3>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/config</span>
+</code></pre></div>
+
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>version</td>
+<td>string</td>
+<td>forked-daapd server version</td>
+</tr>
+<tr>
+<td>websocket_port</td>
+<td>integer</td>
+<td>Port number for the <a href="#push-notifications">websocket</a> (or <code>0</code> if websocket is disabled)</td>
+</tr>
+<tr>
+<td>buildoptions</td>
+<td>array</td>
+<td>Array of strings indicating which features are supported by the forked-daapd server</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/config&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;websocket_port&quot;</span><span class="p">:</span> <span class="mi">3688</span><span class="p">,</span>
+  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;25.0&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;buildoptions&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;ffmpeg&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;iTunes XML&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Spotify&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LastFM&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;MPD&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Device verification&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Websockets&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ALSA&quot;</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h2 id="settings">Settings</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><a href="#list-categories">/api/settings</a></td>
+<td>Get all available categories</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#get-a-category">/api/settings/{category-name}</a></td>
+<td>Get all available options for a category</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><a href="#get-a-option">/api/settings/{category-name}/{option-name}</a></td>
+<td>Get a single setting option</td>
+</tr>
+<tr>
+<td>PUT</td>
+<td><a href="#change-a-option-value">/api/settings/{category-name}/{option-name}</a></td>
+<td>Change the value of a setting option</td>
+</tr>
+</tbody>
+</table>
+<h3 id="list-categories">List categories</h3>
+<p>List all settings categories with their options</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/settings</span>
+</code></pre></div>
+
+<p><strong>Response</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>categories</td>
+<td>array</td>
+<td>Array of settings <a href="#category-object">category</a> objects</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/settings&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;categories&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;webinterface&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;options&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+          <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;show_composer_now_playing&quot;</span><span class="p">,</span>
+          <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+          <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="kc">true</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+          <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;show_composer_for_genre&quot;</span><span class="p">,</span>
+          <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+          <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;classical&quot;</span>
+        <span class="p">}</span>
+      <span class="p">]</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="get-a-category">Get a category</h3>
+<p>Get a settings category with their options</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/settings/{category-name}</span>
+</code></pre></div>
+
+<p><strong>Response</strong></p>
+<p>Returns a settings <a href="#category-object">category</a> object</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/settings/webinterface&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;webinterface&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;options&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;show_composer_now_playing&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="kc">true</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;show_composer_for_genre&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+      <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;classical&quot;</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="get-a-option">Get a option</h3>
+<p>Get a single settings option</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/settings/{category-name}/{option-name}</span>
+</code></pre></div>
+
+<p><strong>Response</strong></p>
+<p>Returns a settings <a href="#option-object">option</a> object</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/settings/webinterface/show_composer_now_playing&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;show_composer_now_playing&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="kc">true</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="change-a-option-value">Change a option value</h3>
+<p>Get a single settings option</p>
+<p><strong>Endpoint</strong></p>
+<div class="highlight"><pre><span></span><code><span class="err">PUT /api/settings/{category-name}/{option-name}</span>
+</code></pre></div>
+
+<p><strong>Request</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td>string</td>
+<td>Option name</td>
+</tr>
+<tr>
+<td>value</td>
+<td>(integer / boolean / string)</td>
+<td>New option value</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong></p>
+<p>On success returns the HTTP <code>204 No Content</code> success status response code.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/settings/webinterface/show_composer_now_playing&quot;</span> --data <span class="s2">&quot;{\&quot;name\&quot;:\&quot;show_composer_now_playing\&quot;,\&quot;value\&quot;:true}&quot;</span>
+</code></pre></div>
+
+<h2 id="push-notifications">Push notifications</h2>
+<p>If forked-daapd was built with websocket support, forked-daapd exposes a websocket at <code>localhost:3688</code> to inform clients of changes (e. g. player state or library updates).
+The port depends on the forked-daapd configuration and can be read using the <a href="#config"><code>/api/config</code></a> endpoint.</p>
+<p>After connecting to the websocket, the client should send a message containing the event types it is interested in. After that forked-daapd
+will send a message each time one of the events occurred.</p>
+<p><strong>Message</strong></p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>notify</td>
+<td>array</td>
+<td>Array of event types</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Event types</strong></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>update</td>
+<td>Library update started or finished</td>
+</tr>
+<tr>
+<td>database</td>
+<td>Library database changed (new/modified/deleted tracks)</td>
+</tr>
+<tr>
+<td>outputs</td>
+<td>An output was enabled or disabled</td>
+</tr>
+<tr>
+<td>player</td>
+<td>Player state changes</td>
+</tr>
+<tr>
+<td>options</td>
+<td>Playback option changes (shuffle, repeat, consume mode)</td>
+</tr>
+<tr>
+<td>volume</td>
+<td>Volume changes</td>
+</tr>
+<tr>
+<td>queue</td>
+<td>Queue changes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre><span></span><code>curl --include <span class="se">\</span>
+     --no-buffer <span class="se">\</span>
+     --header <span class="s2">&quot;Connection: Upgrade&quot;</span> <span class="se">\</span>
+     --header <span class="s2">&quot;Upgrade: websocket&quot;</span> <span class="se">\</span>
+     --header <span class="s2">&quot;Host: localhost:3688&quot;</span> <span class="se">\</span>
+     --header <span class="s2">&quot;Origin: http://localhost:3688&quot;</span> <span class="se">\</span>
+     --header <span class="s2">&quot;Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==&quot;</span> <span class="se">\</span>
+     --header <span class="s2">&quot;Sec-WebSocket-Version: 13&quot;</span> <span class="se">\</span>
+     --header <span class="s2">&quot;Sec-WebSocket-Protocol: notify&quot;</span> <span class="se">\</span>
+     http://localhost:3688/ <span class="se">\</span>
+     --data <span class="s2">&quot;{ \&quot;notify\&quot;: [ \&quot;player\&quot; ] }&quot;</span>
+</code></pre></div>
+
+<div class="highlight"><pre><span></span><code><span class="p">{</span> 
+  <span class="nt">&quot;notify&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;player&quot;</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h2 id="object-model">Object model</h2>
+<h3 id="queue-item-object"><code>queue item</code> object</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>string</td>
+<td>Item id</td>
+</tr>
+<tr>
+<td>position</td>
+<td>integer</td>
+<td>Position in the queue (starting with zero)</td>
+</tr>
+<tr>
+<td>track_id</td>
+<td>string</td>
+<td>Track id</td>
+</tr>
+<tr>
+<td>title</td>
+<td>string</td>
+<td>Title</td>
+</tr>
+<tr>
+<td>artist</td>
+<td>string</td>
+<td>Track artist name</td>
+</tr>
+<tr>
+<td>artist_sort</td>
+<td>string</td>
+<td>Track artist sort name</td>
+</tr>
+<tr>
+<td>album</td>
+<td>string</td>
+<td>Album name</td>
+</tr>
+<tr>
+<td>album_sort</td>
+<td>string</td>
+<td>Album sort name</td>
+</tr>
+<tr>
+<td>album_id</td>
+<td>string</td>
+<td>Album id</td>
+</tr>
+<tr>
+<td>album_artist</td>
+<td>string</td>
+<td>Album artist name</td>
+</tr>
+<tr>
+<td>album_artist_sort</td>
+<td>string</td>
+<td>Album artist sort name</td>
+</tr>
+<tr>
+<td>album_artist_id</td>
+<td>string</td>
+<td>Album artist id</td>
+</tr>
+<tr>
+<td>composer</td>
+<td>string</td>
+<td>Composer (optional)</td>
+</tr>
+<tr>
+<td>genre</td>
+<td>string</td>
+<td>Genre</td>
+</tr>
+<tr>
+<td>year</td>
+<td>integer</td>
+<td>Release year</td>
+</tr>
+<tr>
+<td>track_number</td>
+<td>integer</td>
+<td>Track number</td>
+</tr>
+<tr>
+<td>disc_number</td>
+<td>integer</td>
+<td>Disc number</td>
+</tr>
+<tr>
+<td>length_ms</td>
+<td>integer</td>
+<td>Track length in milliseconds</td>
+</tr>
+<tr>
+<td>media_kind</td>
+<td>string</td>
+<td>Media type of this track: <code>music</code>, <code>movie</code>, <code>podcast</code>, <code>audiobook</code>, <code>musicvideo</code>, <code>tvshow</code></td>
+</tr>
+<tr>
+<td>data_kind</td>
+<td>string</td>
+<td>Data type of this track: <code>file</code>, <code>url</code>, <code>spotify</code>, <code>pipe</code></td>
+</tr>
+<tr>
+<td>path</td>
+<td>string</td>
+<td>Path</td>
+</tr>
+<tr>
+<td>uri</td>
+<td>string</td>
+<td>Resource identifier</td>
+</tr>
+<tr>
+<td>artwork_url</td>
+<td>string</td>
+<td><em>(optional)</em> <a href="#artwork-urls">Artwork url</a></td>
+</tr>
+<tr>
+<td>type</td>
+<td>string</td>
+<td>file (codec) type (ie mp3/flac/...)</td>
+</tr>
+<tr>
+<td>bitrate</td>
+<td>string</td>
+<td>file bitrate (ie 192/128/...)</td>
+</tr>
+<tr>
+<td>samplerate</td>
+<td>string</td>
+<td>file sample rate (ie 44100/48000/...)</td>
+</tr>
+<tr>
+<td>channel</td>
+<td>string</td>
+<td>file channel (ie mono/stereo/xx ch))</td>
+</tr>
+</tbody>
+</table>
+<h3 id="playlist-object"><code>playlist</code> object</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>string</td>
+<td>Playlist id</td>
+</tr>
+<tr>
+<td>name</td>
+<td>string</td>
+<td>Playlist name</td>
+</tr>
+<tr>
+<td>path</td>
+<td>string</td>
+<td>Path</td>
+</tr>
+<tr>
+<td>smart_playlist</td>
+<td>boolean</td>
+<td><code>true</code> if playlist is a smart playlist</td>
+</tr>
+<tr>
+<td>uri</td>
+<td>string</td>
+<td>Resource identifier</td>
+</tr>
+</tbody>
+</table>
+<h3 id="artist-object"><code>artist</code> object</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>string</td>
+<td>Artist id</td>
+</tr>
+<tr>
+<td>name</td>
+<td>string</td>
+<td>Artist name</td>
+</tr>
+<tr>
+<td>name_sort</td>
+<td>string</td>
+<td>Artist sort name</td>
+</tr>
+<tr>
+<td>album_count</td>
+<td>integer</td>
+<td>Number of albums</td>
+</tr>
+<tr>
+<td>track_count</td>
+<td>integer</td>
+<td>Number of tracks</td>
+</tr>
+<tr>
+<td>length_ms</td>
+<td>integer</td>
+<td>Total length of tracks in milliseconds</td>
+</tr>
+<tr>
+<td>uri</td>
+<td>string</td>
+<td>Resource identifier</td>
+</tr>
+<tr>
+<td>artwork_url</td>
+<td>string</td>
+<td><em>(optional)</em> <a href="#artwork-urls">Artwork url</a></td>
+</tr>
+</tbody>
+</table>
+<h3 id="album-object"><code>album</code> object</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>string</td>
+<td>Album id</td>
+</tr>
+<tr>
+<td>name</td>
+<td>string</td>
+<td>Album name</td>
+</tr>
+<tr>
+<td>name_sort</td>
+<td>string</td>
+<td>Album sort name</td>
+</tr>
+<tr>
+<td>artist_id</td>
+<td>string</td>
+<td>Album artist id</td>
+</tr>
+<tr>
+<td>artist</td>
+<td>string</td>
+<td>Album artist name</td>
+</tr>
+<tr>
+<td>track_count</td>
+<td>integer</td>
+<td>Number of tracks</td>
+</tr>
+<tr>
+<td>length_ms</td>
+<td>integer</td>
+<td>Total length of tracks in milliseconds</td>
+</tr>
+<tr>
+<td>uri</td>
+<td>string</td>
+<td>Resource identifier</td>
+</tr>
+<tr>
+<td>artwork_url</td>
+<td>string</td>
+<td><em>(optional)</em> <a href="#artwork-urls">Artwork url</a></td>
+</tr>
+</tbody>
+</table>
+<h3 id="track-object"><code>track</code> object</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>string</td>
+<td>Track id</td>
+</tr>
+<tr>
+<td>title</td>
+<td>string</td>
+<td>Title</td>
+</tr>
+<tr>
+<td>title_sort</td>
+<td>string</td>
+<td>Sort title</td>
+</tr>
+<tr>
+<td>artist</td>
+<td>string</td>
+<td>Track artist name</td>
+</tr>
+<tr>
+<td>artist_sort</td>
+<td>string</td>
+<td>Track artist sort name</td>
+</tr>
+<tr>
+<td>album</td>
+<td>string</td>
+<td>Album name</td>
+</tr>
+<tr>
+<td>album_sort</td>
+<td>string</td>
+<td>Album sort name</td>
+</tr>
+<tr>
+<td>album_id</td>
+<td>string</td>
+<td>Album id</td>
+</tr>
+<tr>
+<td>album_artist</td>
+<td>string</td>
+<td>Album artist name</td>
+</tr>
+<tr>
+<td>album_artist_sort</td>
+<td>string</td>
+<td>Album artist sort name</td>
+</tr>
+<tr>
+<td>album_artist_id</td>
+<td>string</td>
+<td>Album artist id</td>
+</tr>
+<tr>
+<td>composer</td>
+<td>string</td>
+<td>Track composer</td>
+</tr>
+<tr>
+<td>genre</td>
+<td>string</td>
+<td>Genre</td>
+</tr>
+<tr>
+<td>year</td>
+<td>integer</td>
+<td>Release year</td>
+</tr>
+<tr>
+<td>track_number</td>
+<td>integer</td>
+<td>Track number</td>
+</tr>
+<tr>
+<td>disc_number</td>
+<td>integer</td>
+<td>Disc number</td>
+</tr>
+<tr>
+<td>length_ms</td>
+<td>integer</td>
+<td>Track length in milliseconds</td>
+</tr>
+<tr>
+<td>rating</td>
+<td>integer</td>
+<td>Track rating (ranges from 0 to 100)</td>
+</tr>
+<tr>
+<td>play_count</td>
+<td>integer</td>
+<td>How many times the track was played</td>
+</tr>
+<tr>
+<td>skip_count</td>
+<td>integer</td>
+<td>How many times the track was skipped</td>
+</tr>
+<tr>
+<td>time_played</td>
+<td>string</td>
+<td>Timestamp in <code>ISO 8601</code> format</td>
+</tr>
+<tr>
+<td>time_skipped</td>
+<td>string</td>
+<td>Timestamp in <code>ISO 8601</code> format</td>
+</tr>
+<tr>
+<td>time_added</td>
+<td>string</td>
+<td>Timestamp in <code>ISO 8601</code> format</td>
+</tr>
+<tr>
+<td>date_released</td>
+<td>string</td>
+<td>Date in the format <code>yyyy-mm-dd</code></td>
+</tr>
+<tr>
+<td>seek_ms</td>
+<td>integer</td>
+<td>Resume point in milliseconds (available only for podcasts and audiobooks)</td>
+</tr>
+<tr>
+<td>media_kind</td>
+<td>string</td>
+<td>Media type of this track: <code>music</code>, <code>movie</code>, <code>podcast</code>, <code>audiobook</code>, <code>musicvideo</code>, <code>tvshow</code></td>
+</tr>
+<tr>
+<td>data_kind</td>
+<td>string</td>
+<td>Data type of this track: <code>file</code>, <code>url</code>, <code>spotify</code>, <code>pipe</code></td>
+</tr>
+<tr>
+<td>path</td>
+<td>string</td>
+<td>Path</td>
+</tr>
+<tr>
+<td>uri</td>
+<td>string</td>
+<td>Resource identifier</td>
+</tr>
+<tr>
+<td>artwork_url</td>
+<td>string</td>
+<td><em>(optional)</em> <a href="#artwork-urls">Artwork url</a></td>
+</tr>
+</tbody>
+</table>
+<h3 id="paging-object"><code>paging</code> object</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>items</td>
+<td>array</td>
+<td>Array of result objects</td>
+</tr>
+<tr>
+<td>total</td>
+<td>integer</td>
+<td>Total number of items</td>
+</tr>
+<tr>
+<td>offset</td>
+<td>integer</td>
+<td>Requested offset of the first item</td>
+</tr>
+<tr>
+<td>limit</td>
+<td>integer</td>
+<td>Requested maximum number of items</td>
+</tr>
+</tbody>
+</table>
+<h3 id="genre-object"><code>genre</code> object</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td>string</td>
+<td>Name of genre</td>
+</tr>
+</tbody>
+</table>
+<h3 id="directory-object"><code>directory</code> object</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>path</td>
+<td>string</td>
+<td>Directory path</td>
+</tr>
+</tbody>
+</table>
+<h3 id="category-object"><code>category</code> object</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td>string</td>
+<td>Category name</td>
+</tr>
+<tr>
+<td>options</td>
+<td>array</td>
+<td>Array of option in this category</td>
+</tr>
+</tbody>
+</table>
+<h3 id="option-object"><code>option</code> object</h3>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>name</td>
+<td>string</td>
+<td>Option name</td>
+</tr>
+<tr>
+<td>type</td>
+<td>integer</td>
+<td>The type of the value for this option (<code>0</code>: integer, <code>1</code>: boolean, <code>2</code>: string)</td>
+</tr>
+<tr>
+<td>value</td>
+<td>(integer / boolean / string)</td>
+<td>Current value for this option</td>
+</tr>
+</tbody>
+</table>
+<h3 id="artwork-urls">Artwork urls</h3>
+<p>Artwork urls in <code>queue item</code>, <code>artist</code>, <code>album</code> and <code>track</code> objects can be either relative urls or absolute urls to the artwork image.
+Absolute artwork urls are pointing to external artwork images (e. g. for radio streams that provide artwork metadata), while relative artwork urls are served from forked-daapd. </p>
+<p>It is possible to add the query parameters <code>maxwidth</code> and/or <code>maxheight</code> to relative artwork urls, in order to get a smaller image (forked-daapd only scales down never up).</p>
+<p>Note that even if a relative artwork url attribute is present, it is not guaranteed to exist.</p>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
+        
+          <a href=".." title="Home" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+            </div>
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Home
+              </div>
+            </div>
+          </a>
+        
+        
+          <a href="../README_PLAYER_WEBINTERFACE/" title="WEBINTERFACE" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                WEBINTERFACE
+              </div>
+            </div>
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/vendor.3636a4ec.min.js"></script>
+      <script src="../assets/javascripts/bundle.e9fe3281.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
+      
+      <script>
+        app = initialize({
+          base: "..",
+          features: [],
+          search: Object.assign({
+            worker: "../assets/javascripts/worker/search.5eca75d3.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+    
+  </body>
+</html>
