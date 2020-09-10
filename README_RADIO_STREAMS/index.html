@@ -15,7 +15,7 @@
     
     
       
-        <title>Web Interface - forked-daapd</title>
+        <title>Radio Streams - forked-daapd</title>
       
     
     
@@ -49,7 +49,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#forked-daapd-player-web-interface" class="md-skip">
+        <a href="#forked-daapd-and-radio-stream-tweaking" class="md-skip">
           Skip to content
         </a>
       
@@ -77,7 +77,7 @@
           </span>
           <span class="md-header-nav__topic md-ellipsis">
             
-              Web Interface
+              Radio Streams
             
           </span>
         </div>
@@ -173,63 +173,11 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="__toc">
-        Web Interface
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-    
-    <a href="./" title="Web Interface" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../README_PLAYER_WEBINTERFACE/" title="Web Interface" class="md-nav__link">
       Web Interface
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#screenshots" class="md-nav__link">
-    Screenshots
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    Usage
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#build-setup" class="md-nav__link">
-    Build Setup
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-    
   </li>
 
     
@@ -273,11 +221,56 @@
       
       
 
+  
 
-  <li class="md-nav__item">
-    <a href="../README_RADIO_STREAMS/" title="Radio Streams" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Radio Streams
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+    
+    <a href="./" title="Radio Streams" class="md-nav__link md-nav__link--active">
       Radio Streams
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-stream-nametitle" class="md-nav__link">
+    1) Stream Name/Title
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-artwork-and-track-duration" class="md-nav__link">
+    2) Artwork (and track duration)
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
     
@@ -305,22 +298,15 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#screenshots" class="md-nav__link">
-    Screenshots
+  <a href="#1-stream-nametitle" class="md-nav__link">
+    1) Stream Name/Title
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    Usage
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#build-setup" class="md-nav__link">
-    Build Setup
+  <a href="#2-artwork-and-track-duration" class="md-nav__link">
+    2) Artwork (and track duration)
   </a>
   
 </li>
@@ -341,33 +327,85 @@
                   
                 
                 
-                <h1 id="forked-daapd-player-web-interface">forked-daapd player web interface</h1>
-<p>Mobile friendly player web interface for <a href="http://ejurgensen.github.io/forked-daapd/">forked-daapd</a> build with <a href="https://vuejs.org">Vue.js</a>, <a href="http://bulma.io">Bulma</a>.</p>
-<h2 id="screenshots">Screenshots</h2>
-<p><img src="screenshots/Screenshot-now-playing.png" width="300" alt="Now playing"> <img src="screenshots/Screenshot-queue.png" width="300" alt="Queue"> <img src="screenshots/Screenshot-artists.png" width="300" alt="Artists"> <img src="screenshots/Screenshot-album.png" width="300" alt="Album"></p>
-<h2 id="usage">Usage</h2>
-<p>You can find forked-daapd's web interface at <a href="http://forked-daapd.local:3689">http://forked-daapd.local:3689</a>
-or alternatively at <a href="http://[your_server_address_here]:3689">http://[your_server_address_here]:3689</a>.</p>
-<h2 id="build-setup">Build Setup</h2>
-<p>The source is located in the <code>web-src</code> folder.</p>
-<div class="highlight"><pre><span></span><code>cd web-src
+                <h1 id="forked-daapd-and-radio-stream-tweaking">forked-daapd and Radio Stream tweaking</h1>
+<p>Radio streams have many different ways in how metadata is sent.  Many should
+just work as expected, but a few may require some tweaking. If you are not
+seeing expected title, track, artist, artwork in forked-daapd clients or web UI,
+the following may help.</p>
+<p>First, understand what and how the particular stream is sending information.
+ffprobe is a command that can be used to interegrate most of the stream
+information. <code>ffprobe &lt;http://stream.url&gt;</code> should give you some useful output,
+look at the Metadata section, below is an example.</p>
+<div class="highlight"><pre><span></span><code> Metadata:
+    icy-br          : 320
+    icy-description : DJ-mixed blend of modern and classic rock, electronica, world music, and more. Always 100% commercial-free
+    icy-genre       : Eclectic
+    icy-name        : Radio Paradise (320k aac)
+    icy-pub         : 1
+    icy-url         : https://radioparadise.com
+    StreamTitle     : Depeche Mode - Strangelove
+    StreamUrl       : http://img.radioparadise.com/covers/l/B000002LCI.jpg
 </code></pre></div>
 
-<p>It is based on the Vue.js webpack template. For a detailed explanation on how things work, check out the <a href="http://vuejs-templates.github.io/webpack/">guide</a> and <a href="http://vuejs.github.io/vue-loader">docs for vue-loader</a>.</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># install dependencies</span>
-npm install
-
-<span class="c1"># serve with hot reload at localhost:8080</span>
-npm run dev
-
-<span class="c1"># build for production with minification (will update player web interface in &quot;../htdocs&quot;)</span>
-npm run build
-
-<span class="c1"># build for production and view the bundle analyzer report</span>
-npm run build --report
+<p>In the example above, all tags are populated with correct information, no
+modifications to forked-daapd configuration should be needed. Note that
+StreamUrl points to the artwork image file.</p>
+<p>Below is another example that will require some tweaks to forked-daapd, Notice
+<code>icy-name</code> is blank and <code>StreamUrl</code> doesn't point to an image.</p>
+<div class="highlight"><pre><span></span><code>Metadata:
+    icy-br          : 127
+    icy-pub         : 0
+    icy-description : Unspecified description
+    icy-url         : 
+    icy-genre       : various
+    icy-name        : 
+    StreamTitle     : Pour Some Sugar On Me - Def Leppard
+    StreamUrl       : https://radio.stream.domain/api9/eventdata/49790578
 </code></pre></div>
 
-<p>After running <code>npm run dev</code> the web interface is reachable at <a href="http://localhost:8080">localhost:8080</a>. By default it expects <strong>forked-daapd</strong> to be running at <a href="http://localhost:3689">localhost:3689</a> and proxies all JSON API calls to this location. If <strong>forked-daapd</strong> is running at a different location you need to modify the <code>proxyTable</code> configuration in <code>config/index.js</code></p>
+<p>In the above, first fix is the blank name, second is the image artwork.</p>
+<h3 id="1-stream-nametitle">1) Stream Name/Title</h3>
+<p>Set the name with an EXTINF tag in the m3u playlist file:</p>
+<div class="highlight"><pre><span></span><code>#EXTM3U
+#EXTINF:-1, - My Radio Stream Name
+http://radio.stream.domain/stream.url
+</code></pre></div>
+
+<p>The format is basically <code>#EXTINF:&lt;length&gt;, &lt;Artist Name&gt; - &lt;Artist Title&gt;</code>.
+Length is -1 since it's a stream, <code>&lt;Artist Name&gt;</code> was left blank since
+<code>StreamTitle</code> is accurate in the Metadata but <code>&lt;Artist Title&gt;</code> was set to
+<code>My Radio Stream Name</code> since <code>icy-name</code> was blank.</p>
+<h3 id="2-artwork-and-track-duration">2) Artwork (and track duration)</h3>
+<p>If <code>StreamUrl</code> does not point directly to an artwork file then the link may be
+to a json file that contains an artwork link. If so, you can make forked-daapd
+download the file automatically and search for an artwork link, and also track
+duration.</p>
+<p>Try to download the file, e.g. with <code>curl "https://radio.stream.domain/api9/eventdata/49790578"</code>.
+Let's assume you get something like this:</p>
+<div class="highlight"><pre><span></span><code>{
+    &quot;eventId&quot;: 49793707,
+    &quot;eventStart&quot;: &quot;2020-05-08 16:23:03&quot;,
+    &quot;eventFinish&quot;: &quot;2020-05-08 16:27:21&quot;,
+    &quot;eventDuration&quot;: 254,
+    &quot;eventType&quot;: &quot;Song&quot;,
+    &quot;eventSongTitle&quot;: &quot;Pour Some Sugar On Me&quot;,
+    &quot;eventSongArtist&quot;: &quot;Def Leppard&quot;,
+    &quot;eventImageUrl&quot;: &quot;https://radio.stream.domain/artist/1-1/320x320/562.jpg?ver=1465083491&quot;,
+    &quot;eventImageUrlSmall&quot;: &quot;https://radio.stream.domain/artist/1-1/160x160/562.jpg?ver=1465083491&quot;,
+    &quot;eventAppleMusicUrl&quot;: &quot;https://geo.itunes.apple.com/dk/album/530707298?i=530707313&quot;
+}
+</code></pre></div>
+
+<p>In this case, you would need to tell forked-daapd to look for "eventDuration"
+and "eventImageUrl" (or just "duration" and "url"). You can do that like this:</p>
+<div class="highlight"><pre><span></span><code>curl -X PUT &quot;http://localhost:3689/api/settings/misc/streamurl_keywords_length&quot; --data &quot;{\&quot;name\&quot;:\&quot;streamurl_keywords_length\&quot;,\&quot;value\&quot;:\&quot;duration\&quot;}&quot;
+curl -X PUT &quot;http://localhost:3689/api/settings/misc/streamurl_keywords_artwork_url&quot; --data &quot;{\&quot;name\&quot;:\&quot;streamurl_keywords_artwork_url\&quot;,\&quot;value\&quot;:\&quot;url\&quot;}
+</code></pre></div>
+
+<p>If you want multiple search phrases then comma separate, e.g. "duration,length".</p>
+<p>If your radio station is not returning any artwork links, you can also just make
+a static artwork by placing a png/jpg in the same directory as the m3u, and with
+the same name, e.g. <code>My Radio Stream.jpg</code> for <code>My Radio Stream.m3u</code>.</p>
                 
               
               
@@ -386,7 +424,7 @@ npm run build --report
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
         
-          <a href="../README_JSON_API/" title="JSON API" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../README_PULSE/" title="Pulse Audio" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-footer-nav__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
             </div>
@@ -395,25 +433,11 @@ npm run build --report
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                JSON API
+                Pulse Audio
               </div>
             </div>
           </a>
         
-        
-          <a href="../README_SMARTPL/" title="Smart Playlists" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-footer-nav__title">
-              <div class="md-ellipsis">
-                <span class="md-footer-nav__direction">
-                  Next
-                </span>
-                Smart Playlists
-              </div>
-            </div>
-            <div class="md-footer-nav__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
-            </div>
-          </a>
         
       </nav>
     </div>

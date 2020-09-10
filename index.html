@@ -413,8 +413,8 @@
 
 
   <li class="md-nav__item">
-    <a href="README_PLAYER_WEBINTERFACE/" title="WEBINTERFACE" class="md-nav__link">
-      WEBINTERFACE
+    <a href="README_PLAYER_WEBINTERFACE/" title="Web Interface" class="md-nav__link">
+      Web Interface
     </a>
   </li>
 
@@ -425,8 +425,8 @@
 
 
   <li class="md-nav__item">
-    <a href="README_SMARTPL/" title="SMARTPL" class="md-nav__link">
-      SMARTPL
+    <a href="README_SMARTPL/" title="Smart Playlists" class="md-nav__link">
+      Smart Playlists
     </a>
   </li>
 
@@ -449,8 +449,8 @@
 
 
   <li class="md-nav__item">
-    <a href="README_PULSE/" title="PULSE" class="md-nav__link">
-      PULSE
+    <a href="README_PULSE/" title="Pulse Audio" class="md-nav__link">
+      Pulse Audio
     </a>
   </li>
 
@@ -461,8 +461,8 @@
 
 
   <li class="md-nav__item">
-    <a href="cheat-sheet/" title="Specimen" class="md-nav__link">
-      Specimen
+    <a href="README_RADIO_STREAMS/" title="Radio Streams" class="md-nav__link">
+      Radio Streams
     </a>
   </li>
 
@@ -733,8 +733,7 @@ match the version of forked-daapd that you are using. Go to
 <a href="#references">references</a> to find instructions for previous versions of
 forked-daapd.</p>
 <p>If you are looking for help on building forked-daapd (not using it), then
-please see the
-<a href="https://github.com/ejurgensen/forked-daapd/blob/master/INSTALL">INSTALL</a> file.</p>
+please see the <a href="INSTALL.md">INSTALL.md</a> file.</p>
 <h2 id="contents">Contents</h2>
 <ul>
 <li><a href="#getting-started">Getting started</a></li>
@@ -758,8 +757,7 @@ please see the
 <li><a href="#references">References</a></li>
 </ul>
 <h2 id="getting-started">Getting started</h2>
-<p>After installation (see <a href="https://github.com/ejurgensen/forked-daapd/blob/master/INSTALL">INSTALL</a>)
-do the following:</p>
+<p>After installation (see <a href="INSTALL.md">INSTALL.md</a>) do the following:</p>
 <ol>
 <li>Edit the configuration file (usually <code>/etc/forked-daapd.conf</code>) to suit your
     needs</li>
@@ -984,6 +982,10 @@ for the syntax.</p>
 <p>If your Apple TV requires device verification (always required by Apple TV4 with
 tvOS 10.2) then you can do that through the web interface: Select the device and
 then enter the PIN that the Apple TV displays.</p>
+<p>If your speaker is silent when you start playback, and there is no obvious error
+message in the log, you can try disabling ipv6 in the config. Some speakers
+announce that they support ipv6, but in fact don't (at least not with forked-
+daapd).</p>
 <h2 id="chromecast">Chromecast</h2>
 <p>forked-daapd will discover Chromecast devices available on your network, and you
 can then select the device as a speaker. There is no configuration required.</p>
@@ -991,6 +993,8 @@ can then select the device as a speaker. There is no configuration required.</p>
 <p>In the config file, you can select ALSA for local audio. This is the default.</p>
 <p>When using ALSA, the server will try to syncronize playback with AirPlay. You
 can adjust the syncronization in the config file.</p>
+<p>For most setups the default values in the config file should work. If they
+don't, there is help here: <a href="https://github.com/ejurgensen/forked-daapd/blob/master/README_ALSA.md">README_ALSA.md</a></p>
 <h2 id="local-audio-bluetooth-and-more-through-pulseaudio">Local audio, Bluetooth and more through Pulseaudio</h2>
 <p>In the config file, you can select Pulseaudio for local audio. In addition to
 local audio, Pulseaudio also supports an array of other targets, e.g. Bluetooth
@@ -1008,8 +1012,7 @@ stream address in pretty much any music player:</p>
 Apple does not allow AirPlay receiver apps, and because Apple Home Sharing
 cannot be supported by forked-daapd. So what you can do instead is install a
 music player app like VLC, connect to the stream and control playback with
-Remote. You can also use MPoD in "On the go"-mode, where control and playback is
-integrated in one app.</p>
+Remote.</p>
 <p>Note that MP3 encoding must be supported by ffmpeg/libav for this to work. If
 it is not available you will see a message in the log file. In Debian/Ubuntu you
 get MP3 encoding support by installing the package "libavcodec-extra".</p>
@@ -1049,12 +1052,17 @@ station provides artwork, forked-daapd will download it during playback and send
 it to any remotes or AirPlay devices requesting it.</p>
 <p>Instead of downloading M3U's from your radio stations, you can also make an
 empty M3U file and in it insert links to the M3U's of your radio stations.</p>
+<p>Radio streams can only be played by forked-daapd, so that means they will not be
+available to play in DAAP clients like iTunes.</p>
 <p>Support for iTunes Music Library XML format is available as a compile-time
 option. By default, metadata from our parsers is preferred over what's in
 the iTunes DB; use itunes_overrides = true if you prefer iTunes' metadata.</p>
 <p>forked-daapd has support for smart playlists. How to create a smart playlist is
 documented in
 <a href="https://github.com/ejurgensen/forked-daapd/blob/master/README_SMARTPL.md">README_SMARTPL.md</a>.</p>
+<p>If you're not satisfied with internet radio metadata that forked-daapd shows,
+then you can read about tweaking it in
+<a href="https://github.com/ejurgensen/forked-daapd/blob/master/README_RADIO_STREAMS.md">README_RADIO_STREAMS.md</a>.</p>
 <h2 id="artwork">Artwork</h2>
 <p>forked-daapd has support for PNG and JPEG artwork which is either:
  - embedded in the media files
@@ -1180,20 +1188,24 @@ curl &quot;http://localhost:3689/logout?session-id=50&quot;
 <p>Once the above is in order you can login to Spotify via the web interface. The
 procedure for logging in to Spotify is a two-step procedure due to the current
 state of libspotify, but the web interface makes both steps available to you.</p>
-<p>Spotify will automatically notify forked-daapd about playlist updates, so you
-should not need to restart forked-daapd to syncronize with Spotify. However,
-Spotify only notifies about playlist updates, not new saved tracks/albums, so
-you need to manually trigger a rescan to get those.</p>
+<p>Spotify no longer automatically notifies clients about playlist updates, so you
+have to trigger updates manually. You can for instance set up a cron job that
+runs <code>/usr/bin/curl http://localhost:3689/api/update</code></p>
 <p>forked-daapd will not store your password, but will still be able to log you in
 automatically afterwards, because libspotify saves a login token. You can
 configure the location of your Spotify user data in the configuration file.</p>
-<p>To permanently logout and remove credentials, delete the contents of
-<code>/var/cache/forked-daapd/libspotify</code> (while forked-daapd is stopped).</p>
+<p>To permanently logout and remove Spotify tracks + credentials make a request to</p>
+<p>and also delete the contents of <code>/var/cache/forked-daapd/libspotify</code>.</p>
 <p>Limitations:
 You will not be able to do any playlist management through forked-daapd - use
 a Spotify client for that. You also can only listen to your music by letting
 forked-daapd do the playback - so that means you can't stream from forked-daapd
-to iTunes.</p>
+to DAAP clients (e.g. iTunes) and RSP clients.</p>
+<p>Alternatives:
+If you want forked-daapd to be a selectable metaspeaker in Spotify's client, you
+can use <a href="https://github.com/librespot-org/librespot">librespot</a> to write audio
+to a pipe in your library. There will be some lag with volume adjustments, and
+getting metadata to work also requires extra tinkering.</p>
 <h2 id="lastfm">LastFM</h2>
 <p>You can have forked-daapd scrobble the music you listen to. To set up scrobbling
 go to the web interface and authorize forked-daapd with your LastFM credentials.</p>
@@ -1238,9 +1250,10 @@ the same way they would running MPD:</p>
 <h2 id="references">References</h2>
 <p>The source for this version of forked-daapd can be found here:</p>
 <p><a href="https://github.com/ejurgensen/forked-daapd.git">https://github.com/ejurgensen/forked-daapd.git</a></p>
-<p>The original (now unmaintained) source can be found here:</p>
-<p><a href="http://git.debian.org/?p=users/jblache/forked-daapd.git">http://git.debian.org/?p=users/jblache/forked-daapd.git</a></p>
 <p>README's for previous versions of forked-daapd:</p>
+<p><a href="https://github.com/ejurgensen/forked-daapd/blob/27.2/README.md">forked-daapd version 27.2</a></p>
+<p><a href="https://github.com/ejurgensen/forked-daapd/blob/27.1/README.md">forked-daapd version 27.1</a></p>
+<p><a href="https://github.com/ejurgensen/forked-daapd/blob/27.0/README.md">forked-daapd version 27.0</a></p>
 <p><a href="https://github.com/ejurgensen/forked-daapd/blob/26.5/README.md">forked-daapd version 26.5</a></p>
 <p><a href="https://github.com/ejurgensen/forked-daapd/blob/26.4/README.md">forked-daapd version 26.4</a></p>
 <p><a href="https://github.com/ejurgensen/forked-daapd/blob/26.3/README.md">forked-daapd version 26.3</a></p>
@@ -1250,22 +1263,6 @@ the same way they would running MPD:</p>
 <p><a href="https://github.com/ejurgensen/forked-daapd/blob/25.0/README.md">forked-daapd version 25.0</a></p>
 <p><a href="https://github.com/ejurgensen/forked-daapd/blob/24.2/README.md">forked-daapd version 24.2</a></p>
 <p><a href="https://github.com/ejurgensen/forked-daapd/blob/24.1/README.md">forked-daapd version 24.1</a></p>
-<h1 id="welcome-to-mkdocs">Welcome to MkDocs</h1>
-<p>For full documentation visit <a href="https://mkdocs.org">mkdocs.org</a>.</p>
-<p>!!GET /pet/{petId}!!</p>
-<h2 id="commands">Commands</h2>
-<ul>
-<li><code>mkdocs new [dir-name]</code> - Create a new project.</li>
-<li><code>mkdocs serve</code> - Start the live-reloading docs server.</li>
-<li><code>mkdocs build</code> - Build the documentation site.</li>
-<li><code>mkdocs help</code> - Print this help message.</li>
-</ul>
-<h2 id="project-layout">Project layout</h2>
-<div class="codehilite"><pre><span></span><code>mkdocs.yml    # The configuration file.
-docs/
-    index.md  # The documentation homepage.
-    ...       # Other markdown pages, images and other files.
-</code></pre></div>
                 
               
               

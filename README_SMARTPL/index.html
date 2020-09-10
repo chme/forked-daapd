@@ -15,7 +15,7 @@
     
     
       
-        <title>SMARTPL - forked-daapd</title>
+        <title>Smart Playlists - forked-daapd</title>
       
     
     
@@ -77,7 +77,7 @@
           </span>
           <span class="md-header-nav__topic md-ellipsis">
             
-              SMARTPL
+              Smart Playlists
             
           </span>
         </div>
@@ -175,8 +175,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../README_PLAYER_WEBINTERFACE/" title="WEBINTERFACE" class="md-nav__link">
-      WEBINTERFACE
+    <a href="../README_PLAYER_WEBINTERFACE/" title="Web Interface" class="md-nav__link">
+      Web Interface
     </a>
   </li>
 
@@ -196,12 +196,12 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        SMARTPL
+        Smart Playlists
         <span class="md-nav__icon md-icon"></span>
       </label>
     
-    <a href="./" title="SMARTPL" class="md-nav__link md-nav__link--active">
-      SMARTPL
+    <a href="./" title="Smart Playlists" class="md-nav__link md-nav__link--active">
+      Smart Playlists
     </a>
     
       
@@ -270,8 +270,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../README_PULSE/" title="PULSE" class="md-nav__link">
-      PULSE
+    <a href="../README_PULSE/" title="Pulse Audio" class="md-nav__link">
+      Pulse Audio
     </a>
   </li>
 
@@ -282,8 +282,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cheat-sheet/" title="Specimen" class="md-nav__link">
-      Specimen
+    <a href="../README_RADIO_STREAMS/" title="Radio Streams" class="md-nav__link">
+      Radio Streams
     </a>
   </li>
 
@@ -391,7 +391,8 @@ library folder.</p>
 * <code>time_added</code> (date)
 * <code>time_modified</code> (date)
 * <code>time_played</code> (date)
-* <code>time_skipped</code> (date)</p>
+* <code>time_skipped</code> (date)
+* <code>random</code> (special)</p>
 <p>Valid operators include:
 * <code>is</code>, <code>includes</code>, <code>starts with</code> (string)
 * <code>&gt;</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;=</code>, <code>=</code> (int)
@@ -420,6 +421,7 @@ All three matches are case-insensitive.</p>
 </code></pre></div>
 
 <p>"sort-direction" is either <code>ASC</code> (ascending) or <code>DESC</code> (descending). "limit" is the maximum number of items.</p>
+<p>There is additionally a special <code>random</code> <em>field-name</em> that can be used in conjunction with <code>limit</code> to select a random number of items based on current expression.</p>
 <h2 id="examples">Examples</h2>
 <div class="highlight"><pre><span></span><code>&quot;techno&quot; {
    genre includes &quot;techno&quot;
@@ -458,6 +460,15 @@ All three matches are case-insensitive.</p>
 }
 </code></pre></div>
 This would match the last 10 music files added to the library.</p>
+<p><div class="highlight"><pre><span></span><code>&quot;Random 10 Rated Pop songs&quot; {
+  rating &gt; 0 and
+  genre is &quot;Pop&quot; and
+  media_kind is music
+  order by random desc
+  limit 10
+}
+</code></pre></div>
+This generates a random set of, maximum of 10, rated Pop music tracks every time the playlist is queried.</p>
 <h2 id="date-operand-syntax">Date operand syntax</h2>
 <p>One example of a valid date is a date in yyyy-mm-dd format:</p>
 <div class="highlight"><pre><span></span><code>&quot;Files added after January 1, 2004&quot; {
@@ -514,7 +525,7 @@ As an example, a valid date might be:</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
         
-          <a href="../README_PLAYER_WEBINTERFACE/" title="WEBINTERFACE" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../README_PLAYER_WEBINTERFACE/" title="Web Interface" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-footer-nav__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
             </div>
@@ -523,7 +534,7 @@ As an example, a valid date might be:</p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                WEBINTERFACE
+                Web Interface
               </div>
             </div>
           </a>
