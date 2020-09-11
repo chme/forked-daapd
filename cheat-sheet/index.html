@@ -846,7 +846,7 @@ sit amet laoreet nibh.</p>
 
 <h1 id="tldr-cheat-sheet">TL;DR Cheat Sheet</h1>
 <p>For a 60 second quick start on Markdown
-<a href="http://commonmark.org/help/">commonmark has a great tutorial</a>{.new-tab}</p>
+<a class="new-tab" href="http://commonmark.org/help/">commonmark has a great tutorial</a></p>
 <h3 id="emphasis">Emphasis</h3>
 <p>this is <em>italic</em> and so is <em>this</em><br />
 this is <strong>bold</strong> and so is <strong>this</strong><br />
@@ -888,7 +888,7 @@ this is <strong>bold</strong> and so is <strong>this</strong><br />
 point to a <a href="./embedding/lucid.md">relative file or md</a> or
 mail link with emoji <a href="mailto:joshdev@9ci.com">📧</a> or
 click this cloud icon to see the list of icon options
-<a href="https://material.io/icons/"><em>cloud</em>{.icon}</a></p>
+<a href="https://material.io/icons/"><em class="icon">cloud</em></a></p>
 <p>or <a href="images/dingus/image.png">use an image <img alt="" src="images/dingus/image-small.png" /></a></p>
 <p><a href="https://daringfireball.net/projects/markdown/syntax#link">Reference-Style Links</a>
 put link at bottom of paragraph or page.
@@ -896,9 +896,9 @@ you can use numbers or text for
 <a href="http://reason.com/blog">reference-style link definitions</a><br />
 or leave it empty and
 just use the <a href="./images/material.png">link text itself</a>  </p>
-<p>to <a href="sandbox.md">open in new tab</a>{.new-tab}
+<p>to <a class="new-tab" href="sandbox.md">open in new tab</a>
 us <code>{target=_blank} or {.new-tab}</code> attributes
-use it on <a href="sandbox.md">ref links</a>{.new-tab} too</p>
+use it on <a class="new-tab" href="sandbox.md">ref links</a> too</p>
 <p><em>reference links</em> can be at bottom
 of paragraph. Indenting 2 spaces is not
 required but a recommended convention</p>
@@ -908,11 +908,11 @@ with alt text <img alt="foo" src="images/dingus/image-small.png" /><br />
 with ref links <img alt="img-small" src="./images/dingus/image-small.png" /><br />
 can use <a href="blocks/#sizing-alignment">sizing attributes</a></p>
 <p>Put <code>zoomify</code> in the alt text bracket to enable
-clicking to zoom. Try it on any of these images <img alt="zoomify" src="./images/dingus/image.png" />{.tiny}</p>
-<p><img alt="zoomify" src="images/dingus/image.png" />{.center .xsmall}</p>
+clicking to zoom. Try it on any of these images <img alt="zoomify" class="tiny" src="./images/dingus/image.png" /></p>
+<p><img alt="zoomify" class="center xsmall" src="images/dingus/image.png" /></p>
 <blockquote>
 <p><img alt="📷" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f4f7.svg" title=":camera:" /> <strong>Figure Title</strong>
-<img alt="zoomify" src="images/dingus/image.png" />{.center .small}</p>
+<img alt="zoomify" class="center small" src="images/dingus/image.png" /></p>
 </blockquote>
 <h3 id="abbreviations">Abbreviations</h3>
 <p>here are some abbr's
@@ -987,11 +987,11 @@ You can also use inline Markdown.</p>
 </tr>
 <tr>
 <td><a href="images/dingus/image-small.png">with links</a></td>
-<td>images <img alt="zoomify" src="images/dingus/image-small.png" />{.tiny}</td>
+<td>images <img alt="zoomify" class="tiny" src="images/dingus/image-small.png" /></td>
 <td>emojis 🍔</td>
 </tr>
 <tr>
-<td>icons <em>cloud</em>{.icon}</td>
+<td>icons <em class="icon">cloud</em></td>
 <td>footnotes<sup id="fnref2:1"><a class="footnote-ref" href="#fn:1">1</a></sup></td>
 <td>use <code>&lt;br&gt;</code> <br> for multi-line <br> line breaks</td>
 </tr>
@@ -1039,7 +1039,7 @@ for the list of emojis that can be used.</p>
 </blockquote>
 <h3 id="headings-breaks">Headings &amp; Breaks</h3>
 <blockquote>
-<p><img alt="📷" class="twemoji" src="https://twemoji.maxcdn.com/v/latest/svg/1f4f7.svg" title=":camera:" />{.pct50}</p>
+<p><img alt="📷" class="twemoji pct50" src="https://twemoji.maxcdn.com/v/latest/svg/1f4f7.svg" title=":camera:" /></p>
 <div class="highlight"><pre><span></span><code># h1 Heading
 ## h2 Heading
 ### h3 Heading
