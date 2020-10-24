@@ -9,7 +9,7 @@
       
       
       <link rel="shortcut icon" href="../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.0.2">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.1.0">
     
     
       
@@ -17,14 +17,14 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.38780c08.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.bc7e593a.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.3f72e892.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab28b872.min.css">
         
           
           
-          <meta name="theme-color" content="#009485">
+          <meta name="theme-color" content="#000000">
         
       
     
@@ -39,6 +39,8 @@
     
     
     
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
     
       
     
@@ -51,7 +53,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="">
       
   
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -69,7 +71,9 @@
       
     </div>
     
-      <header class="md-header" data-md-component="header">
+      
+
+<header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid" aria-label="Header">
     <a href=".." title="forked-daapd" class="md-header-nav__button md-logo" aria-label="forked-daapd">
       
@@ -140,7 +144,9 @@
               <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+                    
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="forked-daapd" class="md-nav__button md-logo" aria-label="forked-daapd">
       
@@ -359,11 +365,11 @@
               
                 
                 
-                <h1 id="forked-daapd-smart-playlists">forked-daapd smart playlists</h1>
+                <h1 id="forked-daapd-smart-playlists">forked-daapd smart playlists<a class="headerlink" href="#forked-daapd-smart-playlists" title="Permanent link">&para;</a></h1>
 <p>To add a smart playlist to forked-daapd, create a new text file with a filename ending with .smartpl; 
 the filename doesn't matter, only the .smartpl ending does. The file must be placed somewhere in your
 library folder.</p>
-<h2 id="syntax">Syntax</h2>
+<h2 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h2>
 <p>The contents of a smart playlist must follow the syntax:</p>
 <div class="highlight"><pre><span></span><code>&quot;Playlist Name&quot; { expression }
 </code></pre></div>
@@ -433,7 +439,7 @@ All three matches are case-insensitive.</p>
 </code></pre></div>
 <p>"sort-direction" is either <code>ASC</code> (ascending) or <code>DESC</code> (descending). "limit" is the maximum number of items.</p>
 <p>There is additionally a special <code>random</code> <em>field-name</em> that can be used in conjunction with <code>limit</code> to select a random number of items based on current expression.</p>
-<h2 id="examples">Examples</h2>
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>&quot;techno&quot; {
    genre includes &quot;techno&quot;
    and artist includes &quot;zombie&quot;
@@ -476,7 +482,7 @@ This would match the last 10 music files added to the library.</p>
 }
 </code></pre></div>
 This generates a random set of, maximum of 10, rated Pop music tracks every time the playlist is queried.</p>
-<h2 id="date-operand-syntax">Date operand syntax</h2>
+<h2 id="date-operand-syntax">Date operand syntax<a class="headerlink" href="#date-operand-syntax" title="Permanent link">&para;</a></h2>
 <p>One example of a valid date is a date in yyyy-mm-dd format:</p>
 <div class="highlight"><pre><span></span><code>&quot;Files added after January 1, 2004&quot; {
   time_added after 2004-01-01
@@ -504,7 +510,7 @@ As an example, a valid date might be:</p>
 <p>This matches all audiobooks played since the start of the last Monday 00:00AM.</p>
 <p>All dates, except for <code>YYYY-DD-HH</code>, are relative to the day of when <code>forked-daapd</code> evaluates the smartpl query; <code>time_added after today</code> run on a Monday would match against items added since Monday 00:00hrs and evaluating the same smartpl on Friday would only match against added on Friday 00:00hrs.</p>
 <p>Note that <code>time_added after 4 weeks ago</code> and <code>time_added after last month</code> are subtly different; the former is exactly 4 weeks ago (from today) whereas the latter is the first day of the previous month.</p>
-<h2 id="differences-to-mt-daapd-smart-playlists">Differences to mt-daapd smart playlists</h2>
+<h2 id="differences-to-mt-daapd-smart-playlists">Differences to mt-daapd smart playlists<a class="headerlink" href="#differences-to-mt-daapd-smart-playlists" title="Permanent link">&para;</a></h2>
 <p>The syntax is really close to the mt-daapd smart playlist syntax (see
 <a href="http://sourceforge.net/p/mt-daapd/code/HEAD/tree/tags/release-0.2.4.2/contrib/mt-daapd.playlist">http://sourceforge.net/p/mt-daapd/code/HEAD/tree/tags/release-0.2.4.2/contrib/mt-daapd.playlist</a>).</p>
 <p>Even this documentation is based on the file linked above.</p>
@@ -594,8 +600,8 @@ As an example, a valid date might be:</p>
       
     </div>
     
-      <script src="../assets/javascripts/vendor.77e55a48.min.js"></script>
-      <script src="../assets/javascripts/bundle.9554a270.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
+      <script src="../assets/javascripts/vendor.6a3d08fc.min.js"></script>
+      <script src="../assets/javascripts/bundle.71201edf.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
       
       <script>
         app = initialize({

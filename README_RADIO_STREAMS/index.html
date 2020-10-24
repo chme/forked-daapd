@@ -9,7 +9,7 @@
       
       
       <link rel="shortcut icon" href="../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.0.2">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.1.0">
     
     
       
@@ -17,14 +17,14 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.38780c08.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.bc7e593a.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.3f72e892.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab28b872.min.css">
         
           
           
-          <meta name="theme-color" content="#009485">
+          <meta name="theme-color" content="#000000">
         
       
     
@@ -39,6 +39,8 @@
     
     
     
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
     
       
     
@@ -51,7 +53,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="">
       
   
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -69,7 +71,9 @@
       
     </div>
     
-      <header class="md-header" data-md-component="header">
+      
+
+<header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid" aria-label="Header">
     <a href=".." title="forked-daapd" class="md-header-nav__button md-logo" aria-label="forked-daapd">
       
@@ -140,7 +144,9 @@
               <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+                    
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="forked-daapd" class="md-nav__button md-logo" aria-label="forked-daapd">
       
@@ -331,7 +337,7 @@
               
                 
                 
-                <h1 id="forked-daapd-and-radio-stream-tweaking">forked-daapd and Radio Stream tweaking</h1>
+                <h1 id="forked-daapd-and-radio-stream-tweaking">forked-daapd and Radio Stream tweaking<a class="headerlink" href="#forked-daapd-and-radio-stream-tweaking" title="Permanent link">&para;</a></h1>
 <p>Radio streams have many different ways in how metadata is sent.  Many should
 just work as expected, but a few may require some tweaking. If you are not
 seeing expected title, track, artist, artwork in forked-daapd clients or web UI,
@@ -366,7 +372,7 @@ StreamUrl points to the artwork image file.</p>
     StreamUrl       : https://radio.stream.domain/api9/eventdata/49790578
 </code></pre></div>
 <p>In the above, first fix is the blank name, second is the image artwork.</p>
-<h3 id="1-stream-nametitle">1) Stream Name/Title</h3>
+<h3 id="1-stream-nametitle">1) Stream Name/Title<a class="headerlink" href="#1-stream-nametitle" title="Permanent link">&para;</a></h3>
 <p>Set the name with an EXTINF tag in the m3u playlist file:</p>
 <div class="highlight"><pre><span></span><code>#EXTM3U
 #EXTINF:-1, - My Radio Stream Name
@@ -376,7 +382,7 @@ http://radio.stream.domain/stream.url
 Length is -1 since it's a stream, <code>&lt;Artist Name&gt;</code> was left blank since
 <code>StreamTitle</code> is accurate in the Metadata but <code>&lt;Artist Title&gt;</code> was set to
 <code>My Radio Stream Name</code> since <code>icy-name</code> was blank.</p>
-<h3 id="2-artwork-and-track-duration">2) Artwork (and track duration)</h3>
+<h3 id="2-artwork-and-track-duration">2) Artwork (and track duration)<a class="headerlink" href="#2-artwork-and-track-duration" title="Permanent link">&para;</a></h3>
 <p>If <code>StreamUrl</code> does not point directly to an artwork file then the link may be
 to a json file that contains an artwork link. If so, you can make forked-daapd
 download the file automatically and search for an artwork link, and also track
@@ -470,8 +476,8 @@ the same name, e.g. <code>My Radio Stream.jpg</code> for <code>My Radio Stream.m
       
     </div>
     
-      <script src="../assets/javascripts/vendor.77e55a48.min.js"></script>
-      <script src="../assets/javascripts/bundle.9554a270.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
+      <script src="../assets/javascripts/vendor.6a3d08fc.min.js"></script>
+      <script src="../assets/javascripts/bundle.71201edf.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
       
       <script>
         app = initialize({

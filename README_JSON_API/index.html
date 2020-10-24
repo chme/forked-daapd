@@ -9,7 +9,7 @@
       
       
       <link rel="shortcut icon" href="../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.0.2">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.1.0">
     
     
       
@@ -17,14 +17,14 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.38780c08.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.bc7e593a.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.3f72e892.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab28b872.min.css">
         
           
           
-          <meta name="theme-color" content="#009485">
+          <meta name="theme-color" content="#000000">
         
       
     
@@ -39,6 +39,8 @@
     
     
     
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
     
       
     
@@ -51,7 +53,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="">
       
   
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -69,7 +71,9 @@
       
     </div>
     
-      <header class="md-header" data-md-component="header">
+      
+
+<header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid" aria-label="Header">
     <a href=".." title="forked-daapd" class="md-header-nav__button md-logo" aria-label="forked-daapd">
       
@@ -140,7 +144,9 @@
               <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+                    
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="forked-daapd" class="md-nav__button md-logo" aria-label="forked-daapd">
       
@@ -1379,7 +1385,7 @@
               
                 
                 
-                <h1 id="forked-daapd-api-endpoint-reference">forked-daapd API Endpoint Reference</h1>
+                <h1 id="forked-daapd-api-endpoint-reference">forked-daapd API Endpoint Reference<a class="headerlink" href="#forked-daapd-api-endpoint-reference" title="Permanent link">&para;</a></h1>
 <p>Available API endpoints:</p>
 <ul>
 <li><a href="#player">Player</a>: control playback, volume, shuffle/repeat modes</li>
@@ -1399,7 +1405,7 @@
 <li><a href="#album-object">Album</a></li>
 <li><a href="#track-object">Track</a></li>
 </ul>
-<h2 id="player">Player</h2>
+<h2 id="player">Player<a class="headerlink" href="#player" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1451,7 +1457,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="get-player-status">Get player status</h3>
+<h3 id="get-player-status">Get player status<a class="headerlink" href="#get-player-status" title="Permanent link">&para;</a></h3>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/player</span>
 </code></pre></div>
@@ -1521,7 +1527,7 @@
   <span class="nt">&quot;item_progress_ms&quot;</span><span class="p">:</span> <span class="mi">3674</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="control-playback">Control playback</h3>
+<h3 id="control-playback">Control playback<a class="headerlink" href="#control-playback" title="Permanent link">&para;</a></h3>
 <p>Start or resume, pause, stop playback.</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/play</span>
@@ -1543,7 +1549,7 @@
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/toggle&quot;</span>
 </code></pre></div>
-<h3 id="skip-tracks">Skip tracks</h3>
+<h3 id="skip-tracks">Skip tracks<a class="headerlink" href="#skip-tracks" title="Permanent link">&para;</a></h3>
 <p>Skip forward or backward</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/next</span>
@@ -1557,7 +1563,7 @@
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/previous&quot;</span>
 </code></pre></div>
-<h3 id="set-shuffle-mode">Set shuffle mode</h3>
+<h3 id="set-shuffle-mode">Set shuffle mode<a class="headerlink" href="#set-shuffle-mode" title="Permanent link">&para;</a></h3>
 <p>Enable or disable shuffle mode</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/shuffle</span>
@@ -1582,7 +1588,7 @@
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/shuffle?state=true&quot;</span>
 </code></pre></div>
-<h3 id="set-consume-mode">Set consume mode</h3>
+<h3 id="set-consume-mode">Set consume mode<a class="headerlink" href="#set-consume-mode" title="Permanent link">&para;</a></h3>
 <p>Enable or disable consume mode</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/consume</span>
@@ -1607,7 +1613,7 @@
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/consume?state=true&quot;</span>
 </code></pre></div>
-<h3 id="set-repeat-mode">Set repeat mode</h3>
+<h3 id="set-repeat-mode">Set repeat mode<a class="headerlink" href="#set-repeat-mode" title="Permanent link">&para;</a></h3>
 <p>Change repeat mode</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/repeat</span>
@@ -1632,7 +1638,7 @@
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/repeat?state=all&quot;</span>
 </code></pre></div>
-<h3 id="set-volume">Set volume</h3>
+<h3 id="set-volume">Set volume<a class="headerlink" href="#set-volume" title="Permanent link">&para;</a></h3>
 <p>Change master volume or volume of a specific output.</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/volume</span>
@@ -1670,7 +1676,7 @@
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/volume?volume=50&amp;output_id=0&quot;</span>
 </code></pre></div>
-<h3 id="seek">Seek</h3>
+<h3 id="seek">Seek<a class="headerlink" href="#seek" title="Permanent link">&para;</a></h3>
 <p>Seek to a position in the currently playing track.</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/player/seek</span>
@@ -1703,7 +1709,7 @@
 <p>Relative seeking (skip 30 seconds backwards):</p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/player/seek?seek_ms=-30000&quot;</span>
 </code></pre></div>
-<h2 id="outputs-speakers">Outputs / Speakers</h2>
+<h2 id="outputs-speakers">Outputs / Speakers<a class="headerlink" href="#outputs-speakers" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1740,7 +1746,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="get-a-list-of-available-outputs">Get a list of available outputs</h3>
+<h3 id="get-a-list-of-available-outputs">Get a list of available outputs<a class="headerlink" href="#get-a-list-of-available-outputs" title="Permanent link">&para;</a></h3>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/outputs</span>
 </code></pre></div>
@@ -1851,7 +1857,7 @@
   <span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="set-enabled-outputs">Set enabled outputs</h3>
+<h3 id="set-enabled-outputs">Set enabled outputs<a class="headerlink" href="#set-enabled-outputs" title="Permanent link">&para;</a></h3>
 <p>Set the enabled outputs by passing an array of output ids. forked-daapd enables all outputs
 with the given ids and disables the remaining outputs.</p>
 <p><strong>Endpoint</strong></p>
@@ -1879,7 +1885,7 @@ with the given ids and disables the remaining outputs.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/outputs/set&quot;</span> --data <span class="s2">&quot;{\&quot;outputs\&quot;:[\&quot;198018693182577\&quot;,\&quot;0\&quot;]}&quot;</span>
 </code></pre></div>
-<h3 id="get-an-output">Get an output</h3>
+<h3 id="get-an-output">Get an output<a class="headerlink" href="#get-an-output" title="Permanent link">&para;</a></h3>
 <p>Get an output</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/outputs/{id}</span>
@@ -1915,7 +1921,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;volume&quot;</span><span class="p">:</span> <span class="mi">3</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="change-an-output">Change an output</h3>
+<h3 id="change-an-output">Change an output<a class="headerlink" href="#change-an-output" title="Permanent link">&para;</a></h3>
 <p>Enable or disable an output and change its volume.</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/outputs/{id}</span>
@@ -1967,7 +1973,7 @@ with the given ids and disables the remaining outputs.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/outputs/0&quot;</span> --data <span class="s2">&quot;{\&quot;selected\&quot;:true, \&quot;volume\&quot;: 50}&quot;</span>
 </code></pre></div>
-<h3 id="toggle-an-output">Toggle an output</h3>
+<h3 id="toggle-an-output">Toggle an output<a class="headerlink" href="#toggle-an-output" title="Permanent link">&para;</a></h3>
 <p>Enable or disable an output, depending on its current state</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/outputs/{id}/toggle</span>
@@ -1992,7 +1998,7 @@ with the given ids and disables the remaining outputs.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/outputs/0/toggle&quot;</span>
 </code></pre></div>
-<h2 id="queue">Queue</h2>
+<h2 id="queue">Queue<a class="headerlink" href="#queue" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -2029,7 +2035,7 @@ with the given ids and disables the remaining outputs.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="list-queue-items">List queue items</h3>
+<h3 id="list-queue-items">List queue items<a class="headerlink" href="#list-queue-items" title="Permanent link">&para;</a></h3>
 <p>Lists the items in the current queue</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/queue</span>
@@ -2116,7 +2122,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="clearing-the-queue">Clearing the queue</h3>
+<h3 id="clearing-the-queue">Clearing the queue<a class="headerlink" href="#clearing-the-queue" title="Permanent link">&para;</a></h3>
 <p>Remove all items form the current queue</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/queue/clear</span>
@@ -2126,7 +2132,7 @@ with the given ids and disables the remaining outputs.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/queue/clear&quot;</span>
 </code></pre></div>
-<h3 id="adding-items-to-the-queue">Adding items to the queue</h3>
+<h3 id="adding-items-to-the-queue">Adding items to the queue<a class="headerlink" href="#adding-items-to-the-queue" title="Permanent link">&para;</a></h3>
 <p>Add tracks, playlists artists or albums to the current queue</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">POST /api/queue/items/add</span>
@@ -2215,7 +2221,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">10</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="moving-a-queue-item">Moving a queue item</h3>
+<h3 id="moving-a-queue-item">Moving a queue item<a class="headerlink" href="#moving-a-queue-item" title="Permanent link">&para;</a></h3>
 <p>Move a queue item in the current queue</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/queue/items/{id}</span>
@@ -2255,7 +2261,7 @@ with the given ids and disables the remaining outputs.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/queue/items/3?new_position=0&quot;</span>
 </code></pre></div>
-<h3 id="removing-a-queue-item">Removing a queue item</h3>
+<h3 id="removing-a-queue-item">Removing a queue item<a class="headerlink" href="#removing-a-queue-item" title="Permanent link">&para;</a></h3>
 <p>Remove a queue item from the current queue</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">DELETE /api/queue/items/{id}</span>
@@ -2280,7 +2286,7 @@ with the given ids and disables the remaining outputs.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/queue/items/2&quot;</span>
 </code></pre></div>
-<h2 id="library">Library</h2>
+<h2 id="library">Library<a class="headerlink" href="#library" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -2412,7 +2418,7 @@ with the given ids and disables the remaining outputs.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="library-information">Library information</h3>
+<h3 id="library-information">Library information<a class="headerlink" href="#library-information" title="Permanent link">&para;</a></h3>
 <p>List some library stats</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library</span>
@@ -2477,7 +2483,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;updating&quot;</span><span class="p">:</span> <span class="kc">false</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="list-playlists">List playlists</h3>
+<h3 id="list-playlists">List playlists<a class="headerlink" href="#list-playlists" title="Permanent link">&para;</a></h3>
 <p>Lists all playlists in your library (does not return playlist folders)</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library/playlists</span>
@@ -2552,7 +2558,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="get-a-playlist">Get a playlist</h3>
+<h3 id="get-a-playlist">Get a playlist<a class="headerlink" href="#get-a-playlist" title="Permanent link">&para;</a></h3>
 <p>Get a specific playlists in your library</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library/playlists/{id}</span>
@@ -2585,7 +2591,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:playlist:1&quot;</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="update-a-playlist">Update a playlist</h3>
+<h3 id="update-a-playlist">Update a playlist<a class="headerlink" href="#update-a-playlist" title="Permanent link">&para;</a></h3>
 <p>Update attributes of a specific playlists in your library</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/library/playlists/{id}</span>
@@ -2623,7 +2629,7 @@ with the given ids and disables the remaining outputs.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/library/playlists/25?query_limit=20&quot;</span>
 </code></pre></div>
-<h3 id="delete-a-playlist">Delete a playlist</h3>
+<h3 id="delete-a-playlist">Delete a playlist<a class="headerlink" href="#delete-a-playlist" title="Permanent link">&para;</a></h3>
 <p>Delete a playlist, e.g. a RSS feed</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">DELETE /api/library/playlists/{id}</span>
@@ -2646,7 +2652,7 @@ with the given ids and disables the remaining outputs.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X DELETE <span class="s2">&quot;http://localhost:3689/api/library/playlists/25&quot;</span>
 </code></pre></div>
-<h3 id="list-playlist-tracks">List playlist tracks</h3>
+<h3 id="list-playlist-tracks">List playlist tracks<a class="headerlink" href="#list-playlist-tracks" title="Permanent link">&para;</a></h3>
 <p>Lists the tracks in a playlists</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library/playlists/{id}/tracks</span>
@@ -2751,7 +2757,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="update-playlist-tracks">Update playlist tracks</h3>
+<h3 id="update-playlist-tracks">Update playlist tracks<a class="headerlink" href="#update-playlist-tracks" title="Permanent link">&para;</a></h3>
 <p>Updates the play count for tracks in a playlists</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/library/playlists/{id}/tracks</span>
@@ -2789,7 +2795,7 @@ with the given ids and disables the remaining outputs.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/library/playlists/1/tracks?play_count=played&quot;</span>
 </code></pre></div>
-<h3 id="list-playlists-in-a-playlist-folder">List playlists in a playlist folder</h3>
+<h3 id="list-playlists-in-a-playlist-folder">List playlists in a playlist folder<a class="headerlink" href="#list-playlists-in-a-playlist-folder" title="Permanent link">&para;</a></h3>
 <p>Lists the playlists in a playlist folder</p>
 <p><strong>Note</strong>: The root playlist folder has <code>id</code> 0.</p>
 <p><strong>Endpoint</strong></p>
@@ -2890,7 +2896,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="list-artists">List artists</h3>
+<h3 id="list-artists">List artists<a class="headerlink" href="#list-artists" title="Permanent link">&para;</a></h3>
 <p>Lists the artists in your library</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library/artists</span>
@@ -2967,7 +2973,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="get-an-artist">Get an artist</h3>
+<h3 id="get-an-artist">Get an artist<a class="headerlink" href="#get-an-artist" title="Permanent link">&para;</a></h3>
 <p>Get a specific artist in your library</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library/artists/{id}</span>
@@ -3002,7 +3008,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:artist:3815427709949443149&quot;</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="list-artist-albums">List artist albums</h3>
+<h3 id="list-artist-albums">List artist albums<a class="headerlink" href="#list-artist-albums" title="Permanent link">&para;</a></h3>
 <p>Lists the albums of an artist</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library/artists/{id}/albums</span>
@@ -3095,7 +3101,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="list-albums">List albums</h3>
+<h3 id="list-albums">List albums<a class="headerlink" href="#list-albums" title="Permanent link">&para;</a></h3>
 <p>Lists the albums in your library</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library/albums</span>
@@ -3173,7 +3179,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="get-an-album">Get an album</h3>
+<h3 id="get-an-album">Get an album<a class="headerlink" href="#get-an-album" title="Permanent link">&para;</a></h3>
 <p>Get a specific album in your library</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library/albums/{id}</span>
@@ -3209,7 +3215,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;library:album:8009851123233197743&quot;</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="list-album-tracks">List album tracks</h3>
+<h3 id="list-album-tracks">List album tracks<a class="headerlink" href="#list-album-tracks" title="Permanent link">&para;</a></h3>
 <p>Lists the tracks in an album</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library/albums/{id}/tracks</span>
@@ -3313,7 +3319,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="get-a-track">Get a track</h3>
+<h3 id="get-a-track">Get a track<a class="headerlink" href="#get-a-track" title="Permanent link">&para;</a></h3>
 <p>Get a specific track in your library</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library/tracks/{id}</span>
@@ -3369,7 +3375,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;artwork_url&quot;</span><span class="p">:</span> <span class="s2">&quot;/artwork/item/1&quot;</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="list-playlists-for-a-track">List playlists for a track</h3>
+<h3 id="list-playlists-for-a-track">List playlists for a track<a class="headerlink" href="#list-playlists-for-a-track" title="Permanent link">&para;</a></h3>
 <p>Get the list of playlists that contain a track (does not return smart playlists)</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library/tracks/{id}/playlists</span>
@@ -3459,7 +3465,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="update-track-properties">Update track properties</h3>
+<h3 id="update-track-properties">Update track properties<a class="headerlink" href="#update-track-properties" title="Permanent link">&para;</a></h3>
 <p>Change properties of a specific track (supported properties are "rating" and "play_count")</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/library/tracks/{id}</span>
@@ -3505,7 +3511,7 @@ with the given ids and disables the remaining outputs.</p>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/library/tracks/1?play_count=increment&quot;</span>
 </code></pre></div>
-<h3 id="list-genres">List genres</h3>
+<h3 id="list-genres">List genres<a class="headerlink" href="#list-genres" title="Permanent link">&para;</a></h3>
 <p>Get list of genres</p>
 <p><strong>Endpoint</strong></p>
 <p><div class="highlight"><pre><span></span><code><span class="err">GET /api/library/genres</span>
@@ -3568,7 +3574,7 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;limit&quot;</span><span class="p">:</span> <span class="mi">-1</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="list-albums-for-genre">List albums for genre</h3>
+<h3 id="list-albums-for-genre">List albums for genre<a class="headerlink" href="#list-albums-for-genre" title="Permanent link">&para;</a></h3>
 <p>Lists the albums in a genre</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET api/search?type=albums&amp;expression=genre+is+\&quot;{genre name}\&quot;&quot;</span>
@@ -3674,7 +3680,7 @@ curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=albums&
   <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="get-count-of-tracks-artists-and-albums">Get count of tracks, artists and albums</h3>
+<h3 id="get-count-of-tracks-artists-and-albums">Get count of tracks, artists and albums<a class="headerlink" href="#get-count-of-tracks-artists-and-albums" title="Permanent link">&para;</a></h3>
 <p>Get information about the number of tracks, artists and albums and the total playtime</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library/count</span>
@@ -3736,7 +3742,7 @@ curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=albums&
   <span class="nt">&quot;db_playtime&quot;</span><span class="p">:</span> <span class="mi">1590767</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="list-local-directories">List local directories</h3>
+<h3 id="list-local-directories">List local directories<a class="headerlink" href="#list-local-directories" title="Permanent link">&para;</a></h3>
 <p>List the local directories and the directory contents (tracks and playlists)</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/library/files</span>
@@ -3850,7 +3856,7 @@ curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=albums&
   <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="trigger-rescan">Trigger rescan</h3>
+<h3 id="trigger-rescan">Trigger rescan<a class="headerlink" href="#trigger-rescan" title="Permanent link">&para;</a></h3>
 <p>Trigger a library rescan</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/update</span>
@@ -3870,7 +3876,7 @@ curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=albums&
   <span class="nt">&quot;updating&quot;</span><span class="p">:</span> <span class="kc">false</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="trigger-metadata-rescan">Trigger metadata rescan</h3>
+<h3 id="trigger-metadata-rescan">Trigger metadata rescan<a class="headerlink" href="#trigger-metadata-rescan" title="Permanent link">&para;</a></h3>
 <p>Trigger a library metadata rescan even if files have not been updated.  Maintenence method.</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/rescan</span>
@@ -3880,7 +3886,7 @@ curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=albums&
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/rescan&quot;</span>
 </code></pre></div>
-<h3 id="backup-db">Backup DB</h3>
+<h3 id="backup-db">Backup DB<a class="headerlink" href="#backup-db" title="Permanent link">&para;</a></h3>
 <p>Request a library backup - configuration must be enabled and point to a valid writable path. Maintenance method.</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/library/backup</span>
@@ -3892,7 +3898,7 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/library/backup&quot;</span>
 </code></pre></div>
-<h2 id="search">Search</h2>
+<h2 id="search">Search<a class="headerlink" href="#search" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -3914,7 +3920,7 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
 </tr>
 </tbody>
 </table>
-<h3 id="search-by-search-term">Search by search term</h3>
+<h3 id="search-by-search-term">Search by search term<a class="headerlink" href="#search-by-search-term" title="Permanent link">&para;</a></h3>
 <p>Search for playlists, artists, albums, tracks, genres that include the given query in their title (case insensitive matching).</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/search</span>
@@ -4089,7 +4095,7 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
   <span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="search-by-query-language">Search by query language</h3>
+<h3 id="search-by-query-language">Search by query language<a class="headerlink" href="#search-by-query-language" title="Permanent link">&para;</a></h3>
 <p>Search for artists, albums, tracks by a smart playlist query expression (see <a href="https://github.com/ejurgensen/forked-daapd/blob/master/README_SMARTPL.md">README_SMARTPL.md</a> for the expression syntax).</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/search</span>
@@ -4152,7 +4158,7 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
 <p>Search for music tracks ordered descending by the time added to the library and limit result to 2 items:</p>
 <div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=tracks&amp;expression=media_kind+is+music+order+by+time_added+desc&amp;offset=0&amp;limit=2&quot;</span>
 </code></pre></div>
-<h2 id="server-info">Server info</h2>
+<h2 id="server-info">Server info<a class="headerlink" href="#server-info" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -4169,7 +4175,7 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
 </tr>
 </tbody>
 </table>
-<h3 id="config">Config</h3>
+<h3 id="config">Config<a class="headerlink" href="#config" title="Permanent link">&para;</a></h3>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/config</span>
 </code></pre></div>
@@ -4218,7 +4224,7 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
   <span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
-<h2 id="settings">Settings</h2>
+<h2 id="settings">Settings<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -4255,7 +4261,7 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
 </tr>
 </tbody>
 </table>
-<h3 id="list-categories">List categories</h3>
+<h3 id="list-categories">List categories<a class="headerlink" href="#list-categories" title="Permanent link">&para;</a></h3>
 <p>List all settings categories with their options</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/settings</span>
@@ -4300,7 +4306,7 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
   <span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="get-a-category">Get a category</h3>
+<h3 id="get-a-category">Get a category<a class="headerlink" href="#get-a-category" title="Permanent link">&para;</a></h3>
 <p>Get a settings category with their options</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/settings/{category-name}</span>
@@ -4326,7 +4332,7 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
   <span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="get-an-option">Get an option</h3>
+<h3 id="get-an-option">Get an option<a class="headerlink" href="#get-an-option" title="Permanent link">&para;</a></h3>
 <p>Get a single settings option</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/settings/{category-name}/{option-name}</span>
@@ -4342,7 +4348,7 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
   <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="kc">true</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="change-an-option-value">Change an option value</h3>
+<h3 id="change-an-option-value">Change an option value<a class="headerlink" href="#change-an-option-value" title="Permanent link">&para;</a></h3>
 <p>Get a single settings option</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/settings/{category-name}/{option-name}</span>
@@ -4374,7 +4380,7 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/settings/webinterface/show_composer_now_playing&quot;</span> --data <span class="s2">&quot;{\&quot;name\&quot;:\&quot;show_composer_now_playing\&quot;,\&quot;value\&quot;:true}&quot;</span>
 </code></pre></div>
-<h3 id="delete-an-option">Delete an option</h3>
+<h3 id="delete-an-option">Delete an option<a class="headerlink" href="#delete-an-option" title="Permanent link">&para;</a></h3>
 <p>Delete a single settings option (thus resetting it to default)</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">DELETE /api/settings/{category-name}/{option-name}</span>
@@ -4384,7 +4390,7 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X DELETE <span class="s2">&quot;http://localhost:3689/api/settings/webinterface/show_composer_now_playing&quot;</span>
 </code></pre></div>
-<h2 id="push-notifications">Push notifications</h2>
+<h2 id="push-notifications">Push notifications<a class="headerlink" href="#push-notifications" title="Permanent link">&para;</a></h2>
 <p>If forked-daapd was built with websocket support, forked-daapd exposes a websocket at <code>localhost:3688</code> to inform clients of changes (e. g. player state or library updates).
 The port depends on the forked-daapd configuration and can be read using the <a href="#config"><code>/api/config</code></a> endpoint.</p>
 <p>After connecting to the websocket, the client should send a message containing the event types it is interested in. After that forked-daapd
@@ -4464,8 +4470,8 @@ will send a message each time one of the events occurred.</p>
   <span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
-<h2 id="object-model">Object model</h2>
-<h3 id="queue-item-object"><code>queue item</code> object</h3>
+<h2 id="object-model">Object model<a class="headerlink" href="#object-model" title="Permanent link">&para;</a></h2>
+<h3 id="queue-item-object"><code>queue item</code> object<a class="headerlink" href="#queue-item-object" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -4612,7 +4618,7 @@ will send a message each time one of the events occurred.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="playlist-object"><code>playlist</code> object</h3>
+<h3 id="playlist-object"><code>playlist</code> object<a class="headerlink" href="#playlist-object" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -4664,7 +4670,7 @@ will send a message each time one of the events occurred.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="artist-object"><code>artist</code> object</h3>
+<h3 id="artist-object"><code>artist</code> object<a class="headerlink" href="#artist-object" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -4716,7 +4722,7 @@ will send a message each time one of the events occurred.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="album-object"><code>album</code> object</h3>
+<h3 id="album-object"><code>album</code> object<a class="headerlink" href="#album-object" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -4773,7 +4779,7 @@ will send a message each time one of the events occurred.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="track-object"><code>track</code> object</h3>
+<h3 id="track-object"><code>track</code> object<a class="headerlink" href="#track-object" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -4935,7 +4941,7 @@ will send a message each time one of the events occurred.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="paging-object"><code>paging</code> object</h3>
+<h3 id="paging-object"><code>paging</code> object<a class="headerlink" href="#paging-object" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -4967,7 +4973,7 @@ will send a message each time one of the events occurred.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="genre-object"><code>genre</code> object</h3>
+<h3 id="genre-object"><code>genre</code> object<a class="headerlink" href="#genre-object" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -4984,7 +4990,7 @@ will send a message each time one of the events occurred.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="directory-object"><code>directory</code> object</h3>
+<h3 id="directory-object"><code>directory</code> object<a class="headerlink" href="#directory-object" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -5001,7 +5007,7 @@ will send a message each time one of the events occurred.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="category-object"><code>category</code> object</h3>
+<h3 id="category-object"><code>category</code> object<a class="headerlink" href="#category-object" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -5023,7 +5029,7 @@ will send a message each time one of the events occurred.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="option-object"><code>option</code> object</h3>
+<h3 id="option-object"><code>option</code> object<a class="headerlink" href="#option-object" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -5050,7 +5056,7 @@ will send a message each time one of the events occurred.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="artwork-urls">Artwork urls</h3>
+<h3 id="artwork-urls">Artwork urls<a class="headerlink" href="#artwork-urls" title="Permanent link">&para;</a></h3>
 <p>Artwork urls in <code>queue item</code>, <code>artist</code>, <code>album</code> and <code>track</code> objects can be either relative urls or absolute urls to the artwork image.
 Absolute artwork urls are pointing to external artwork images (e. g. for radio streams that provide artwork metadata), while relative artwork urls are served from forked-daapd. </p>
 <p>It is possible to add the query parameters <code>maxwidth</code> and/or <code>maxheight</code> to relative artwork urls, in order to get a smaller image (forked-daapd only scales down never up).</p>
@@ -5134,8 +5140,8 @@ Absolute artwork urls are pointing to external artwork images (e. g. for radio s
       
     </div>
     
-      <script src="../assets/javascripts/vendor.77e55a48.min.js"></script>
-      <script src="../assets/javascripts/bundle.9554a270.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
+      <script src="../assets/javascripts/vendor.6a3d08fc.min.js"></script>
+      <script src="../assets/javascripts/bundle.71201edf.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
       
       <script>
         app = initialize({

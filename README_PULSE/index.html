@@ -9,7 +9,7 @@
       
       
       <link rel="shortcut icon" href="../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.0.2">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.1.0">
     
     
       
@@ -17,14 +17,14 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.38780c08.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.bc7e593a.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.3f72e892.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab28b872.min.css">
         
           
           
-          <meta name="theme-color" content="#009485">
+          <meta name="theme-color" content="#000000">
         
       
     
@@ -39,6 +39,8 @@
     
     
     
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
     
       
     
@@ -51,7 +53,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="">
       
   
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -69,7 +71,9 @@
       
     </div>
     
-      <header class="md-header" data-md-component="header">
+      
+
+<header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid" aria-label="Header">
     <a href=".." title="forked-daapd" class="md-header-nav__button md-logo" aria-label="forked-daapd">
       
@@ -140,7 +144,9 @@
               <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
-                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+                    
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="forked-daapd" class="md-nav__button md-logo" aria-label="forked-daapd">
       
@@ -453,7 +459,7 @@
               
                 
                 
-                <h1 id="forked-daapd-and-pulseaudio">forked-daapd and Pulseaudio</h1>
+                <h1 id="forked-daapd-and-pulseaudio">forked-daapd and Pulseaudio<a class="headerlink" href="#forked-daapd-and-pulseaudio" title="Permanent link">&para;</a></h1>
 <p>You have the choice of runnning Pulseaudio either in system mode or user mode.
 For headless servers, i.e. systems without desktop users, system mode is
 recommended.</p>
@@ -466,11 +472,11 @@ sessions as expected.</p>
 <li><a href="#system-mode-with-bluetooth-support">System mode</a></li>
 <li><a href="#user-mode-with-network-access">User mode</a></li>
 </ul>
-<h2 id="system-mode-with-bluetooth-support">System Mode with Bluetooth support</h2>
+<h2 id="system-mode-with-bluetooth-support">System Mode with Bluetooth support<a class="headerlink" href="#system-mode-with-bluetooth-support" title="Permanent link">&para;</a></h2>
 <p>Credit: <a href="http://robpope.co.uk/blog/post/setting-up-forked-daapd-with-bluetooth">Rob Pope</a></p>
 <p>This guide was written based on headless Debian Jessie platforms. Most of the
 instructions will require that you are root.</p>
-<h3 id="step-1-setting-up-pulseaudio">Step 1: Setting up Pulseaudio</h3>
+<h3 id="step-1-setting-up-pulseaudio">Step 1: Setting up Pulseaudio<a class="headerlink" href="#step-1-setting-up-pulseaudio" title="Permanent link">&para;</a></h3>
 <p>If you see a "Connection refused" error when starting forked-daapd, then you
 will probably need to setup Pulseaudio to run in system mode [1]. This means
 that the Pulseaudio daemon will be started during boot and be available to all
@@ -510,13 +516,13 @@ step. Otherwise do one of the following:</p>
 1. enable system mode on boot with <code>systemctl enable pulseaudio</code>
 2. reboot (or at least restart dbus and pulseaudio)
 3. check that the Bluetooth module is loaded with <code>pactl list modules short</code></p>
-<h3 id="step-2-setting-up-forked-daapd">Step 2: Setting up forked-daapd</h3>
+<h3 id="step-2-setting-up-forked-daapd">Step 2: Setting up forked-daapd<a class="headerlink" href="#step-2-setting-up-forked-daapd" title="Permanent link">&para;</a></h3>
 <p>Add the user forked-daapd is running as (typically "daapd") to the
 "pulse-access" group:</p>
 <div class="highlight"><pre><span></span><code>adduser daapd pulse-access
 </code></pre></div>
 <p>Now (re)start forked-daapd.</p>
-<h3 id="step-3-adding-a-bluetooth-device">Step 3: Adding a Bluetooth device</h3>
+<h3 id="step-3-adding-a-bluetooth-device">Step 3: Adding a Bluetooth device<a class="headerlink" href="#step-3-adding-a-bluetooth-device" title="Permanent link">&para;</a></h3>
 <p>To connect with the device, run <code>bluetoothctl</code> and then:</p>
 <div class="highlight"><pre><span></span><code>power on
 agent on
@@ -529,22 +535,22 @@ connect [MAC address]
 </code></pre></div>
 <p>Now the speaker should appear in forked-daapd. You can also verify that
 Pulseaudio has detected the speaker with <code>pactl list sinks short</code>.</p>
-<h2 id="user-mode-with-network-access">User Mode with Network Access</h2>
+<h2 id="user-mode-with-network-access">User Mode with Network Access<a class="headerlink" href="#user-mode-with-network-access" title="Permanent link">&para;</a></h2>
 <p>Credit: wolfmanx and <a href="http://billauer.co.il/blog/2014/01/pa-multiple-users/">this blog</a></p>
-<h3 id="step-1-copy-system-pulseaudio-configuration-to-the-users-home-directory">Step 1: Copy system pulseaudio configuration to the users home directory</h3>
+<h3 id="step-1-copy-system-pulseaudio-configuration-to-the-users-home-directory">Step 1: Copy system pulseaudio configuration to the users home directory<a class="headerlink" href="#step-1-copy-system-pulseaudio-configuration-to-the-users-home-directory" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>mkdir -p ~/.pulse
 cp /etc/pulse/default.pa ~/.pulse/
 </code></pre></div>
-<h3 id="step-2-enable-tcp-access-from-localhost-only">Step 2: Enable TCP access from localhost only</h3>
+<h3 id="step-2-enable-tcp-access-from-localhost-only">Step 2: Enable TCP access from localhost only<a class="headerlink" href="#step-2-enable-tcp-access-from-localhost-only" title="Permanent link">&para;</a></h3>
 <p>Edit the file <code>~/.pulse/default.pa</code> , adding the following line at the end:</p>
 <div class="highlight"><pre><span></span><code>load-module module-native-protocol-tcp auth-ip-acl=127.0.0.1
 </code></pre></div>
-<h3 id="step-3-restart-the-pulseaudio-deamon">Step 3: Restart the pulseaudio deamon</h3>
+<h3 id="step-3-restart-the-pulseaudio-deamon">Step 3: Restart the pulseaudio deamon<a class="headerlink" href="#step-3-restart-the-pulseaudio-deamon" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>pulseaudio -k
 # OR
 pulseaudio -D
 </code></pre></div>
-<h3 id="step-4-adjust-configuration-file">Step 4: Adjust configuration file</h3>
+<h3 id="step-4-adjust-configuration-file">Step 4: Adjust configuration file<a class="headerlink" href="#step-4-adjust-configuration-file" title="Permanent link">&para;</a></h3>
 <p>In the <code>audio</code> section of <code>/etc/forked-daapd.conf</code>, set <code>server</code> to <code>localhost</code>:</p>
 <div class="highlight"><pre><span></span><code>server = &quot;localhost&quot;
 </code></pre></div>
@@ -630,8 +636,8 @@ case it is actually the solution recommended by the <a href="https://lists.freed
       
     </div>
     
-      <script src="../assets/javascripts/vendor.77e55a48.min.js"></script>
-      <script src="../assets/javascripts/bundle.9554a270.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
+      <script src="../assets/javascripts/vendor.6a3d08fc.min.js"></script>
+      <script src="../assets/javascripts/bundle.71201edf.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
       
       <script>
         app = initialize({
