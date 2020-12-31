@@ -1,0 +1,10 @@
+.md-button {
+    color: var(--md-accent-fg-color) !important;
+    border-color: currentColor !important;
+}
+.md-button:focus,
+.md-button:hover {
+    color: var(--md-primary-fg-color) !important;
+    background-color: var(--md-accent-fg-color) !important;
+    border-color: var(--md-accent-fg-color) !important;
+}

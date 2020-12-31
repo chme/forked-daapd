@@ -1,0 +1,1455 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Linux/FreeBSD DAAP (iTunes) and MPD media server with support for AirPlay devices (multiroom), Apple Remote (and compatibles), Chromecast, Spotify and internet radio. ">
+      
+      
+      
+      
+        <link rel="canonical" href="https://ejurgensen.github.io/forked-daapd/alsa/">
+      
+      <link rel="shortcut icon" href="../images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.2.3">
+    
+    
+      
+        <title>ALSA - forked-daapd</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.3b61ea93.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.39b8e14a.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#ffffff">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="">
+      
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#forked-daapd-and-alsa" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href="https://ejurgensen.github.io/forked-daapd/" title="forked-daapd" class="md-header-nav__button md-logo" aria-label="forked-daapd">
+      
+  <img src="../images/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      <div class="md-header-nav__ellipsis">
+        <div class="md-header-nav__topic">
+          <span class="md-ellipsis">
+            forked-daapd
+          </span>
+        </div>
+        <div class="md-header-nav__topic">
+          <span class="md-ellipsis">
+            
+              ALSA
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header-nav__source">
+        
+<a href="https://github.com/ejurgensen/forked-daapd/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ejurgensen/forked-daapd
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        Home
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../install/" class="md-tabs__link md-tabs__link--active">
+        Documentation
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        API Reference
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="https://ejurgensen.github.io/forked-daapd/" title="forked-daapd" class="md-nav__button md-logo" aria-label="forked-daapd">
+      
+  <img src="../images/logo.svg" alt="logo">
+
+    </a>
+    forked-daapd
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/ejurgensen/forked-daapd/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ejurgensen/forked-daapd
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+
+  
+  <li class="md-nav__item md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-1" type="checkbox" id="nav-1" >
+    
+    <label class="md-nav__link" for="nav-1">
+      Home
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Home" data-md-level="1">
+      <label class="md-nav__title" for="nav-1">
+        <span class="md-nav__icon md-icon"></span>
+        Home
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href=".." class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../getting_started/" class="md-nav__link">
+      Getting started
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  
+
+
+  
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Documentation
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Documentation" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        <span class="md-nav__icon md-icon"></span>
+        Documentation
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../install/" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../configuration/" class="md-nav__link">
+      Configuration
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../library/" class="md-nav__link">
+      Library
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../radio/" class="md-nav__link">
+      Playlists and Radio
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../smartpl/" class="md-nav__link">
+      Smart Playlists
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../artwork/" class="md-nav__link">
+      Artwork
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  
+    
+  
+  <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-7" type="checkbox" id="nav-2-7" >
+    
+    <label class="md-nav__link" for="nav-2-7">
+      Clients
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Clients" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-7">
+        <span class="md-nav__icon md-icon"></span>
+        Clients
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../clients/" class="md-nav__link">
+      Supported Clients
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../webinterface/" class="md-nav__link">
+      Web Interface
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../remote/" class="md-nav__link">
+      Remote
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../mpd/" class="md-nav__link">
+      MPD Clients
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../cli/" class="md-nav__link">
+      Command Line CLients
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  
+
+
+  
+    
+  
+  <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-8" type="checkbox" id="nav-2-8" checked>
+    
+    <label class="md-nav__link" for="nav-2-8">
+      Outputs
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Outputs" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-8">
+        <span class="md-nav__icon md-icon"></span>
+        Outputs
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../outputs/" class="md-nav__link">
+      Supported Outputs
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        ALSA
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+    
+    <a href="./" class="md-nav__link md-nav__link--active">
+      ALSA
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-introduction-to-alsa-devices" class="md-nav__link">
+    Quick introduction to ALSA devices
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-the-server" class="md-nav__link">
+    Configuring the server
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#automatically-determine-all-relevant-the-sound-card-information" class="md-nav__link">
+    Automatically Determine ALL relevant the sound card information
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manually-determining-the-sound-cards-you-have-alsa-can-see" class="md-nav__link">
+    Manually Determining the sound cards you have / ALSA can see
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mixer-name" class="md-nav__link">
+    Mixer name
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mixer-device" class="md-nav__link">
+    Mixer device
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handling-devices-that-cannot-concurrently-play-multiple-audio-streams" class="md-nav__link">
+    Handling Devices that cannot concurrently play multiple audio streams
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alsa-dmix-configurationsetup" class="md-nav__link">
+    ALSA dmix configuration/setup
+  </a>
+  
+    <nav class="md-nav" aria-label="ALSA dmix configuration/setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#forked-daapd-config-with-dmix" class="md-nav__link">
+    forked-daapd config with dmix
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-up-an-audio-equalizer" class="md-nav__link">
+    Setting up an Audio Equalizer
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../pulse/" class="md-nav__link">
+      Pulse Audio
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../streams/" class="md-nav__link">
+      Radio Streams
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  
+    
+  
+  <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-9" type="checkbox" id="nav-2-9" >
+    
+    <label class="md-nav__link" for="nav-2-9">
+      Online Services Integration
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Online Services Integration" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-9">
+        <span class="md-nav__icon md-icon"></span>
+        Online Services Integration
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../spotify/" class="md-nav__link">
+      Spotify
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../lastfm/" class="md-nav__link">
+      LastFM
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+
+  
+    
+  
+  <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-10" type="checkbox" id="nav-2-10" >
+    
+    <label class="md-nav__link" for="nav-2-10">
+      Advanced Topics
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Advanced Topics" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-10">
+        <span class="md-nav__icon md-icon"></span>
+        Advanced Topics
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../remote_access/" class="md-nav__link">
+      Remote Access
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+
+  
+  <li class="md-nav__item md-nav__item--nested">
+    
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" >
+    
+    <label class="md-nav__link" for="nav-3">
+      API Reference
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="API Reference" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon"></span>
+        API Reference
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+
+  <li class="md-nav__item">
+    <a href="../api/" class="md-nav__link">
+      JSON API
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-introduction-to-alsa-devices" class="md-nav__link">
+    Quick introduction to ALSA devices
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-the-server" class="md-nav__link">
+    Configuring the server
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#automatically-determine-all-relevant-the-sound-card-information" class="md-nav__link">
+    Automatically Determine ALL relevant the sound card information
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manually-determining-the-sound-cards-you-have-alsa-can-see" class="md-nav__link">
+    Manually Determining the sound cards you have / ALSA can see
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mixer-name" class="md-nav__link">
+    Mixer name
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mixer-device" class="md-nav__link">
+    Mixer device
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handling-devices-that-cannot-concurrently-play-multiple-audio-streams" class="md-nav__link">
+    Handling Devices that cannot concurrently play multiple audio streams
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alsa-dmix-configurationsetup" class="md-nav__link">
+    ALSA dmix configuration/setup
+  </a>
+  
+    <nav class="md-nav" aria-label="ALSA dmix configuration/setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#forked-daapd-config-with-dmix" class="md-nav__link">
+    forked-daapd config with dmix
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setting-up-an-audio-equalizer" class="md-nav__link">
+    Setting up an Audio Equalizer
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/ejurgensen/forked-daapd/edit/master/docs/alsa.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                <h1 id="forked-daapd-and-alsa">forked-daapd and ALSA<a class="headerlink" href="#forked-daapd-and-alsa" title="Permanent link">&para;</a></h1>
+<p>ALSA is one of the main output configuration options for local audio; when using ALSA you will typically let the system select the soundcard on your machine as the <code>default</code> device/sound card - a mixer associated with the ALSA device is used for volume control.  However if your machine has multiple sound cards and your system chooses the wrong playback device, you will need to manually select the card and mixer to complete the <code>forked daapd</code> configuration.</p>
+<h2 id="quick-introduction-to-alsa-devices">Quick introduction to ALSA devices<a class="headerlink" href="#quick-introduction-to-alsa-devices" title="Permanent link">&para;</a></h2>
+<p>ALSA devices can be addressed in a number ways but traditionally we have referred to them using the hardware prefix, card number and optionally device number with something like <code>hw:0</code> or <code>hw:0,1</code>.  In ALSA configuration terms <code>card X, device Y</code> is known as <code>hw:X,Y</code>.</p>
+<p>ALSA has other <em>prefixes</em> for each card and most importantly <code>plughw</code>.  The <code>plughw</code> performs transparent sample format and sample rate conversions and maybe a better choice for many users rather than <code>hw:</code> which would fail when provided unsupported audio formats/sample rates.</p>
+<p>Alternative ALSA names can be used to refer to physical ALSA devices and can be useful in a number of ways:
+* more descriptive rather than being a card number
+* consistent for USB numeration - USB ALSA devices may not have the same card number across reboots/reconnects</p>
+<p>The ALSA device information required for configuration the server can be deterined using <code>aplay</code>, as described in the rest of this document, but <code>forked-daapd</code> can also assist; when configured to log at <code>INFO</code> level the following information is provided during startup:
+<div class="highlight"><pre><span></span><code>laudio: Available ALSA playback mixer(s) on hw:0 CARD=Intel (HDA Intel): &#39;Master&#39; &#39;Headphone&#39; &#39;Speaker&#39; &#39;PCM&#39; &#39;Mic&#39; &#39;Beep&#39;
+laudio: Available ALSA playback mixer(s) on hw:1 CARD=E30 (E30): &#39;E30 &#39;
+laudio: Available ALSA playback mixer(s) on hw:2 CARD=Seri (Plantronics Blackwire 3210 Seri): &#39;Sidetone&#39; &#39;Headset&#39;
+</code></pre></div>
+The <code>CARD=</code> string is the alternate ALSA name for the device and can be used in place of the traditional <code>hw:x</code> name.</p>
+<p>On this machine the server reports that it can see the onboard HDA Intel sound card and two additional sound cards: a Topping E30 DAC and a Plantronics Headset which are both USB devices.  We can address the first ALSA device as <code>hw:0</code> or <code>hw:CARD=Intel</code> or <code>hw:Intel</code> or <code>plughw:Intel</code>, the second ALSA device as <code>hw:1</code> or <code>hw:E30</code> and so forth.  The latter 2 devices being on USB will mean that <code>hw:1</code> may not always refer to <code>hw:E30</code> and thus in such a case using the alternate name is useful.</p>
+<h2 id="configuring-the-server">Configuring the server<a class="headerlink" href="#configuring-the-server" title="Permanent link">&para;</a></h2>
+<p><code>forked-daapd</code> can support a single ALSA device or multiple ALSA devices.
+<div class="highlight"><pre><span></span><code># example audio section for server for a single soundcard
+audio {
+    nickname = &quot;Computer&quot;
+    type = &quot;alsa&quot;
+
+    card = &quot;hw:1&quot;           # defaults to &#39;default&#39;
+    mixer = &quot;Analogue&quot;      # defaults to &#39;PCM&#39; or &#39;Master&#39;
+    mixer_device = &quot;hw:1&quot;   # defaults to same as &#39;card&#39; value
+}
+</code></pre></div>
+Multiple devices can be made available to <code>forked-daapd</code> using seperate <code>alsa { .. }</code> sections.
+<div class="highlight"><pre><span></span><code>audio {
+    type = &quot;alsa&quot;
+}
+
+alsa &quot;hw:1&quot; {
+    nickname = &quot;Computer&quot;
+    mixer = &quot;Analogue&quot;
+    mixer_device = &quot;hw:1&quot;
+}
+
+alsa &quot;hw:2&quot; {
+    nickname = &quot;Second ALSA device&quot;
+}
+</code></pre></div>
+NB: When introducing <code>alsa { .. }</code> section(s) the ALSA specific configuration in the <code>audio { .. }</code> section will be ignored.</p>
+<p>If there is only one sound card, verify if the <code>default</code> sound device is correct for playback, we will use the <code>aplay</code> utility.</p>
+<p><div class="highlight"><pre><span></span><code># generate some audio if you don&#39;t have a wav file to hand
+$ sox -n -c 2 -r 44100 -b 16 -C 128 /tmp/sine441.wav synth 30 sin 500-100 fade h 0.2 30 0.2
+
+$ aplay -Ddefault /tmp/sine441.wav
+</code></pre></div>
+If you can hear music played then you are good to use <code>default</code> for the server configuration.  If you can not hear anything from the <code>aplay</code> firstly verify (using <code>alsamixer</code>) that the sound card is not muted.  If the card is not muted AND there is no sound you can try the options below to determine the card and mixer for configuring the server.</p>
+<h2 id="automatically-determine-all-relevant-the-sound-card-information">Automatically Determine ALL relevant the sound card information<a class="headerlink" href="#automatically-determine-all-relevant-the-sound-card-information" title="Permanent link">&para;</a></h2>
+<p>As shown above, <code>forked-daapd</code> can help, consider the information that logged:
+<div class="highlight"><pre><span></span><code>laudio: Available ALSA playback mixer(s) on hw:0 CARD=Intel (HDA Intel): &#39;Master&#39; &#39;Headphone&#39; &#39;Speaker&#39; &#39;PCM&#39; &#39;Mic&#39; &#39;Beep&#39;
+laudio: Available ALSA playback mixer(s) on hw:1 CARD=E30 (E30): &#39;E30 &#39;
+laudio: Available ALSA playback mixer(s) on hw:2 CARD=Seri (Plantronics Blackwire 3210 Seri): &#39;Sidetone&#39; &#39;Headset&#39;
+</code></pre></div>
+Using the information above, we can see 3 soundcards that we could use with <code>forked-daap</code> with the first soundcard having a number of seperate mixer devices (volume control) for headphone and the interal speakers - we'll configure the server to use both these and also the E30 device.  The server configuration for theese multiple outputs would be:
+<div class="highlight"><pre><span></span><code># using ALSA device alias where possible
+
+alsa &quot;hw:Intel&quot; {
+    nickname = &quot;Computer - Speaker&quot;
+    mixer = &quot;Speaker&quot;
+}
+
+alsa &quot;hw:Intel&quot; {
+    nickname = &quot;Computer - Headphones&quot;
+    mixer = &quot;Headphone&quot;
+}
+
+alsa &quot;plughw:E30&quot; {
+    # this E30 device only support S32_LE so we can use the &#39;plughw&#39; prefix to
+    # add transparent conversion support of more common S16/S24_LE formats
+
+    nickname = &quot;E30 DAC&quot;
+    mixer = &quot;E30 &quot;
+    mixer_device = &quot;hw:E30&quot;
+}
+</code></pre></div>
+NB: it is troublesome to use <code>hw</code> or <code>plughw</code> ALSA addressing when running <code>forked-daapd</code> on a machine with <code>pulseaudio</code> and if you wish to use refer to ALSA devices directly that you stop <code>pulseaudio</code>.</p>
+<h2 id="manually-determining-the-sound-cards-you-have-alsa-can-see">Manually Determining the sound cards you have / ALSA can see<a class="headerlink" href="#manually-determining-the-sound-cards-you-have-alsa-can-see" title="Permanent link">&para;</a></h2>
+<p>The example below is how I determined the correct sound card and mixer values for a Raspberry Pi that has an additional DAC card (hat) mounted.  Of course using the log output from the server would have given the same results.</p>
+<p>Use <code>aplay -l</code> to list all the sound cards and their order as known to the system - you can have multiple <code>card X, device Y</code> entries; some cards can also have multiple playback devices such as the RPI's onboard soundcard which feeds both headphone (card 0, device 0) and HDMI (card 0, device 1).
+<div class="highlight"><pre><span></span><code>$ aplay -l
+**** List of PLAYBACK Hardware Devices ****
+card 0: ALSA [bcm2835 ALSA], device 0: bcm2835 ALSA [bcm2835 ALSA]
+  Subdevices: 6/7
+  Subdevice #0: subdevice #0
+  Subdevice #1: subdevice #1
+  Subdevice #2: subdevice #2
+  Subdevice #3: subdevice #3
+  Subdevice #4: subdevice #4
+  Subdevice #5: subdevice #5
+  Subdevice #6: subdevice #6
+card 0: ALSA [bcm2835 ALSA], device 1: bcm2835 ALSA [bcm2835 IEC958/HDMI]
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0
+card 1: IQaudIODAC [IQaudIODAC], device 0: IQaudIO DAC HiFi pcm512x-hifi-0 []
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0
+</code></pre></div>
+On this machine we see the second sound card installed, an IQaudIODAC dac hat, and identified as <code>card 1 device 0</code>.  This is the playback device we want to be used by the server.</p>
+<p><code>hw:1,0</code> is the IQaudIODAC that we want to use - we verify audiable playback through that sound card using <code>aplay -Dhw:1 /tmp/sine441.wav</code>.  If the card has only one device, we can simply refer to the sound card using <code>hw:X</code> so in this case where the IQaudIODAC only has one device, we can refer to this card as <code>hw:1</code> or <code>hw:1,0</code>.</p>
+<p>Use <code>aplay -L</code> to get more information about the PCM devices defined on the system.
+<div class="highlight"><pre><span></span><code>$ aplay -L
+null
+    Discard all samples (playback) or generate zero samples (capture)
+default:CARD=ALSA
+    bcm2835 ALSA, bcm2835 ALSA
+    Default Audio Device
+sysdefault:CARD=ALSA
+    bcm2835 ALSA, bcm2835 ALSA
+    Default Audio Device
+dmix:CARD=ALSA,DEV=0
+    bcm2835 ALSA, bcm2835 ALSA
+    Direct sample mixing device
+dmix:CARD=ALSA,DEV=1
+    bcm2835 ALSA, bcm2835 IEC958/HDMI
+    Direct sample mixing device
+dsnoop:CARD=ALSA,DEV=0
+    bcm2835 ALSA, bcm2835 ALSA
+    Direct sample snooping device
+dsnoop:CARD=ALSA,DEV=1
+    bcm2835 ALSA, bcm2835 IEC958/HDMI
+    Direct sample snooping device
+hw:CARD=ALSA,DEV=0
+    bcm2835 ALSA, bcm2835 ALSA
+    Direct hardware device without any conversions
+hw:CARD=ALSA,DEV=1
+    bcm2835 ALSA, bcm2835 IEC958/HDMI
+    Direct hardware device without any conversions
+plughw:CARD=ALSA,DEV=0
+    bcm2835 ALSA, bcm2835 ALSA
+    Hardware device with all software conversions
+plughw:CARD=ALSA,DEV=1
+    bcm2835 ALSA, bcm2835 IEC958/HDMI
+    Hardware device with all software conversions
+default:CARD=IQaudIODAC
+    IQaudIODAC, 
+    Default Audio Device
+sysdefault:CARD=IQaudIODAC
+    IQaudIODAC, 
+    Default Audio Device
+dmix:CARD=IQaudIODAC,DEV=0
+    IQaudIODAC, 
+    Direct sample mixing device
+dsnoop:CARD=IQaudIODAC,DEV=0
+    IQaudIODAC, 
+    Direct sample snooping device
+hw:CARD=IQaudIODAC,DEV=0
+    IQaudIODAC, 
+    Direct hardware device without any conversions
+plughw:CARD=IQaudIODAC,DEV=0
+    IQaudIODAC, 
+    Hardware device with all software conversions
+</code></pre></div>
+For the server configuration, we will use:
+<div class="highlight"><pre><span></span><code>audio {
+    nickname = &quot;Computer&quot;
+    type = &quot;alsa&quot;
+    card=&quot;hw:1&quot;
+    # mixer=TBD
+    # mixer_device=TBD
+}
+</code></pre></div></p>
+<h2 id="mixer-name">Mixer name<a class="headerlink" href="#mixer-name" title="Permanent link">&para;</a></h2>
+<p>Once you have the card number (determined from <code>aplay -l</code>) we can inspect/confirm the name of the mixer that can be used for playback (it may NOT be <code>PCM</code> as expected by the server).  In this example, the card <code>1</code> is of interest and thus we use <code>-c 1</code> with the following command:
+<div class="highlight"><pre><span></span><code>$ amixer -c 1 
+Simple mixer control &#39;DSP Program&#39;,0
+  Capabilities: enum
+  Items: &#39;FIR interpolation with de-emphasis&#39; &#39;Low latency IIR with de-emphasis&#39; &#39;High attenuation with de-emphasis&#39; &#39;Fixed process flow&#39; &#39;Ringing-less low latency FIR&#39;
+  Item0: &#39;Ringing-less low latency FIR&#39;
+Simple mixer control &#39;Analogue&#39;,0
+  Capabilities: pvolume
+  Playback channels: Front Left - Front Right
+  Limits: Playback 0 - 1
+  Mono:
+  Front Left: Playback 1 [100%] [0.00dB]
+  Front Right: Playback 1 [100%] [0.00dB]
+Simple mixer control &#39;Analogue Playback Boost&#39;,0
+  Capabilities: volume
+  Playback channels: Front Left - Front Right
+  Capture channels: Front Left - Front Right
+  Limits: 0 - 1
+  Front Left: 0 [0%] [0.00dB]
+  Front Right: 0 [0%] [0.00dB]
+...
+</code></pre></div></p>
+<p>This card has multiple controls but we want to find a mixer control listed with a <code>pvolume</code> (playback) capability - in this case that mixer value required for the server configuration is called <code>Analogue</code>.</p>
+<p>For the server configuration, we will use:
+<div class="highlight"><pre><span></span><code>audio {
+    nickname = &quot;Computer&quot;
+    type = &quot;alsa&quot;
+    card=&quot;hw:1&quot;
+    mixer=&quot;Analogue&quot;
+    # mixer_device=TBD
+}
+</code></pre></div></p>
+<h2 id="mixer-device">Mixer device<a class="headerlink" href="#mixer-device" title="Permanent link">&para;</a></h2>
+<p>This is the name of the underlying physical device used for the mixer - it is typically the same value as the value of <code>card</code> in which case a value is not required by the server configuration.  An example of when you want to change explicitly configure this is if you need to use a <code>dmix</code> device (see below).</p>
+<h2 id="handling-devices-that-cannot-concurrently-play-multiple-audio-streams">Handling Devices that cannot concurrently play multiple audio streams<a class="headerlink" href="#handling-devices-that-cannot-concurrently-play-multiple-audio-streams" title="Permanent link">&para;</a></h2>
+<p>Some devices such as various RPI DAC boards (IQaudio DAC, Allo Boss DAC...) cannot have multiple streams openned at the same time/cannot play multiple sound files at the same time. This results in <code>Device or resource busy</code> errors.  You can confirm if your sound card has this problem by using the example below once have determined the names/cards information as above.</p>
+<p>Using our <code>hw:1</code> device we try:</p>
+<div class="highlight"><pre><span></span><code># generate some audio
+$ sox -n -c 2 -r 44100 -b 16 -C 128 /tmp/sine441.wav synth 30 sin 500-100 fade h 0.2 30 0.2
+
+# attempt to play 2 files at the same time
+$ aplay -v -Dhw:1 /tmp/sine441.wav &amp;
+Playing WAVE &#39;/tmp/sine441.wav&#39; : Signed 16 bit Little Endian, Rate 44100 Hz, Stereo
+Hardware PCM card 1 &#39;IQaudIODAC&#39; device 0 subdevice 0
+Its setup is:
+  stream       : PLAYBACK
+  access       : RW_INTERLEAVED
+  format       : S16_LE
+  subformat    : STD
+  channels     : 2
+  rate         : 44100
+  exact rate   : 44100 (44100/1)
+  msbits       : 16
+  buffer_size  : 22052
+  period_size  : 5513
+  period_time  : 125011
+  tstamp_mode  : NONE
+  tstamp_type  : MONOTONIC
+  period_step  : 1
+  avail_min    : 5513
+  period_event : 0
+  start_threshold  : 22052
+  stop_threshold   : 22052
+  silence_threshold: 0
+  silence_size : 0
+  boundary     : 1445199872
+  appl_ptr     : 0
+  hw_ptr       : 0
+$ aplay -v -Dhw:1 /tmp/sine441.wav
+aplay: main:788: audio open error: Device or resource busy
+</code></pre></div>
+<p>In this instance this device cannot open multiple streams - <code>forked-daapd</code> can handle this situation transparently with some audio being truncated from the end of the current file as the server prepares to play the following track. If this handling is causing you problems you may wish to use <a href="https://www.alsa-project.org/main/index.php/Asoundrc#Software_mixing">ALSA's <code>dmix</code> functionally</a> which provides a software mixing module. We will need to define a <code>dmix</code> component and configure the server to use that as it's sound card.</p>
+<p>The downside to the <code>dmix</code> approach will be the need to fix a samplerate (48000 being the default) for this software mixing module meaning any files that have a mismatched samplerate will be resampled.</p>
+<h2 id="alsa-dmix-configurationsetup">ALSA dmix configuration/setup<a class="headerlink" href="#alsa-dmix-configurationsetup" title="Permanent link">&para;</a></h2>
+<p>A <code>dmix</code> device can be defined in <code>/etc/asound.conf</code> or <code>~/.asoundrc</code> for the same user running <code>forked-daapd</code>.  We will need to know the underlying physical soundcard to be used: in our examples above, <code>hw:1,0</code> / <code>card 1, device 0</code> representing our IQaudIODAC as per output of <code>aplay -l</code>.  We also take the <code>buffer_size</code> and <code>period_size</code> from the output of playing a sound file via <code>aplay -v</code>.</p>
+<p><div class="highlight"><pre><span></span><code># use &#39;dac&#39; as the name of the device: &quot;aplay -Ddac ....&quot;
+pcm.!dac {
+    type plug
+    slave.pcm &quot;dmixer&quot;
+    hint.description &quot;IQAudio DAC s/w dmix enabled device&quot;
+}
+
+pcm.dmixer  {
+    type dmix
+    ipc_key 1024             # need to be uniq value
+    ipc_key_add_uid false    # multiple concurrent different users
+    ipc_perm 0666            # multi-user sharing permissions
+
+    slave {
+    pcm &quot;hw:1,0&quot;         # points at the underlying device - could also simply be hw:1
+    period_time 0
+    period_size 4096     # from the output of aplay -v
+    buffer_size 22052    # from the output of aplay -v
+    rate 44100           # locked in sample rate for resampling on dmix device
+    }
+    hint.description &quot;IQAudio DAC s/w dmix device&quot;
+}
+
+ctl.dmixer {
+    type hw
+    card 1                  # underlying device
+    device 0
+}
+</code></pre></div>
+Running <code>aplay -L</code> we will see our newly defined devices <code>dac</code> and <code>dmixer</code>
+<div class="highlight"><pre><span></span><code>$ aplay -L
+null
+    Discard all samples (playback) or generate zero samples (capture)
+dac
+    IQAudio DAC s/w dmix enabled device
+dmixer
+    IQAudio DAC s/w dmix device
+default:CARD=ALSA
+    bcm2835 ALSA, bcm2835 ALSA
+    Default Audio Device
+...
+</code></pre></div>
+At this point we are able to rerun the concurrent <code>aplay</code> commands (adding <code>-Ddac</code> to specify the playback device to use) to verify ALSA configuration.</p>
+<p>If there is only one card on the machine you may use <code>pcm.!default</code> instead of <code>pcm.!dac</code> - there is less configuration to be done later since many ALSA applications will use the device called <code>default</code> by default.  Furthermore on RPI you can explicitly disable the onboard sound card to leave us with only the IQaudIODAC board enabled (won't affect HDMI sound output) by commenting out <code>#dtparam=audio=on</code> in <code>/boot/config.txt</code> and rebooting.</p>
+<h3 id="forked-daapd-config-with-dmix">forked-daapd config with dmix<a class="headerlink" href="#forked-daapd-config-with-dmix" title="Permanent link">&para;</a></h3>
+<p>We will use the newly defined card named <code>dac</code> which uses the underlying <code>hw:1</code> device as per <code>/etc/asound.conf</code> or <code>~/.asoundrc</code> configuration.  Note that the <code>mixer_device</code> is now required and must refer to the real device (see the <code>slave.pcm</code> value) and not the named device (ie <code>dac</code>) that we created and are using for the <code>card</code> configuration value.</p>
+<p>For the final server configuration, we will use:
+<div class="highlight"><pre><span></span><code>audio {
+    nickname = &quot;Computer&quot;
+    type = &quot;alsa&quot;
+    card=&quot;dac&quot;
+    mixer=&quot;Analogue&quot;
+    mixer_device=&quot;hw:1&quot;
+}
+</code></pre></div></p>
+<h2 id="setting-up-an-audio-equalizer">Setting up an Audio Equalizer<a class="headerlink" href="#setting-up-an-audio-equalizer" title="Permanent link">&para;</a></h2>
+<p>There exists an ALSA equalizer plugin.  On <code>debian</code> (incl Raspberry Pi) systems you can install this plugin by <code>apt install libasound2-plugin-equal</code>; this is not currently available on Fedora (FC31) but can be easily built from <a href="https://github.com/raedwulf/alsaequal">source</a> after installing the dependant <code>ladspa</code> package.</p>
+<p>Once installed the user must setup a virtual device and use this device in the server configuration.</p>
+<p>If you wish to use your <code>hw:0</code> device for output:
+<div class="highlight"><pre><span></span><code># /etc/asound.conf
+ctl.equal {
+  type equal;
+
+  # library /usr/lib64/ladspa/caps.so
+}
+
+pcm.equal {
+  type plug;
+  slave.pcm {
+      type equal;
+
+      ## must be plughw:x,y and not hw:x,y
+      slave.pcm &quot;plughw:0,0&quot;;
+
+      # library /usr/lib64/ladspa/caps.so
+  }
+  hint.description &quot;equalised device&quot;
+}
+</code></pre></div>
+and in <code>forked-daapd.conf</code>
+<div class="highlight"><pre><span></span><code>alsa &quot;equal&quot; {
+    nickname = &quot;Equalised Output&quot;
+    # adjust accordingly for mixer with pvolume capability
+    mixer = &quot;PCM&quot;
+    mixer_device = &quot;hw:0&quot;
+}
+</code></pre></div>
+Using the web UI and on the outputs selection you should see an output called <code>Equalised Output</code> which you should select and set the volume.</p>
+<p>When starting playback for any audio tracks you should hopefully hear the output. In a terminal, run <code>alsamixer -Dequal</code> and you'll see the eqaliser - to test that this is all working, go and drop the upper frequencies and boosting the bass frequencies and give it a second - if this changes the sound profile from your speakers, well done, its done and you can adjust the equalizer as you desire.</p>
+<p>Note however, the equalizer appears to require a <code>plughw</code> device which means you cannnot use this equalizer with a <code>dmix</code> output chain.</p>
+<h1 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h1>
+<ul>
+<li>Errors in log <code>Failed to open configured mixer element</code> when selecting output device</li>
+<li>
+<p>Errors in log <code>Invalid CTL</code> or <code>Failed to attach mixer</code> when playing/adjusting volume
+<code>mixer</code> value is wrong.  Verify name of <code>mixer</code> value in server config against the names from all devices capable of playback using <code>amixer -c &lt;card number&gt;</code>.  Assume the device is card 1:
+<div class="highlight"><pre><span></span><code>(IFS=$&#39;\n&#39;
+ CARD=1
+ for i in $(amixer -c ${CARD} scontrols | awk -F\&#39; &#39;{ print $2 }&#39;); do 
+   amixer -c ${CARD} sget &quot;$i&quot; | grep Capabilities | grep -q pvolume &amp;&amp; echo $i
+   done
+)
+</code></pre></div>
+Look at the names output and choose the one that fits.  The outputs can be something like:
+<div class="highlight"><pre><span></span><code># laptop
+Master
+Headphone
+Speaker
+PCM
+Mic
+Beep
+
+# RPI with no additional DAC, card = 0
+PCM
+
+# RPI with additional DAC hat (IQAudioDAC, using a pcm512x chip)
+Analogue
+Digital
+</code></pre></div></p>
+</li>
+<li>
+<p>No sound during playback - valid mixer/verified by aplay
+Check that the mixer is not muted or volume set to 0.  Using the value of <code>mixer</code> as per server config and unmute or set volume to max.  Assume the device is card 1 and <code>mixer = Analogue</code>:
+<div class="highlight"><pre><span></span><code>amixer -c 1 set Analogue unmute  ## some mixers can not be muted resulting in &quot;invalid command&quot;
+amixer -c 1 set Analogue 100%
+</code></pre></div>
+An example of a device with volume turned all the way down - notice the <code>Playback</code> values are <code>0</code>[0%]`:
+<div class="highlight"><pre><span></span><code>Simple mixer control &#39;Analogue&#39;,0
+Capabilities: pvolume
+Playback channels: Front Left - Front Right
+Limits: Playback 0 - 1
+Mono:
+Front Left: Playback 0 [0%] [-6.00dB]
+Front Right: Playback 0 [0%] [-6.00dB]
+</code></pre></div></p>
+</li>
+<li>
+<p>Server stops playing after moving to new track in paly queue, Error in log <code>Could not open playback device</code>
+The log contains these log lines:
+<div class="highlight"><pre><span></span><code>[2019-06-19 20:52:51] [  LOG]   laudio: open &#39;/dev/snd/pcmC0D0p&#39; failed (-16)[2019-06-19 20:52:51] [  LOG]   laudio: Could not open playback device: Device or resource busy
+[2019-06-19 20:52:51] [  LOG]   laudio: Device &#39;hw&#39; does not support quality (48000/16/2), falling back to default
+[2019-06-19 20:52:51] [  LOG]   laudio: open &#39;/dev/snd/pcmC0D0p&#39; failed (-16)[2019-06-19 20:52:51] [  LOG]   laudio: Could not open playback device: Device or resource busy
+[2019-06-19 20:52:51] [  LOG]   laudio: ALSA device failed setting fallback quality[2019-06-19 20:52:51] [  LOG]   player: The ALSA device &#39;Computer&#39; FAILED
+</code></pre></div>
+If you have a RPI with a DAC hat with a <code>pcm512x</code> chip will affect you.  This is because the server wants to open the audio device for the next audio track whilst current track is still playing but the hardware does not allow this - see the comments above regarding determining concurrrent playback.</p>
+</li>
+</ul>
+<p>This error will occur for output hardware that do not support concurrent device open and the server plays 2 files of different bitrate (44.1khz and 48khz) back to back.</p>
+<p>If you observe the error, you will need to use the <code>dmix</code> configuration as mentioned above.</p>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
+        
+          <a href="../outputs/" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+            </div>
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Supported Outputs
+              </div>
+            </div>
+          </a>
+        
+        
+          <a href="../pulse/" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Pulse Audio
+              </div>
+            </div>
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+  <div class="md-footer-social">
+    
+      
+      
+        
+        
+      
+      <a href="https://github.com/ejurgensen/forked-daapd" target="_blank" rel="noopener" title="github.com" class="md-footer-social__link">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+      </a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/vendor.08c56446.min.js"></script>
+      <script src="../assets/javascripts/bundle.6ced434e.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
+      
+      <script>
+        app = initialize({
+          base: "..",
+          features: ['navigation.tabs', 'navigation.sections'],
+          search: Object.assign({
+            worker: "../assets/javascripts/worker/search.8c7e0a7e.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+    
+  </body>
+</html>
