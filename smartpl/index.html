@@ -313,7 +313,7 @@
 
   <li class="md-nav__item">
     <a href="../install/" class="md-nav__link">
-      Installation
+      Building from Source
     </a>
   </li>
 
@@ -338,7 +338,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../radio/" class="md-nav__link">
+    <a href="../playlists/" class="md-nav__link">
       Playlists and Radio
     </a>
   </li>
@@ -515,7 +515,7 @@
 
   <li class="md-nav__item">
     <a href="../cli/" class="md-nav__link">
-      Command Line CLients
+      Command Line Clients
     </a>
   </li>
 
@@ -837,52 +837,62 @@ library folder.</p>
 <p>An expression consists of:</p>
 <div class="highlight"><pre><span></span><code>field-name operator operand
 </code></pre></div>
-<p>Where valid field-names (with their types) are:
-* <code>artist</code> (string)
-* <code>album_artist</code> (string)
-* <code>album</code> (string)
-* <code>title</code> (string)
-* <code>genre</code> (string)
-* <code>composer</code> (string)
-* <code>path</code> (string)
-* <code>type</code> (string)
-* <code>grouping</code> (string)
-* <code>data_kind</code> (enumeration)
-* <code>media_kind</code> (enumeration)
-* <code>play_count</code> (integer)
-* <code>skip_count</code> (integer)
-* <code>rating</code> (integer)
-* <code>year</code> (integer)
-* <code>compilation</code> (integer)
-* <code>track</code> (integer)
-* <code>disc</code> (integer)
-* <code>time_added</code> (date)
-* <code>time_modified</code> (date)
-* <code>time_played</code> (date)
-* <code>time_skipped</code> (date)
-* <code>random</code> (special)</p>
-<p>Valid operators include:
-* <code>is</code>, <code>includes</code>, <code>starts with</code> (string)
-* <code>&gt;</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;=</code>, <code>=</code> (int)
-* <code>after</code>, <code>before</code> (date)
-* <code>is</code> (enumeration)</p>
+<p>Where valid field-names (with their types) are:</p>
+<ul>
+<li><code>artist</code> (string)</li>
+<li><code>album_artist</code> (string)</li>
+<li><code>album</code> (string)</li>
+<li><code>title</code> (string)</li>
+<li><code>genre</code> (string)</li>
+<li><code>composer</code> (string)</li>
+<li><code>path</code> (string)</li>
+<li><code>type</code> (string)</li>
+<li><code>grouping</code> (string)</li>
+<li><code>data_kind</code> (enumeration)</li>
+<li><code>media_kind</code> (enumeration)</li>
+<li><code>play_count</code> (integer)</li>
+<li><code>skip_count</code> (integer)</li>
+<li><code>rating</code> (integer)</li>
+<li><code>year</code> (integer)</li>
+<li><code>compilation</code> (integer)</li>
+<li><code>track</code> (integer)</li>
+<li><code>disc</code> (integer)</li>
+<li><code>time_added</code> (date)</li>
+<li><code>time_modified</code> (date)</li>
+<li><code>time_played</code> (date)</li>
+<li><code>time_skipped</code> (date)</li>
+<li><code>random</code> (special)</li>
+</ul>
+<p>Valid operators include:</p>
+<ul>
+<li><code>is</code>, <code>includes</code>, <code>starts with</code> (string)</li>
+<li><code>&gt;</code>, <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;=</code>, <code>=</code> (int)</li>
+<li><code>after</code>, <code>before</code> (date)</li>
+<li><code>is</code> (enumeration)</li>
+</ul>
 <p>The <code>is</code> operator must exactly match the field value, while the <code>includes</code> operator matches a substring.
 The <code>starts with</code> operator matches, if the value starts with the given prefix.
 All three matches are case-insensitive.</p>
-<p>Valid operands include:
-* "string value" (string)
-* integer (int)</p>
-<p>Valid operands for the enumeration <code>data_kind</code> are:
-* <code>file</code>
-* <code>url</code>
-* <code>spotify</code>
-* <code>pipe</code></p>
-<p>Valid operands for the enumeration <code>media_kind</code> are:
-* <code>music</code>
-* <code>movie</code>
-* <code>podcast</code>
-* <code>audiobook</code>
-* <code>tvshow</code></p>
+<p>Valid operands include:</p>
+<ul>
+<li>"string value" (string)</li>
+<li>integer (int)</li>
+</ul>
+<p>Valid operands for the enumeration <code>data_kind</code> are:</p>
+<ul>
+<li><code>file</code></li>
+<li><code>url</code></li>
+<li><code>spotify</code></li>
+<li><code>pipe</code></li>
+</ul>
+<p>Valid operands for the enumeration <code>media_kind</code> are:</p>
+<ul>
+<li><code>music</code></li>
+<li><code>movie</code></li>
+<li><code>podcast</code></li>
+<li><code>audiobook</code></li>
+<li><code>tvshow</code></li>
+</ul>
 <p>Multiple expressions can be anded or ored together, using the keywords <code>OR</code> and <code>AND</code>. The unary not operator is also supported using the keyword <code>NOT</code>.</p>
 <p>It is possible to define the sort order and limit the number of items by adding an order clause and/or a limit clause after the last expression:</p>
 <div class="highlight"><pre><span></span><code>&quot;Playlist Name&quot; { expression ORDER BY field-name sort-direction LIMIT limit }
@@ -916,14 +926,14 @@ All three matches are case-insensitive.</p>
 }
 </code></pre></div>
 <p>This would match any podcast and audiobook file that was never played with forked-daapd.</p>
-<p><div class="highlight"><pre><span></span><code>&quot;Recently added music&quot; {
+<div class="highlight"><pre><span></span><code>&quot;Recently added music&quot; {
   media_kind is music
   order by time_added desc
   limit 10
 }
 </code></pre></div>
-This would match the last 10 music files added to the library.</p>
-<p><div class="highlight"><pre><span></span><code>&quot;Random 10 Rated Pop songs&quot; {
+<p>This would match the last 10 music files added to the library.</p>
+<div class="highlight"><pre><span></span><code>&quot;Random 10 Rated Pop songs&quot; {
   rating &gt; 0 and
   genre is &quot;Pop&quot; and
   media_kind is music
@@ -931,19 +941,25 @@ This would match the last 10 music files added to the library.</p>
   limit 10
 }
 </code></pre></div>
-This generates a random set of, maximum of 10, rated Pop music tracks every time the playlist is queried.</p>
+<p>This generates a random set of, maximum of 10, rated Pop music tracks every time the playlist is queried.</p>
 <h2 id="date-operand-syntax">Date operand syntax<a class="headerlink" href="#date-operand-syntax" title="Permanent link">&para;</a></h2>
 <p>One example of a valid date is a date in yyyy-mm-dd format:</p>
 <div class="highlight"><pre><span></span><code>&quot;Files added after January 1, 2004&quot; {
   time_added after 2004-01-01
 }
 </code></pre></div>
-<p>There are also some special date keywords:
-* <code>today</code>, <code>yesterday</code>, <code>last week</code>, <code>last month</code>, <code>last year</code></p>
+<p>There are also some special date keywords:</p>
+<ul>
+<li><code>today</code>, <code>yesterday</code>, <code>last week</code>, <code>last month</code>, <code>last year</code></li>
+</ul>
 <p>These dates refer to the <em>start</em> of that period; <code>today</code> means 00:00hrs of today, <code>last week</code> means the previous Monday 00:00hrs, <code>last month</code> is the first day of the previous month at 00:00hrs etc.</p>
 <p>A valid date can also be made by applying an interval to a date. Intervals can be defined as <code>days</code>, <code>weeks</code>, <code>months</code>, <code>years</code>.
 As an example, a valid date might be:</p>
-<p><code>3 weeks before today</code> or <code>3 weeks ago</code></p>
+<div class="highlight"><pre><span></span><code>3 weeks before today
+</code></pre></div>
+<p>or</p>
+<div class="highlight"><pre><span></span><code>3 weeks ago
+</code></pre></div>
 <p>Examples:</p>
 <div class="highlight"><pre><span></span><code>&quot;Recently Added&quot; {
     time_added after 2 weeks ago
@@ -962,11 +978,13 @@ As an example, a valid date might be:</p>
 <p>The syntax is really close to the mt-daapd smart playlist syntax (see
 <a href="http://sourceforge.net/p/mt-daapd/code/HEAD/tree/tags/release-0.2.4.2/contrib/mt-daapd.playlist">http://sourceforge.net/p/mt-daapd/code/HEAD/tree/tags/release-0.2.4.2/contrib/mt-daapd.playlist</a>).</p>
 <p>Even this documentation is based on the file linked above.</p>
-<p>Some differences are:
-* only one smart playlist per file
-* the not operator must be placed before an expression and not before the operator
-* "||", "&amp;&amp;", "!" are not supported (use "or", "and", "not")
-* comments are not supported</p>
+<p>Some differences are:</p>
+<ul>
+<li>only one smart playlist per file</li>
+<li>the not operator must be placed before an expression and not before the operator</li>
+<li>"||", "&amp;&amp;", "!" are not supported (use "or", "and", "not")</li>
+<li>comments are not supported</li>
+</ul>
                 
               
               
@@ -985,7 +1003,7 @@ As an example, a valid date might be:</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
         
-          <a href="../radio/" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../playlists/" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-footer-nav__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
             </div>

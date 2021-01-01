@@ -1,83 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url>
      <loc>https://ejurgensen.github.io/forked-daapd/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/getting_started/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/install/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/library/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://ejurgensen.github.io/forked-daapd/radio/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <loc>https://ejurgensen.github.io/forked-daapd/playlists/</loc>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/smartpl/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/artwork/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/clients/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/webinterface/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/remote/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/mpd/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/cli/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/outputs/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/alsa/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/pulse/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/streams/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/spotify/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/lastfm/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/remote_access/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/api/</loc>
-     <lastmod>2020-12-31</lastmod>
+     <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url>
 </urlset>

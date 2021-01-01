@@ -313,7 +313,7 @@
 
   <li class="md-nav__item">
     <a href="../install/" class="md-nav__link">
-      Installation
+      Building from Source
     </a>
   </li>
 
@@ -338,7 +338,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../radio/" class="md-nav__link">
+    <a href="../playlists/" class="md-nav__link">
       Playlists and Radio
     </a>
   </li>
@@ -466,7 +466,14 @@
     Pairing
   </a>
   
-    <nav class="md-nav" aria-label="Pairing">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting-pairing-issues" class="md-nav__link">
+    Troubleshooting pairing issues
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting pairing issues">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -516,7 +523,7 @@
 
   <li class="md-nav__item">
     <a href="../cli/" class="md-nav__link">
-      Command Line CLients
+      Command Line Clients
     </a>
   </li>
 
@@ -786,7 +793,14 @@
     Pairing
   </a>
   
-    <nav class="md-nav" aria-label="Pairing">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting-pairing-issues" class="md-nav__link">
+    Troubleshooting pairing issues
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting pairing issues">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -842,30 +856,35 @@ they return online during playback.</p>
 <li>Enter the pair code in the web interface (update the page with F5 if it does
     not automatically pick up the pairing request)</li>
 </ol>
+<h2 id="troubleshooting-pairing-issues">Troubleshooting pairing issues<a class="headerlink" href="#troubleshooting-pairing-issues" title="Permanent link">&para;</a></h2>
 <p>If Remote doesn't connect to forked-daapd after you entered the pairing code
 something went wrong. Check the log file to see the error message. Here are
 some common reasons:</p>
 <h3 id="you-did-not-enter-the-correct-pairing-code">You did not enter the correct pairing code<a class="headerlink" href="#you-did-not-enter-the-correct-pairing-code" title="Permanent link">&para;</a></h3>
 <p>You will see an error in the log about pairing failure with a HTTP response code
-that is <em>not</em> 0.
-Solution: Try again.</p>
+that is <em>not</em> 0.</p>
+<p><strong>Solution</strong>: Try again.</p>
 <h3 id="no-response-from-remote-possibly-a-network-issue">No response from Remote, possibly a network issue<a class="headerlink" href="#no-response-from-remote-possibly-a-network-issue" title="Permanent link">&para;</a></h3>
-<p>If you see an error in the log with either:
- - a HTTP response code that is 0
- - "Empty pairing request callback"
-it means that forked-daapd could not establish a connection to Remote. This 
+<p>If you see an error in the log with either:</p>
+<ul>
+<li>a HTTP response code that is 0</li>
+<li>"Empty pairing request callback"</li>
+</ul>
+<p>it means that forked-daapd could not establish a connection to Remote. This 
 might be a network issue, your router may not be allowing multicast between the
-Remote device and the host forked-daapd is running on.
-Solution 1: Sometimes it resolves the issue if you force Remote to quit, restart
+Remote device and the host forked-daapd is running on.</p>
+<p><strong>Solution 1</strong>: Sometimes it resolves the issue if you force Remote to quit, restart
 it and do the pairing proces again. Another trick is to establish some other
-connection (eg SSH) from the iPod/iPhone/iPad to the host.
-Solution 2: Check your router settings if you can whitelist multicast addresses
+connection (eg SSH) from the iPod/iPhone/iPad to the host.</p>
+<p><strong>Solution 2</strong>: Check your router settings if you can whitelist multicast addresses
 under IGMP settings. For Apple Bonjour, setting a multicast address of
 224.0.0.251 and a netmask of 255.255.255.255 should work.</p>
-<p>Otherwise try using avahi-browse for troubleshooting:
- - in a terminal, run <code>avahi-browse -r -k _touch-remote._tcp</code>
- - start Remote, goto Settings, Add Library
- - after a couple seconds at most, you should get something similar to this:</p>
+<p>Otherwise try using avahi-browse for troubleshooting:</p>
+<ul>
+<li>in a terminal, run <code>avahi-browse -r -k _touch-remote._tcp</code></li>
+<li>start Remote, goto Settings, Add Library</li>
+<li>after a couple seconds at most, you should get something similar to this:</li>
+</ul>
 <div class="highlight"><pre><span></span><code>+ ath0 IPv4 59eff13ea2f98dbbef6c162f9df71b784a3ef9a3      _touch-remote._tcp   local
 = ath0 IPv4 59eff13ea2f98dbbef6c162f9df71b784a3ef9a3      _touch-remote._tcp   local
    hostname = [Foobar.local]
