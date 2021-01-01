@@ -60,10 +60,6 @@
      <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
-     <loc>https://ejurgensen.github.io/forked-daapd/streams/</loc>
-     <lastmod>2021-01-01</lastmod>
-     <changefreq>daily</changefreq>
-    </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/spotify/</loc>
      <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
@@ -73,6 +69,10 @@
      <changefreq>daily</changefreq>
     </url><url>
      <loc>https://ejurgensen.github.io/forked-daapd/remote_access/</loc>
+     <lastmod>2021-01-01</lastmod>
+     <changefreq>daily</changefreq>
+    </url><url>
+     <loc>https://ejurgensen.github.io/forked-daapd/streams/</loc>
      <lastmod>2021-01-01</lastmod>
      <changefreq>daily</changefreq>
     </url><url>
