@@ -1862,9 +1862,11 @@
 <p>Available API endpoints:</p>
 <ul>
 <li><a href="#player">Player</a>: control playback, volume, shuffle/repeat modes</li>
-<li><a href="#outputs-speakers">Outputs / Speakers</a>: list available outputs and enable/disable outputs</li>
+<li><a href="#outputs-speakers">Outputs / Speakers</a>: list available outputs and
+  enable/disable outputs</li>
 <li><a href="#queue">Queue</a>: list, add or modify the current queue</li>
-<li><a href="#library">Library</a>: list playlists, artists, albums and tracks from your library or trigger library rescan</li>
+<li><a href="#library">Library</a>: list playlists, artists, albums and tracks from your
+  library or trigger library rescan</li>
 <li><a href="#search">Search</a>: search for playlists, artists, albums and tracks</li>
 <li><a href="#server-info">Server info</a>: get server information</li>
 <li><a href="#settings">Settings</a>: list and change settings for the player web interface</li>
@@ -2331,8 +2333,8 @@
 <span class="p">}</span>
 </code></pre></div>
 <h3 id="set-enabled-outputs">Set enabled outputs<a class="headerlink" href="#set-enabled-outputs" title="Permanent link">&para;</a></h3>
-<p>Set the enabled outputs by passing an array of output ids. forked-daapd enables all outputs
-with the given ids and disables the remaining outputs.</p>
+<p>Set the enabled outputs by passing an array of output ids. forked-daapd enables
+all outputs with the given ids and disables the remaining outputs.</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/outputs/set</span>
 </code></pre></div>
@@ -2379,7 +2381,8 @@ with the given ids and disables the remaining outputs.</p>
 </tbody>
 </table>
 <p><strong>Response</strong></p>
-<p>On success returns the HTTP <code>200 OK</code> success status response code. With the response body holding the <strong><code>output</code> object</strong>.</p>
+<p>On success returns the HTTP <code>200 OK</code> success status response code. With the
+response body holding the <strong><code>output</code> object</strong>.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/outputs/0&quot;</span>
 </code></pre></div>
@@ -2653,7 +2656,8 @@ with the given ids and disables the remaining outputs.</p>
 </tr>
 </tbody>
 </table>
-<p>Either the <code>uris</code> or the <code>expression</code> parameter must be set. If both are set the <code>uris</code> parameter takes presedence and the <code>expression</code> parameter will be ignored.</p>
+<p>Either the <code>uris</code> or the <code>expression</code> parameter must be set. If both are set the
+<code>uris</code> parameter takes presedence and the <code>expression</code> parameter will be ignored.</p>
 <p><strong>Response</strong></p>
 <p>On success returns the HTTP <code>200 OK</code> success status response code.</p>
 <table>
@@ -2687,9 +2691,9 @@ with the given ids and disables the remaining outputs.</p>
   <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">42</span>
 <span class="p">}</span>
 </code></pre></div>
-<p>Clear current queue, add 10 new random tracks of <code>genre</code> <em>Pop</em> and start playback
+<p>Clear current queue, add 10 new random tracks of <code>genre</code> <em>Pop</em> and start playback</p>
 <div class="highlight"><pre><span></span><code>curl -X POST &quot;http://localhost:3689/api/queue/items/add?limit=10&amp;clear=true&amp;playback=start&amp;expression=genre+is+%22Pop%22+order+by+random+desc&quot;
-</code></pre></div></p>
+</code></pre></div>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
   <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="mi">10</span>
 <span class="p">}</span>
@@ -3052,7 +3056,8 @@ with the given ids and disables the remaining outputs.</p>
 </tbody>
 </table>
 <p><strong>Response</strong></p>
-<p>On success returns the HTTP <code>200 OK</code> success status response code. With the response body holding the <strong><a href="#playlist-object"><code>playlist</code></a> object</strong>.</p>
+<p>On success returns the HTTP <code>200 OK</code> success status response code. With the
+response body holding the <strong><a href="#playlist-object"><code>playlist</code></a> object</strong>.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/playlists/1&quot;</span>
 </code></pre></div>
@@ -3467,7 +3472,8 @@ with the given ids and disables the remaining outputs.</p>
 </tbody>
 </table>
 <p><strong>Response</strong></p>
-<p>On success returns the HTTP <code>200 OK</code> success status response code. With the response body holding the <strong><a href="#artist-object"><code>artist</code></a> object</strong>.</p>
+<p>On success returns the HTTP <code>200 OK</code> success status response code. With the
+response body holding the <strong><a href="#artist-object"><code>artist</code></a> object</strong>.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/artists/3815427709949443149&quot;</span>
 </code></pre></div>
@@ -3673,7 +3679,8 @@ with the given ids and disables the remaining outputs.</p>
 </tbody>
 </table>
 <p><strong>Response</strong></p>
-<p>On success returns the HTTP <code>200 OK</code> success status response code. With the response body holding the <strong><a href="#album-object"><code>album</code></a> object</strong>.</p>
+<p>On success returns the HTTP <code>200 OK</code> success status response code. With the
+response body holding the <strong><a href="#album-object"><code>album</code></a> object</strong>.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/albums/8009851123233197743&quot;</span>
 </code></pre></div>
@@ -3813,7 +3820,8 @@ with the given ids and disables the remaining outputs.</p>
 </tbody>
 </table>
 <p><strong>Response</strong></p>
-<p>On success returns the HTTP <code>200 OK</code> success status response code. With the response body holding the <strong><a href="#track-object"><code>track</code></a> object</strong>.</p>
+<p>On success returns the HTTP <code>200 OK</code> success status response code. With the
+response body holding the <strong><a href="#track-object"><code>track</code></a> object</strong>.</p>
 <p><strong>Example</strong></p>
 <div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/library/track/1&quot;</span>
 </code></pre></div>
@@ -3987,9 +3995,9 @@ with the given ids and disables the remaining outputs.</p>
 <h3 id="list-genres">List genres<a class="headerlink" href="#list-genres" title="Permanent link">&para;</a></h3>
 <p>Get list of genres</p>
 <p><strong>Endpoint</strong></p>
-<p><div class="highlight"><pre><span></span><code><span class="err">GET /api/library/genres</span>
+<div class="highlight"><pre><span></span><code><span class="err">GET /api/library/genres</span>
 </code></pre></div>
-<strong>Response</strong></p>
+<p><strong>Response</strong></p>
 <table>
 <thead>
 <tr>
@@ -4350,7 +4358,8 @@ curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=albums&
 <span class="p">}</span>
 </code></pre></div>
 <h3 id="trigger-metadata-rescan">Trigger metadata rescan<a class="headerlink" href="#trigger-metadata-rescan" title="Permanent link">&para;</a></h3>
-<p>Trigger a library metadata rescan even if files have not been updated.  Maintenence method.</p>
+<p>Trigger a library metadata rescan even if files have not been updated.
+Maintenence method.</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/rescan</span>
 </code></pre></div>
@@ -4360,7 +4369,8 @@ curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=albums&
 <div class="highlight"><pre><span></span><code>curl -X PUT <span class="s2">&quot;http://localhost:3689/api/rescan&quot;</span>
 </code></pre></div>
 <h3 id="backup-db">Backup DB<a class="headerlink" href="#backup-db" title="Permanent link">&para;</a></h3>
-<p>Request a library backup - configuration must be enabled and point to a valid writable path. Maintenance method.</p>
+<p>Request a library backup - configuration must be enabled and point to a valid
+writable path. Maintenance method.</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">PUT /api/library/backup</span>
 </code></pre></div>
@@ -4394,7 +4404,8 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
 </tbody>
 </table>
 <h3 id="search-by-search-term">Search by search term<a class="headerlink" href="#search-by-search-term" title="Permanent link">&para;</a></h3>
-<p>Search for playlists, artists, albums, tracks, genres that include the given query in their title (case insensitive matching).</p>
+<p>Search for playlists, artists, albums, tracks, genres that include the given
+query in their title (case insensitive matching).</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/search</span>
 </code></pre></div>
@@ -4569,7 +4580,9 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
 <span class="p">}</span>
 </code></pre></div>
 <h3 id="search-by-query-language">Search by query language<a class="headerlink" href="#search-by-query-language" title="Permanent link">&para;</a></h3>
-<p>Search for artists, albums, tracks by a smart playlist query expression (see <a href="https://github.com/ejurgensen/forked-daapd/blob/master/README_SMARTPL.md">README_SMARTPL.md</a> for the expression syntax).</p>
+<p>Search for artists, albums, tracks by a smart playlist query expression (see
+<a href="https://github.com/ejurgensen/forked-daapd/blob/master/README_SMARTPL.md">README_SMARTPL.md</a>
+for the expression syntax).</p>
 <p><strong>Endpoint</strong></p>
 <div class="highlight"><pre><span></span><code><span class="err">GET /api/search</span>
 </code></pre></div>
@@ -4628,7 +4641,8 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
 </tbody>
 </table>
 <p><strong>Example</strong></p>
-<p>Search for music tracks ordered descending by the time added to the library and limit result to 2 items:</p>
+<p>Search for music tracks ordered descending by the time added to the library and
+limit result to 2 items:</p>
 <div class="highlight"><pre><span></span><code>curl -X GET <span class="s2">&quot;http://localhost:3689/api/search?type=tracks&amp;expression=media_kind+is+music+order+by+time_added+desc&amp;offset=0&amp;limit=2&quot;</span>
 </code></pre></div>
 <h2 id="server-info">Server info<a class="headerlink" href="#server-info" title="Permanent link">&para;</a></h2>
@@ -4864,10 +4878,14 @@ Otherwise a HTTP <code>500 Internal Server Error</code> response is returned.</p
 <div class="highlight"><pre><span></span><code>curl -X DELETE <span class="s2">&quot;http://localhost:3689/api/settings/webinterface/show_composer_now_playing&quot;</span>
 </code></pre></div>
 <h2 id="push-notifications">Push notifications<a class="headerlink" href="#push-notifications" title="Permanent link">&para;</a></h2>
-<p>If forked-daapd was built with websocket support, forked-daapd exposes a websocket at <code>localhost:3688</code> to inform clients of changes (e. g. player state or library updates).
-The port depends on the forked-daapd configuration and can be read using the <a href="#config"><code>/api/config</code></a> endpoint.</p>
-<p>After connecting to the websocket, the client should send a message containing the event types it is interested in. After that forked-daapd
-will send a message each time one of the events occurred.</p>
+<p>If forked-daapd was built with websocket support, forked-daapd exposes a
+websocket at <code>localhost:3688</code> to inform clients of changes (e. g. player state
+or library updates).
+The port depends on the forked-daapd configuration and can be read using the
+<a href="#config"><code>/api/config</code></a> endpoint.</p>
+<p>After connecting to the websocket, the client should send a message containing
+the event types it is interested in. After that forked-daapd will send a message
+each time one of the events occurred.</p>
 <p><strong>Message</strong></p>
 <table>
 <thead>
@@ -4937,10 +4955,8 @@ will send a message each time one of the events occurred.</p>
      http://localhost:3688/ <span class="se">\</span>
      --data <span class="s2">&quot;{ \&quot;notify\&quot;: [ \&quot;player\&quot; ] }&quot;</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><span class="p">{</span> 
-  <span class="nt">&quot;notify&quot;</span><span class="p">:</span> <span class="p">[</span>
-    <span class="s2">&quot;player&quot;</span>
-  <span class="p">]</span>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+  <span class="nt">&quot;notify&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;player&quot;</span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
 <h2 id="object-model">Object model<a class="headerlink" href="#object-model" title="Permanent link">&para;</a></h2>
@@ -5530,10 +5546,16 @@ will send a message each time one of the events occurred.</p>
 </tbody>
 </table>
 <h3 id="artwork-urls">Artwork urls<a class="headerlink" href="#artwork-urls" title="Permanent link">&para;</a></h3>
-<p>Artwork urls in <code>queue item</code>, <code>artist</code>, <code>album</code> and <code>track</code> objects can be either relative urls or absolute urls to the artwork image.
-Absolute artwork urls are pointing to external artwork images (e. g. for radio streams that provide artwork metadata), while relative artwork urls are served from forked-daapd. </p>
-<p>It is possible to add the query parameters <code>maxwidth</code> and/or <code>maxheight</code> to relative artwork urls, in order to get a smaller image (forked-daapd only scales down never up).</p>
-<p>Note that even if a relative artwork url attribute is present, it is not guaranteed to exist.</p>
+<p>Artwork urls in <code>queue item</code>, <code>artist</code>, <code>album</code> and <code>track</code> objects can be
+either relative urls or absolute urls to the artwork image.
+Absolute artwork urls are pointing to external artwork images (e. g. for radio
+streams that provide artwork metadata), while relative artwork urls are served
+from forked-daapd.</p>
+<p>It is possible to add the query parameters <code>maxwidth</code> and/or <code>maxheight</code> to
+relative artwork urls, in order to get a smaller image (forked-daapd only scales
+down never up).</p>
+<p>Note that even if a relative artwork url attribute is present, it is not
+guaranteed to exist.</p>
                 
               
               

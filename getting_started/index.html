@@ -921,19 +921,7 @@
                 <h1 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <h3 id="prebuilt-packages">Prebuilt packages<a class="headerlink" href="#prebuilt-packages" title="Permanent link">&para;</a></h3>
-<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Debian/Ubuntu</label><div class="tabbed-content">
-<div class="admonition warning">
-<p class="admonition-title">Web interface and Spotify</p>
-<p>The forked-daapd package in Debian and Ubuntu comes <strong>without support
-for Spotify</strong> (<a href="https://github.com/ejurgensen/forked-daapd/issues/34">Issue #34</a>)
-and <strong>without the web interface</strong> (<a href="https://github.com/ejurgensen/forked-daapd/issues/552">Issue #552</a>).</p>
-<p>It is possible to install the web interface manually by copying the files from
-the <code>htdocs</code> folder to <code>/usr/share/forked-daapd/htdocs</code>.</p>
-</div>
-<div class="highlight"><pre><span></span><code>sudo apt install forked-daapd
-</code></pre></div>
-</div>
-<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Raspberry Pi OS</label><div class="tabbed-content">
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">Raspberry Pi OS</label><div class="tabbed-content">
 <ol>
 <li>
 <p>Add repository key</p>
@@ -956,28 +944,48 @@ sudo apt install forked-daapd
 </code></pre></div>
 </li>
 </ol>
+<p>For further informations and RPi related support visit:
+<a href="https://www.raspberrypi.org/forums/viewtopic.php?t=49928">Improved forked-daapd (iTunes server) - Raspberry Pi Forums</a></p>
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">Debian/Ubuntu</label><div class="tabbed-content">
+<div class="admonition warning">
+<p class="admonition-title">Web interface and Spotify</p>
+<p>The forked-daapd package in Debian and Ubuntu comes <strong>without support
+for Spotify</strong> (<a href="https://github.com/ejurgensen/forked-daapd/issues/34">Issue #34</a>)
+and <strong>without the web interface</strong> (<a href="https://github.com/ejurgensen/forked-daapd/issues/552">Issue #552</a>).</p>
+<p>It is possible to install the web interface manually by copying the files from
+the <code>htdocs</code> folder to <code>/usr/share/forked-daapd/htdocs</code>.</p>
+</div>
+<div class="highlight"><pre><span></span><code>sudo apt install forked-daapd
+</code></pre></div>
 </div>
 </div>
 <h3 id="building-from-source">Building from source<a class="headerlink" href="#building-from-source" title="Permanent link">&para;</a></h3>
-<p>Detailed instructions for building forked-daapd from source for different distributions / operating systems can be found under <a href="../install/">documentation/install</a>.</p>
+<p>Detailed instructions for building forked-daapd from source for different
+distributions / operating systems can be found under <a href="../install/">documentation/install</a>.</p>
 <h3 id="docker-images">Docker images<a class="headerlink" href="#docker-images" title="Permanent link">&para;</a></h3>
 <p>Community maintained docker images for forked-daapd can be found on <a href="https://github.com/linuxserver/docker-daapd">linuxserver/docker-daapd</a>.</p>
 <h2 id="setup-configuration">Setup / configuration<a class="headerlink" href="#setup-configuration" title="Permanent link">&para;</a></h2>
-<p>Edit the configuration file (usually <code>/etc/forked-daapd.conf</code>) to suit your needs, e.g.:</p>
+<p>Edit the configuration file (usually <code>/etc/forked-daapd.conf</code>) to suit your needs,
+e.g.:</p>
 <ol>
 <li>Add your local music folder to <code>library.directories</code></li>
 </ol>
 <h2 id="first-run">First run<a class="headerlink" href="#first-run" title="Permanent link">&para;</a></h2>
-<p>After modifying the configuration file restart forked-daapd (usually done with <code>sudo systemctl restart forked-daapd.service</code>).</p>
-<p>forked-daapd scans the configured folders which can take a while. You can follow the progress in the log file:</p>
+<p>After modifying the configuration file restart forked-daapd (usually done with
+<code>sudo systemctl restart forked-daapd.service</code>).</p>
+<p>forked-daapd scans the configured folders which can take a while. You can follow
+the progress in the log file:</p>
 <div class="highlight"><pre><span></span><code>tail -f /var/log/forked-daapd.log
 </code></pre></div>
 <p>You can access forked-daapd's web interface by visiting <a href="http://forked-daapd.local:3689">http://forked-daapd.local:3689</a>
 or, if that won't work, by visiting <code>http://[your_server_address_here]:3689</code>.</p>
 <h3 id="airplay-and-chromecast">AirPlay and Chromecast<a class="headerlink" href="#airplay-and-chromecast" title="Permanent link">&para;</a></h3>
-<p>forked-daapd should automatically discover AirPlay and Chromecast devices on your network.</p>
-<p>If your Apple TV requires device verification (always required by Apple TV4 with tvOS 10.2) then you can do that
-in the web interface through <code>Settings</code> &gt; <code>Remotes &amp; Outputs</code>:</p>
+<p>forked-daapd should automatically discover AirPlay and Chromecast devices on
+your network.</p>
+<p>If your Apple TV requires device verification (always required by Apple TV4 with
+tvOS 10.2) then you can do that in the web interface through
+<code>Settings</code> &gt; <code>Remotes &amp; Outputs</code>:</p>
 <ol>
 <li>Select the device</li>
 <li>Enter the PIN that the Apple TV displays</li>
@@ -986,9 +994,11 @@ in the web interface through <code>Settings</code> &gt; <code>Remotes &amp; Outp
 <p>If you want to use a remote app, e.g. Apple Remote:</p>
 <ul>
 <li>Open the web interface</li>
-<li>Open the app on your mobile phone and go to <code>Settings</code>, <code>Add Library</code>. The app will now display a 4 digit pin</li>
-<li>After a few seconds a modal dialog will appear in forked-daapds web interface. Enter the pin from the app there.
-    The pairing should now complete and your remote app should show your media library</li>
+<li>Open the app on your mobile phone and go to <code>Settings</code>, <code>Add Library</code>. The app
+  will now display a 4 digit pin</li>
+<li>After a few seconds a modal dialog will appear in forked-daapds web interface.
+  Enter the pin from the app there.
+  The pairing should now complete and your remote app should show your media library</li>
 </ul>
                 
               

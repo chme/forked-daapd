@@ -819,9 +819,9 @@ or alternatively at <code>http://[your_server_address_here]:3689</code>.</p>
 with remotes, select speakers, authenticate with Spotify, etc.</p>
 <div class="admonition important">
 <p class="admonition-title">Debian package</p>
+</div>
 <p>The Debian forked-daapd package does not include the web interface due to Debian
 packaging rules.</p>
-</div>
 <h2 id="screenshots">Screenshots<a class="headerlink" href="#screenshots" title="Permanent link">&para;</a></h2>
 <p><img alt="Now playing" src="../images/Screenshot-now-playing.png" width="300" />
 <img alt="Queue" src="../images/Screenshot-queue.png" width="300" />
@@ -831,7 +831,9 @@ packaging rules.</p>
 <p>The source is located in the <code>web-src</code> folder.</p>
 <div class="highlight"><pre><span></span><code>cd web-src
 </code></pre></div>
-<p>It is based on the Vue.js webpack template. For a detailed explanation on how things work, check out the <a href="http://vuejs-templates.github.io/webpack/">guide</a> and <a href="http://vuejs.github.io/vue-loader">docs for vue-loader</a>.</p>
+<p>It is based on the Vue.js webpack template. For a detailed explanation on how
+things work, check out the <a href="http://vuejs-templates.github.io/webpack/">guide</a>
+and <a href="http://vuejs.github.io/vue-loader">docs for vue-loader</a>.</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># install dependencies</span>
 npm install
 
@@ -844,7 +846,10 @@ npm run build
 <span class="c1"># build for production and view the bundle analyzer report</span>
 npm run build --report
 </code></pre></div>
-<p>After running <code>npm run dev</code> the web interface is reachable at <a href="http://localhost:8080">localhost:8080</a>. By default it expects <strong>forked-daapd</strong> to be running at <a href="http://localhost:3689">localhost:3689</a> and proxies all JSON API calls to this location. If <strong>forked-daapd</strong> is running at a different location you need to modify the <code>proxyTable</code> configuration in <code>config/index.js</code></p>
+<p>After running <code>npm run dev</code> the web interface is reachable at <a href="http://localhost:8080">localhost:8080</a>.
+By default it expects <strong>forked-daapd</strong> to be running at <a href="http://localhost:3689">localhost:3689</a>
+and proxies all JSON API calls to this location. If <strong>forked-daapd</strong> is running
+at a different location you need to modify the <code>proxyTable</code> configuration in <code>config/index.js</code></p>
                 
               
               

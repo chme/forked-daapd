@@ -823,26 +823,30 @@
                 
                 
                 <h1 id="forked-daapd">forked-daapd<a class="headerlink" href="#forked-daapd" title="Permanent link">&para;</a></h1>
-<p><strong>forked-daapd</strong> is an open source (audio) media server for GNU/Linux, FreeBSD and MacOS.</p>
-<p>It allows sharing and/or streaming your media library to iTunes (<abbr title="DAAP stands for Digital Audio Access Protocol which is the protocol used by iTunes and friends to share/stream media libraries over the network.">DAAP</abbr>), Roku (RSP),
-AirPlay devices (multiroom), Chromecast and also supports local playback.</p>
-<p>You can control forked-daapd via its web interface, Apple Remote (and compatible <abbr title="DAAP stands for Digital Audio Access Protocol which is the protocol used by iTunes and friends to share/stream media libraries over the network.">DAAP</abbr>/DACP clients),
-MPD clients or via its JSON API.</p>
-<p>Besides serving your local music, podcast and audiobook media files, forked-daapd supports
-internet radios and Spotify (requires Spotify premium account).</p>
-<p>forked-daapd is a complete rewrite of <a href="https://www.fireflymediaserver.net/">mt-daapd</a> (Firefly Media Server).</p>
+<p><strong>forked-daapd</strong> is an open source (audio) media server for GNU/Linux, FreeBSD
+and MacOS.</p>
+<p>It allows sharing and/or streaming your media library to iTunes (DAAP<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup>),
+Roku (RSP), AirPlay devices (multiroom), Chromecast and also supports local playback.</p>
+<p>You can control forked-daapd via its web interface, Apple Remote (and compatible
+DAAP/DACP clients), MPD clients or via its JSON API.</p>
+<p>Besides serving your local music, podcast and audiobook media files,
+forked-daapd supports internet radios and Spotify (requires Spotify premium account).</p>
+<p>forked-daapd is a complete rewrite of <a href="https://www.fireflymediaserver.net/">mt-daapd</a>
+(Firefly Media Server).</p>
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
 <ul>
 <li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 22h12l-6-6m9-13H3a2 2 0 00-2 2v12a2 2 0 002 2h4v-2H3V5h18v12h-4v2h4a2 2 0 002-2V5a2 2 0 00-2-2z"/></svg></span> Stream to AirPlay devices (synchronized multiroom)</li>
 <li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 11v2c5 0 9 4 9 9h2c0-6.1-4.9-11-11-11m18-9H10c-1.1 0-2 .9-2 2v6.5c1 .5 1.9 1.2 2.7 1.9.9-1.4 2.5-2.4 4.3-2.4 2.8 0 5 2.2 5 5s-2.2 5-5 5h-.2c.1.7.2 1.3.2 2h5c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2m-5 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2m0 10c-.2 0-.5 0-.7-.1-.5-1.5-1.2-2.8-2.1-4 .4-1.1 1.5-2 2.8-2 1.7 0 3 1.3 3 3S16.7 18 15 18M2 15v2c2.8 0 5 2.2 5 5h2c0-3.9-3.1-7-7-7m0 4v3h3c0-1.7-1.3-3-3-3"/></svg></span> Stream to Chromecast</li>
 <li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 2H8a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2m0 14H8V4h12m-7.5 11a2.5 2.5 0 002.5-2.5V7h3V5h-4v5.5c-.42-.31-.93-.5-1.5-.5a2.5 2.5 0 00-2.5 2.5 2.5 2.5 0 002.5 2.5M4 6H2v14a2 2 0 002 2h14v-2H4"/></svg></span> Share local library with iTunes and Roku</li>
 <li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.84-5 6.7v2.07c4-.91 7-4.49 7-8.77 0-4.28-3-7.86-7-8.77M16.5 12c0-1.77-1-3.29-2.5-4.03V16c1.5-.71 2.5-2.24 2.5-4M3 9v6h4l5 5V4L7 9H3z"/></svg></span> Local audio playback with ALSA or PulseAudio</li>
-<li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 19H7V5h10m0-4H7c-1.11 0-2 .89-2 2v18a2 2 0 002 2h10a2 2 0 002-2V3a2 2 0 00-2-2z"/></svg></span> Control with remote apps like Apple Remote on iOS, Retune/TunesRemote+ on Android or Remote for WP on Windows Phone</li>
+<li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 19H7V5h10m0-4H7c-1.11 0-2 .89-2 2v18a2 2 0 002 2h10a2 2 0 002-2V3a2 2 0 00-2-2z"/></svg></span> Control with remote apps like Apple Remote on iOS,
+  Retune /TunesRemote+ on Android or Remote for WP on Windows Phone</li>
 <li>Control via forked-daapds integrated web interface</li>
-<li>Control by any MPD client</li>
+<li>Control with MPD clients</li>
 <li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6m-1 11h-2v5a2 2 0 01-2 2 2 2 0 01-2-2 2 2 0 012-2c.4 0 .7.1 1 .3V11h3v2m0-4V3.5L18.5 9H13z"/></svg></span> Supports audio files in most formats</li>
 <li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 6a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V8c0-.85.53-1.58 1.28-1.87L15.71 1l.76 1.83L8.83 6H20m0 2H4v4h12v-2h2v2h2V8M7 14a3 3 0 00-3 3 3 3 0 003 3 3 3 0 003-3 3 3 0 00-3-3z"/></svg></span> Supports internet radio</li>
-<li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17.9 10.9C14.7 9 9.35 8.8 6.3 9.75c-.5.15-1-.15-1.15-.6-.15-.5.15-1 .6-1.15 3.55-1.05 9.4-.85 13.1 1.35.45.25.6.85.35 1.3-.25.35-.85.5-1.3.25m-.1 2.8c-.25.35-.7.5-1.05.25-2.7-1.65-6.8-2.15-9.95-1.15-.4.1-.85-.1-.95-.5-.1-.4.1-.85.5-.95 3.65-1.1 8.15-.55 11.25 1.35.3.15.45.65.2 1m-1.2 2.75c-.2.3-.55.4-.85.2-2.35-1.45-5.3-1.75-8.8-.95-.35.1-.65-.15-.75-.45-.1-.35.15-.65.45-.75 3.8-.85 7.1-.5 9.7 1.1.35.15.4.55.25.85M12 2A10 10 0 002 12a10 10 0 0010 10 10 10 0 0010-10A10 10 0 0012 2z"/></svg></span> Supports playing your Spotify library (requires Spotify premium account)</li>
+<li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17.9 10.9C14.7 9 9.35 8.8 6.3 9.75c-.5.15-1-.15-1.15-.6-.15-.5.15-1 .6-1.15 3.55-1.05 9.4-.85 13.1 1.35.45.25.6.85.35 1.3-.25.35-.85.5-1.3.25m-.1 2.8c-.25.35-.7.5-1.05.25-2.7-1.65-6.8-2.15-9.95-1.15-.4.1-.85-.1-.95-.5-.1-.4.1-.85.5-.95 3.65-1.1 8.15-.55 11.25 1.35.3.15.45.65.2 1m-1.2 2.75c-.2.3-.55.4-.85.2-2.35-1.45-5.3-1.75-8.8-.95-.35.1-.65-.15-.75-.45-.1-.35.15-.65.45-.75 3.8-.85 7.1-.5 9.7 1.1.35.15.4.55.25.85M12 2A10 10 0 002 12a10 10 0 0010 10 10 10 0 0010-10A10 10 0 0012 2z"/></svg></span> Supports playing your Spotify library (requires Spotify
+  premium account)</li>
 <li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18.25v3.25H7v-3.25c0-1.38 2.24-2.5 5-2.5s5 1.12 5 2.5M12 5.5a6.5 6.5 0 016.5 6.5c0 1.25-.35 2.42-.96 3.41L16 14.04c.32-.61.5-1.31.5-2.04 0-2.5-2-4.5-4.5-4.5s-4.5 2-4.5 4.5c0 .73.18 1.43.5 2.04l-1.54 1.37c-.61-.99-.96-2.16-.96-3.41A6.5 6.5 0 0112 5.5m0-4A10.5 10.5 0 0122.5 12c0 2.28-.73 4.39-1.96 6.11l-1.5-1.35c.92-1.36 1.46-3 1.46-4.76A8.5 8.5 0 0012 3.5 8.5 8.5 0 003.5 12c0 1.76.54 3.4 1.46 4.76l-1.5 1.35A10.473 10.473 0 011.5 12 10.5 10.5 0 0112 1.5m0 8a2.5 2.5 0 012.5 2.5 2.5 2.5 0 01-2.5 2.5A2.5 2.5 0 019.5 12 2.5 2.5 0 0112 9.5z"/></svg></span> Supports subscriptions to podcasts (RSS) feeds</li>
 <li><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 8h2v2h-2V8M4 5h16a2 2 0 012 2h-3v2H5v4h3v3h11v1h3a2 2 0 01-2 2h-4v1h-2v-1h-3v1H7v-1H4a2 2 0 01-2-2V7a2 2 0 012-2m15 10H9v-5h10v1h3v2h-3v2m-6-3v2h2v-2h-2M5 6v2h1V6H5m2 0v2h1V6H7m2 0v2h1V6H9m2 0v2h1V6h-1m2 0v2h1V6h-1m2 0v2h1V6h-1m5 8h2v2h-2v-2z"/></svg></span> Runs on low power devices like the Raspberry Pi</li>
 </ul>
@@ -864,6 +868,15 @@ please see the <a href="INSTALL.md">INSTALL.md</a> file.</p>
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <p>The source for this version of forked-daapd can be found here:</p>
 <p><a href="https://github.com/ejurgensen/forked-daapd.git">https://github.com/ejurgensen/forked-daapd.git</a></p>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>DAAP stands for Digital Audio Access Protocol which is the protocol used by
+iTunes and friends to share/stream media libraries over the network.&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
                 
               
               

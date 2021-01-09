@@ -68,7 +68,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#installation-instructions-for-forked-daapd" class="md-skip">
+        <a href="#building-from-source" class="md-skip">
           Skip to content
         </a>
       
@@ -341,13 +341,6 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#quick-version-for-raspbian-raspberry-pi" class="md-nav__link">
-    Quick version for Raspbian (Raspberry Pi)
-  </a>
-  
-</li>
       
         <li class="md-nav__item">
   <a href="#quick-version-for-debianubuntu-users" class="md-nav__link">
@@ -829,13 +822,6 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#quick-version-for-raspbian-raspberry-pi" class="md-nav__link">
-    Quick version for Raspbian (Raspberry Pi)
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#quick-version-for-debianubuntu-users" class="md-nav__link">
     Quick version for Debian/Ubuntu users
   </a>
@@ -908,17 +894,13 @@
                   </a>
                 
                 
-                <h1 id="installation-instructions-for-forked-daapd">Installation instructions for forked-daapd<a class="headerlink" href="#installation-instructions-for-forked-daapd" title="Permanent link">&para;</a></h1>
+                <h1 id="building-from-source">Building from Source<a class="headerlink" href="#building-from-source" title="Permanent link">&para;</a></h1>
 <p>This document contains instructions for installing forked-daapd from the git
 tree.</p>
 <p>The source for this version of forked-daapd can be found here:
 <a href="https://github.com/ejurgensen/forked-daapd.git">ejurgensen/forked-daapd</a></p>
 <p>The original (now unmaintained) source can be found here:
 <a href="http://git.debian.org/?p=users/jblache/forked-daapd.git">jblache/forked-daapd</a></p>
-<h2 id="quick-version-for-raspbian-raspberry-pi">Quick version for Raspbian (Raspberry Pi)<a class="headerlink" href="#quick-version-for-raspbian-raspberry-pi" title="Permanent link">&para;</a></h2>
-<p>See the instructions here:
-<a href="http://www.raspberrypi.org/phpBB3/viewtopic.php?t=49928">Improved forked-daapd (iTunes server) -
-Raspberry Pi Forums</a></p>
 <h2 id="quick-version-for-debianubuntu-users">Quick version for Debian/Ubuntu users<a class="headerlink" href="#quick-version-for-debianubuntu-users" title="Permanent link">&para;</a></h2>
 <p>If you are the lucky kind, this should get you all the required tools and
 libraries:</p>
@@ -1040,20 +1022,20 @@ all the steps that you need to execute:
 (and sometimes build) ports... you'll want a decent network connection
 and some patience!</p>
 <p>Install macports (which requires Xcode):
-  <a href="https://www.macports.org/install.php">https://www.macports.org/install.php</a></p>
+<a href="https://www.macports.org/install.php">https://www.macports.org/install.php</a></p>
 <p>Install Apple's Java (this enables java command on OSX 10.7+):
-  <a href="https://support.apple.com/kb/DL1572?locale=en_US">https://support.apple.com/kb/DL1572?locale=en_US</a></p>
+<a href="https://support.apple.com/kb/DL1572?locale=en_US">https://support.apple.com/kb/DL1572?locale=en_US</a></p>
 <p>Afterwards, you can optionally install Oracle's newer version, and then
-  choose it using the Java pref in the System Preferences:
-  <a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">http://www.oracle.com/technetwork/java/javase/downloads/index.html</a></p>
+choose it using the Java pref in the System Preferences:
+<a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">http://www.oracle.com/technetwork/java/javase/downloads/index.html</a></p>
 <div class="highlight"><pre><span></span><code>sudo port install <span class="se">\</span>
   autoconf automake libtool pkgconfig git gperf libgcrypt <span class="se">\</span>
   libunistring libconfuse ffmpeg libevent json-c libwebsockets curl
 </code></pre></div>
 <p>Download, configure, build and install the Mini-XML library:
-  <a href="http://www.msweet.org/projects.php/Mini-XML">http://www.msweet.org/projects.php/Mini-XML</a></p>
+<a href="http://www.msweet.org/projects.php/Mini-XML">http://www.msweet.org/projects.php/Mini-XML</a></p>
 <p>Download, configure, build and install the libinotify library:
-  <a href="https://github.com/libinotify-kqueue/libinotify-kqueue">https://github.com/libinotify-kqueue/libinotify-kqueue</a></p>
+<a href="https://github.com/libinotify-kqueue/libinotify-kqueue">https://github.com/libinotify-kqueue/libinotify-kqueue</a></p>
 <p>Add the following to <code>.bashrc</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># add /usr/local to pkg-config path</span>
 <span class="nb">export</span> <span class="nv">PKG_CONFIG_PATH</span><span class="o">=</span>/usr/local/lib/pkgconfig:/opt/local/lib/pkgconfig
@@ -1118,8 +1100,7 @@ sudo chown unknown /usr/local/var/cache/forked-daapd <span class="c1"># or chang
 <p>Run forked-daapd:</p>
 <div class="highlight"><pre><span></span><code>sudo /usr/local/sbin/forked-daapd
 </code></pre></div>
-<p>Verify it's running (you need to <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop
-dns-sd):</p>
+<p>Verify it's running (you need to <span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-c">C</kbd></span> to stop dns-sd):</p>
 <div class="highlight"><pre><span></span><code>dns-sd -B _daap._tcp
 </code></pre></div>
 <h2 id="long-version-requirements">Long version - requirements<a class="headerlink" href="#long-version-requirements" title="Permanent link">&para;</a></h2>
@@ -1166,7 +1147,7 @@ dns-sd):</p>
   often already installed as part of your distro</li>
 <li>libpulse (optional - Pulseaudio local audio)<br />
   from <a href="https://www.freedesktop.org/wiki/Software/PulseAudio/Download/">https://www.freedesktop.org/wiki/Software/PulseAudio/Download/</a></li>
-<li>libplist 0.16+ (optional - iTunes XML support and Apple TV device verification)<br />
+<li>libplist 0.16+ (optional - iTunes XML support and Apple TV device verification)
   from <a href="http://github.com/JonathanBeck/libplist/downloads">http://github.com/JonathanBeck/libplist/downloads</a></li>
 <li>libsodium (optional - Apple TV device verification)<br />
   from <a href="https://download.libsodium.org/doc/">https://download.libsodium.org/doc/</a></li>
@@ -1233,8 +1214,9 @@ install all dependencies for the player web interface. After that run <code>npm 
 This will build the web interface and update the <code>htdocs</code> folder.
 (See <a href="README_PLAYER_WEBINTERFACE.md">README_PLAYER_WEBINTERFACE.md</a> for more
 informations)</p>
-<p>Building with libwebsockets is required if you want the web interface. It will be enabled
-if the library is present (with headers). Use <code>--without-libwebsockets</code> to disable.</p>
+<p>Building with libwebsockets is required if you want the web interface. It will be
+enabled if the library is present (with headers). Use <code>--without-libwebsockets</code>
+to disable.</p>
 <p>Building with Pulseaudio is optional. It will be enabled if the library is
 present (with headers). Use <code>--without-pulseaudio</code> to disable.</p>
 <p>Recommended build settings:</p>
