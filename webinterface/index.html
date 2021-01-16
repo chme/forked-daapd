@@ -14,7 +14,7 @@
         <link rel="canonical" href="https://ejurgensen.github.io/forked-daapd/webinterface/">
       
       <link rel="shortcut icon" href="../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.2.3">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.2.4">
     
     
       
@@ -22,10 +22,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.3b61ea93.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.15aa0b43.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.39b8e14a.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.75751829.min.css">
         
           
           
@@ -819,14 +819,27 @@ or alternatively at <code>http://[your_server_address_here]:3689</code>.</p>
 with remotes, select speakers, authenticate with Spotify, etc.</p>
 <div class="admonition important">
 <p class="admonition-title">Debian package</p>
-</div>
 <p>The Debian forked-daapd package does not include the web interface due to Debian
 packaging rules.</p>
+</div>
 <h2 id="screenshots">Screenshots<a class="headerlink" href="#screenshots" title="Permanent link">&para;</a></h2>
-<p><img alt="Now playing" src="../images/Screenshot-now-playing.png" width="300" />
-<img alt="Queue" src="../images/Screenshot-queue.png" width="300" />
-<img alt="Artists" src="../images/Screenshot-artists.png" width="300" />
-<img alt="Album" src="../images/Screenshot-album.png" width="300" /></p>
+<p><img alt="Now playing" class="zoom" src="../images/screenshot-now-playing.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-queue.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-music-browse.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-music-artists.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-music-artist.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-music-albums.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-music-albums-options.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-music-album.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-music-spotify.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-audiobooks-authors.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-audiobooks-books.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-podcasts.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-podcast.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-files.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-search.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-menu.png" />
+<img alt="Now playing" class="zoom" src="../images/screenshot-outputs.png" /></p>
 <h2 id="build-setup">Build Setup<a class="headerlink" href="#build-setup" title="Permanent link">&para;</a></h2>
 <p>The source is located in the <code>web-src</code> folder.</p>
 <div class="highlight"><pre><span></span><code>cd web-src
@@ -929,8 +942,8 @@ at a different location you need to modify the <code>proxyTable</code> configura
       
     </div>
     
-      <script src="../assets/javascripts/vendor.08c56446.min.js"></script>
-      <script src="../assets/javascripts/bundle.6ced434e.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
+      <script src="../assets/javascripts/vendor.93c04032.min.js"></script>
+      <script src="../assets/javascripts/bundle.83e5331e.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
       
       <script>
         app = initialize({
@@ -941,6 +954,8 @@ at a different location you need to modify the <code>proxyTable</code> configura
           }, typeof search !== "undefined" && search)
         })
       </script>
+      
+        <script src="../javascripts/extra.js"></script>
       
     
   </body>
