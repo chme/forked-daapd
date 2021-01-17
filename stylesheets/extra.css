@@ -21,6 +21,20 @@
 }
 
 /*
+ * The nav title has a click handler to scroll to the top
+ */
+.md-header-nav__title {
+  cursor: pointer;
+}
+
+/*
+ * Text alignment
+ */
+.text-center {
+  text-align: center;
+}
+
+/*
  * Custom CSS for images
  */
 .hidden {

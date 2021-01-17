@@ -1,3 +1,13 @@
+/*
+ * Add click event handler for title in nav to scroll to top
+ */
+document.querySelector('.md-header-nav__title').addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+/*
+ * Add click event handler for images with class="zoom"
+ */
 document.querySelectorAll('img.zoom').forEach(item => {
     const p = item.parentElement;
     if (!p.classList.contains('processed')) {
