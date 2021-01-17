@@ -346,9 +346,45 @@
       
     
     
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Playlists and Radio
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+    
     <a href="./" class="md-nav__link md-nav__link--active">
       Playlists and Radio
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#internet-radio" class="md-nav__link">
+    Internet Radio
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#smart-playlists" class="md-nav__link">
+    Smart Playlists
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -737,6 +773,28 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#internet-radio" class="md-nav__link">
+    Internet Radio
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#smart-playlists" class="md-nav__link">
+    Smart Playlists
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -755,6 +813,7 @@
                 <h1 id="playlists-and-internet-radio">Playlists and internet radio<a class="headerlink" href="#playlists-and-internet-radio" title="Permanent link">&para;</a></h1>
 <p>forked-daapd supports M3U and PLS playlists. Just drop your playlist somewhere
 in your library with an .m3u or .pls extension and it will pick it up.</p>
+<h2 id="internet-radio">Internet Radio<a class="headerlink" href="#internet-radio" title="Permanent link">&para;</a></h2>
 <p>If the playlist contains an http URL it will be added as an internet radio
 station, and the URL will be probed for Shoutcast (ICY) metadata. If the radio
 station provides artwork, forked-daapd will download it during playback and send
@@ -763,15 +822,12 @@ it to any remotes or AirPlay devices requesting it.</p>
 empty M3U file and in it insert links to the M3U's of your radio stations.</p>
 <p>Radio streams can only be played by forked-daapd, so that means they will not be
 available to play in DAAP clients like iTunes.</p>
-<p>Support for iTunes Music Library XML format is available as a compile-time
-option. By default, metadata from our parsers is preferred over what's in
-the iTunes DB; use itunes_overrides = true if you prefer iTunes' metadata.</p>
-<p>forked-daapd has support for smart playlists. How to create a smart playlist is
-documented in
-<a href="https://github.com/ejurgensen/forked-daapd/blob/master/README_SMARTPL.md">README_SMARTPL.md</a>.</p>
 <p>If you're not satisfied with internet radio metadata that forked-daapd shows,
-then you can read about tweaking it in
-<a href="https://github.com/ejurgensen/forked-daapd/blob/master/README_RADIO_STREAMS.md">README_RADIO_STREAMS.md</a>.</p>
+then you can read about tweaking it under
+<a href="../streams/">Advanced Topics / Radio Streams</a>.</p>
+<h2 id="smart-playlists">Smart Playlists<a class="headerlink" href="#smart-playlists" title="Permanent link">&para;</a></h2>
+<p>forked-daapd has support for smart playlists. How to create a smart playlist is
+documented in <a href="../smartpl/">Smart Playlists</a>.</p>
                 
               
               

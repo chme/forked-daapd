@@ -855,6 +855,9 @@ configuration file a rescan is required before the new setting will take effect.
 You can do this by using "Update library" from the web interface.</p>
 <p>Symlinks are supported and dereferenced, but it is best to use them for
 directories only.</p>
+<p>Support for iTunes Music Library XML format is available as a compile-time
+option. By default, metadata from our parsers is preferred over what's in
+the iTunes DB; use itunes_overrides = true if you prefer iTunes' metadata.</p>
 <h2 id="supported-formats">Supported formats<a class="headerlink" href="#supported-formats" title="Permanent link">&para;</a></h2>
 <p>forked-daapd should support pretty much all audio formats. It relies on libav
 (or ffmpeg) to extract metadata and decode the files on the fly when the client

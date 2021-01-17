@@ -1,4 +1,11 @@
 document.querySelectorAll('img.zoom').forEach(item => {
+    const p = item.parentElement;
+    if (!p.classList.contains('processed')) {
+        p.classList.add('processed');
+        if (p.querySelectorAll('img.zoom').length === p.children.length) {
+            p.classList.add('zoom-wrapper');
+        }
+    }
     item.addEventListener('click', function () {
         const img = document.getElementById('fullscreen-image-img');
         img.setAttribute('src', this.getAttribute('src'));

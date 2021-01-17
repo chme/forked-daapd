@@ -469,29 +469,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#troubleshooting-pairing-issues" class="md-nav__link">
-    Troubleshooting pairing issues
+  <a href="#troubleshooting" class="md-nav__link">
+    Troubleshooting
   </a>
-  
-    <nav class="md-nav" aria-label="Troubleshooting pairing issues">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#you-did-not-enter-the-correct-pairing-code" class="md-nav__link">
-    You did not enter the correct pairing code
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#no-response-from-remote-possibly-a-network-issue" class="md-nav__link">
-    No response from Remote, possibly a network issue
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -809,29 +789,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#troubleshooting-pairing-issues" class="md-nav__link">
-    Troubleshooting pairing issues
+  <a href="#troubleshooting" class="md-nav__link">
+    Troubleshooting
   </a>
-  
-    <nav class="md-nav" aria-label="Troubleshooting pairing issues">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#you-did-not-enter-the-correct-pairing-code" class="md-nav__link">
-    You did not enter the correct pairing code
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#no-response-from-remote-possibly-a-network-issue" class="md-nav__link">
-    No response from Remote, possibly a network issue
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -869,15 +829,18 @@ they return online during playback.</p>
 <li>Enter the pair code in the web interface (update the page with F5 if it does
    not automatically pick up the pairing request)</li>
 </ol>
-<h2 id="troubleshooting-pairing-issues">Troubleshooting pairing issues<a class="headerlink" href="#troubleshooting-pairing-issues" title="Permanent link">&para;</a></h2>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
 <p>If Remote doesn't connect to forked-daapd after you entered the pairing code
 something went wrong. Check the log file to see the error message. Here are
 some common reasons:</p>
-<h3 id="you-did-not-enter-the-correct-pairing-code">You did not enter the correct pairing code<a class="headerlink" href="#you-did-not-enter-the-correct-pairing-code" title="Permanent link">&para;</a></h3>
+<div class="admonition danger">
+<p class="admonition-title">You did not enter the correct pairing code</p>
 <p>You will see an error in the log about pairing failure with a HTTP response code
 that is <em>not</em> 0.</p>
 <p><strong>Solution</strong>: Try again.</p>
-<h3 id="no-response-from-remote-possibly-a-network-issue">No response from Remote, possibly a network issue<a class="headerlink" href="#no-response-from-remote-possibly-a-network-issue" title="Permanent link">&para;</a></h3>
+</div>
+<div class="admonition danger">
+<p class="admonition-title">No response from Remote, possibly a network issue</p>
 <p>If you see an error in the log with either:</p>
 <ul>
 <li>a HTTP response code that is 0</li>
@@ -892,6 +855,7 @@ connection (eg SSH) from the iPod/iPhone/iPad to the host.</p>
 <p><strong>Solution 2</strong>: Check your router settings if you can whitelist multicast addresses
 under IGMP settings. For Apple Bonjour, setting a multicast address of
 224.0.0.251 and a netmask of 255.255.255.255 should work.</p>
+</div>
 <p>Otherwise try using avahi-browse for troubleshooting:</p>
 <ul>
 <li>in a terminal, run <code>avahi-browse -r -k _touch-remote._tcp</code></li>
