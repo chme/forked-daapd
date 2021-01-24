@@ -1172,7 +1172,11 @@ jsonapi_reply_library(struct httpd_request *hreq)
 static int
 jsonapi_reply_update(struct httpd_request *hreq)
 {
-  library_rescan(NULL);
+  const char *source;
+
+  source = evhttp_find_header(hreq->query, "source");
+  library_rescan(source);
+
   return HTTP_NOCONTENT;
 }
 
