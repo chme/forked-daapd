@@ -277,8 +277,11 @@ purge_cruft(time_t start, char *source)
   db_groups_cleanup();
   db_queue_cleanup();
 
-  DPRINTF(E_DBG, L_LIB, "Purging old artwork content\n");
-  cache_artwork_purge_cruft(start);
+  if (!source)
+    {
+      DPRINTF(E_DBG, L_LIB, "Purging old artwork content\n");
+      cache_artwork_purge_cruft(start);
+    }
 }
 
 static enum command_state
