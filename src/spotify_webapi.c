@@ -38,6 +38,8 @@
 #include "spotify.h"
 
 
+#define SPOTIFY_SCANNER_SOURCE_NAME "spotifyscanner"
+
 enum spotify_request_type {
   SPOTIFY_REQUEST_TYPE_DEFAULT,
   SPOTIFY_REQUEST_TYPE_RESCAN,
@@ -1307,7 +1309,12 @@ prepare_directories(const char *artist, const char *album)
 {
   int dir_id;
   char virtual_path[PATH_MAX];
+  char source[25];
   int ret;
+
+  ret = snprintf(source, sizeof(source), "%s", SPOTIFY_SCANNER_SOURCE_NAME);
+  if (ret < 0)
+    return -1;
 
   ret = snprintf(virtual_path, sizeof(virtual_path), "/spotify:/%s", artist);
   if ((ret < 0) || (ret >= sizeof(virtual_path)))
@@ -1315,19 +1322,23 @@ prepare_directories(const char *artist, const char *album)
       DPRINTF(E_LOG, L_SPOTIFY, "Virtual path exceeds PATH_MAX (/spotify:/%s)\n", artist);
       return -1;
     }
-  dir_id = db_directory_addorupdate(virtual_path, NULL, 0, DIR_SPOTIFY);
+  dir_id = db_directory_addorupdate(virtual_path, NULL, 0, DIR_SPOTIFY, source);
   if (dir_id <= 0)
     {
       DPRINTF(E_LOG, L_SPOTIFY, "Could not add or update directory '%s'\n", virtual_path);
       return -1;
     }
+
+  ret = snprintf(source, sizeof(source), "%s", SPOTIFY_SCANNER_SOURCE_NAME);
+  if (ret < 0)
+    return 0;
   ret = snprintf(virtual_path, sizeof(virtual_path), "/spotify:/%s/%s", artist, album);
   if ((ret < 0) || (ret >= sizeof(virtual_path)))
     {
       DPRINTF(E_LOG, L_SPOTIFY, "Virtual path exceeds PATH_MAX (/spotify:/%s/%s)\n", artist, album);
       return -1;
     }
-  dir_id = db_directory_addorupdate(virtual_path, NULL, 0, dir_id);
+  dir_id = db_directory_addorupdate(virtual_path, NULL, 0, dir_id, source);
   if (dir_id <= 0)
     {
       DPRINTF(E_LOG, L_SPOTIFY, "Could not add or update directory '%s'\n", virtual_path);
@@ -1451,6 +1462,8 @@ track_add(struct spotify_track *track, struct spotify_album *album, const char *
       mfi.directory_id = dir_id;
 
       map_track_to_mfi(&mfi, track, album, pl_name);
+
+      mfi.source = SPOTIFY_SCANNER_SOURCE_NAME;
 
       library_media_save(&mfi);
 
@@ -1643,6 +1656,8 @@ map_playlist_to_pli(struct playlist_info *pli, struct spotify_playlist *playlist
     pli->virtual_path = safe_asprintf("/spotify:/%s (%s)", playlist->name, playlist->owner);
   else
     pli->virtual_path = safe_asprintf("/spotify:/%s", playlist->name);
+
+  pli->source = SPOTIFY_SCANNER_SOURCE_NAME;
 }
 
 /*
@@ -2072,7 +2087,7 @@ spotifywebapi_deinit()
 
 struct library_source spotifyscanner =
 {
-  .name = "spotifyscanner",
+  .name = SPOTIFY_SCANNER_SOURCE_NAME,
   .disabled = 0,
   .init = spotifywebapi_init,
   .deinit = spotifywebapi_deinit,

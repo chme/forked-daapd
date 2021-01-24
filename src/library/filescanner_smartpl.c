@@ -77,6 +77,8 @@ scan_smartpl(const char *file, time_t mtime, int dir_id)
 
   free_smartpl(&smartpl, 1);
 
+  pli->source = FILESCANNER_SOURCE_NAME;
+
   ret = library_playlist_save(pli);
   if (ret < 0)
     {

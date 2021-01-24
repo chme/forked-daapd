@@ -154,7 +154,7 @@ library_is_exiting();
 /* ------------------------ Library external interface --------------------- */
 
 void
-library_rescan();
+library_rescan(const char *source_name);
 
 void
 library_metarescan();

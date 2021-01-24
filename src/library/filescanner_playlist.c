@@ -186,6 +186,7 @@ process_nested_playlist(int parent_id, const char *path)
     goto error;
 
   pli->type = PL_FOLDER;
+  pli->source = FILESCANNER_SOURCE_NAME;
   ret = library_playlist_save(pli);
   if (ret < 0)
     goto error;
@@ -217,6 +218,7 @@ process_nested_playlist(int parent_id, const char *path)
     }
 
   pli->parent_id = parent_id;
+  pli->source = FILESCANNER_SOURCE_NAME;
 
   ret = library_playlist_save(pli);
   if (ret < 0)
@@ -267,6 +269,8 @@ process_url(int pl_id, const char *path, struct media_file_info *mfi)
     }
   else
     scan_metadata_stream(mfi, path);
+
+  mfi->source = FILESCANNER_SOURCE_NAME;
 
   ret = library_media_save(mfi);
   if (ret < 0)

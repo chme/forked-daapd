@@ -461,6 +461,8 @@ playlist_add(const char *path)
   if (ret < 0)
     return -1;
 
+  pli.source = FILESCANNER_SOURCE_NAME;
+
   ret = library_playlist_save(&pli);
   if (ret < 0)
     {
@@ -626,6 +628,8 @@ process_regular_file(const char *file, struct stat *sb, int type, int flags, int
 	}
     }
 
+  mfi.source = FILESCANNER_SOURCE_NAME;
+
   library_media_save(&mfi);
 
   cache_artwork_ping(file, sb->st_mtime, !is_bulkscan);
@@ -717,7 +721,7 @@ process_file(char *file, struct stat *sb, enum file_type file_type, int scan_typ
 
 	DPRINTF(E_LOG, L_SCAN, "Startup rescan triggered, found init-rescan file: %s\n", file);
 
-	library_rescan();
+	library_rescan(NULL);
 	break;
 
       case FILE_CTRL_METASCAN:
@@ -825,6 +829,7 @@ process_directory(char *path, int parent_id, int flags)
   int scan_type;
   enum file_type file_type;
   char virtual_path[PATH_MAX];
+  char source[25];
   int dir_id;
   int ret;
 
@@ -840,11 +845,15 @@ process_directory(char *path, int parent_id, int flags)
 
   /* Add/update directories table */
 
+  ret = snprintf(source, sizeof(source), "%s", FILESCANNER_SOURCE_NAME);
+  if (ret < 0)
+    return;
+
   ret = virtual_path_make(virtual_path, sizeof(virtual_path), path);
   if (ret < 0)
     return;
 
-  dir_id = db_directory_addorupdate(virtual_path, path, 0, parent_id);
+  dir_id = db_directory_addorupdate(virtual_path, path, 0, parent_id, source);
   if (dir_id <= 0)
     {
       DPRINTF(E_LOG, L_SCAN, "Insert or update of directory failed '%s'\n", virtual_path);
@@ -955,6 +964,7 @@ process_parent_directories(char *path)
   int dir_id;
   char buf[PATH_MAX];
   char virtual_path[PATH_MAX];
+  char source[25];
   int ret;
 
   dir_id = DIR_FILE;
@@ -975,7 +985,11 @@ process_parent_directories(char *path)
       if (ret < 0)
 	return 0;
 
-      dir_id = db_directory_addorupdate(virtual_path, buf, 0, dir_id);
+      ret = snprintf(source, sizeof(source), "%s", FILESCANNER_SOURCE_NAME);
+      if (ret < 0)
+        return 0;
+
+      dir_id = db_directory_addorupdate(virtual_path, buf, 0, dir_id, source);
       if (dir_id <= 0)
 	{
 	  DPRINTF(E_LOG, L_SCAN, "Insert or update of directory failed '%s'\n", virtual_path);
@@ -1949,6 +1963,8 @@ playlist_add_files(FILE *fp, int pl_id, const char *virtual_path)
 
       memset(&mfi, 0, sizeof(struct media_file_info));
       scan_metadata_stream(&mfi, path);
+
+      mfi.source = FILESCANNER_SOURCE_NAME;
       library_media_save(&mfi);
       free_mfi(&mfi, 1);
 
@@ -2107,6 +2123,8 @@ queue_save(const char *virtual_path)
 
 	      memset(&mfi, 0, sizeof(struct media_file_info));
 	      scan_metadata_stream(&mfi, queue_item.path);
+
+	      mfi.source = FILESCANNER_SOURCE_NAME;
 	      library_media_save(&mfi);
 	      free_mfi(&mfi, 1);
 	    }
@@ -2175,7 +2193,7 @@ filescanner_deinit(void)
 
 struct library_source filescanner =
 {
-  .name = "filescanner",
+  .name = FILESCANNER_SOURCE_NAME,
   .disabled = 0,
   .init = filescanner_init,
   .deinit = filescanner_deinit,

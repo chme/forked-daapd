@@ -5,6 +5,8 @@
 #include "db.h"
 
 
+#define FILESCANNER_SOURCE_NAME "filescanner"
+
 /* --------------------------- Actual scanners ---------------------------- */
 
 int

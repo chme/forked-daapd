@@ -840,6 +840,8 @@ process_pls(plist_t playlists, const char *file)
       free(pli.virtual_path);
       pli.virtual_path = safe_asprintf("/file:%s/%s", file, name);
 
+      pli.source = FILESCANNER_SOURCE_NAME;
+
       ret = library_playlist_save(&pli);
       if (ret < 0)
 	{
@@ -899,6 +901,8 @@ itml_is_modified(const char *path, time_t mtime)
   playlist_fill(pli, path);
   free(pli->title);
   pli->title = strdup(path);
+
+  pli->source = FILESCANNER_SOURCE_NAME;
 
   ret = library_playlist_save(pli);
   if (ret < 0)

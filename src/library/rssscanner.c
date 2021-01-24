@@ -51,6 +51,7 @@
 #include "library.h"
 #include "library/filescanner.h"
 
+#define RSS_SCANNER_SOURCE_NAME "RSS feeds"
 #define APPLE_PODCASTS_SERVER "https://podcasts.apple.com/"
 #define APPLE_ITUNES_SERVER "https://itunes.apple.com/"
 #define RSS_LIMIT_DEFAULT 10
@@ -217,6 +218,7 @@ playlist_fetch(bool *is_new, const char *path)
   pli->directory_id = DIR_HTTP;
   pli->type = PL_RSS;
   pli->query_limit = RSS_LIMIT_DEFAULT;
+  pli->source = RSS_SCANNER_SOURCE_NAME;
 
   ret = library_playlist_save(pli);
   if (ret < 0)
@@ -490,6 +492,8 @@ rss_save(struct playlist_info *pli, int *count, enum rss_scan_type scan_type)
 
       mfi_metadata_fixup(&mfi, &ri, feed_title, feed_author, time_added);
 
+      mfi.source = RSS_SCANNER_SOURCE_NAME;
+
       library_media_save(&mfi);
 
       free_mfi(&mfi, 1);
@@ -522,6 +526,8 @@ rss_scan(const char *path, enum rss_scan_type scan_type)
   ret = rss_save(pli, &count, scan_type);
   if (ret < 0)
     goto error;
+
+  pli->source = RSS_SCANNER_SOURCE_NAME;
 
   // Save the playlist again, title etc may have been modified by rss_save().
   // This also updates the db_timestamp which protects the RSS from deletion.
@@ -641,7 +647,7 @@ rss_add(const char *path)
 
 struct library_source rssscanner =
 {
-  .name = "RSS feeds",
+  .name = RSS_SCANNER_SOURCE_NAME,
   .disabled = 0,
   .initscan = rss_rescan,
   .rescan = rss_rescan,

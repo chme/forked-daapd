@@ -57,6 +57,11 @@ struct library_callback_register
   struct event *ev;
 };
 
+struct scan_param
+{
+  char *source_name;
+};
+
 struct playlist_item_add_param
 {
   const char *vp_playlist;
@@ -262,10 +267,13 @@ handle_deferred_update_notifications(void)
 }
 
 static void
-purge_cruft(time_t start)
+purge_cruft(time_t start, char *source)
 {
   DPRINTF(E_DBG, L_LIB, "Purging old library content\n");
-  db_purge_cruft(start);
+  if (source)
+    db_purge_source_cruft(start, source);
+  else
+    db_purge_cruft(start);
   db_groups_cleanup();
   db_queue_cleanup();
 
@@ -276,6 +284,7 @@ purge_cruft(time_t start)
 static enum command_state
 rescan(void *arg, int *ret)
 {
+  struct scan_param *cmdarg;
   time_t starttime;
   time_t endtime;
   int i;
@@ -284,12 +293,21 @@ rescan(void *arg, int *ret)
   listener_notify(LISTENER_UPDATE);
   starttime = time(NULL);
 
+  cmdarg = arg;
+
   for (i = 0; sources[i]; i++)
     {
       if (!sources[i]->disabled && sources[i]->rescan)
 	{
-	  DPRINTF(E_INFO, L_LIB, "Rescan library source '%s'\n", sources[i]->name);
-	  sources[i]->rescan();
+	  if (cmdarg->source_name && strcmp(cmdarg->source_name, sources[i]->name) != 0)
+	    {
+	      DPRINTF(E_DBG, L_LIB, "Skipping library source '%s'\n", sources[i]->name);
+	    }
+	  else
+	    {
+	      DPRINTF(E_INFO, L_LIB, "Rescan library source '%s'\n", sources[i]->name);
+	      sources[i]->rescan();
+	    }
 	}
       else
 	{
@@ -297,7 +315,7 @@ rescan(void *arg, int *ret)
 	}
     }
 
-  purge_cruft(starttime);
+  purge_cruft(starttime, cmdarg->source_name);
 
   DPRINTF(E_DBG, L_LIB, "Running post library scan jobs\n");
   db_hook_post_scan();
@@ -310,6 +328,8 @@ rescan(void *arg, int *ret)
     listener_notify(LISTENER_UPDATE | LISTENER_DATABASE);
   else
     listener_notify(LISTENER_UPDATE);
+
+  free(cmdarg->source_name);
 
   *ret = 0;
   return COMMAND_END;
@@ -339,7 +359,7 @@ metarescan(void *arg, int *ret)
 	}
     }
 
-  purge_cruft(starttime);
+  purge_cruft(starttime, NULL);
 
   DPRINTF(E_DBG, L_LIB, "Running post library scan jobs\n");
   db_hook_post_scan();
@@ -600,8 +620,10 @@ update_trigger(void *arg, int *retval)
 /* ----------------------- LIBRARY EXTERNAL INTERFACE ---------------------- */
 
 void
-library_rescan()
+library_rescan(const char *source_name)
 {
+  struct scan_param *cmdarg;
+
   if (scanning)
     {
       DPRINTF(E_INFO, L_LIB, "Scan already running, ignoring request to trigger a new init scan\n");
@@ -609,7 +631,17 @@ library_rescan()
     }
 
   scanning = true; // TODO Guard "scanning" with a mutex
-  commands_exec_async(cmdbase, rescan, NULL);
+
+  cmdarg = calloc(1, sizeof(struct scan_param));
+  if (!cmdarg)
+    {
+      DPRINTF(E_LOG, L_LIB, "Could not allocate scan_param\n");
+      return;
+    }
+
+  cmdarg->source_name = safe_strdup(source_name);
+
+  commands_exec_async(cmdbase, rescan, cmdarg);
 }
 
 void
@@ -665,7 +697,7 @@ initscan()
 
   if (! (cfg_getbool(cfg_getsec(cfg, "library"), "filescan_disable")))
     {
-      purge_cruft(starttime);
+      purge_cruft(starttime, NULL);
 
       DPRINTF(E_DBG, L_LIB, "Running post library scan jobs\n");
       db_hook_post_scan();
@@ -682,24 +714,39 @@ initscan()
     listener_notify(LISTENER_UPDATE);
 }
 
+/*
+ * @return true if scan is running, otherwise false
+ */
 bool
 library_is_scanning()
 {
   return scanning;
 }
 
+/*
+ * @param is_scanning true if scan is running, otherwise false
+ */
 void
 library_set_scanning(bool is_scanning)
 {
   scanning = is_scanning;
 }
 
+/*
+ * @return true if a running scan should be aborted due to imminent shutdown, otherwise false
+ */
 bool
 library_is_exiting()
 {
   return scan_exit;
 }
 
+/*
+ * Trigger for sending the DATABASE event
+ *
+ * Needs to be called, if an update to the database (library tables) occurred. The DATABASE event
+ * is emitted with the delay 'library_update_wait'. It is safe to call this function from any thread.
+ */
 void
 library_update_trigger(short update_events)
 {
@@ -802,6 +849,15 @@ library_item_add(const char *path)
   return commands_exec_sync(cmdbase, item_add, NULL, (char *)path);
 }
 
+/*
+ * Execute the function 'func' with the given argument 'arg' in the library thread.
+ *
+ * The pointer passed as argument is freed in the library thread after func returned.
+ *
+ * @param func The function to be executed
+ * @param arg Argument passed to func
+ * @return 0 if triggering the function execution succeeded, -1 on failure.
+ */
 int
 library_exec_async(command_function func, void *arg)
 {

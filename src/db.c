@@ -227,8 +227,8 @@ static const struct col_type_map mfi_cols_map[] =
     { "album_artist_sort",  mfi_offsetof(album_artist_sort),  DB_TYPE_STRING, DB_FIXUP_ALBUM_ARTIST_SORT },
     { "composer_sort",      mfi_offsetof(composer_sort),      DB_TYPE_STRING, DB_FIXUP_COMPOSER_SORT },
     { "channels",           mfi_offsetof(channels),           DB_TYPE_INT },
-    { "source",             mfi_offsetof(source),             DB_TYPE_STRING },
-    { "library_directory",  mfi_offsetof(library_directory),  DB_TYPE_STRING },
+    { "source",             mfi_offsetof(source),             DB_TYPE_STRING, DB_FIXUP_NO_SANITIZE },
+    { "library_directory",  mfi_offsetof(library_directory),  DB_TYPE_STRING, DB_FIXUP_NO_SANITIZE },
   };
 
 /* This list must be kept in sync with
@@ -253,8 +253,8 @@ static const struct col_type_map pli_cols_map[] =
     { "query_limit",        pli_offsetof(query_limit),        DB_TYPE_INT },
     { "media_kind",         pli_offsetof(media_kind),         DB_TYPE_INT,    DB_FIXUP_MEDIA_KIND },
     { "artwork_url",        pli_offsetof(artwork_url),        DB_TYPE_STRING, DB_FIXUP_NO_SANITIZE },
-    { "source",             pli_offsetof(source),             DB_TYPE_STRING },
-    { "library_directory",  pli_offsetof(library_directory),  DB_TYPE_STRING },
+    { "source",             pli_offsetof(source),             DB_TYPE_STRING, DB_FIXUP_NO_SANITIZE },
+    { "library_directory",  pli_offsetof(library_directory),  DB_TYPE_STRING, DB_FIXUP_NO_SANITIZE },
 
     // Not in the database, but returned via the query's COUNT()/SUM()
     { "items",              pli_offsetof(items),              DB_TYPE_INT,    DB_FIXUP_STANDARD, DB_FLAG_NO_BIND },
@@ -1608,6 +1608,59 @@ db_purge_cruft(time_t ref)
     }
 
   query = sqlite3_mprintf(Q_TMPL, DIR_MAX, (int64_t)ref);
+  if (!query)
+    {
+      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      db_transaction_end();
+      return;
+    }
+
+  DPRINTF(E_DBG, L_DB, "Running purge query '%s'\n", query);
+
+  ret = db_query_run(query, 1, LISTENER_DATABASE);
+  if (ret == 0)
+    DPRINTF(E_DBG, L_DB, "Purged %d rows\n", sqlite3_changes(hdl));
+
+  db_transaction_end();
+
+#undef Q_TMPL
+}
+
+void
+db_purge_source_cruft(time_t ref, const char *source)
+{
+#define Q_TMPL "DELETE FROM directories WHERE id >= %d AND db_timestamp < %" PRIi64 " AND source = %Q;"
+  int i;
+  int ret;
+  char *query;
+  char *queries_tmpl[4] =
+    {
+      "DELETE FROM playlistitems WHERE playlistid IN (SELECT p.id FROM playlists p WHERE p.type <> %d AND p.db_timestamp < %" PRIi64 " AND source = %Q);",
+      "DELETE FROM playlistitems WHERE filepath IN (SELECT f.path FROM files f WHERE -1 <> %d AND f.db_timestamp < %" PRIi64 " AND source = %Q);",
+      "DELETE FROM playlists WHERE type <> %d AND db_timestamp < %" PRIi64 " AND source = %Q;",
+      "DELETE FROM files WHERE -1 <> %d AND db_timestamp < %" PRIi64 " AND source = %Q;",
+    };
+
+  db_transaction_begin();
+
+  for (i = 0; i < (sizeof(queries_tmpl) / sizeof(queries_tmpl[0])); i++)
+    {
+      query = sqlite3_mprintf(queries_tmpl[i], PL_SPECIAL, (int64_t)ref, source);
+      if (!query)
+	{
+	  DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+	  db_transaction_end();
+	  return;
+	}
+
+      DPRINTF(E_DBG, L_DB, "Running purge query '%s'\n", query);
+
+      ret = db_query_run(query, 1, 0);
+      if (ret == 0)
+	DPRINTF(E_DBG, L_DB, "Purged %d rows\n", sqlite3_changes(hdl));
+    }
+
+  query = sqlite3_mprintf(Q_TMPL, DIR_MAX, (int64_t)ref, source);
   if (!query)
     {
       DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
@@ -4253,11 +4306,13 @@ db_directory_update(struct directory_info *di)
 }
 
 int
-db_directory_addorupdate(char *virtual_path, char *path, int disabled, int parent_id)
+db_directory_addorupdate(char *virtual_path, char *path, int disabled, int parent_id, char *source)
 {
   struct directory_info di;
   int id;
   int ret;
+
+  memset(&di, 0, sizeof(struct directory_info));
 
   id = db_directory_id_byvirtualpath(virtual_path);
 
@@ -4267,6 +4322,7 @@ db_directory_addorupdate(char *virtual_path, char *path, int disabled, int paren
   di.path = path;
   di.disabled = disabled;
   di.db_timestamp = (uint64_t)time(NULL);
+  di.source = source;
 
   if (di.id == 0)
     ret = db_directory_add(&di, &id);
