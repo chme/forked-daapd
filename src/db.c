@@ -4214,8 +4214,8 @@ db_directory_enum_end(struct directory_enum *de)
 static int
 db_directory_add(struct directory_info *di, int *id)
 {
-#define QADD_TMPL "INSERT INTO directories (virtual_path, db_timestamp, disabled, parent_id, path)" \
-                  " VALUES (TRIM(%Q), %d, %" PRIi64 ", %d, TRIM(%Q), TRIM(%Q));"
+#define QADD_TMPL "INSERT INTO directories (virtual_path, db_timestamp, disabled, parent_id, path, source, library_directory)" \
+                  " VALUES (TRIM(%Q), %d, %" PRIi64 ", %d, TRIM(%Q), TRIM(%Q), TRIM(%Q));"
 
   char *query;
   char *errmsg;
