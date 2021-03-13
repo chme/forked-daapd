@@ -4306,7 +4306,7 @@ db_directory_update(struct directory_info *di)
 }
 
 int
-db_directory_addorupdate(char *virtual_path, char *path, int disabled, int parent_id, char *source)
+db_directory_addorupdate(char *virtual_path, char *path, int disabled, int parent_id, char *source, char *libary_directory)
 {
   struct directory_info di;
   int id;
@@ -4323,6 +4323,7 @@ db_directory_addorupdate(char *virtual_path, char *path, int disabled, int paren
   di.disabled = disabled;
   di.db_timestamp = (uint64_t)time(NULL);
   di.source = source;
+  di.library_directory = libary_directory;
 
   if (di.id == 0)
     ret = db_directory_add(&di, &id);

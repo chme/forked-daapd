@@ -110,6 +110,7 @@ struct deferred_pl {
 
 struct stacked_dir {
   char *path;
+  char *library_directory;
   int parent_id;
   struct stacked_dir *next;
 };
@@ -205,7 +206,7 @@ get_parent_dir_id(const char *path)
 }
 
 static int
-push_dir(struct stacked_dir **s, const char *path, int parent_id)
+push_dir(struct stacked_dir **s, const char *path, const char *library_directory, int parent_id)
 {
   struct stacked_dir *d;
 
@@ -220,6 +221,14 @@ push_dir(struct stacked_dir **s, const char *path, int parent_id)
   if (!d->path)
     {
       DPRINTF(E_LOG, L_SCAN, "Could not stack directory %s; out of memory for path\n", path);
+      free(d);
+      return -1;
+    }
+
+  d->library_directory = strdup(library_directory);
+  if (!d->library_directory)
+    {
+      DPRINTF(E_LOG, L_SCAN, "Could not stack directory %s; out of memory for library_directory\n", library_directory);
       free(d);
       return -1;
     }
@@ -816,7 +825,7 @@ read_attributes(char *resolved_path, const char *path, struct stat *sb, int *is_
 }
 
 static void
-process_directory(char *path, int parent_id, int flags)
+process_directory(char *path, char *library_directory, int parent_id, int flags)
 {
   DIR *dirp;
   struct dirent *de;
@@ -830,6 +839,7 @@ process_directory(char *path, int parent_id, int flags)
   enum file_type file_type;
   char virtual_path[PATH_MAX];
   char source[25];
+  char library_sub_dir[PATH_MAX];
   int dir_id;
   int ret;
 
@@ -853,7 +863,7 @@ process_directory(char *path, int parent_id, int flags)
   if (ret < 0)
     return;
 
-  dir_id = db_directory_addorupdate(virtual_path, path, 0, parent_id, source);
+  dir_id = db_directory_addorupdate(virtual_path, path, 0, parent_id, source, library_directory);
   if (dir_id <= 0)
     {
       DPRINTF(E_LOG, L_SCAN, "Insert or update of directory failed '%s'\n", virtual_path);
@@ -918,7 +928,12 @@ process_directory(char *path, int parent_id, int flags)
 
       if (S_ISDIR(sb.st_mode))
 	{
-	  push_dir(&dirstack, resolved_path, dir_id);
+	  ret = snprintf(library_sub_dir, sizeof(library_sub_dir), "%s/%s", library_directory, basename(resolved_path));
+	  if (ret >= sizeof(library_sub_dir)) {
+	      DPRINTF(E_LOG, L_SCAN, "Failed to create library directory path for '%s', skipping\n", resolved_path);
+	      continue;
+	  }
+	  push_dir(&dirstack, resolved_path, library_sub_dir, dir_id);
 	}
       else if (!(flags & F_SCAN_FAST))
 	{
@@ -989,7 +1004,7 @@ process_parent_directories(char *path)
       if (ret < 0)
         return 0;
 
-      dir_id = db_directory_addorupdate(virtual_path, buf, 0, dir_id, source);
+      dir_id = db_directory_addorupdate(virtual_path, buf, 0, dir_id, source, buf);
       if (dir_id <= 0)
 	{
 	  DPRINTF(E_LOG, L_SCAN, "Insert or update of directory failed '%s'\n", virtual_path);
@@ -1008,14 +1023,14 @@ process_directories(char *root, int parent_id, int flags)
 {
   struct stacked_dir *dir;
 
-  process_directory(root, parent_id, flags);
+  process_directory(root, root, parent_id, flags);
 
   if (library_is_exiting())
     return;
 
   while ((dir = pop_dir(&dirstack)))
     {
-      process_directory(dir->path, dir->parent_id, flags);
+      process_directory(dir->path, dir->library_directory, dir->parent_id, flags);
 
       free(dir->path);
       free(dir);

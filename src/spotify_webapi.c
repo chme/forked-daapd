@@ -1322,7 +1322,7 @@ prepare_directories(const char *artist, const char *album)
       DPRINTF(E_LOG, L_SPOTIFY, "Virtual path exceeds PATH_MAX (/spotify:/%s)\n", artist);
       return -1;
     }
-  dir_id = db_directory_addorupdate(virtual_path, NULL, 0, DIR_SPOTIFY, source);
+  dir_id = db_directory_addorupdate(virtual_path, NULL, 0, DIR_SPOTIFY, source, NULL);
   if (dir_id <= 0)
     {
       DPRINTF(E_LOG, L_SPOTIFY, "Could not add or update directory '%s'\n", virtual_path);
@@ -1338,7 +1338,7 @@ prepare_directories(const char *artist, const char *album)
       DPRINTF(E_LOG, L_SPOTIFY, "Virtual path exceeds PATH_MAX (/spotify:/%s/%s)\n", artist, album);
       return -1;
     }
-  dir_id = db_directory_addorupdate(virtual_path, NULL, 0, dir_id, source);
+  dir_id = db_directory_addorupdate(virtual_path, NULL, 0, dir_id, source, NULL);
   if (dir_id <= 0)
     {
       DPRINTF(E_LOG, L_SPOTIFY, "Could not add or update directory '%s'\n", virtual_path);
