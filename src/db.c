@@ -739,6 +739,7 @@ free_pli(struct playlist_info *pli, int content_only)
   free(pli->virtual_path);
   free(pli->query_order);
   free(pli->artwork_url);
+  free(pli->library_directory);
 
   if (!content_only)
     free(pli);

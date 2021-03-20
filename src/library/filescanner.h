@@ -16,10 +16,10 @@ void
 scan_metadata_stream(struct media_file_info *mfi, const char *path);
 
 void
-scan_playlist(const char *file, time_t mtime, int dir_id);
+scan_playlist(const char *file, time_t mtime, int dir_id, const char *library_dir);
 
 void
-scan_smartpl(const char *file, time_t mtime, int dir_id);
+scan_smartpl(const char *file, time_t mtime, int dir_id, const char *library_directory);
 
 void
 scan_itunes_itml(const char *file, time_t mtime, int dir_id);
@@ -77,6 +77,6 @@ playlist_fill(struct playlist_info *pli, const char *path);
  * @return         the id of the playlist (pli->id), negative on error
  */
 int
-playlist_add(const char *path);
+playlist_add(const char *path, const char *library_directory);
 
 #endif /* !__FILESCANNER_H__ */

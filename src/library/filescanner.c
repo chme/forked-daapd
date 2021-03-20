@@ -106,6 +106,7 @@ struct deferred_pl {
   time_t mtime;
   struct deferred_pl *next;
   int directory_id;
+  char *library_directory;
 };
 
 struct stacked_dir {
@@ -461,7 +462,7 @@ playlist_fill(struct playlist_info *pli, const char *path)
 }
 
 int
-playlist_add(const char *path)
+playlist_add(const char *path, const char *library_directory)
 {
   struct playlist_info pli;
   int ret;
@@ -471,6 +472,7 @@ playlist_add(const char *path)
     return -1;
 
   pli.source = FILESCANNER_SOURCE_NAME;
+  pli.library_directory = safe_strdup(library_directory);
 
   ret = library_playlist_save(&pli);
   if (ret < 0)
@@ -488,13 +490,13 @@ playlist_add(const char *path)
 /* --------------------------- Processing procedures ---------------------- */
 
 static void
-process_playlist(char *file, time_t mtime, int dir_id)
+process_playlist(char *file, time_t mtime, int dir_id, char *library_directory)
 {
   enum file_type ft;
 
   ft = file_type_get(file);
   if (ft == FILE_PLAYLIST)
-    scan_playlist(file, mtime, dir_id);
+    scan_playlist(file, mtime, dir_id, library_directory);
   else if (ft == FILE_ITUNES)
     scan_itunes_itml(file, mtime, dir_id);
 }
@@ -520,7 +522,7 @@ kickoff(void (*kickoff_func)(char **arg), const char *file, int lines)
 
 /* Thread: scan */
 static void
-defer_playlist(char *path, time_t mtime, int dir_id)
+defer_playlist(char *path, time_t mtime, int dir_id, const char *library_directory)
 {
   struct deferred_pl *pl;
 
@@ -538,6 +540,15 @@ defer_playlist(char *path, time_t mtime, int dir_id)
   if (!pl->path)
     {
       DPRINTF(E_WARN, L_SCAN, "Out of memory for deferred playlist\n");
+
+      free(pl);
+      return;
+    }
+
+  pl->library_directory = strdup(library_directory);
+  if (!pl->library_directory)
+    {
+      DPRINTF(E_WARN, L_SCAN, "Out of memory for deferred playlist field library_directory\n");
 
       free(pl);
       return;
@@ -561,7 +572,7 @@ process_deferred_playlists(void)
     {
       playlists = pl->next;
 
-      process_playlist(pl->path, pl->mtime, pl->directory_id);
+      process_playlist(pl->path, pl->mtime, pl->directory_id, pl->library_directory);
 
       free(pl->path);
       free(pl);
@@ -572,7 +583,7 @@ process_deferred_playlists(void)
 }
 
 static void
-process_regular_file(const char *file, struct stat *sb, int type, int flags, int dir_id)
+process_regular_file(const char *file, struct stat *sb, int type, int flags, int dir_id, const char *library_directory)
 {
   bool is_bulkscan = (flags & F_SCAN_BULK);
   struct media_file_info mfi;
@@ -638,6 +649,7 @@ process_regular_file(const char *file, struct stat *sb, int type, int flags, int
     }
 
   mfi.source = FILESCANNER_SOURCE_NAME;
+  mfi.library_directory = strdup(library_directory);
 
   library_media_save(&mfi);
 
@@ -649,12 +661,12 @@ process_regular_file(const char *file, struct stat *sb, int type, int flags, int
 
 /* Thread: scan */
 static void
-process_file(char *file, struct stat *sb, enum file_type file_type, int scan_type, int flags, int dir_id)
+process_file(char *file, struct stat *sb, enum file_type file_type, int scan_type, int flags, int dir_id, char *library_directory)
 {
   switch (file_type)
     {
       case FILE_REGULAR:
-	process_regular_file(file, sb, scan_type, flags, dir_id);
+	process_regular_file(file, sb, scan_type, flags, dir_id, library_directory);
 
 	counter++;
 
@@ -670,14 +682,14 @@ process_file(char *file, struct stat *sb, enum file_type file_type, int scan_typ
       case FILE_PLAYLIST:
       case FILE_ITUNES:
 	if (flags & F_SCAN_BULK)
-	  defer_playlist(file, sb->st_mtime, dir_id);
+	  defer_playlist(file, sb->st_mtime, dir_id, library_directory);
 	else
-	  process_playlist(file, sb->st_mtime, dir_id);
+	  process_playlist(file, sb->st_mtime, dir_id, library_directory);
 	break;
 
       case FILE_SMARTPL:
 	DPRINTF(E_DBG, L_SCAN, "Smart playlist file: %s\n", file);
-	scan_smartpl(file, sb->st_mtime, dir_id);
+	scan_smartpl(file, sb->st_mtime, dir_id, library_directory);
 	break;
 
       case FILE_ARTWORK:
@@ -938,7 +950,7 @@ process_directory(char *path, char *library_directory, int parent_id, int flags)
       else if (!(flags & F_SCAN_FAST))
 	{
 	  if (S_ISREG(sb.st_mode) || S_ISFIFO(sb.st_mode))
-	    process_file(resolved_path, &sb, file_type, scan_type, flags, dir_id);
+	    process_file(resolved_path, &sb, file_type, scan_type, flags, dir_id, library_directory);
 	  else
 	    DPRINTF(E_LOG, L_SCAN, "Skipping %s, not a directory, symlink, pipe nor regular file\n", entry);
 	}
@@ -1476,7 +1488,7 @@ process_inotify_file(struct watch_info *wi, char *path, struct inotify_event *ie
 	}
       else if (S_ISREG(sb.st_mode) || S_ISFIFO(sb.st_mode))
 	{
-	  process_file(resolved_path, &sb, file_type, scan_type, 0, dir_id);
+	  process_file(resolved_path, &sb, file_type, scan_type, 0, dir_id, ""); // FIXME Pass correct library directory path
 	}
       else
 	DPRINTF(E_LOG, L_SCAN, "Skipping %s, not a directory, symlink, pipe nor regular file\n", resolved_path);
@@ -2000,6 +2012,7 @@ playlist_add_files(FILE *fp, int pl_id, const char *virtual_path)
 static int
 playlist_item_add(const char *vp_playlist, const char *vp_item)
 {
+  // FIXME chme - Fetch path/directory from directories db table
   char *pl_path;
   FILE *fp;
   int pl_id;
@@ -2019,7 +2032,7 @@ playlist_item_add(const char *vp_playlist, const char *vp_item)
   pl_id = db_pl_id_bypath(pl_path);
   if (pl_id < 0)
     {
-      pl_id = playlist_add(pl_path);
+      pl_id = playlist_add(pl_path, NULL); // FIXME chme - set lib dir
       if (pl_id < 0)
 	goto error;
     }
@@ -2108,7 +2121,7 @@ queue_save(const char *virtual_path)
   pl_id = db_pl_id_bypath(pl_path);
   if (pl_id < 0)
     {
-      pl_id = playlist_add(pl_path);
+      pl_id = playlist_add(pl_path, NULL); // FIXME chme - set lib dir
       if (pl_id < 0)
 	goto error;
     }

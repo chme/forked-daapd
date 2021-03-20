@@ -40,7 +40,7 @@
 
 
 void
-scan_smartpl(const char *file, time_t mtime, int dir_id)
+scan_smartpl(const char *file, time_t mtime, int dir_id, const char *library_directory)
 {
   struct smartpl smartpl;
   struct playlist_info *pli;
@@ -60,6 +60,7 @@ scan_smartpl(const char *file, time_t mtime, int dir_id)
     }
 
   pli->directory_id = dir_id;
+  pli->library_directory = safe_strdup(library_directory);
 
   memset(&smartpl, 0, sizeof(struct smartpl));
   ret = smartpl_query_parse_file(&smartpl, file);
