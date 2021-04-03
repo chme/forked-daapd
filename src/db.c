@@ -4078,6 +4078,110 @@ db_group_persistentid_byid(int id, int64_t *persistentid)
 
 
 /* Directories */
+
+static struct directory_info *
+db_directory_info_fetch_byquery(const char *query)
+{
+  struct directory_info *di;
+  sqlite3_stmt *stmt;
+  int ret;
+
+
+  if (!query)
+    return NULL;
+
+  DPRINTF(E_DBG, L_DB, "Running query '%s'\n", query);
+
+  di = calloc(1, sizeof(struct directory_info));
+  if (!di)
+    {
+      DPRINTF(E_LOG, L_DB, "Could not allocate struct directory_info, out of memory\n");
+      return NULL;
+    }
+
+  ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
+  if (ret != SQLITE_OK)
+    {
+      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+
+      free(di);
+      return NULL;
+    }
+
+  ret = db_blocking_step(stmt);
+
+  if (ret != SQLITE_ROW)
+    {
+      if (ret == SQLITE_DONE)
+	DPRINTF(E_DBG, L_DB, "No results\n");
+      else
+	DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+
+      sqlite3_finalize(stmt);
+      free(di);
+      return NULL;
+    }
+
+  di->id = sqlite3_column_int(stmt, 0);
+  di->virtual_path = strdup((char *)sqlite3_column_text(stmt, 1));
+  di->db_timestamp = sqlite3_column_int(stmt, 2);
+  di->disabled = sqlite3_column_int64(stmt, 3);
+  di->parent_id = sqlite3_column_int(stmt, 4);
+  di->path = strdup((char *)sqlite3_column_text(stmt, 5));
+  di->source = strdup((char *)sqlite3_column_text(stmt, 6));
+  di->library_directory = strdup((char *)sqlite3_column_text(stmt, 7));
+
+  return di;
+}
+
+struct directory_info *
+db_directory_info_fetch_byid(int id)
+{
+#define Q_TMPL "SELECT * FROM directories d WHERE d.id = %d;"
+  struct directory_info *di;
+  char *query;
+
+  query = sqlite3_mprintf(Q_TMPL, id);
+  if (!query)
+    {
+      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+
+      return NULL;
+    }
+
+  di = db_directory_info_fetch_byquery(query);
+
+  sqlite3_free(query);
+
+  return di;
+
+#undef Q_TMPL
+}
+
+struct directory_info *
+db_directory_info_fetch_bypath(const char *path)
+{
+#define Q_TMPL "SELECT * FROM directories d WHERE d.path = '%q';"
+  struct directory_info *di;
+  char *query;
+
+  query = sqlite3_mprintf(Q_TMPL, path);
+  if (!query)
+    {
+      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+
+      return NULL;
+    }
+
+  di = db_directory_info_fetch_byquery(query);
+
+  sqlite3_free(query);
+
+  return di;
+
+#undef Q_TMPL
+}
+
 int
 db_directory_id_byvirtualpath(const char *virtual_path)
 {
@@ -4353,7 +4457,7 @@ db_directory_ping_bymatch(char *virtual_path)
 }
 
 void
-db_directory_disable_bymatch(char *path, enum strip_type strip, uint32_t cookie)
+db_directory_disable_bymatch(const char *path, enum strip_type strip, uint32_t cookie)
 {
 #define Q_TMPL "UPDATE directories SET virtual_path = substr(virtual_path, %d)," \
                " disabled = %" PRIi64 " WHERE virtual_path = '/file:%q' OR virtual_path LIKE '/file:%q/%%';"
@@ -4372,7 +4476,7 @@ db_directory_disable_bymatch(char *path, enum strip_type strip, uint32_t cookie)
 }
 
 int
-db_directory_enable_bycookie(uint32_t cookie, char *path)
+db_directory_enable_bycookie(uint32_t cookie, const char *path)
 {
 #define Q_TMPL "UPDATE directories SET virtual_path = ('/file:%q' || virtual_path)," \
                " disabled = 0 WHERE disabled = %" PRIi64 ";"
@@ -5261,18 +5365,6 @@ queue_enum_start(struct query_params *qp)
   return 0;
 
 #undef Q_TMPL
-}
-
-static inline char *
-strdup_if(char *str, int cond)
-{
-  if (str == NULL)
-    return NULL;
-
-  if (cond)
-    return strdup(str);
-
-  return str;
 }
 
 static int
@@ -6361,7 +6453,7 @@ db_watch_get_bypath(struct watch_info *wi)
 }
 
 void
-db_watch_mark_bypath(char *path, enum strip_type strip, uint32_t cookie)
+db_watch_mark_bypath(const char *path, enum strip_type strip, uint32_t cookie)
 {
 #define Q_TMPL "UPDATE inotify SET path = substr(path, %d), cookie = %" PRIi64 " WHERE path = '%q';"
   char *query;
@@ -6379,7 +6471,7 @@ db_watch_mark_bypath(char *path, enum strip_type strip, uint32_t cookie)
 }
 
 void
-db_watch_mark_bymatch(char *path, enum strip_type strip, uint32_t cookie)
+db_watch_mark_bymatch(const char *path, enum strip_type strip, uint32_t cookie)
 {
 #define Q_TMPL "UPDATE inotify SET path = substr(path, %d), cookie = %" PRIi64 " WHERE path LIKE '%q/%%';"
   char *query;
@@ -6397,7 +6489,7 @@ db_watch_mark_bymatch(char *path, enum strip_type strip, uint32_t cookie)
 }
 
 void
-db_watch_move_bycookie(uint32_t cookie, char *path)
+db_watch_move_bycookie(uint32_t cookie, const char *path)
 {
 #define Q_TMPL "UPDATE inotify SET path = '%q' || path, cookie = 0 WHERE cookie = %" PRIi64 ";"
   char *query;
@@ -6527,6 +6619,24 @@ db_watch_enum_fetchwd(struct watch_enum *we, uint32_t *wd)
   return 0;
 }
 
+void
+db_disable_bypath(const char *path, enum strip_type strip, uint32_t cookie)
+{
+  db_watch_mark_bypath(path, strip, cookie);
+  db_watch_mark_bymatch(path, strip, cookie);
+  db_file_disable_bymatch(path, strip, cookie);
+  db_pl_disable_bymatch(path, strip, cookie);
+  db_directory_disable_bymatch(path, strip, cookie);
+}
+
+void
+db_enable_bycookie(const char *path, uint32_t cookie)
+{
+  db_watch_move_bycookie(cookie, path);
+  db_file_enable_bycookie(cookie, path, NULL);
+  db_pl_enable_bycookie(cookie, path);
+  db_directory_enable_bycookie(cookie, path);
+}
 
 #ifdef DB_PROFILE
 static int

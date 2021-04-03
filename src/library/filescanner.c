@@ -206,6 +206,23 @@ get_parent_dir_id(const char *path)
   return parent_id;
 }
 
+static struct directory_info *
+get_parent_directory_info(const char *path)
+{
+  struct directory_info *di;
+  char *pathcopy;
+  char *parent_dir;
+
+  pathcopy = strdup(path);
+  parent_dir = dirname(pathcopy);
+
+  di = db_directory_info_fetch_bypath(parent_dir);
+
+  free(pathcopy);
+
+  return di;
+}
+
 static int
 push_dir(struct stacked_dir **s, const char *path, const char *library_directory, int parent_id)
 {
@@ -1031,25 +1048,25 @@ process_parent_directories(char *path)
 }
 
 static void
-process_directories(char *root, int parent_id, int flags)
+process_directories(char *root, char *library_directory, int parent_id, int flags)
 {
   struct stacked_dir *dir;
 
-  process_directory(root, root, parent_id, flags);
+  process_directory(root, library_directory, parent_id, flags);
 
   if (library_is_exiting())
     return;
 
-  while ((dir = pop_dir(&dirstack)))
+  while ((!library_is_exiting()) && (dir = pop_dir(&dirstack)))
     {
       process_directory(dir->path, dir->library_directory, dir->parent_id, flags);
 
       free(dir->path);
       free(dir);
-
-      if (library_is_exiting())
-	return;
     }
+
+  if (dirstack)
+    DPRINTF(E_LOG, L_SCAN, "WARNING: unhandled leftover directories\n");
 }
 
 
@@ -1089,9 +1106,7 @@ bulk_scan(int flags)
 	  DPRINTF(E_LOG, L_SCAN, "Skipping library directory %s, could not dereference: %s\n", path, strerror(errno));
 
 	  /* Assume dir is mistakenly not mounted, so just disable everything and update timestamps */
-	  db_file_disable_bymatch(path, STRIP_NONE, 0);
-	  db_pl_disable_bymatch(path, STRIP_NONE, 0);
-	  db_directory_disable_bymatch(path, STRIP_NONE, 0);
+	  db_disable_bypath(path, STRIP_NONE, 0);
 
 	  db_file_ping_bymatch(path, 1);
 	  db_pl_ping_bymatch(path, 1);
@@ -1106,7 +1121,7 @@ bulk_scan(int flags)
 
       db_transaction_begin();
 
-      process_directories(deref, parent_id, flags);
+      process_directories(deref, deref, parent_id, flags);
       db_transaction_end();
 
       free(deref);
@@ -1120,9 +1135,6 @@ bulk_scan(int flags)
 
   if (library_is_exiting())
     return;
-
-  if (dirstack)
-    DPRINTF(E_LOG, L_SCAN, "WARNING: unhandled leftover directories\n");
 
   end = time(NULL);
 
@@ -1175,16 +1187,15 @@ process_inotify_dir(struct watch_info *wi, char *path, struct inotify_event *ie)
   char *s;
   int flags = 0;
   int ret;
-  int parent_id;
+  struct directory_info *di;
+  char library_dir[PATH_MAX];
   int fd;
 
   DPRINTF(E_DBG, L_SCAN, "Directory event: 0x%08x, cookie 0x%08x, wd %d\n", ie->mask, ie->cookie, wi->wd);
 
   if (ie->mask & IN_UNMOUNT)
     {
-      db_file_disable_bymatch(path, STRIP_NONE, 0);
-      db_pl_disable_bymatch(path, STRIP_NONE, 0);
-      db_directory_disable_bymatch(path, STRIP_NONE, 0);
+      db_disable_bypath(path, STRIP_NONE, 0);
     }
 
   if (ie->mask & IN_MOVE_SELF)
@@ -1228,18 +1239,13 @@ process_inotify_dir(struct watch_info *wi, char *path, struct inotify_event *ie)
 	  if (ret < 0)
 	    return;
 
-	  db_file_disable_bymatch(path, STRIP_NONE, 0);
-	  db_pl_disable_bymatch(path, STRIP_NONE, 0);
+	  db_disable_bypath(path, STRIP_NONE, 0);
 	}
     }
 
   if (ie->mask & IN_MOVED_FROM)
     {
-      db_watch_mark_bypath(path, STRIP_PATH, ie->cookie);
-      db_watch_mark_bymatch(path, STRIP_PATH, ie->cookie);
-      db_file_disable_bymatch(path, STRIP_PATH, ie->cookie);
-      db_pl_disable_bymatch(path, STRIP_PATH, ie->cookie);
-      db_directory_disable_bymatch(path, STRIP_PATH, ie->cookie);
+      db_disable_bypath(path, STRIP_PATH, ie->cookie);
     }
 
   if (ie->mask & IN_MOVED_TO)
@@ -1281,9 +1287,7 @@ process_inotify_dir(struct watch_info *wi, char *path, struct inotify_event *ie)
 	  if (ret == 0)
 	    watches_clear(wi->wd, path);
 
-	  db_file_disable_bymatch(path, STRIP_NONE, 0);
-	  db_pl_disable_bymatch(path, STRIP_NONE, 0);
-	  db_directory_disable_bymatch(path, STRIP_NONE, 0);
+	  db_disable_bypath(path, STRIP_NONE, 0);
 	}
       else if (ret < 0)
 	{
@@ -1302,11 +1306,15 @@ process_inotify_dir(struct watch_info *wi, char *path, struct inotify_event *ie)
 
   if (ie->mask & IN_CREATE)
     {
-      parent_id = get_parent_dir_id(path);
-      process_directories(path, parent_id, flags);
-
-      if (dirstack)
-	DPRINTF(E_LOG, L_SCAN, "WARNING: unhandled leftover directories\n");
+      di = get_parent_directory_info(path);
+      if (di)
+        {
+	  ret = snprintf(library_dir, sizeof(library_dir), "%s/%s", di->library_directory, basename(path));
+	  if (ret < sizeof(library_dir))
+	    {
+	      process_directories(path, library_dir, di->id, flags);
+	    }
+	}
     }
 }
 

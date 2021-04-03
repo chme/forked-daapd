@@ -753,6 +753,10 @@ db_group_persistentid_byid(int id, int64_t *persistentid);
 
 
 /* Directories */
+struct directory_info *
+db_directory_info_fetch_byid(int id);
+struct directory_info *
+db_directory_info_fetch_bypath(const char *path);
 int
 db_directory_id_byvirtualpath(const char *virtual_path);
 
@@ -775,10 +779,10 @@ void
 db_directory_ping_bymatch(char *virtual_path);
 
 void
-db_directory_disable_bymatch(char *path, enum strip_type strip, uint32_t cookie);
+db_directory_disable_bymatch(const char *path, enum strip_type strip, uint32_t cookie);
 
 int
-db_directory_enable_bycookie(uint32_t cookie, char *path);
+db_directory_enable_bycookie(uint32_t cookie, const char *path);
 
 int
 db_directory_enable_bypath(char *path);
@@ -949,13 +953,13 @@ int
 db_watch_get_bypath(struct watch_info *wi);
 
 void
-db_watch_mark_bypath(char *path, enum strip_type strip, uint32_t cookie);
+db_watch_mark_bypath(const char *path, enum strip_type strip, uint32_t cookie);
 
 void
-db_watch_mark_bymatch(char *path, enum strip_type strip, uint32_t cookie);
+db_watch_mark_bymatch(const char *path, enum strip_type strip, uint32_t cookie);
 
 void
-db_watch_move_bycookie(uint32_t cookie, char *path);
+db_watch_move_bycookie(uint32_t cookie, const char *path);
 
 int
 db_watch_cookie_known(uint32_t cookie);
@@ -968,6 +972,12 @@ db_watch_enum_end(struct watch_enum *we);
 
 int
 db_watch_enum_fetchwd(struct watch_enum *we, uint32_t *wd);
+
+void
+db_disable_bypath(const char *path, enum strip_type strip, uint32_t cookie);
+
+void
+db_enable_bycookie(const char *path, uint32_t cookie);
 
 int
 db_backup();
