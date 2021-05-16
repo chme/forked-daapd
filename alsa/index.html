@@ -13,8 +13,8 @@
       
         <link rel="canonical" href="https://ejurgensen.github.io/forked-daapd/alsa/">
       
-      <link rel="shortcut icon" href="../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.2.4">
+      <link rel="icon" href="../images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.4">
     
     
       
@@ -22,10 +22,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.15aa0b43.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.bde7dde4.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.75751829.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ef6f36e2.min.css">
         
           
           
@@ -39,7 +39,7 @@
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
-        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
       
     
     
@@ -59,8 +59,9 @@
     
     
     <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="">
-      
   
+    
+    <script>function __prefix(e){return new URL("..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
@@ -77,26 +78,24 @@
       
     </div>
     
-      
-
-<header class="md-header" data-md-component="header">
-  <nav class="md-header-nav md-grid" aria-label="Header">
-    <a href="https://ejurgensen.github.io/forked-daapd/" title="forked-daapd" class="md-header-nav__button md-logo" aria-label="forked-daapd">
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="forked-daapd" class="md-header__button md-logo" aria-label="forked-daapd" data-md-component="logo">
       
   <img src="../images/logo.svg" alt="logo">
 
     </a>
-    <label class="md-header-nav__button md-icon" for="__drawer">
+    <label class="md-header__button md-icon" for="__drawer">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
     </label>
-    <div class="md-header-nav__title" data-md-component="header-title">
-      <div class="md-header-nav__ellipsis">
-        <div class="md-header-nav__topic">
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
           <span class="md-ellipsis">
             forked-daapd
           </span>
         </div>
-        <div class="md-header-nav__topic">
+        <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
               ALSA
@@ -106,8 +105,10 @@
       </div>
     </div>
     
-      <label class="md-header-nav__button md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
       </label>
       
 <div class="md-search" data-md-component="search" role="dialog">
@@ -116,11 +117,11 @@
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
       <label class="md-search__icon md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
       </label>
-      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
       </button>
     </form>
     <div class="md-search__output">
@@ -137,12 +138,12 @@
 </div>
     
     
-      <div class="md-header-nav__source">
+      <div class="md-header__source">
         
-<a href="https://github.com/ejurgensen/forked-daapd/" title="Go to repository" class="md-source">
+<a href="https://github.com/ejurgensen/forked-daapd/" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     ejurgensen/forked-daapd
@@ -218,19 +219,17 @@
           
             
               
-              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation" >
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
-
-
 
   
 
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="https://ejurgensen.github.io/forked-daapd/" title="forked-daapd" class="md-nav__button md-logo" aria-label="forked-daapd">
+    <a href=".." title="forked-daapd" class="md-nav__button md-logo" aria-label="forked-daapd" data-md-component="logo">
       
   <img src="../images/logo.svg" alt="logo">
 
@@ -240,10 +239,10 @@
   
     <div class="md-nav__source">
       
-<a href="https://github.com/ejurgensen/forked-daapd/" title="Go to repository" class="md-source">
+<a href="https://github.com/ejurgensen/forked-daapd/" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
   </div>
   <div class="md-source__repository">
     ejurgensen/forked-daapd
@@ -257,282 +256,267 @@
       
       
 
-
-
-  <li class="md-nav__item">
-    <a href=".." class="md-nav__link">
-      Home
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Home
+      </a>
+    </li>
   
 
+    
+      
+      
+      
 
   
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  
     
+  
+  
     
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
-    
-    <label class="md-nav__link" for="nav-2">
-      Documentation
-      <span class="md-nav__icon md-icon"></span>
-    </label>
-    <nav class="md-nav" aria-label="Documentation" data-md-level="1">
-      <label class="md-nav__title" for="nav-2">
-        <span class="md-nav__icon md-icon"></span>
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" checked>
+      
+      <label class="md-nav__link" for="__nav_2">
         Documentation
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../getting_started/" class="md-nav__link">
-      Getting started
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../install/" class="md-nav__link">
-      Building from Source
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../library/" class="md-nav__link">
-      Library
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../playlists/" class="md-nav__link">
-      Playlists and Radio
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../smartpl/" class="md-nav__link">
-      Smart Playlists
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../artwork/" class="md-nav__link">
-      Artwork
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-
-  
-    
-  
-  <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-    
-    
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-7" type="checkbox" id="nav-2-7" >
-    
-    <label class="md-nav__link" for="nav-2-7">
-      Clients
-      <span class="md-nav__icon md-icon"></span>
-    </label>
-    <nav class="md-nav" aria-label="Clients" data-md-level="2">
-      <label class="md-nav__title" for="nav-2-7">
         <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Documentation" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Documentation
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/" class="md-nav__link">
+        Getting started
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        Building from Source
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../library/" class="md-nav__link">
+        Library
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../playlists/" class="md-nav__link">
+        Playlists and Radio
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../smartpl/" class="md-nav__link">
+        Smart Playlists
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../artwork/" class="md-nav__link">
+        Artwork
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_7" type="checkbox" id="__nav_2_7" >
+      
+      <label class="md-nav__link" for="__nav_2_7">
         Clients
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../clients/" class="md-nav__link">
-      Supported Clients
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../webinterface/" class="md-nav__link">
-      Web Interface
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../remote/" class="md-nav__link">
-      Remote
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../mpd/" class="md-nav__link">
-      MPD Clients
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../cli/" class="md-nav__link">
-      Command Line Clients
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-  
-
-
-  
-    
-  
-  <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-    
-    
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-8" type="checkbox" id="nav-2-8" checked>
-    
-    <label class="md-nav__link" for="nav-2-8">
-      Outputs
-      <span class="md-nav__icon md-icon"></span>
-    </label>
-    <nav class="md-nav" aria-label="Outputs" data-md-level="2">
-      <label class="md-nav__title" for="nav-2-8">
         <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Clients" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_7">
+          <span class="md-nav__icon md-icon"></span>
+          Clients
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../clients/" class="md-nav__link">
+        Supported Clients
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../webinterface/" class="md-nav__link">
+        Web Interface
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote/" class="md-nav__link">
+        Remote
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mpd/" class="md-nav__link">
+        MPD Clients
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        Command Line Clients
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+    
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_8" type="checkbox" id="__nav_2_8" checked>
+      
+      <label class="md-nav__link" for="__nav_2_8">
         Outputs
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../outputs/" class="md-nav__link">
-      Supported Outputs
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="__toc">
-        ALSA
         <span class="md-nav__icon md-icon"></span>
       </label>
+      <nav class="md-nav" aria-label="Outputs" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_8">
+          <span class="md-nav__icon md-icon"></span>
+          Outputs
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../outputs/" class="md-nav__link">
+        Supported Outputs
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
     
-    <a href="./" class="md-nav__link md-nav__link--active">
-      ALSA
-    </a>
-    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
       
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          ALSA
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        ALSA
+      </a>
+      
+        
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
   
   
     
@@ -542,7 +526,7 @@
       <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
-    <ul class="md-nav__list" data-md-scrollfix>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
   <a href="#introduction-to-alsa-devices" class="md-nav__link">
@@ -552,8 +536,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuring-forked-daapd" class="md-nav__link">
-    Configuring forked-daapd
+  <a href="#configuring-owntone" class="md-nav__link">
+    Configuring OwnTone
   </a>
   
 </li>
@@ -643,200 +627,193 @@
     </ul>
   
 </nav>
-    
-  </li>
+      
+    </li>
+  
 
-        
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pulse/" class="md-nav__link">
+        Pulse Audio
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
+
           
-
-
-
-  <li class="md-nav__item">
-    <a href="../pulse/" class="md-nav__link">
-      Pulse Audio
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-
+            
+  
+  
   
     
-  
-  <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
     
-    
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-9" type="checkbox" id="nav-2-9" >
-    
-    <label class="md-nav__link" for="nav-2-9">
-      Online Services Integration
-      <span class="md-nav__icon md-icon"></span>
-    </label>
-    <nav class="md-nav" aria-label="Online Services Integration" data-md-level="2">
-      <label class="md-nav__title" for="nav-2-9">
-        <span class="md-nav__icon md-icon"></span>
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_9" type="checkbox" id="__nav_2_9" >
+      
+      <label class="md-nav__link" for="__nav_2_9">
         Online Services Integration
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../spotify/" class="md-nav__link">
-      Spotify
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../lastfm/" class="md-nav__link">
-      LastFM
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-          
-          
-          
-
-
-
-  
-    
-  
-  <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-    
-    
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-10" type="checkbox" id="nav-2-10" >
-    
-    <label class="md-nav__link" for="nav-2-10">
-      Advanced Topics
-      <span class="md-nav__icon md-icon"></span>
-    </label>
-    <nav class="md-nav" aria-label="Advanced Topics" data-md-level="2">
-      <label class="md-nav__title" for="nav-2-10">
         <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Online Services Integration" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_9">
+          <span class="md-nav__icon md-icon"></span>
+          Online Services Integration
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../spotify/" class="md-nav__link">
+        Spotify
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lastfm/" class="md-nav__link">
+        LastFM
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_10" type="checkbox" id="__nav_2_10" >
+      
+      <label class="md-nav__link" for="__nav_2_10">
         Advanced Topics
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="Advanced Topics" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_10">
+          <span class="md-nav__icon md-icon"></span>
+          Advanced Topics
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote_access/" class="md-nav__link">
+        Remote Access
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../streams/" class="md-nav__link">
+        Radio Streams
+      </a>
+    </li>
+  
+
           
+        </ul>
+      </nav>
+    </li>
+  
 
-
-
-  <li class="md-nav__item">
-    <a href="../remote_access/" class="md-nav__link">
-      Remote Access
-    </a>
-  </li>
-
-        
           
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../streams/" class="md-nav__link">
-      Radio Streams
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
+        </ul>
+      </nav>
+    </li>
+  
 
     
       
       
       
-
-
 
   
-  <li class="md-nav__item md-nav__item--nested">
+  
+  
     
-    
-      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" >
-    
-    <label class="md-nav__link" for="nav-3">
-      API Reference
-      <span class="md-nav__icon md-icon"></span>
-    </label>
-    <nav class="md-nav" aria-label="API Reference" data-md-level="1">
-      <label class="md-nav__title" for="nav-3">
-        <span class="md-nav__icon md-icon"></span>
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      <label class="md-nav__link" for="__nav_3">
         API Reference
+        <span class="md-nav__icon md-icon"></span>
       </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
-        
+      <nav class="md-nav" aria-label="API Reference" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          API Reference
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        JSON API
+      </a>
+    </li>
+  
+
           
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../swagger/" class="md-nav__link">
+        Swagger UI
+      </a>
+    </li>
+  
+
           
-
-
-
-  <li class="md-nav__item">
-    <a href="../api/" class="md-nav__link">
-      JSON API
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-
-  <li class="md-nav__item">
-    <a href="../swagger/" class="md-nav__link">
-      Swagger UI
-    </a>
-  </li>
-
-        
-      </ul>
-    </nav>
-  </li>
+        </ul>
+      </nav>
+    </li>
+  
 
     
   </ul>
@@ -847,11 +824,12 @@
             
             
               
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc" >
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
   
   
     
@@ -861,7 +839,7 @@
       <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
-    <ul class="md-nav__list" data-md-scrollfix>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
   <a href="#introduction-to-alsa-devices" class="md-nav__link">
@@ -871,8 +849,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuring-forked-daapd" class="md-nav__link">
-    Configuring forked-daapd
+  <a href="#configuring-owntone" class="md-nav__link">
+    Configuring OwnTone
   </a>
   
 </li>
@@ -967,7 +945,7 @@
               </div>
             
           
-          <div class="md-content">
+          <div class="md-content" data-md-component="content">
             <article class="md-content__inner md-typeset">
               
                 
@@ -982,7 +960,7 @@ ALSA you will typically let the system select the soundcard on your machine as
 the <code>default</code> device/sound card - a mixer associated with the ALSA device is
 used for volume control. However if your machine has multiple sound cards and
 your system chooses the wrong playback device, you will need to manually select
-the card and mixer to complete the <code>forked daapd</code> configuration.</p>
+the card and mixer to complete the OwnTone configuration.</p>
 <h2 id="introduction-to-alsa-devices">Introduction to ALSA devices<a class="headerlink" href="#introduction-to-alsa-devices" title="Permanent link">&para;</a></h2>
 <p>ALSA devices can be addressed in a number ways but traditionally we have referred
 to them using the hardware prefix, card number and optionally device number with
@@ -1016,8 +994,8 @@ which are both USB devices. We can address the first ALSA device as <code>hw:0</
 or <code>hw:E30</code> and so forth. The latter 2 devices being on USB will mean that <code>hw:1</code>
 may not always refer to <code>hw:E30</code> and thus in such a case using the alternate
 name is useful.</p>
-<h2 id="configuring-forked-daapd">Configuring forked-daapd<a class="headerlink" href="#configuring-forked-daapd" title="Permanent link">&para;</a></h2>
-<p><code>forked-daapd</code> can support a single ALSA device or multiple ALSA devices.</p>
+<h2 id="configuring-owntone">Configuring OwnTone<a class="headerlink" href="#configuring-owntone" title="Permanent link">&para;</a></h2>
+<p>OwnTone can support a single ALSA device or multiple ALSA devices.</p>
 <div class="highlight"><pre><span></span><code># example audio section for server for a single soundcard
 audio {
     nickname = &quot;Computer&quot;
@@ -1028,7 +1006,7 @@ audio {
     mixer_device = &quot;hw:1&quot;   # defaults to same as &#39;card&#39; value
 }
 </code></pre></div>
-<p>Multiple devices can be made available to <code>forked-daapd</code> using seperate
+<p>Multiple devices can be made available to OwnTone using seperate
 <code>alsa { .. }</code> sections.</p>
 <div class="highlight"><pre><span></span><code>audio {
     type = &quot;alsa&quot;
@@ -1060,13 +1038,13 @@ AND there is no sound you can try the options below to determine the card and
 mixer for configuring the server.</p>
 <h2 id="find-relevant-sound-card-information">Find relevant sound card information<a class="headerlink" href="#find-relevant-sound-card-information" title="Permanent link">&para;</a></h2>
 <h3 id="automatically">Automatically<a class="headerlink" href="#automatically" title="Permanent link">&para;</a></h3>
-<p>As shown above, <code>forked-daapd</code> can help, consider the information that logged:</p>
+<p>As shown above, OwnTone can help, consider the information that logged:</p>
 <div class="highlight"><pre><span></span><code>laudio: Available ALSA playback mixer(s) on hw:0 CARD=Intel (HDA Intel): &#39;Master&#39; &#39;Headphone&#39; &#39;Speaker&#39; &#39;PCM&#39; &#39;Mic&#39; &#39;Beep&#39;
 laudio: Available ALSA playback mixer(s) on hw:1 CARD=E30 (E30): &#39;E30 &#39;
 laudio: Available ALSA playback mixer(s) on hw:2 CARD=Seri (Plantronics Blackwire 3210 Seri): &#39;Sidetone&#39; &#39;Headset&#39;
 </code></pre></div>
 <p>Using the information above, we can see 3 soundcards that we could use with
-<code>forked-daap</code> with the first soundcard having a number of seperate mixer devices
+OwnTone with the first soundcard having a number of seperate mixer devices
 (volume control) for headphone and the interal speakers - we'll configure the
 server to use both these and also the E30 device. The server configuration for
 theese multiple outputs would be:</p>
@@ -1092,7 +1070,7 @@ alsa &quot;plughw:E30&quot; {
 }
 </code></pre></div>
 <p>NB: it is troublesome to use <code>hw</code> or <code>plughw</code> ALSA addressing when running
-<code>forked-daapd</code> on a machine with <code>pulseaudio</code> and if you wish to use refer to
+OwnTone on a machine with <code>pulseaudio</code> and if you wish to use refer to
 ALSA devices directly that you stop <code>pulseaudio</code>.</p>
 <h3 id="manually">Manually<a class="headerlink" href="#manually" title="Permanent link">&para;</a></h3>
 <p>The example below is how I determined the correct sound card and mixer values
@@ -1274,7 +1252,7 @@ Its setup is:
 $ aplay -v -Dhw:1 /tmp/sine441.wav
 aplay: main:788: audio open error: Device or resource busy
 </code></pre></div>
-<p>In this instance this device cannot open multiple streams - <code>forked-daapd</code> can
+<p>In this instance this device cannot open multiple streams - OwnTone can
 handle this situation transparently with some audio being truncated from the end
 of the current file as the server prepares to play the following track. If this
 handling is causing you problems you may wish to use <a href="https://www.alsa-project.org/main/index.php/Asoundrc#Software_mixing">ALSA's <code>dmix</code> functionally</a>
@@ -1285,7 +1263,7 @@ being the default) for this software mixing module meaning any files that have
 a mismatched samplerate will be resampled.</p>
 <h2 id="alsa-dmix-configurationsetup">ALSA dmix configuration/setup<a class="headerlink" href="#alsa-dmix-configurationsetup" title="Permanent link">&para;</a></h2>
 <p>A <code>dmix</code> device can be defined in <code>/etc/asound.conf</code> or <code>~/.asoundrc</code> for the
-same user running <code>forked-daapd</code>. We will need to know the underlying physical
+same user running OwnTone. We will need to know the underlying physical
 soundcard to be used: in our examples above, <code>hw:1,0</code> / <code>card 1, device 0</code>
 representing our IQaudIODAC as per output of <code>aplay -l</code>. We also take the
 <code>buffer_size</code> and <code>period_size</code> from the output of playing a sound file via
@@ -1304,11 +1282,11 @@ pcm.dmixer  {
     ipc_perm 0666            # multi-user sharing permissions
 
     slave {
- pcm &quot;hw:1,0&quot;         # points at the underlying device - could also simply be hw:1
- period_time 0
- period_size 4096     # from the output of aplay -v
- buffer_size 22052    # from the output of aplay -v
- rate 44100           # locked in sample rate for resampling on dmix device
+        pcm &quot;hw:1,0&quot;         # points at the underlying device - could also simply be hw:1
+        period_time 0
+        period_size 4096     # from the output of aplay -v
+        buffer_size 22052    # from the output of aplay -v
+        rate 44100           # locked in sample rate for resampling on dmix device
     }
     hint.description &quot;IQAudio DAC s/w dmix device&quot;
 }
@@ -1383,7 +1361,7 @@ pcm.equal {
   hint.description &quot;equalised device&quot;
 }
 </code></pre></div>
-<p>and in <code>forked-daapd.conf</code></p>
+<p>and in <code>owntone.conf</code></p>
 <div class="highlight"><pre><span></span><code>alsa &quot;equal&quot; {
     nickname = &quot;Equalised Output&quot;
     # adjust accordingly for mixer with pvolume capability
@@ -1481,45 +1459,44 @@ mentioned above.</p>
             </article>
           </div>
         </div>
+        
       </main>
       
         
 <footer class="md-footer">
   
-    <div class="md-footer-nav">
-      <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
-        
-          <a href="../outputs/" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-            <div class="md-footer-nav__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        <a href="../outputs/" class="md-footer__link md-footer__link--prev" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Supported Outputs
             </div>
-            <div class="md-footer-nav__title">
-              <div class="md-ellipsis">
-                <span class="md-footer-nav__direction">
-                  Previous
-                </span>
-                Supported Outputs
-              </div>
+          </div>
+        </a>
+      
+      
+        <a href="../pulse/" class="md-footer__link md-footer__link--next" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Pulse Audio
             </div>
-          </a>
-        
-        
-          <a href="../pulse/" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
-            <div class="md-footer-nav__title">
-              <div class="md-ellipsis">
-                <span class="md-footer-nav__direction">
-                  Next
-                </span>
-                Pulse Audio
-              </div>
-            </div>
-            <div class="md-footer-nav__button md-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
-            </div>
-          </a>
-        
-      </nav>
-    </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -1529,6 +1506,7 @@ mentioned above.</p>
         <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
           Material for MkDocs
         </a>
+        
       </div>
       
   <div class="md-footer-social">
@@ -1549,19 +1527,13 @@ mentioned above.</p>
 </footer>
       
     </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.sections"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../assets/javascripts/workers/search.4fa0e4ee.min.js", "version": null}</script>
     
-      <script src="../assets/javascripts/vendor.93c04032.min.js"></script>
-      <script src="../assets/javascripts/bundle.83e5331e.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
-      
-      <script>
-        app = initialize({
-          base: "..",
-          features: ['navigation.tabs', 'navigation.sections'],
-          search: Object.assign({
-            worker: "../assets/javascripts/worker/search.8c7e0a7e.min.js"
-          }, typeof search !== "undefined" && search)
-        })
-      </script>
+    
+      <script src="../assets/javascripts/bundle.1d3bfcf1.min.js"></script>
       
         <script src="../javascripts/extra.js"></script>
       
