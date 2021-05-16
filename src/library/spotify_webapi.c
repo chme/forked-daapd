@@ -149,6 +149,8 @@ static const char *spotify_album_tracks_uri = "https://api.spotify.com/v1/albums
 static const char *spotify_playlists_uri = "https://api.spotify.com/v1/me/playlists?limit=50";
 static const char *spotify_playlist_tracks_uri = "https://api.spotify.com/v1/playlists/%s/tracks";
 static const char *spotify_artist_albums_uri = "https://api.spotify.com/v1/artists/%s/albums?include_groups=album,single";
+static const char *spotify_shows_uri    = "https://api.spotify.com/v1/me/shows?limit=50";
+static const char *spotify_shows_episodes_uri = "https://api.spotify.com/v1/shows/%s/episodes";
 
 
 static void
@@ -774,6 +776,40 @@ parse_metadata_playlist(json_object *jsonplaylist, struct spotify_playlist *play
       playlist->tracks_href = jparse_str_from_obj(needle, "href");
       playlist->tracks_count = jparse_int_from_obj(needle, "total");
     }
+}
+
+static void
+parse_metadata_show(json_object *jsonshow, struct spotify_album *show)
+{
+  memset(show, 0, sizeof(struct spotify_album));
+
+  show->name = jparse_str_from_obj(jsonshow, "name");
+  show->artist = jparse_str_from_obj(jsonshow, "publisher");
+  show->uri = jparse_str_from_obj(jsonshow, "uri");
+  show->id = jparse_str_from_obj(jsonshow, "id");
+}
+
+static void
+parse_metadata_episode(json_object *jsonepisode, struct spotify_track *episode)
+{
+  memset(episode, 0, sizeof(struct spotify_track));
+
+  episode->name = jparse_str_from_obj(jsonepisode, "name");
+  episode->uri = jparse_str_from_obj(jsonepisode, "uri");
+  episode->id = jparse_str_from_obj(jsonepisode, "id");
+  episode->duration_ms = jparse_int_from_obj(jsonepisode, "duration_ms");
+
+//  episode->release_date = jparse_str_from_obj(jsonepisode, "release_date");
+//  episode->release_date_precision = jparse_str_from_obj(jsonepisode, "release_date_precision");
+//  episode->release_year = get_year_from_date(jsonepisode->release_date);
+
+  // "is_playable" is only returned for a request with a market parameter, default to true if it is not in the response
+  episode->is_playable = true;
+  if (json_object_object_get_ex(jsonepisode, "is_playable", NULL))
+    {
+      episode->is_playable = jparse_bool_from_obj(jsonepisode, "is_playable");
+    }
+
 }
 
 /*
@@ -1568,6 +1604,83 @@ scan_saved_albums(enum spotify_request_type request_type)
   return ret;
 }
 
+/*
+ * Add a saved podcast show to the library
+ */
+static int
+saved_episodes_add(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg)
+{
+  struct spotify_album *show = arg;
+  struct spotify_track episode;
+  int dir_id;
+  int ret;
+
+  DPRINTF(E_DBG, L_SPOTIFY, "saved_episodes_add: %s\n", json_object_to_json_string(item));
+
+  // Map episode information
+  parse_metadata_episode(item, &episode);
+
+  // Get or create the directory structure for this album
+  dir_id = prepare_directories(show->artist, show->name);
+
+  ret = track_add(&episode, show, NULL, dir_id, request_type);
+
+  if (ret == 0 && spotify_saved_plid)
+	db_pl_add_item_bypath(spotify_saved_plid, episode.uri);
+
+  return 0;
+}
+
+/*
+ * Add a saved podcast show to the library
+ */
+static int
+saved_show_add(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg)
+{
+  json_object *jsonshow;
+  struct spotify_album show;
+  char *endpoint_uri;
+
+  DPRINTF(E_DBG, L_SPOTIFY, "saved_show_add: %s\n", json_object_to_json_string(item));
+
+  if (!json_object_object_get_ex(item, "show", &jsonshow))
+    {
+      DPRINTF(E_LOG, L_SPOTIFY, "Unexpected JSON: Item %d is missing the 'show' field\n", index);
+      return -1;
+    }
+
+  // Map show information
+  parse_metadata_show(jsonshow, &show);
+  show.added_at = jparse_str_from_obj(item, "added_at");
+  show.mtime = jparse_time_from_obj(item, "added_at");
+
+
+  // Now map the show episodes and insert/update them in the files database
+  endpoint_uri = safe_asprintf(spotify_shows_episodes_uri, show.id);
+  request_pagingobject_endpoint(endpoint_uri, saved_episodes_add, transaction_start, transaction_end, true, request_type, &show);
+  free(endpoint_uri);
+
+  if ((index + 1) >= total || ((index + 1) % 10 == 0))
+    DPRINTF(E_LOG, L_SPOTIFY, "Scanned %d of %d saved albums\n", (index + 1), total);
+
+  return 0;
+}
+
+/*
+ * Thread: library
+ *
+ * Scan users saved podcast shows into the library
+ */
+static int
+scan_saved_shows(enum spotify_request_type request_type)
+{
+  int ret;
+
+  ret = request_pagingobject_endpoint(spotify_shows_uri, saved_show_add, NULL, NULL, true, request_type, NULL);
+
+  return ret;
+}
+
 
 /*
  * Add a saved playlist tracks to the library
@@ -1774,6 +1887,7 @@ scan(enum spotify_request_type request_type)
   create_saved_tracks_playlist();
   scan_saved_albums(request_type);
   scan_playlists(request_type);
+  scan_saved_shows(request_type);
 
   scanning = false;
   end = time(NULL);
