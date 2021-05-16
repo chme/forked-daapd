@@ -41,7 +41,11 @@ MDNS_SRC=mdns_dnssd.c
 endif
 
 if COND_LIBWEBSOCKETS
+if COND_LIBWEBSOCKETS_OLD
+LIBWEBSOCKETS_SRC=websocket.v2.c websocket.h
+else
 LIBWEBSOCKETS_SRC=websocket.c websocket.h
+endif
 endif
 
 GPERF_FILES = \

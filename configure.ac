@@ -268,9 +268,19 @@ OWNTONE_ARG_WITH_CHECK([OWNTONE_OPTS], [Pulseaudio support], [pulseaudio], [LIBP
 AM_CONDITIONAL([COND_PULSEAUDIO], [[test "x$with_pulseaudio" = "xyes"]])
 
 dnl Build with libwebsockets
+dnl OWNTONE_ARG_WITH_CHECK(TARGET, DESCRIPTION, OPTION, ENV, MODULES, [FUNCTION],
+dnl   [HEADER], [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
 OWNTONE_ARG_WITH_CHECK([OWNTONE_OPTS], [libwebsockets support], [libwebsockets], [LIBWEBSOCKETS],
-	[libwebsockets >= 3.0.0])
+	[libwebsockets >= 2.0.2], [], [],
+	[dnl check for  old version < 3.0.0
+	 PKG_CHECK_EXISTS([libwebsockets < 3.0.0],
+		[AC_DEFINE([LIBWEBSOCKETS_OLD], 1,
+			[Define to 1 if you have libwebsockets 2 (<3.0.0)])
+		[libwebsockets_old=yes]],
+		[])
+	])
 AM_CONDITIONAL([COND_LIBWEBSOCKETS], [[test "x$with_libwebsockets" = "xyes"]])
+AM_CONDITIONAL([COND_LIBWEBSOCKETS_OLD], [[test "x$libwebsockets_old" = "xyes"]])
 
 dnl Build with libevent_pthreads
 OWNTONE_ARG_WITH_CHECK([OWNTONE_OPTS], [libevent_pthreads support],
