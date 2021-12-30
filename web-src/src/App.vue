@@ -2,10 +2,12 @@
   <div id="app">
     <navbar-top />
     <vue-progress-bar class="fd-progress-bar" />
-    <transition name="fade">
-      <!-- Setting v-show to true on the router-view tag avoids jumpiness during transitions -->
-      <router-view v-show="true" />
-    </transition>
+    <router-view v-slot="{ Component }">
+      <transition name="fade">
+        <component :is="Component" />
+      </transition>
+    </router-view>
+
     <modal-dialog-remote-pairing :show="pairing_active" @close="pairing_active = false" />
     <modal-dialog-update
         :show="show_update_dialog"
