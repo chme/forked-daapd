@@ -73,11 +73,11 @@
 
 <script>
 import { LoadDataBeforeEnterMixin } from './mixin'
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import ListItemTrack from '@/components/ListItemTrack'
-import ListAlbums from '@/components/ListAlbums'
-import ModalDialogTrack from '@/components/ModalDialogTrack'
-import ModalDialogAddRss from '@/components/ModalDialogAddRss'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import ListItemTrack from '@/components/ListItemTrack.vue'
+import ListAlbums from '@/components/ListAlbums.vue'
+import ModalDialogTrack from '@/components/ModalDialogTrack.vue'
+import ModalDialogAddRss from '@/components/ModalDialogAddRss.vue'
 import * as types from '@/store/mutation_types'
 import RangeSlider from 'vue-range-slider'
 import webapi from '@/webapi'

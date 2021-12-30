@@ -23,9 +23,9 @@
 
 <script>
 import { LoadDataBeforeEnterMixin } from './mixin'
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import ListAlbums from '@/components/ListAlbums'
-import ModalDialogArtist from '@/components/ModalDialogArtist'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import ListAlbums from '@/components/ListAlbums.vue'
+import ModalDialogArtist from '@/components/ModalDialogArtist.vue'
 import webapi from '@/webapi'
 
 const artistData = {

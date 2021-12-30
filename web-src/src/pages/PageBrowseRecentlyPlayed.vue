@@ -16,9 +16,9 @@
 
 <script>
 import { LoadDataBeforeEnterMixin } from './mixin'
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import TabsMusic from '@/components/TabsMusic'
-import ListTracks from '@/components/ListTracks'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import TabsMusic from '@/components/TabsMusic.vue'
+import ListTracks from '@/components/ListTracks.vue'
 import webapi from '@/webapi'
 
 const browseData = {

@@ -121,8 +121,8 @@
 </template>
 
 <script>
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import TabsSettings from '@/components/TabsSettings'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import TabsSettings from '@/components/TabsSettings.vue'
 import webapi from '@/webapi'
 
 export default {

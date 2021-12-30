@@ -96,11 +96,11 @@
 </template>
 
 <script>
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import TabsSettings from '@/components/TabsSettings'
-import SettingsCheckbox from '@/components/SettingsCheckbox'
-import SettingsTextfield from '@/components/SettingsTextfield'
-import SettingsIntfield from '@/components/SettingsIntfield'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import TabsSettings from '@/components/TabsSettings.vue'
+import SettingsCheckbox from '@/components/SettingsCheckbox.vue'
+import SettingsTextfield from '@/components/SettingsTextfield.vue'
+import SettingsIntfield from '@/components/SettingsIntfield.vue'
 
 export default {
   name: 'SettingsPageWebinterface',

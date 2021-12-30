@@ -30,9 +30,9 @@
 </template>
 
 <script>
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import TabsSettings from '@/components/TabsSettings'
-import SettingsCheckbox from '@/components/SettingsCheckbox'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import TabsSettings from '@/components/TabsSettings.vue'
+import SettingsCheckbox from '@/components/SettingsCheckbox.vue'
 
 export default {
   name: 'SettingsPageArtwork',

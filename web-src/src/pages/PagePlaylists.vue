@@ -12,8 +12,8 @@
 
 <script>
 import { LoadDataBeforeEnterMixin } from './mixin'
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import ListPlaylists from '@/components/ListPlaylists'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import ListPlaylists from '@/components/ListPlaylists.vue'
 import webapi from '@/webapi'
 
 const playlistsData = {

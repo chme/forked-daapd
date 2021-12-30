@@ -44,11 +44,11 @@
 
 <script>
 import { LoadDataBeforeEnterMixin } from './mixin'
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import SpotifyListItemAlbum from '@/components/SpotifyListItemAlbum'
-import SpotifyModalDialogAlbum from '@/components/SpotifyModalDialogAlbum'
-import SpotifyModalDialogArtist from '@/components/SpotifyModalDialogArtist'
-import CoverArtwork from '@/components/CoverArtwork'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import SpotifyListItemAlbum from '@/components/SpotifyListItemAlbum.vue'
+import SpotifyModalDialogAlbum from '@/components/SpotifyModalDialogAlbum.vue'
+import SpotifyModalDialogArtist from '@/components/SpotifyModalDialogArtist.vue'
+import CoverArtwork from '@/components/CoverArtwork.vue'
 import store from '@/store'
 import webapi from '@/webapi'
 import SpotifyWebApi from 'spotify-web-api-js'

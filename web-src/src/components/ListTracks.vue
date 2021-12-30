@@ -12,8 +12,8 @@
 </template>
 
 <script>
-import ListItemTrack from '@/components/ListItemTrack'
-import ModalDialogTrack from '@/components/ModalDialogTrack'
+import ListItemTrack from '@/components/ListItemTrack.vue'
+import ModalDialogTrack from '@/components/ModalDialogTrack.vue'
 import webapi from '@/webapi'
 
 export default {

@@ -45,11 +45,11 @@
 
 <script>
 import { LoadDataBeforeEnterMixin } from './mixin'
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import TabsMusic from '@/components/TabsMusic'
-import IndexButtonList from '@/components/IndexButtonList'
-import ListArtists from '@/components/ListArtists'
-import DropdownMenu from '@/components/DropdownMenu'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import TabsMusic from '@/components/TabsMusic.vue'
+import IndexButtonList from '@/components/IndexButtonList.vue'
+import ListArtists from '@/components/ListArtists.vue'
+import DropdownMenu from '@/components/DropdownMenu.vue'
 import webapi from '@/webapi'
 import * as types from '@/store/mutation_types'
 import Artists from '@/lib/Artists'

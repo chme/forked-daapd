@@ -74,13 +74,13 @@
 
 <script>
 import { LoadDataBeforeEnterMixin } from './mixin'
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import ListItemDirectory from '@/components/ListItemDirectory'
-import ListItemPlaylist from '@/components/ListItemPlaylist'
-import ListItemTrack from '@/components/ListItemTrack'
-import ModalDialogDirectory from '@/components/ModalDialogDirectory'
-import ModalDialogPlaylist from '@/components/ModalDialogPlaylist'
-import ModalDialogTrack from '@/components/ModalDialogTrack'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import ListItemDirectory from '@/components/ListItemDirectory.vue'
+import ListItemPlaylist from '@/components/ListItemPlaylist.vue'
+import ListItemTrack from '@/components/ListItemTrack.vue'
+import ModalDialogDirectory from '@/components/ModalDialogDirectory.vue'
+import ModalDialogPlaylist from '@/components/ModalDialogPlaylist.vue'
+import ModalDialogTrack from '@/components/ModalDialogTrack.vue'
 import webapi from '@/webapi'
 
 const filesData = {

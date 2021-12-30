@@ -32,10 +32,10 @@
 
 <script>
 import { LoadDataBeforeEnterMixin } from './mixin'
-import ContentWithHero from '@/templates/ContentWithHero'
-import ListTracks from '@/components/ListTracks'
-import ModalDialogAlbum from '@/components/ModalDialogAlbum'
-import CoverArtwork from '@/components/CoverArtwork'
+import ContentWithHero from '@/templates/ContentWithHero.vue'
+import ListTracks from '@/components/ListTracks.vue'
+import ModalDialogAlbum from '@/components/ModalDialogAlbum.vue'
+import CoverArtwork from '@/components/CoverArtwork.vue'
 import webapi from '@/webapi'
 
 const albumData = {

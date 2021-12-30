@@ -60,9 +60,9 @@
 </template>
 
 <script>
-import ModalDialogQueueItem from '@/components/ModalDialogQueueItem'
+import ModalDialogQueueItem from '@/components/ModalDialogQueueItem.vue'
 import RangeSlider from 'vue-range-slider'
-import CoverArtwork from '@/components/CoverArtwork'
+import CoverArtwork from '@/components/CoverArtwork.vue'
 import webapi from '@/webapi'
 import * as types from '@/store/mutation_types'
 

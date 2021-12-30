@@ -185,14 +185,14 @@
 </template>
 
 <script>
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import ContentText from '@/templates/ContentText'
-import TabsSearch from '@/components/TabsSearch'
-import ListTracks from '@/components/ListTracks'
-import ListArtists from '@/components/ListArtists'
-import ListAlbums from '@/components/ListAlbums'
-import ListComposers from '@/components/ListComposers'
-import ListPlaylists from '@/components/ListPlaylists'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import ContentText from '@/templates/ContentText.vue'
+import TabsSearch from '@/components/TabsSearch.vue'
+import ListTracks from '@/components/ListTracks.vue'
+import ListArtists from '@/components/ListArtists.vue'
+import ListAlbums from '@/components/ListAlbums.vue'
+import ListComposers from '@/components/ListComposers.vue'
+import ListPlaylists from '@/components/ListPlaylists.vue'
 import webapi from '@/webapi'
 import * as types from '@/store/mutation_types'
 

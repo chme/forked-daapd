@@ -28,10 +28,10 @@
 
 <script>
 import { LoadDataBeforeEnterMixin } from './mixin'
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import IndexButtonList from '@/components/IndexButtonList'
-import ListTracks from '@/components/ListTracks'
-import ModalDialogArtist from '@/components/ModalDialogArtist'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import IndexButtonList from '@/components/IndexButtonList.vue'
+import ListTracks from '@/components/ListTracks.vue'
+import ModalDialogArtist from '@/components/ModalDialogArtist.vue'
 import webapi from '@/webapi'
 
 const tracksData = {

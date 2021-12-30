@@ -31,10 +31,10 @@
 
 <script>
 import { LoadDataBeforeEnterMixin } from './mixin'
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import ListAlbums from '@/components/ListAlbums'
-import ModalDialogArtist from '@/components/ModalDialogArtist'
-import DropdownMenu from '@/components/DropdownMenu'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import ListAlbums from '@/components/ListAlbums.vue'
+import ModalDialogArtist from '@/components/ModalDialogArtist.vue'
+import DropdownMenu from '@/components/DropdownMenu.vue'
 import webapi from '@/webapi'
 import * as types from '@/store/mutation_types'
 import Albums from '@/lib/Albums'

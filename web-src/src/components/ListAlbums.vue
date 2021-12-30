@@ -69,10 +69,10 @@
 </template>
 
 <script>
-import ListItemAlbum from '@/components/ListItemAlbum'
-import ModalDialogAlbum from '@/components/ModalDialogAlbum'
-import ModalDialog from '@/components/ModalDialog'
-import CoverArtwork from '@/components/CoverArtwork'
+import ListItemAlbum from '@/components/ListItemAlbum.vue'
+import ModalDialogAlbum from '@/components/ModalDialogAlbum.vue'
+import ModalDialog from '@/components/ModalDialog.vue'
+import CoverArtwork from '@/components/CoverArtwork.vue'
 import webapi from '@/webapi'
 import Albums from '@/lib/Albums'
 

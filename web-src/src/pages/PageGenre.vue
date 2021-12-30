@@ -28,10 +28,10 @@
 
 <script>
 import { LoadDataBeforeEnterMixin } from './mixin'
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import IndexButtonList from '@/components/IndexButtonList'
-import ListAlbums from '@/components/ListAlbums'
-import ModalDialogGenre from '@/components/ModalDialogGenre'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import IndexButtonList from '@/components/IndexButtonList.vue'
+import ListAlbums from '@/components/ListAlbums.vue'
+import ModalDialogGenre from '@/components/ModalDialogGenre.vue'
 import webapi from '@/webapi'
 
 const genreData = {

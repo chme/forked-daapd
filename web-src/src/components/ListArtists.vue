@@ -32,8 +32,8 @@
 </template>
 
 <script>
-import ListItemArtist from '@/components/ListItemArtist'
-import ModalDialogArtist from '@/components/ModalDialogArtist'
+import ListItemArtist from '@/components/ListItemArtist.vue'
+import ModalDialogArtist from '@/components/ModalDialogArtist.vue'
 import Artists from '@/lib/Artists'
 
 export default {

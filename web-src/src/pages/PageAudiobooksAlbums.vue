@@ -19,10 +19,10 @@
 
 <script>
 import { LoadDataBeforeEnterMixin } from './mixin'
-import TabsAudiobooks from '@/components/TabsAudiobooks'
-import IndexButtonList from '@/components/IndexButtonList'
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import ListAlbums from '@/components/ListAlbums'
+import TabsAudiobooks from '@/components/TabsAudiobooks.vue'
+import IndexButtonList from '@/components/IndexButtonList.vue'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import ListAlbums from '@/components/ListAlbums.vue'
 import webapi from '@/webapi'
 import Albums from '@/lib/Albums'
 

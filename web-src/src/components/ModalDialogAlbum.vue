@@ -69,7 +69,7 @@
 </template>
 
 <script>
-import CoverArtwork from '@/components/CoverArtwork'
+import CoverArtwork from '@/components/CoverArtwork.vue'
 import webapi from '@/webapi'
 
 export default {

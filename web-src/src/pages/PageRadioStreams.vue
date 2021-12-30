@@ -14,8 +14,8 @@
 
 <script>
 import { LoadDataBeforeEnterMixin } from './mixin'
-import ContentWithHeading from '@/templates/ContentWithHeading'
-import ListTracks from '@/components/ListTracks'
+import ContentWithHeading from '@/templates/ContentWithHeading.vue'
+import ListTracks from '@/components/ListTracks.vue'
 import webapi from '@/webapi'
 
 const streamsData = {

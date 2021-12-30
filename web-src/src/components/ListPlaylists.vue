@@ -17,8 +17,8 @@
 </template>
 
 <script>
-import ListItemPlaylist from '@/components/ListItemPlaylist'
-import ModalDialogPlaylist from '@/components/ModalDialogPlaylist'
+import ListItemPlaylist from '@/components/ListItemPlaylist.vue'
+import ModalDialogPlaylist from '@/components/ModalDialogPlaylist.vue'
 
 export default {
   name: 'ListPlaylists',
