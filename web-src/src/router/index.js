@@ -1,4 +1,4 @@
-import { createRouter } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import store from '@/store'
 import * as types from '@/store/mutation_types'
 import PageQueue from '@/pages/PageQueue.vue'
@@ -42,6 +42,7 @@ import SettingsPageOnlineServices from '@/pages/SettingsPageOnlineServices.vue'
 import SettingsPageRemotesOutputs from '@/pages/SettingsPageRemotesOutputs.vue'
 
 export const router = createRouter({
+  history: createWebHistory(),
   routes: [
     {
       path: '/',
