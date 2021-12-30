@@ -13,7 +13,7 @@
         :show="show_update_dialog"
         @close="show_update_dialog = false" />
     <notifications v-show="!show_burger_menu" />
-    <navbar-bottom />
+    <!-- navbar-bottom /-->
     <div class="fd-overlay-fullscreen" v-show="show_burger_menu || show_player_menu"
         @click="show_burger_menu = show_player_menu = false"></div>
   </div>
