@@ -3,7 +3,7 @@
     <tabs-music></tabs-music>
 
     <content-with-heading>
-      <template slot="options">
+      <template v-slot:options>
         <index-button-list :index="albums_list.indexList"></index-button-list>
 
         <div class="columns">
@@ -30,13 +30,13 @@
           </div>
         </div>
       </template>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Albums</p>
         <p class="heading">{{ albums_list.sortedAndFiltered.length }} Albums</p>
       </template>
-      <template slot="heading-right">
+      <template v-slot:heading-right>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <list-albums :albums="albums_list"></list-albums>
       </template>
     </content-with-heading>

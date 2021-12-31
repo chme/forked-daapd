@@ -7,7 +7,7 @@
             :key="album.id"
             :album="album"
             @click="open_album(album)">
-          <template slot="artwork" v-if="is_visible_artwork">
+          <template v-slot:artwork v-if="is_visible_artwork">
             <p class="image is-64x64 fd-has-shadow fd-has-action">
             <cover-artwork
                 :artwork_url="album.artwork_url"
@@ -17,7 +17,7 @@
                 :maxheight="64" />
             </p>
           </template>
-          <template slot="actions">
+          <template v-slot:actions>
             <a @click="open_dialog(album)">
               <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
             </a>
@@ -30,7 +30,7 @@
           :key="album.id"
           :album="album"
           @click="open_album(album)">
-        <template slot="artwork" v-if="is_visible_artwork">
+        <template v-slot:artwork v-if="is_visible_artwork">
           <p class="image is-64x64 fd-has-shadow fd-has-action">
           <cover-artwork
               :artwork_url="album.artwork_url"
@@ -40,7 +40,7 @@
               :maxheight="64" />
           </p>
         </template>
-        <template slot="actions">
+        <template v-slot:actions>
           <a @click="open_dialog(album)">
             <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
           </a>
@@ -60,7 +60,7 @@
         delete_action="Remove"
         @close="show_remove_podcast_modal = false"
         @delete="remove_podcast">
-      <template slot="modal-content">
+      <template v-slot:modal-content>
         <p>Permanently remove this podcast from your library?</p>
         <p class="is-size-7">(This will also remove the RSS playlist <b>{{ rss_playlist_to_remove.name }}</b>.)</p>
       </template>

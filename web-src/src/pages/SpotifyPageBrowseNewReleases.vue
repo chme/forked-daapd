@@ -3,15 +3,15 @@
     <tabs-music></tabs-music>
 
     <content-with-heading>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">New Releases</p>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <spotify-list-item-album v-for="album in new_releases"
             :key="album.id"
             :album="album"
             @click="open_album(album)">
-          <template slot="artwork" v-if="is_visible_artwork">
+          <template v-slot:artwork v-if="is_visible_artwork">
             <p class="image is-64x64 fd-has-shadow fd-has-action">
               <cover-artwork
                 :artwork_url="artwork_url(album)"
@@ -21,7 +21,7 @@
                 :maxheight="64" />
             </p>
           </template>
-          <template slot="actions">
+          <template v-slot:actions>
             <a @click="open_album_dialog(album)">
               <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
             </a>

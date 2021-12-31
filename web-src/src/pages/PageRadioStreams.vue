@@ -1,10 +1,10 @@
 <template>
   <div>
     <content-with-heading>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Radio</p>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <p class="heading has-text-centered-mobile">{{ tracks.total }} tracks</p>
         <list-tracks :tracks="tracks.items"></list-tracks>
       </template>

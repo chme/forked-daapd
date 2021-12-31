@@ -1,10 +1,10 @@
 <template>
   <content-with-heading>
-    <template slot="heading-left">
+    <template v-slot:heading-left>
       <div class="title is-4">{{ album.name }}
       </div>
      </template>
-    <template slot="heading-right">
+    <template v-slot:heading-right>
       <div class="buttons is-centered">
         <a class="button is-small is-light is-rounded" @click="show_album_details_modal = true">
           <span class="icon"><i class="mdi mdi-dots-horizontal mdi-18px"></i></span>
@@ -17,10 +17,10 @@
         </a>
       </div>
     </template>
-    <template slot="content">
+    <template v-slot:content>
       <p class="heading has-text-centered-mobile">{{ album.track_count }} tracks</p>
       <list-item-track v-for="track in tracks" :key="track.id" :track="track" @click="play_track(track)">
-        <template slot="progress">
+        <template v-slot:progress>
           <range-slider
             class="track-progress"
             min="0"
@@ -30,7 +30,7 @@
             :value="track.seek_ms" >
           </range-slider>
         </template>
-        <template slot="actions">
+        <template v-slot:actions>
           <a @click="open_dialog(track)">
             <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
           </a>
@@ -55,7 +55,7 @@
         delete_action="Remove"
         @close="show_remove_podcast_modal = false"
         @delete="remove_podcast">
-        <template slot="modal-content">
+        <template v-slot:modal-content>
           <p>Permanently remove this podcast from your library?</p>
           <p class="is-size-7">(This will also remove the RSS playlist <b>{{ rss_playlist_to_remove.name }}</b>.)</p>
         </template>

@@ -1,12 +1,12 @@
 <template>
   <div>
     <list-item-playlist v-for="playlist in playlists" :key="playlist.id" :playlist="playlist" @click="open_playlist(playlist)">
-      <template slot="icon">
+      <template v-slot:icon>
         <span class="icon">
           <i class="mdi" :class="{ 'mdi-library-music': playlist.type !== 'folder', 'mdi-rss': playlist.type === 'rss', 'mdi-folder': playlist.type === 'folder' }"></i>
         </span>
       </template>
-      <template slot="actions">
+      <template v-slot:actions>
         <a @click="open_dialog(playlist)">
           <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
         </a>

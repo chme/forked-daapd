@@ -1,9 +1,9 @@
 <template>
   <content-with-heading>
-    <template slot="heading-left">
+    <template v-slot:heading-left>
       <div class="title is-4">{{ playlist.name }}</div>
     </template>
-    <template slot="heading-right">
+    <template v-slot:heading-right>
       <div class="buttons is-centered">
         <a class="button is-small is-light is-rounded" @click="show_playlist_details_modal = true">
           <span class="icon"><i class="mdi mdi-dots-horizontal mdi-18px"></i></span>
@@ -13,7 +13,7 @@
         </a>
       </div>
     </template>
-    <template slot="content">
+    <template v-slot:content>
       <p class="heading has-text-centered-mobile">{{ tracks.length }} tracks</p>
       <list-tracks :tracks="tracks" :uris="uris"></list-tracks>
       <modal-dialog-playlist :show="show_playlist_details_modal" :playlist="playlist" :uris="uris" @close="show_playlist_details_modal = false" />

@@ -3,14 +3,14 @@
     <tabs-audiobooks></tabs-audiobooks>
 
     <content-with-heading>
-      <template slot="options">
+      <template v-slot:options>
         <index-button-list :index="albums_list.indexList"></index-button-list>
       </template>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Audiobooks</p>
         <p class="heading">{{ albums_list.sortedAndFiltered.length }} Audiobooks</p>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <list-albums :albums="albums_list"></list-albums>
       </template>
     </content-with-heading>

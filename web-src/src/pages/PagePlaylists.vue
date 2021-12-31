@@ -1,10 +1,10 @@
 <template>
   <content-with-heading>
-    <template slot="heading-left">
+    <template v-slot:heading-left>
       <p class="title is-4">{{ playlist.name }}</p>
       <p class="heading">{{ playlists.total }} playlists</p>
     </template>
-    <template slot="content">
+    <template v-slot:content>
       <list-playlists :playlists="playlists.items"></list-playlists>
     </template>
   </content-with-heading>

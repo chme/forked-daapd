@@ -1,9 +1,9 @@
 <template>
   <content-with-heading>
-    <template slot="heading-left">
+    <template v-slot:heading-left>
       <p class="title is-4">{{ artist.name }}</p>
     </template>
-    <template slot="heading-right">
+    <template v-slot:heading-right>
       <div class="buttons is-centered">
         <a class="button is-small is-light is-rounded" @click="show_artist_details_modal = true">
           <span class="icon"><i class="mdi mdi-dots-horizontal mdi-18px"></i></span>
@@ -13,13 +13,13 @@
         </a>
       </div>
     </template>
-    <template slot="content">
+    <template v-slot:content>
       <p class="heading has-text-centered-mobile">{{ total }} albums</p>
       <spotify-list-item-album v-for="album in albums"
           :key="album.id"
           :album="album"
           @click="open_album(album)">
-        <template slot="artwork" v-if="is_visible_artwork">
+        <template v-slot:artwork v-if="is_visible_artwork">
           <p class="image is-64x64 fd-has-shadow fd-has-action">
             <cover-artwork
               :artwork_url="artwork_url(album)"
@@ -29,13 +29,13 @@
               :maxheight="64" />
           </p>
         </template>
-        <template slot="actions">
+        <template v-slot:actions>
           <a @click="open_dialog(album)">
             <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
           </a>
         </template>
       </spotify-list-item-album>
-      <infinite-loading v-if="offset < total" @infinite="load_next"><span slot="no-more">.</span></infinite-loading>
+      <infinite-loading v-if="offset < total" @infinite="load_next"><template v-slot:no-more>.</template></infinite-loading>
       <spotify-modal-dialog-album :show="show_details_modal" :album="selected_album" @close="show_details_modal = false" />
       <spotify-modal-dialog-artist :show="show_artist_details_modal" :artist="artist" @close="show_artist_details_modal = false" />
     </template>

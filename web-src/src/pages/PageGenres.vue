@@ -3,16 +3,16 @@
     <tabs-music></tabs-music>
 
     <content-with-heading>
-      <template slot="options">
+      <template v-slot:options>
         <index-button-list :index="index_list"></index-button-list>
       </template>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Genres</p>
         <p class="heading">{{ genres.total }} genres</p>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <list-item-genre v-for="genre in genres.items" :key="genre.name" :genre="genre" @click="open_genre(genre)">
-          <template slot="actions">
+          <template v-slot:actions>
             <a @click="open_dialog(genre)">
               <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
             </a>

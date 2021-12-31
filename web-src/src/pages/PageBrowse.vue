@@ -4,14 +4,14 @@
 
     <!-- Recently added -->
     <content-with-heading>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Recently added</p>
         <p class="heading">albums</p>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <list-albums :albums="recently_added.items"></list-albums>
       </template>
-      <template slot="footer">
+      <template v-slot:footer>
         <nav class="level">
           <p class="level-item">
             <a class="button is-light is-small is-rounded" v-on:click="open_browse('recently_added')">Show more</a>
@@ -22,14 +22,14 @@
 
     <!-- Recently played -->
     <content-with-heading>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Recently played</p>
         <p class="heading">tracks</p>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <list-tracks :tracks="recently_played.items"></list-tracks>
       </template>
-      <template slot="footer">
+      <template v-slot:footer>
         <nav class="level">
           <p class="level-item">
             <a class="button is-light is-small is-rounded" v-on:click="open_browse('recently_played')">Show more</a>

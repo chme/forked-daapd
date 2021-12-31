@@ -1,10 +1,10 @@
 <template>
   <content-with-heading>
-    <template slot="heading-left">
+    <template v-slot:heading-left>
       <p class="heading">{{ queue.count }} tracks</p>
       <p class="title is-4">Queue</p>
     </template>
-    <template slot="heading-right">
+    <template v-slot:heading-right>
       <div class="buttons is-centered">
         <a class="button is-small" :class="{ 'is-info': show_only_next_items }" @click="update_show_next_items">
           <span class="icon">
@@ -38,14 +38,14 @@
         </a>
       </div>
     </template>
-    <template slot="content">
+    <template v-slot:content>
       <draggable v-model="queue_items" handle=".handle" @end="move_item">
         <list-item-queue-item v-for="(item, index) in queue_items"
           :key="item.id" :item="item" :position="index"
           :current_position="current_position"
           :show_only_next_items="show_only_next_items"
           :edit_mode="edit_mode">
-            <template slot="actions">
+            <template v-slot:actions>
               <a @click="open_dialog(item)" v-if="!edit_mode">
                 <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
               </a>

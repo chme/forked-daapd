@@ -3,11 +3,11 @@
     <tabs-music></tabs-music>
 
     <content-with-heading>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Recently added</p>
         <p class="heading">albums</p>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <list-albums :albums="albums_list"></list-albums>
       </template>
     </content-with-heading>

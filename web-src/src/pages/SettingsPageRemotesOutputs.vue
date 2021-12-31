@@ -3,11 +3,11 @@
     <tabs-settings></tabs-settings>
 
     <content-with-heading>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <div class="title is-4">Remote Pairing</div>
       </template>
 
-      <template slot="content">
+      <template v-slot:content>
         <!-- Paring request active -->
         <div class="notification" v-if="pairing.active">
           <form v-on:submit.prevent="kickoff_pairing">
@@ -32,11 +32,11 @@
     </content-with-heading>
 
     <content-with-heading>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <div class="title is-4">Speaker pairing and device verification</div>
       </template>
 
-      <template slot="content">
+      <template v-slot:content>
         <p class="content">
           If your speaker requires pairing then activate it below and enter the PIN that it displays.
         </p>

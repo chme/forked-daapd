@@ -3,11 +3,11 @@
     <tabs-settings></tabs-settings>
 
     <content-with-heading>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <div class="title is-4">Spotify</div>
       </template>
 
-      <template slot="content">
+      <template v-slot:content>
         <div class="notification is-size-7" v-if="!spotify.spotify_installed">
           <p>OwnTone was either built without support for Spotify or libspotify is not installed.</p>
         </div>
@@ -78,11 +78,11 @@
     </content-with-heading>
 
     <content-with-heading>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <div class="title is-4">Last.fm</div>
       </template>
 
-      <template slot="content">
+      <template v-slot:content>
         <div class="notification is-size-7" v-if="!lastfm.enabled">
           <p>OwnTone was built without support for Last.fm.</p>
         </div>

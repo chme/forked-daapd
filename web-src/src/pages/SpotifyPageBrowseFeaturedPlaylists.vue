@@ -3,12 +3,12 @@
     <tabs-music></tabs-music>
 
     <content-with-heading>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Featured Playlists</p>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <spotify-list-item-playlist v-for="playlist in featured_playlists" :key="playlist.id" :playlist="playlist">
-          <template slot="actions">
+          <template v-slot:actions>
             <a @click="open_playlist_dialog(playlist)">
               <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
             </a>

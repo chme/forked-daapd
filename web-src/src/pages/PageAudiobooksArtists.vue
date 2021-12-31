@@ -3,16 +3,16 @@
     <tabs-audiobooks></tabs-audiobooks>
 
     <content-with-heading>
-      <template slot="options">
+      <template v-slot:options>
         <index-button-list :index="artists_list.indexList"></index-button-list>
       </template>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Authors</p>
         <p class="heading">{{ artists_list.sortedAndFiltered.length }} Authors</p>
       </template>
-      <template slot="heading-right">
+      <template v-slot:heading-right>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <list-artists :artists="artists_list"></list-artists>
       </template>
     </content-with-heading>

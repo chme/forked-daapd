@@ -1,6 +1,6 @@
 <template>
   <content-with-hero>
-    <template slot="heading-left">
+    <template v-slot:heading-left>
       <h1 class="title is-5">{{ album.name }}</h1>
       <h2 class="subtitle is-6 has-text-link has-text-weight-normal"><a class="has-text-link" @click="open_artist">{{ album.artist }}</a></h2>
 
@@ -13,7 +13,7 @@
         </a>
       </div>
     </template>
-    <template slot="heading-right">
+    <template v-slot:heading-right>
       <p class="image is-square fd-has-shadow fd-has-action">
         <cover-artwork
           :artwork_url="album.artwork_url"
@@ -22,7 +22,7 @@
           @click="show_album_details_modal = true" />
       </p>
     </template>
-    <template slot="content">
+    <template v-slot:content>
       <p class="heading is-7 has-text-centered-mobile fd-has-margin-top">{{ album.track_count }} tracks</p>
       <list-tracks :tracks="tracks" :uris="album.uri"></list-tracks>
       <modal-dialog-album :show="show_album_details_modal" :album="album" @close="show_album_details_modal = false" />

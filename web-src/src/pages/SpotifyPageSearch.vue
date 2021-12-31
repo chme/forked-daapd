@@ -27,21 +27,21 @@
 
     <!-- Tracks -->
     <content-with-heading v-if="show_tracks && tracks.total">
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Tracks</p>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <spotify-list-item-track v-for="track in tracks.items" :key="track.id" :track="track" :album="track.album" :position="0" :context_uri="track.uri">
-          <template slot="actions">
+          <template v-slot:actions>
             <a @click="open_track_dialog(track)">
               <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
             </a>
           </template>
         </spotify-list-item-track>
-        <infinite-loading v-if="query.type === 'track'" @infinite="search_tracks_next"><span slot="no-more">.</span></infinite-loading>
+        <infinite-loading v-if="query.type === 'track'" @infinite="search_tracks_next"><template v-slot:no-more>.</template></infinite-loading>
         <spotify-modal-dialog-track :show="show_track_details_modal" :track="selected_track" :album="selected_track.album" @close="show_track_details_modal = false" />
       </template>
-      <template slot="footer">
+      <template v-slot:footer>
         <nav v-if="show_all_tracks_button" class="level">
           <p class="level-item">
             <a class="button is-light is-small is-rounded" v-on:click="open_search_tracks">Show all {{ tracks.total.toLocaleString() }} tracks</a>
@@ -50,28 +50,28 @@
       </template>
     </content-with-heading>
     <content-text v-if="show_tracks && !tracks.total" class="mt-6">
-      <template slot="content">
+      <template v-slot:content>
         <p><i>No tracks found</i></p>
       </template>
     </content-text>
 
     <!-- Artists -->
     <content-with-heading v-if="show_artists && artists.total">
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Artists</p>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <spotify-list-item-artist v-for="artist in artists.items" :key="artist.id" :artist="artist">
-          <template slot="actions">
+          <template v-slot:actions>
             <a @click="open_artist_dialog(artist)">
               <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
             </a>
           </template>
         </spotify-list-item-artist>
-        <infinite-loading v-if="query.type === 'artist'" @infinite="search_artists_next"><span slot="no-more">.</span></infinite-loading>
+        <infinite-loading v-if="query.type === 'artist'" @infinite="search_artists_next"><template v-slot:no-more>.</template></infinite-loading>
         <spotify-modal-dialog-artist :show="show_artist_details_modal" :artist="selected_artist" @close="show_artist_details_modal = false" />
       </template>
-      <template slot="footer">
+      <template v-slot:footer>
         <nav v-if="show_all_artists_button" class="level">
           <p class="level-item">
             <a class="button is-light is-small is-rounded" v-on:click="open_search_artists">Show all {{ artists.total.toLocaleString() }} artists</a>
@@ -80,22 +80,22 @@
       </template>
     </content-with-heading>
     <content-text v-if="show_artists && !artists.total">
-      <template slot="content">
+      <template v-slot:content>
         <p><i>No artists found</i></p>
       </template>
     </content-text>
 
     <!-- Albums -->
     <content-with-heading v-if="show_albums && albums.total">
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Albums</p>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <spotify-list-item-album v-for="album in albums.items"
             :key="album.id"
             :album="album"
             @click="open_album(album)">
-          <template slot="artwork" v-if="is_visible_artwork">
+          <template v-slot:artwork v-if="is_visible_artwork">
             <p class="image is-64x64 fd-has-shadow fd-has-action">
               <cover-artwork
                 :artwork_url="artwork_url(album)"
@@ -105,16 +105,16 @@
                 :maxheight="64" />
             </p>
           </template>
-          <template slot="actions">
+          <template v-slot:actions>
             <a @click="open_album_dialog(album)">
               <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
             </a>
           </template>
         </spotify-list-item-album>
-        <infinite-loading v-if="query.type === 'album'" @infinite="search_albums_next"><span slot="no-more">.</span></infinite-loading>
+        <infinite-loading v-if="query.type === 'album'" @infinite="search_albums_next"><template v-slot:no-more>.</template></infinite-loading>
         <spotify-modal-dialog-album :show="show_album_details_modal" :album="selected_album" @close="show_album_details_modal = false" />
       </template>
-      <template slot="footer">
+      <template v-slot:footer>
         <nav v-if="show_all_albums_button" class="level">
           <p class="level-item">
             <a class="button is-light is-small is-rounded" v-on:click="open_search_albums">Show all {{ albums.total.toLocaleString() }} albums</a>
@@ -123,28 +123,28 @@
       </template>
     </content-with-heading>
     <content-text v-if="show_albums && !albums.total">
-      <template slot="content">
+      <template v-slot:content>
         <p><i>No albums found</i></p>
       </template>
     </content-text>
 
     <!-- Playlists -->
     <content-with-heading v-if="show_playlists && playlists.total">
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Playlists</p>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <spotify-list-item-playlist v-for="playlist in playlists.items" :key="playlist.id" :playlist="playlist">
-          <template slot="actions">
+          <template v-slot:actions>
             <a @click="open_playlist_dialog(playlist)">
               <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
             </a>
           </template>
         </spotify-list-item-playlist>
-        <infinite-loading v-if="query.type === 'playlist'" @infinite="search_playlists_next"><span slot="no-more">.</span></infinite-loading>
+        <infinite-loading v-if="query.type === 'playlist'" @infinite="search_playlists_next"><template v-slot:no-more>.</template></infinite-loading>
         <spotify-modal-dialog-playlist :show="show_playlist_details_modal" :playlist="selected_playlist" @close="show_playlist_details_modal = false" />
       </template>
-      <template slot="footer">
+      <template v-slot:footer>
         <nav v-if="show_all_playlists_button" class="level">
           <p class="level-item">
             <a class="button is-light is-small is-rounded" v-on:click="open_search_playlists">Show all {{ playlists.total.toLocaleString() }} playlists</a>
@@ -153,7 +153,7 @@
       </template>
     </content-with-heading>
     <content-text v-if="show_playlists && !playlists.total">
-      <template slot="content">
+      <template v-slot:content>
         <p><i>No playlists found</i></p>
       </template>
     </content-text>

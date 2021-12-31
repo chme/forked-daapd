@@ -1,9 +1,9 @@
 <template>
   <content-with-heading>
-    <template slot="heading-left">
+    <template v-slot:heading-left>
       <div class="title is-4">{{ playlist.name }}</div>
     </template>
-    <template slot="heading-right">
+    <template v-slot:heading-right>
       <div class="buttons is-centered">
         <a class="button is-small is-light is-rounded" @click="show_playlist_details_modal = true">
           <span class="icon"><i class="mdi mdi-dots-horizontal mdi-18px"></i></span>
@@ -13,16 +13,16 @@
         </a>
       </div>
     </template>
-    <template slot="content">
+    <template v-slot:content>
       <p class="heading has-text-centered-mobile">{{ playlist.tracks.total }} tracks</p>
       <spotify-list-item-track v-for="(item, index) in tracks" :key="item.track.id" :track="item.track" :album="item.track.album" :position="index" :context_uri="playlist.uri">
-        <template slot="actions">
+        <template v-slot:actions>
           <a @click="open_track_dialog(item.track)">
             <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
           </a>
         </template>
       </spotify-list-item-track>
-      <infinite-loading v-if="offset < total" @infinite="load_next"><span slot="no-more">.</span></infinite-loading>
+      <infinite-loading v-if="offset < total" @infinite="load_next"><template v-slot:no-more>.</template></infinite-loading>
       <spotify-modal-dialog-track :show="show_track_details_modal" :track="selected_track" :album="selected_track.album" @close="show_track_details_modal = false" />
       <spotify-modal-dialog-playlist :show="show_playlist_details_modal" :playlist="playlist" @close="show_playlist_details_modal = false" />
     </template>

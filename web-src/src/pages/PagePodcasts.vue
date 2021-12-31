@@ -1,10 +1,10 @@
 <template>
   <div>
     <content-with-heading v-if="new_episodes.items.length > 0">
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">New episodes</p>
       </template>
-      <template slot="heading-right">
+      <template v-slot:heading-right>
       <div class="buttons is-centered">
         <a class="button is-small" @click="mark_all_played">
           <span class="icon">
@@ -14,9 +14,9 @@
         </a>
       </div>
     </template>
-    <template slot="content">
+    <template v-slot:content>
         <list-item-track v-for="track in new_episodes.items" :key="track.id" :track="track" @click="play_track(track)">
-          <template slot="progress">
+          <template v-slot:progress>
             <range-slider
               class="track-progress"
               min="0"
@@ -26,7 +26,7 @@
               :value="track.seek_ms" >
             </range-slider>
           </template>
-          <template slot="actions">
+          <template v-slot:actions>
             <a @click="open_track_dialog(track)">
               <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
             </a>
@@ -37,11 +37,11 @@
     </content-with-heading>
 
     <content-with-heading>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Podcasts</p>
         <p class="heading">{{ albums.total }} podcasts</p>
       </template>
-      <template slot="heading-right">
+      <template v-slot:heading-right>
         <div class="buttons is-centered">
           <a v-if="rss.tracks > 0" class="button is-small" @click="update_rss">
             <span class="icon">
@@ -57,7 +57,7 @@
           </a>
         </div>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <list-albums :albums="albums.items"
             @play-count-changed="reload_new_episodes()"
             @podcast-deleted="reload_podcasts()">

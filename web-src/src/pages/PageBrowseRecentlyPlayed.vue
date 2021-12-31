@@ -3,11 +3,11 @@
     <tabs-music></tabs-music>
 
     <content-with-heading>
-      <template slot="heading-left">
+      <template v-slot:heading-left>
         <p class="title is-4">Recently played</p>
         <p class="heading">tracks</p>
       </template>
-      <template slot="content">
+      <template v-slot:content>
         <list-tracks :tracks="recently_played.items"></list-tracks>
       </template>
     </content-with-heading>

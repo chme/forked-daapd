@@ -7,7 +7,7 @@
             :key="artist.id"
             :artist="artist"
             @click="open_artist(artist)">
-            <template slot="actions">
+            <template v-slot:actions>
                 <a @click="open_dialog(artist)">
                 <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
                 </a>
@@ -20,7 +20,7 @@
           :key="artist.id"
           :artist="artist"
           @click="open_artist(artist)">
-          <template slot="actions">
+          <template v-slot:actions>
               <a @click="open_dialog(artist)">
               <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
               </a>
