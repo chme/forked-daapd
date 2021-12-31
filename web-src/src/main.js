@@ -5,6 +5,8 @@ import VueProgressBar from '@aacassandra/vue3-progressbar'
 import { ObserveVisibility } from 'vue-observe-visibility'
 import App from './App.vue'
 
+import './mystyles.scss'
+
 createApp(App)
   .use(store)
   .use(router)
