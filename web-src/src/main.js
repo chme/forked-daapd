@@ -6,6 +6,7 @@ import { ObserveVisibility } from 'vue-observe-visibility'
 import App from './App.vue'
 
 import './mystyles.scss'
+import 'mdi/css/materialdesignicons.css'
 
 createApp(App)
   .use(store)
