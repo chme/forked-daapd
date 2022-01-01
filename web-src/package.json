@@ -21,6 +21,7 @@
     "vue-observe-visibility": "^1.0.0",
     "vue-range-slider": "^0.6.0",
     "vue-router": "^4.0.12",
+    "vue3-click-away": "^1.2.1",
     "vuedraggable": "^4.1.0",
     "vuex": "^4.0.2"
   },

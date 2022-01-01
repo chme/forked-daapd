@@ -1,5 +1,5 @@
 <template>
-  <div class="dropdown" :class="{ 'is-active': is_active }" v-click-outside="onClickOutside">
+  <div class="dropdown" :class="{ 'is-active': is_active }" v-click-away="onClickOutside">
     <div class="dropdown-trigger">
       <button class="button" aria-haspopup="true" aria-controls="dropdown-menu" @click="is_active = !is_active">
         <span>{{ value }}</span>

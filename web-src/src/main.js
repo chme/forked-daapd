@@ -3,6 +3,7 @@ import store from './store'
 import { router } from './router'
 import VueProgressBar from '@aacassandra/vue3-progressbar'
 import { ObserveVisibility } from 'vue-observe-visibility'
+import VueClickAway from "vue3-click-away";
 import App from './App.vue'
 
 import './mystyles.scss'
@@ -16,6 +17,7 @@ createApp(App)
     failedColor: 'red',
     height: '1px'
   })
+  .use(VueClickAway)
   .directive('observe-visibility', {
     beforeMount: ObserveVisibility.beforeMount,
     update: ObserveVisibility.update,
