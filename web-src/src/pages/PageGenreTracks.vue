@@ -27,14 +27,13 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import IndexButtonList from '@/components/IndexButtonList.vue'
 import ListTracks from '@/components/ListTracks.vue'
 import ModalDialogGenre from '@/components/ModalDialogGenre.vue'
 import webapi from '@/webapi'
 
-const tracksData = {
+const dataObject = {
   load: function (to) {
     return webapi.library_genre_tracks(to.params.genre)
   },
@@ -47,7 +46,6 @@ const tracksData = {
 
 export default {
   name: 'PageGenreTracks',
-  mixins: [LoadDataBeforeEnterMixin(tracksData)],
   components: { ContentWithHeading, ListTracks, IndexButtonList, ModalDialogGenre },
 
   data () {
@@ -79,6 +77,19 @@ export default {
     play: function () {
       webapi.player_play_expression(this.expression, true)
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

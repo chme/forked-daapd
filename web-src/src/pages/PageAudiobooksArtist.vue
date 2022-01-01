@@ -22,13 +22,12 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import ListAlbums from '@/components/ListAlbums.vue'
 import ModalDialogArtist from '@/components/ModalDialogArtist.vue'
 import webapi from '@/webapi'
 
-const artistData = {
+const dataObject = {
   load: function (to) {
     return Promise.all([
       webapi.library_artist(to.params.artist_id),
@@ -44,7 +43,6 @@ const artistData = {
 
 export default {
   name: 'PageAudiobooksArtist',
-  mixins: [LoadDataBeforeEnterMixin(artistData)],
   components: { ContentWithHeading, ListAlbums, ModalDialogArtist },
 
   data () {
@@ -60,6 +58,19 @@ export default {
     play: function () {
       webapi.player_play_uri(this.albums.items.map(a => a.uri).join(','), false)
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

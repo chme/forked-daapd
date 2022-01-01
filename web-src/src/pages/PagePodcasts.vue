@@ -72,7 +72,6 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import ListItemTrack from '@/components/ListItemTrack.vue'
 import ListAlbums from '@/components/ListAlbums.vue'
@@ -82,7 +81,7 @@ import * as types from '@/store/mutation_types'
 import RangeSlider from 'vue-range-slider'
 import webapi from '@/webapi'
 
-const albumsData = {
+const dataObject = {
   load: function (to) {
     return Promise.all([
       webapi.library_albums('podcast'),
@@ -98,7 +97,6 @@ const albumsData = {
 
 export default {
   name: 'PagePodcasts',
-  mixins: [LoadDataBeforeEnterMixin(albumsData)],
   components: { ContentWithHeading, ListItemTrack, ListAlbums, ModalDialogTrack, ModalDialogAddRss, RangeSlider },
 
   data () {
@@ -157,6 +155,19 @@ export default {
       this.$store.commit(types.UPDATE_DIALOG_SCAN_KIND, 'rss')
       this.$store.commit(types.SHOW_UPDATE_DIALOG, true)
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

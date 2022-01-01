@@ -25,7 +25,6 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import TabsMusic from '@/components/TabsMusic.vue'
 import IndexButtonList from '@/components/IndexButtonList.vue'
@@ -33,7 +32,7 @@ import ListItemGenre from '@/components/ListItemGenre.vue'
 import ModalDialogGenre from '@/components/ModalDialogGenre.vue'
 import webapi from '@/webapi'
 
-const genresData = {
+const dataObject = {
   load: function (to) {
     return webapi.library_genres()
   },
@@ -45,7 +44,6 @@ const genresData = {
 
 export default {
   name: 'PageGenres',
-  mixins: [LoadDataBeforeEnterMixin(genresData)],
   components: { ContentWithHeading, TabsMusic, IndexButtonList, ListItemGenre, ModalDialogGenre },
 
   data () {
@@ -73,6 +71,19 @@ export default {
       this.selected_genre = genre
       this.show_details_modal = true
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

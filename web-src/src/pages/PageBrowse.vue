@@ -41,14 +41,13 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import TabsMusic from '@/components/TabsMusic.vue'
 import ListAlbums from '@/components/ListAlbums.vue'
 import ListTracks from '@/components/ListTracks.vue'
 import webapi from '@/webapi'
 
-const browseData = {
+const dataObject = {
   load: function (to) {
     return Promise.all([
       webapi.search({ type: 'album', expression: 'time_added after 8 weeks ago and media_kind is music having track_count > 3 order by time_added desc', limit: 3 }),
@@ -64,7 +63,6 @@ const browseData = {
 
 export default {
   name: 'PageBrowse',
-  mixins: [LoadDataBeforeEnterMixin(browseData)],
   components: { ContentWithHeading, TabsMusic, ListAlbums, ListTracks },
 
   data () {
@@ -81,6 +79,19 @@ export default {
     open_browse: function (type) {
       this.$router.push({ path: '/music/browse/' + type })
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

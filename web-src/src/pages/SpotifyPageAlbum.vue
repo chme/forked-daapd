@@ -40,7 +40,6 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHero from '@/templates/ContentWithHero.vue'
 import SpotifyListItemTrack from '@/components/SpotifyListItemTrack.vue'
 import SpotifyModalDialogTrack from '@/components/SpotifyModalDialogTrack.vue'
@@ -50,7 +49,7 @@ import store from '@/store'
 import webapi from '@/webapi'
 import SpotifyWebApi from 'spotify-web-api-js'
 
-const albumData = {
+const dataObject = {
   load: function (to) {
     const spotifyApi = new SpotifyWebApi()
     spotifyApi.setAccessToken(store.state.spotify.webapi_token)
@@ -64,7 +63,6 @@ const albumData = {
 
 export default {
   name: 'PageAlbum',
-  mixins: [LoadDataBeforeEnterMixin(albumData)],
   components: { ContentWithHero, SpotifyListItemTrack, SpotifyModalDialogTrack, SpotifyModalDialogAlbum, CoverArtwork },
 
   data () {
@@ -101,6 +99,19 @@ export default {
       this.selected_track = track
       this.show_track_details_modal = true
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

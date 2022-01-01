@@ -70,7 +70,6 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import TabsMusic from '@/components/TabsMusic.vue'
 import SpotifyListItemAlbum from '@/components/SpotifyListItemAlbum.vue'
@@ -82,7 +81,7 @@ import store from '@/store'
 import * as types from '@/store/mutation_types'
 import SpotifyWebApi from 'spotify-web-api-js'
 
-const browseData = {
+const dataObject = {
   load: function (to) {
     if (store.state.spotify_new_releases.length > 0 && store.state.spotify_featured_playlists.length > 0) {
       return Promise.resolve()
@@ -106,7 +105,6 @@ const browseData = {
 
 export default {
   name: 'SpotifyPageBrowse',
-  mixins: [LoadDataBeforeEnterMixin(browseData)],
   components: { ContentWithHeading, TabsMusic, SpotifyListItemAlbum, SpotifyListItemPlaylist, SpotifyModalDialogAlbum, SpotifyModalDialogPlaylist, CoverArtwork },
 
   data () {
@@ -155,6 +153,19 @@ export default {
       }
       return ''
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

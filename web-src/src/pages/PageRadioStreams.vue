@@ -13,12 +13,11 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import ListTracks from '@/components/ListTracks.vue'
 import webapi from '@/webapi'
 
-const streamsData = {
+const dataObject = {
   load: function (to) {
     return webapi.library_radio_streams()
   },
@@ -30,13 +29,25 @@ const streamsData = {
 
 export default {
   name: 'PageRadioStreams',
-  mixins: [LoadDataBeforeEnterMixin(streamsData)],
   components: { ContentWithHeading, ListTracks },
 
   data () {
     return {
       tracks: { items: [] }
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

@@ -43,7 +43,6 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import SpotifyListItemAlbum from '@/components/SpotifyListItemAlbum.vue'
 import SpotifyModalDialogAlbum from '@/components/SpotifyModalDialogAlbum.vue'
@@ -54,7 +53,7 @@ import webapi from '@/webapi'
 import SpotifyWebApi from 'spotify-web-api-js'
 import InfiniteLoading from 'vue-infinite-loading'
 
-const artistData = {
+const dataObject = {
   load: function (to) {
     const spotifyApi = new SpotifyWebApi()
     spotifyApi.setAccessToken(store.state.spotify.webapi_token)
@@ -76,7 +75,6 @@ const artistData = {
 
 export default {
   name: 'SpotifyPageArtist',
-  mixins: [LoadDataBeforeEnterMixin(artistData)],
   components: { ContentWithHeading, SpotifyListItemAlbum, SpotifyModalDialogAlbum, SpotifyModalDialogArtist, InfiniteLoading, CoverArtwork },
 
   data () {
@@ -141,6 +139,19 @@ export default {
       }
       return ''
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

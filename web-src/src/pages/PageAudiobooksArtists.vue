@@ -20,7 +20,6 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import TabsAudiobooks from '@/components/TabsAudiobooks.vue'
 import IndexButtonList from '@/components/IndexButtonList.vue'
@@ -28,7 +27,7 @@ import ListArtists from '@/components/ListArtists.vue'
 import webapi from '@/webapi'
 import Artists from '@/lib/Artists'
 
-const artistsData = {
+const dataObject = {
   load: function (to) {
     return webapi.library_artists('audiobook')
   },
@@ -40,7 +39,6 @@ const artistsData = {
 
 export default {
   name: 'PageAudiobooksArtists',
-  mixins: [LoadDataBeforeEnterMixin(artistsData)],
   components: { ContentWithHeading, TabsAudiobooks, IndexButtonList, ListArtists },
 
   data () {
@@ -59,6 +57,19 @@ export default {
   },
 
   methods: {
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

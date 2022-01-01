@@ -22,13 +22,12 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import ListTracks from '@/components/ListTracks.vue'
 import ModalDialogPlaylist from '@/components/ModalDialogPlaylist.vue'
 import webapi from '@/webapi'
 
-const playlistData = {
+const dataObject = {
   load: function (to) {
     return Promise.all([
       webapi.library_playlist(to.params.playlist_id),
@@ -44,7 +43,6 @@ const playlistData = {
 
 export default {
   name: 'PagePlaylist',
-  mixins: [LoadDataBeforeEnterMixin(playlistData)],
   components: { ContentWithHeading, ListTracks, ModalDialogPlaylist },
 
   data () {
@@ -69,6 +67,19 @@ export default {
     play: function () {
       webapi.player_play_uri(this.uris, true)
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

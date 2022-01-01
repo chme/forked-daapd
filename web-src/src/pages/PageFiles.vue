@@ -73,7 +73,6 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import ListItemDirectory from '@/components/ListItemDirectory.vue'
 import ListItemPlaylist from '@/components/ListItemPlaylist.vue'
@@ -83,7 +82,7 @@ import ModalDialogPlaylist from '@/components/ModalDialogPlaylist.vue'
 import ModalDialogTrack from '@/components/ModalDialogTrack.vue'
 import webapi from '@/webapi'
 
-const filesData = {
+const dataObject = {
   load: function (to) {
     if (to.query.directory) {
       return webapi.library_files(to.query.directory)
@@ -106,7 +105,6 @@ const filesData = {
 
 export default {
   name: 'PageFiles',
-  mixins: [LoadDataBeforeEnterMixin(filesData)],
   components: { ContentWithHeading, ListItemDirectory, ListItemPlaylist, ListItemTrack, ModalDialogDirectory, ModalDialogPlaylist, ModalDialogTrack },
 
   data () {
@@ -173,6 +171,19 @@ export default {
       this.selected_playlist = playlist
       this.show_playlist_details_modal = true
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

@@ -15,13 +15,12 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import TabsMusic from '@/components/TabsMusic.vue'
 import ListTracks from '@/components/ListTracks.vue'
 import webapi from '@/webapi'
 
-const browseData = {
+const dataObject = {
   load: function (to) {
     return webapi.search({
       type: 'track',
@@ -37,13 +36,25 @@ const browseData = {
 
 export default {
   name: 'PageBrowseType',
-  mixins: [LoadDataBeforeEnterMixin(browseData)],
   components: { ContentWithHeading, TabsMusic, ListTracks },
 
   data () {
     return {
       recently_played: {}
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

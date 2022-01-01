@@ -18,7 +18,6 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import TabsAudiobooks from '@/components/TabsAudiobooks.vue'
 import IndexButtonList from '@/components/IndexButtonList.vue'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
@@ -26,7 +25,7 @@ import ListAlbums from '@/components/ListAlbums.vue'
 import webapi from '@/webapi'
 import Albums from '@/lib/Albums'
 
-const albumsData = {
+const dataObject = {
   load: function (to) {
     return webapi.library_albums('audiobook')
   },
@@ -38,7 +37,6 @@ const albumsData = {
 
 export default {
   name: 'PageAudiobooksAlbums',
-  mixins: [LoadDataBeforeEnterMixin(albumsData)],
   components: { TabsAudiobooks, ContentWithHeading, IndexButtonList, ListAlbums },
 
   data () {
@@ -57,6 +55,19 @@ export default {
   },
 
   methods: {
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

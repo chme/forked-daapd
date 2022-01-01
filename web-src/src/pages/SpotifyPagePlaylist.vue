@@ -30,7 +30,6 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import SpotifyListItemTrack from '@/components/SpotifyListItemTrack.vue'
 import SpotifyModalDialogTrack from '@/components/SpotifyModalDialogTrack.vue'
@@ -40,7 +39,7 @@ import webapi from '@/webapi'
 import SpotifyWebApi from 'spotify-web-api-js'
 import InfiniteLoading from 'vue-infinite-loading'
 
-const playlistData = {
+const dataObject = {
   load: function (to) {
     const spotifyApi = new SpotifyWebApi()
     spotifyApi.setAccessToken(store.state.spotify.webapi_token)
@@ -61,7 +60,6 @@ const playlistData = {
 
 export default {
   name: 'SpotifyPagePlaylist',
-  mixins: [LoadDataBeforeEnterMixin(playlistData)],
   components: { ContentWithHeading, SpotifyListItemTrack, SpotifyModalDialogTrack, SpotifyModalDialogPlaylist, InfiniteLoading },
 
   data () {
@@ -109,6 +107,19 @@ export default {
       this.selected_track = track
       this.show_track_details_modal = true
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

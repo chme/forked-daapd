@@ -44,7 +44,6 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import TabsMusic from '@/components/TabsMusic.vue'
 import IndexButtonList from '@/components/IndexButtonList.vue'
@@ -54,7 +53,7 @@ import webapi from '@/webapi'
 import * as types from '@/store/mutation_types'
 import Artists from '@/lib/Artists'
 
-const artistsData = {
+const dataObject = {
   load: function (to) {
     return webapi.library_artists('music')
   },
@@ -66,7 +65,6 @@ const artistsData = {
 
 export default {
   name: 'PageArtists',
-  mixins: [LoadDataBeforeEnterMixin(artistsData)],
   components: { ContentWithHeading, TabsMusic, IndexButtonList, ListArtists, DropdownMenu },
 
   data () {
@@ -122,6 +120,19 @@ export default {
     scrollToTop: function () {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

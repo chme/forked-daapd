@@ -27,14 +27,13 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHeading from '@/templates/ContentWithHeading.vue'
 import IndexButtonList from '@/components/IndexButtonList.vue'
 import ListTracks from '@/components/ListTracks.vue'
 import ModalDialogArtist from '@/components/ModalDialogArtist.vue'
 import webapi from '@/webapi'
 
-const tracksData = {
+const dataObject = {
   load: function (to) {
     return Promise.all([
       webapi.library_artist(to.params.artist_id),
@@ -50,7 +49,6 @@ const tracksData = {
 
 export default {
   name: 'PageArtistTracks',
-  mixins: [LoadDataBeforeEnterMixin(tracksData)],
   components: { ContentWithHeading, ListTracks, IndexButtonList, ModalDialogArtist },
 
   data () {
@@ -82,6 +80,19 @@ export default {
     play: function () {
       webapi.player_play_uri(this.tracks.items.map(a => a.uri).join(','), true)
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>

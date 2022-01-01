@@ -31,14 +31,13 @@
 </template>
 
 <script>
-import { LoadDataBeforeEnterMixin } from './mixin'
 import ContentWithHero from '@/templates/ContentWithHero.vue'
 import ListTracks from '@/components/ListTracks.vue'
 import ModalDialogAlbum from '@/components/ModalDialogAlbum.vue'
 import CoverArtwork from '@/components/CoverArtwork.vue'
 import webapi from '@/webapi'
 
-const albumData = {
+const dataObject = {
   load: function (to) {
     return Promise.all([
       webapi.library_album(to.params.album_id),
@@ -54,7 +53,6 @@ const albumData = {
 
 export default {
   name: 'PageAlbum',
-  mixins: [LoadDataBeforeEnterMixin(albumData)],
   components: { ContentWithHero, ListTracks, ModalDialogAlbum, CoverArtwork },
 
   data () {
@@ -75,6 +73,19 @@ export default {
     play: function () {
       webapi.player_play_uri(this.album.uri, true)
     }
+  },
+
+  beforeRouteEnter (to, from, next) {
+    dataObject.load(to).then((response) => {
+      next(vm => dataObject.set(vm, response))
+    })
+  },
+  beforeRouteUpdate (to, from, next) {
+    const vm = this
+    dataObject.load(to).then((response) => {
+      dataObject.set(vm, response)
+      next()
+    })
   }
 }
 </script>
