@@ -39,21 +39,23 @@
       </div>
     </template>
     <template v-slot:content>
-      <draggable v-model="queue_items" handle=".handle" @end="move_item">
-        <list-item-queue-item v-for="(item, index) in queue_items"
-          :key="item.id" :item="item" :position="index"
-          :current_position="current_position"
-          :show_only_next_items="show_only_next_items"
-          :edit_mode="edit_mode">
-            <template v-slot:actions>
-              <a @click="open_dialog(item)" v-if="!edit_mode">
-                <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
-              </a>
-              <a @click="remove(item)" v-if="item.id !== state.item_id && edit_mode">
-                <span class="icon has-text-grey"><i class="mdi mdi-delete mdi-18px"></i></span>
-              </a>
-            </template>
-          </list-item-queue-item>
+      <draggable v-model="queue_items" handle=".handle" item-key="id" @end="move_item">
+        <template #item="{ element }">
+          <list-item-queue-item
+            :item="element"
+            :current_position="current_position"
+            :show_only_next_items="show_only_next_items"
+            :edit_mode="edit_mode">
+              <template v-slot:actions>
+                <a @click="open_dialog(item)" v-if="!edit_mode">
+                  <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
+                </a>
+                <a @click="remove(item)" v-if="item.id !== state.item_id && edit_mode">
+                  <span class="icon has-text-grey"><i class="mdi mdi-delete mdi-18px"></i></span>
+                </a>
+              </template>
+            </list-item-queue-item>
+        </template>
       </draggable>
       <modal-dialog-queue-item :show="show_details_modal" :item="selected_item" @close="show_details_modal = false" />
       <modal-dialog-add-url-stream :show="show_url_modal" @close="show_url_modal = false" />
