@@ -10,7 +10,7 @@
         <h2 class="subtitle is-7 has-text-grey"><b>{{ album.artist }}</b></h2>
         <h2 class="subtitle is-7 has-text-grey has-text-weight-normal"
             v-if="album.date_released && album.media_kind === 'music'">
-          {{ album.date_released | time('L') }}
+          {{ $filters.time(album.date_released, 'L') }}
         </h2>
       </div>
     </div>

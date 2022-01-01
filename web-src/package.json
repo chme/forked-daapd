@@ -13,6 +13,7 @@
     "bulma-switch": "^2.0.0",
     "mdi": "^2.2.43",
     "moment": "^2.29.1",
+    "moment-duration-format": "^2.3.2",
     "reconnectingwebsocket": "^1.0.0",
     "spotify-web-api-js": "^1.5.2",
     "string-to-color": "^2.2.2",

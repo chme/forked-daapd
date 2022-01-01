@@ -4,12 +4,13 @@ import { router } from './router'
 import VueProgressBar from '@aacassandra/vue3-progressbar'
 import { ObserveVisibility } from 'vue-observe-visibility'
 import VueClickAway from "vue3-click-away";
+import { filters } from './filter'
 import App from './App.vue'
 
 import './mystyles.scss'
 import 'mdi/css/materialdesignicons.css'
 
-createApp(App)
+const app = createApp(App)
   .use(store)
   .use(router)
   .use(VueProgressBar, {
@@ -23,4 +24,6 @@ createApp(App)
     update: ObserveVisibility.update,
     unmounted: ObserveVisibility.unbind
   })
-  .mount('#app')
+
+app.config.globalProperties.$filters = filters
+app.mount('#app')

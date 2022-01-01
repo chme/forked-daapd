@@ -22,7 +22,7 @@
             </range-slider>
           </p>
           <p class="content">
-            <span>{{ item_progress_ms | duration }} / {{ now_playing.length_ms | duration }}</span>
+            <span>{{ $filters.duration(item_progress_ms) }} / {{ $filters.duration(now_playing.length_ms) }}</span>
           </p>
         </div>
       </div>
