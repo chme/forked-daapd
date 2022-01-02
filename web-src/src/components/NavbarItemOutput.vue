@@ -14,12 +14,14 @@
         <div class="level-item fd-expanded">
           <div class="fd-expanded">
             <p class="heading" :class="{ 'has-text-grey-light': !output.selected }">{{ output.name }}</p>
-              <Slider v-model="volume"
-                :min="0"
-                :max="100"
-                :step="1"
-                :disabled="!output.selected"
-                @change="set_volume" />
+            <Slider v-model="volume"
+              :min="0"
+              :max="100"
+              :step="1"
+              :tooltips="false"
+              :disabled="!output.selected"
+              @change="set_volume"
+              :classes="{ target: 'slider'}" />
             <!--range-slider
               class="slider fd-has-action"
               min="0"

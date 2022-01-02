@@ -10,6 +10,7 @@ import App from './App.vue'
 
 import './mystyles.scss'
 import 'mdi/css/materialdesignicons.css'
+import '@vueform/slider/themes/default.css'
 
 const app = createApp(App)
   .use(store)

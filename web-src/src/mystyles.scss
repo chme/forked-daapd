@@ -6,10 +6,15 @@
 .slider {
   min-width: 250px;
   width: 100%;
-}
-.range-slider-fill {
-  background-color: hsl(0, 0%, 21%);
-}
+  margin-top: 16px;
+  margin-bottom: 16px;
+  --slider-height: 4px;
+  --slider-connect-bg: hsl(0, 0%, 21%);
+  --slider-tooltip-bg: hsl(0, 0%, 21%);
+  --slider-handle-ring-color: #3B82F630;
+  --slider-handle-shadow: 0.5px 0.5px 0.5px 0.5px rgba(0,0,0,.32);
+  --slider-handle-shadow-active: 0.5px 0.5px 0.5px 0.5px rgba(0,0,0,.42);
+  }
 
 .track-progress {
   margin: 0;

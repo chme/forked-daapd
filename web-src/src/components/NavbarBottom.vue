@@ -57,7 +57,9 @@
                       :min="0"
                       :max="100"
                       :step="1"
-                      @change="set_volume" />
+                      :tooltips="false"
+                      @change="set_volume"
+                      :classes="{ target: 'slider'}" />
                     <!--range-slider
                       class="slider fd-has-action"
                       min="0"
@@ -91,8 +93,10 @@
                       :min="0"
                       :max="100"
                       :step="1"
+                      :tooltips="false"
                       :disabled="!playing"
-                      @change="set_stream_volume" />
+                      @change="set_stream_volume"
+                      :classes="{ target: 'slider'}" />
                     <!--range-slider
                       class="slider fd-has-action"
                       min="0"
@@ -157,7 +161,9 @@
                     :min="0"
                     :max="100"
                     :step="1"
-                    @change="set_volume" />
+                    :tooltips="false"
+                    @change="set_volume"
+                    :classes="{ target: 'slider'}" />
                   <!--range-slider
                     class="slider fd-has-action"
                     min="0"
@@ -195,8 +201,10 @@
                     :min="0"
                     :max="100"
                     :step="1"
+                    :tooltips="false"
                     :disabled="!playing"
-                    @change="set_stream_volume" />
+                    @change="set_stream_volume"
+                    :classes="{ target: 'slider'}" />
                   <!-- range-slider
                     class="slider fd-has-action"
                     min="0"
