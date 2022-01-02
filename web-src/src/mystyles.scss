@@ -3,6 +3,7 @@
 @import 'bulma-switch/dist/css/bulma-switch.sass';
 
 
+/* Volume slider */
 .slider {
   min-width: 250px;
   width: 100%;
@@ -14,7 +15,27 @@
   --slider-handle-ring-color: #3B82F630;
   --slider-handle-shadow: 0.5px 0.5px 0.5px 0.5px rgba(0,0,0,.32);
   --slider-handle-shadow-active: 0.5px 0.5px 0.5px 0.5px rgba(0,0,0,.42);
-  }
+}
+
+/* Now playing progress bar */
+.seek-slider {
+  min-width: 250px;
+  max-width: 500px;
+  width: 100% !important;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  margin: 0 auto 16px auto;
+  --slider-height: 4px;
+  --slider-connect-bg: hsl(171, 100%, 41%);
+  --slider-tooltip-bg: hsl(171, 100%, 41%);
+  --slider-handle-bg: hsl(171, 100%, 41%);
+  --slider-handle-border: 0;
+  --slider-handle-width: 10px;
+  --slider-handle-height: 10px;
+  --slider-handle-radius: 9999px;
+  --slider-handle-shadow: 0.5px 0.5px 0.5px 0.5px rgba(0,0,0,.32);
+  --slider-handle-shadow-active: 0.5px 0.5px 0.5px 0.5px rgba(0,0,0,.42);
+  --slider-handle-ring-width: 3px;
+}
 
 .track-progress {
   margin: 0;
@@ -202,23 +223,6 @@ section.hero + section.fd-content {
 }
 .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
   opacity: 0;
-}
-
-/* Now playing progress bar */
-.seek-slider {
-  min-width: 250px;
-  max-width: 500px;
-  width: 100% !important;
-}
-.seek-slider .range-slider-fill {
-  background-color: hsl(171, 100%, 41%);
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-}
-.seek-slider .range-slider-knob {
-  width: 10px;
-  height: 10px;
-  background-color: hsl(171, 100%, 41%);
-  border-color: hsl(171, 100%, 41%);
 }
 
 /* Add a little bit of spacing between title and subtitle */
