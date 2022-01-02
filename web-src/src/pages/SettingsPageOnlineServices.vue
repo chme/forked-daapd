@@ -56,7 +56,7 @@
             </p>
             <p class="help is-danger" v-if="spotify_missing_scope.length > 0">
               Please reauthorize Web API access to grant OwnTone the following additional access rights:
-              <b><code>{{ $filters.join(spotify_missing_scope) }}</code></b>
+              <b><code>{{ spotify_missing_scope.join() }}</code></b>
             </p>
             <div class="field fd-has-margin-top ">
               <div class="control">
@@ -65,7 +65,7 @@
             </div>
             <p class="help">
               Access to the Spotify Web API enables scanning of your Spotify library. Required scopes are
-              <code>{{ $filters.join(spotify_required_scope) }}</code>.
+              <code>{{ spotify_required_scope.join() }}</code>.
             </p>
             <div v-if="spotify.webapi_token_valid" class="field fd-has-margin-top ">
               <div class="control">

@@ -68,8 +68,13 @@
         <div class="columns is-centered">
           <div class="column is-four-fifths">
             <div class="content has-text-centered-mobile">
+<<<<<<< Upstream, based on master
               <p class="is-size-7">Compiled with support for {{ config.buildoptions | join }}.</p>
               <p class="is-size-7">Web interface built with <a href="http://bulma.io">Bulma</a>, <a href="https://materialdesignicons.com/">Material Design Icons</a>, <a href="https://vuejs.org/">Vue.js</a>, <a href="https://github.com/mzabriskie/axios">axios</a> and <a href="https://github.com/owntone/owntone-server/network/dependencies">more</a>.</p>
+=======
+              <p class="is-size-7">Compiled with support for {{ config.buildoptions.join() }}.</p>
+              <p class="is-size-7">Web interface built with <a href="http://bulma.io">Bulma</a>, <a href="https://materialdesignicons.com/">Material Design Icons</a>, <a href="https://vuejs.org/">Vue.js</a>, <a href="https://github.com/mzabriskie/axios">axios</a> and <a href="https://github.com/ejurgensen/OwnTone/network/dependencies">more</a>.</p>
+>>>>>>> 827b5b3 wip! [vue3] Fix missing filter "join"
             </div>
           </div>
         </div>
