@@ -70,7 +70,7 @@ import ListItemTrack from '@/components/ListItemTrack.vue'
 import ModalDialogTrack from '@/components/ModalDialogTrack.vue'
 import ModalDialogAlbum from '@/components/ModalDialogAlbum.vue'
 import ModalDialog from '@/components/ModalDialog.vue'
-import RangeSlider from 'vue-range-slider'
+//import RangeSlider from 'vue-range-slider'
 import webapi from '@/webapi'
 
 const dataObject = {
@@ -89,7 +89,14 @@ const dataObject = {
 
 export default {
   name: 'PagePodcast',
-  components: { ContentWithHeading, ListItemTrack, ModalDialogTrack, RangeSlider, ModalDialogAlbum, ModalDialog },
+  components: {
+    ContentWithHeading,
+    ListItemTrack,
+    ModalDialogTrack,
+//    RangeSlider,
+    ModalDialogAlbum,
+    ModalDialog
+  },
 
   data () {
     return {

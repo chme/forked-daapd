@@ -14,7 +14,13 @@
         <div class="level-item fd-expanded">
           <div class="fd-expanded">
             <p class="heading" :class="{ 'has-text-grey-light': !output.selected }">{{ output.name }}</p>
-            <range-slider
+              <Slider v-model="volume"
+                :min="0"
+                :max="100"
+                :step="1"
+                :disabled="!output.selected"
+                @change="set_volume" />
+            <!--range-slider
               class="slider fd-has-action"
               min="0"
               max="100"
@@ -22,7 +28,7 @@
               :disabled="!output.selected"
               :value="volume"
               @change="set_volume" >
-            </range-slider>
+            </range-slider-->
           </div>
         </div>
       </div>
@@ -31,12 +37,16 @@
 </template>
 
 <script>
-import RangeSlider from 'vue-range-slider'
+//import RangeSlider from 'vue-range-slider'
+import Slider from '@vueform/slider'
 import webapi from '@/webapi'
 
 export default {
   name: 'NavbarItemOutput',
-  components: { RangeSlider },
+  components: { 
+//    RangeSlider
+    Slider
+ },
 
   props: ['output'],
 

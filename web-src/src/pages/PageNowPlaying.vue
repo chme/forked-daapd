@@ -61,14 +61,18 @@
 
 <script>
 import ModalDialogQueueItem from '@/components/ModalDialogQueueItem.vue'
-import RangeSlider from 'vue-range-slider'
+//import RangeSlider from 'vue-range-slider'
 import CoverArtwork from '@/components/CoverArtwork.vue'
 import webapi from '@/webapi'
 import * as types from '@/store/mutation_types'
 
 export default {
   name: 'PageNowPlaying',
-  components: { ModalDialogQueueItem, RangeSlider, CoverArtwork },
+  components: {
+    ModalDialogQueueItem,
+//    RangeSlider,
+    CoverArtwork
+  },
 
   data () {
     return {

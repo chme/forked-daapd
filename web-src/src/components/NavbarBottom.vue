@@ -53,14 +53,19 @@
                 <div class="level-item fd-expanded">
                   <div class="fd-expanded">
                     <p class="heading">Volume</p>
-                    <range-slider
+                    <Slider v-model="player.volume"
+                      :min="0"
+                      :max="100"
+                      :step="1"
+                      @change="set_volume" />
+                    <!--range-slider
                       class="slider fd-has-action"
                       min="0"
                       max="100"
                       step="1"
                       :value="player.volume"
                       @change="set_volume">
-                    </range-slider>
+                    </range-slider-->
                   </div>
                 </div>
               </div>
@@ -82,7 +87,13 @@
                 <div class="level-item fd-expanded">
                   <div class="fd-expanded">
                     <p class="heading" :class="{ 'has-text-grey-light': !playing }">HTTP stream <a href="stream.mp3"><span class="is-lowercase">(stream.mp3)</span></a></p>
-                    <range-slider
+                    <Slider v-model="stream_volume"
+                      :min="0"
+                      :max="100"
+                      :step="1"
+                      :disabled="!playing"
+                      @change="set_stream_volume" />
+                    <!--range-slider
                       class="slider fd-has-action"
                       min="0"
                       max="100"
@@ -90,7 +101,7 @@
                       :disabled="!playing"
                       :value="stream_volume"
                       @change="set_stream_volume">
-                    </range-slider>
+                    </range-slider-->
                   </div>
                 </div>
               </div>
@@ -142,14 +153,19 @@
               <div class="level-item fd-expanded">
                 <div class="fd-expanded">
                   <p class="heading">Volume</p>
-                  <range-slider
+                  <Slider v-model="player.volume"
+                    :min="0"
+                    :max="100"
+                    :step="1"
+                    @change="set_volume" />
+                  <!--range-slider
                     class="slider fd-has-action"
                     min="0"
                     max="100"
                     step="1"
                     :value="player.volume"
                     @change="set_volume">
-                  </range-slider>
+                  </range-slider-->
                 </div>
               </div>
             </div>
@@ -175,7 +191,13 @@
               <div class="level-item fd-expanded">
                 <div class="fd-expanded">
                   <p class="heading" :class="{ 'has-text-grey-light': !playing }">HTTP stream <a href="stream.mp3"><span class="is-lowercase">(stream.mp3)</span></a></p>
-                  <range-slider
+                  <Slider v-model="stream_volume"
+                    :min="0"
+                    :max="100"
+                    :step="1"
+                    :disabled="!playing"
+                    @change="set_stream_volume" />
+                  <!-- range-slider
                     class="slider fd-has-action"
                     min="0"
                     max="100"
@@ -183,7 +205,7 @@
                     :disabled="!playing"
                     :value="stream_volume"
                     @change="set_stream_volume">
-                  </range-slider>
+                  </range-slider-->
                 </div>
               </div>
             </div>
@@ -207,7 +229,8 @@ import PlayerButtonConsume from '@/components/PlayerButtonConsume.vue'
 import PlayerButtonRepeat from '@/components/PlayerButtonRepeat.vue'
 import PlayerButtonSeekBack from '@/components/PlayerButtonSeekBack.vue'
 import PlayerButtonSeekForward from '@/components/PlayerButtonSeekForward.vue'
-import RangeSlider from 'vue-range-slider'
+//import RangeSlider from 'vue-range-slider'
+import Slider from '@vueform/slider'
 import * as types from '@/store/mutation_types'
 
 export default {
@@ -215,7 +238,8 @@ export default {
   components: {
     NavbarItemLink,
     NavbarItemOutput,
-    RangeSlider,
+    //RangeSlider,
+    Slider,
     PlayerButtonPlayPause,
     PlayerButtonNext,
     PlayerButtonPrevious,
