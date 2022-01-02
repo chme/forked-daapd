@@ -105,7 +105,10 @@ export default {
       if (Array.isArray(this.albums)) {
         return this.albums
       }
-      return this.albums.sortedAndFiltered
+      if (this.albums) {
+        return this.albums.sortedAndFiltered
+      }
+      return []
     },
 
     is_grouped: function () {
