@@ -40,9 +40,10 @@
     </template>
     <template v-slot:content>
       <draggable v-model="queue_items" handle=".handle" item-key="id" @end="move_item">
-        <template #item="{ element }">
+        <template #item="{ element, index }">
           <list-item-queue-item
             :item="element"
+            :position="index"
             :current_position="current_position"
             :show_only_next_items="show_only_next_items"
             :edit_mode="edit_mode">
