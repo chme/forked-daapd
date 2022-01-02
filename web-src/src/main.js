@@ -5,6 +5,7 @@ import VueProgressBar from '@aacassandra/vue3-progressbar'
 import { ObserveVisibility } from 'vue-observe-visibility'
 import VueClickAway from "vue3-click-away"
 import VueLazyLoad from 'vue3-lazyload'
+import VueScrollTo from 'vue-scrollto'
 import { filters } from './filter'
 import App from './App.vue'
 
@@ -25,6 +26,7 @@ const app = createApp(App)
     // Do not log errors, if image does not exist
     log: false
   })
+  .use(VueScrollTo)
   .directive('observe-visibility', {
     beforeMount: ObserveVisibility.beforeMount,
     update: ObserveVisibility.update,

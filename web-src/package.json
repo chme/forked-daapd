@@ -22,6 +22,7 @@
     "vue-infinite-loading": "github:nvitius/vue-infinite-loading#next",
     "vue-observe-visibility": "^1.0.0",
     "vue-router": "^4.0.12",
+    "vue-scrollto": "^2.20.0",
     "vue3-click-away": "^1.2.1",
     "vue3-lazyload": "^0.2.5-beta",
     "vuedraggable": "^4.1.0",
