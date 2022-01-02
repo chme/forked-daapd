@@ -295,25 +295,25 @@ export const router = createRouter({
         }, 10)
       })
     } else if (to.path === from.path && to.hash) {
-      return { selector: to.hash, offset: { x: 0, y: 120 } }
+      return { el: to.hash, left: 0, top: 120 }
     } else if (to.hash) {
       return new Promise((resolve, reject) => {
         setTimeout(() => {
-          resolve({ selector: to.hash, offset: { x: 0, y: 120 } })
+          resolve({ el: to.hash, left: 0, top: 120 })
         }, 10)
       })
     } else if (to.meta.has_index) {
       return new Promise((resolve, reject) => {
         setTimeout(() => {
           if (to.meta.has_tabs) {
-            resolve({ selector: '#top', offset: { x: 0, y: 140 } })
+            resolve({ el: '#top', left: 0, top: 140 })
           } else {
-            resolve({ selector: '#top', offset: { x: 0, y: 100 } })
+            resolve({ el: '#top', left: 0, top: 100 })
           }
         }, 10)
       })
     } else {
-      return { x: 0, y: 0 }
+      return { left: 0, top: 0 }
     }
   }
 })
