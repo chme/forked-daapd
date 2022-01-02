@@ -5,7 +5,7 @@
 - [ ] `vue-range-slider` is not compatible with vue3
   - replacement option: <https://github.com/vueform/slider>
   - used `@vueform/slider` for volume control
-  - TODO track progress (now playing)
+  - [x] track progress (now playing)
   - TODO track progress (podcasts)
 - [x] vue-router does not support navigation guards in mixins: <https://github.com/vuejs/vue-router-next/issues/454>
   - replace mixin with composition api? <https://next.router.vuejs.org/guide/advanced/composition-api.html#navigation-guards>
@@ -24,7 +24,7 @@
     - Works as a directive
     - Easy replacement for `vue-tiny-lazyload-img`
 
-- [ ] Top margin in pages is wrong (maybe related to vue-route scroll behavior changes?)
+- [ ] Top margin in pages is wrong (maybe related to vue-router scroll behavior changes?)
 - [ ] Mobile view seems to be broken
 - [x] Changing sort option (artist albums view) does not work
 
@@ -33,3 +33,5 @@
 - [ ] Replace `bulma-switch` with `@vueform/toggle`?
 
 - [ ] Add linting (ESLint) ?
+
+- [ ] Check transitions
