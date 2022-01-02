@@ -1,6 +1,6 @@
 <template>
   <div class="media">
-    <figure class="media-left fd-has-action" v-if="slots().icon">
+    <figure class="media-left fd-has-action" v-if="$slots.icon">
       <slot name="icon"></slot>
     </figure>
     <div class="media-content fd-has-action is-clipped">
