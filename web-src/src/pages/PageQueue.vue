@@ -48,10 +48,10 @@
             :show_only_next_items="show_only_next_items"
             :edit_mode="edit_mode">
               <template v-slot:actions>
-                <a @click="open_dialog(element)" v-if="!edit_mode">
+                <a @click.prevent.stop="open_dialog(element)" v-if="!edit_mode">
                   <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
                 </a>
-                <a @click="remove(element)" v-if="element.id !== state.item_id && edit_mode">
+                <a @click.prevent.stop="remove(element)" v-if="element.id !== state.item_id && edit_mode">
                   <span class="icon has-text-grey"><i class="mdi mdi-delete mdi-18px"></i></span>
                 </a>
               </template>

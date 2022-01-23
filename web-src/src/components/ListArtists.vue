@@ -8,7 +8,7 @@
             :artist="artist"
             @click="open_artist(artist)">
             <template v-slot:actions>
-                <a @click="open_dialog(artist)">
+                <a @click.prevent.stop="open_dialog(artist)">
                 <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
                 </a>
             </template>
@@ -21,7 +21,7 @@
           :artist="artist"
           @click="open_artist(artist)">
           <template v-slot:actions>
-              <a @click="open_dialog(artist)">
+              <a @click.prevent.stop="open_dialog(artist)">
               <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
               </a>
           </template>

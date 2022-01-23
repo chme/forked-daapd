@@ -13,7 +13,7 @@
       <template v-slot:content>
         <list-item-genre v-for="genre in genres.items" :key="genre.name" :genre="genre" @click="open_genre(genre)">
           <template v-slot:actions>
-            <a @click="open_dialog(genre)">
+            <a @click.prevent.stop="open_dialog(genre)">
               <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
             </a>
           </template>

@@ -7,7 +7,7 @@
         </span>
       </template>
       <template v-slot:actions>
-        <a @click="open_dialog(playlist)">
+        <a @click.prevent.stop="open_dialog(playlist)">
           <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
         </a>
       </template>

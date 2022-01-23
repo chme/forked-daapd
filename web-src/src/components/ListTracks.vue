@@ -2,7 +2,7 @@
   <div>
     <list-item-track v-for="(track, index) in tracks" :key="track.id" :track="track" @click="play_track(index, track)">
       <template v-slot:actions>
-        <a @click="open_dialog(track)">
+        <a @click.prevent.stop="open_dialog(track)">
           <span class="icon has-text-dark"><i class="mdi mdi-dots-vertical mdi-18px"></i></span>
         </a>
       </template>
