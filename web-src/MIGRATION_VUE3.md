@@ -6,10 +6,12 @@
   - replacement option: <https://github.com/vueform/slider>
   - used `@vueform/slider` for volume control
   - [x] track progress (now playing)
-  - TODO track progress (podcasts)
+  - [ ] track progress (podcasts)
+
 - [x] vue-router does not support navigation guards in mixins: <https://github.com/vuejs/vue-router-next/issues/454>
   - replace mixin with composition api? <https://next.router.vuejs.org/guide/advanced/composition-api.html#navigation-guards>
   - Copied nav guards into each component
+
 - [x] vue-router link does not support `tag` and `active-class` properties: <https://next.router.vuejs.org/guide/migration/index.html#removal-of-event-and-tag-props-in-router-link>
 
 - [ ] vite does not support env vars in `vite.config.js` from `.env` files
@@ -26,12 +28,16 @@
     - Easy replacement for `vue-tiny-lazyload-img`
 
 - [ ] Top margin in pages is wrong (maybe related to vue-router scroll behavior changes?)
-- [ ] Mobile view seems to be broken
+
+- [x] Mobile view seems to be broken
+  - Looks like the cause of this was the broken router-link in bulma tabs component
+
 - [x] Changing sort option (artist albums view) does not work
 
 - [ ] Replace unmaintained `vue-infinite-loading` dependency
 
-- [ ] Replace `bulma-switch` with `@vueform/toggle`?
+- [x] Replace `bulma-switch` with `@vueform/toggle`?
+  - Update of `bulma-switch` (or `vite`) fixed the import of the sass file, no need to replace it now
 
 - [ ] Add linting (ESLint) ?
 
