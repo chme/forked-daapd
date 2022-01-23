@@ -4,14 +4,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "serve": "vite"
   },
   "dependencies": {
     "@aacassandra/vue3-progressbar": "^1.0.3",
     "@vueform/slider": "^2.0.8",
-    "axios": "^0.24.0",
+    "axios": "^0.25.0",
     "bulma": "^0.9.3",
-    "bulma-switch": "^2.0.0",
+    "bulma-switch": "^2.0.4",
     "mdi": "^2.2.43",
     "moment": "^2.29.1",
     "moment-duration-format": "^2.3.2",
@@ -29,8 +30,8 @@
     "vuex": "^4.0.2"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^2.0.0",
-    "sass": "^1.45.2",
-    "vite": "^2.7.2"
+    "@vitejs/plugin-vue": "^2.1.0",
+    "sass": "^1.49.0",
+    "vite": "^2.7.13"
   }
 }
