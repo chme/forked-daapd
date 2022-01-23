@@ -38,7 +38,7 @@
             </a>
           </template>
         </spotify-list-item-track>
-        <infinite-loading v-if="query.type === 'track'" @infinite="search_tracks_next"><template v-slot:no-more>.</template></infinite-loading>
+        <VueEternalLoading v-if="query.type === 'track'" :load="search_tracks_next"><template #no-more>.</template></VueEternalLoading>
         <spotify-modal-dialog-track :show="show_track_details_modal" :track="selected_track" :album="selected_track.album" @close="show_track_details_modal = false" />
       </template>
       <template v-slot:footer>
@@ -68,7 +68,7 @@
             </a>
           </template>
         </spotify-list-item-artist>
-        <infinite-loading v-if="query.type === 'artist'" @infinite="search_artists_next"><template v-slot:no-more>.</template></infinite-loading>
+        <VueEternalLoading v-if="query.type === 'artist'" :load="search_artists_next"><template #no-more>.</template></VueEternalLoading>
         <spotify-modal-dialog-artist :show="show_artist_details_modal" :artist="selected_artist" @close="show_artist_details_modal = false" />
       </template>
       <template v-slot:footer>
@@ -111,7 +111,7 @@
             </a>
           </template>
         </spotify-list-item-album>
-        <infinite-loading v-if="query.type === 'album'" @infinite="search_albums_next"><template v-slot:no-more>.</template></infinite-loading>
+        <VueEternalLoading v-if="query.type === 'album'" :load="search_albums_next"><template #no-more>.</template></VueEternalLoading>
         <spotify-modal-dialog-album :show="show_album_details_modal" :album="selected_album" @close="show_album_details_modal = false" />
       </template>
       <template v-slot:footer>
@@ -141,7 +141,7 @@
             </a>
           </template>
         </spotify-list-item-playlist>
-        <infinite-loading v-if="query.type === 'playlist'" @infinite="search_playlists_next"><template v-slot:no-more>.</template></infinite-loading>
+        <VueEternalLoading v-if="query.type === 'playlist'" :load="search_playlists_next"><template #no-more>.</template></VueEternalLoading>
         <spotify-modal-dialog-playlist :show="show_playlist_details_modal" :playlist="selected_playlist" @close="show_playlist_details_modal = false" />
       </template>
       <template v-slot:footer>
@@ -176,11 +176,13 @@ import CoverArtwork from '@/components/CoverArtwork.vue'
 import SpotifyWebApi from 'spotify-web-api-js'
 import webapi from '@/webapi'
 import * as types from '@/store/mutation_types'
-import InfiniteLoading from 'vue-infinite-loading'
+import { VueEternalLoading } from '@ts-pro/vue-eternal-loading'
+
+const PAGE_SIZE = 50
 
 export default {
   name: 'SpotifyPageSearch',
-  components: { ContentWithHeading, ContentText, TabsSearch, SpotifyListItemTrack, SpotifyListItemArtist, SpotifyListItemAlbum, SpotifyListItemPlaylist, SpotifyModalDialogTrack, SpotifyModalDialogArtist, SpotifyModalDialogAlbum, SpotifyModalDialogPlaylist, InfiniteLoading, CoverArtwork },
+  components: { ContentWithHeading, ContentText, TabsSearch, SpotifyListItemTrack, SpotifyListItemArtist, SpotifyListItemAlbum, SpotifyListItemPlaylist, SpotifyModalDialogTrack, SpotifyModalDialogArtist, SpotifyModalDialogAlbum, SpotifyModalDialogPlaylist, VueEternalLoading, CoverArtwork },
 
   data () {
     return {
@@ -266,7 +268,7 @@ export default {
       }
 
       this.search_query = this.query.query
-      this.search_param.limit = this.query.limit ? this.query.limit : 50
+      this.search_param.limit = this.query.limit ? this.query.limit : PAGE_SIZE
       this.search_param.offset = this.query.offset ? this.query.offset : 0
 
       this.$store.commit(types.ADD_RECENT_SEARCH, this.query.query)
@@ -295,55 +297,43 @@ export default {
       })
     },
 
-    search_tracks_next: function ($state) {
+    search_tracks_next: function ({ loaded }) {
       this.spotify_search().then(data => {
         this.tracks.items = this.tracks.items.concat(data.tracks.items)
         this.tracks.total = data.tracks.total
         this.search_param.offset += data.tracks.limit
-
-        $state.loaded()
-        if (this.search_param.offset >= this.tracks.total) {
-          $state.complete()
-        }
+        
+        loaded(data.tracks.items.length, PAGE_SIZE)
       })
     },
 
-    search_artists_next: function ($state) {
+    search_artists_next: function ({ loaded }) {
       this.spotify_search().then(data => {
         this.artists.items = this.artists.items.concat(data.artists.items)
         this.artists.total = data.artists.total
         this.search_param.offset += data.artists.limit
-
-        $state.loaded()
-        if (this.search_param.offset >= this.artists.total) {
-          $state.complete()
-        }
+        
+        loaded(data.artists.items.length, PAGE_SIZE)
       })
     },
 
-    search_albums_next: function ($state) {
+    search_albums_next: function ({ loaded }) {
       this.spotify_search().then(data => {
         this.albums.items = this.albums.items.concat(data.albums.items)
         this.albums.total = data.albums.total
         this.search_param.offset += data.albums.limit
-
-        $state.loaded()
-        if (this.search_param.offset >= this.albums.total) {
-          $state.complete()
-        }
+        
+        loaded(data.albums.items.length, PAGE_SIZE)
       })
     },
 
-    search_playlists_next: function ($state) {
+    search_playlists_next: function ({ loaded }) {
       this.spotify_search().then(data => {
         this.playlists.items = this.playlists.items.concat(data.playlists.items)
         this.playlists.total = data.playlists.total
         this.search_param.offset += data.playlists.limit
-
-        $state.loaded()
-        if (this.search_param.offset >= this.playlists.total) {
-          $state.complete()
-        }
+        
+        loaded(data.playlists.items.length, PAGE_SIZE)
       })
     },
 

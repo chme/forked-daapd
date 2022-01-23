@@ -34,7 +34,8 @@
 
 - [x] Changing sort option (artist albums view) does not work
 
-- [ ] Replace unmaintained `vue-infinite-loading` dependency
+- [x] Replace unmaintained `vue-infinite-loading` dependency
+  - Replace with `@ts-pro/vue-eternal-loading`: <https://github.com/ts-pro/vue-eternal-loading>
 
 - [x] Replace `bulma-switch` with `@vueform/toggle`?
   - Update of `bulma-switch` (or `vite`) fixed the import of the sass file, no need to replace it now

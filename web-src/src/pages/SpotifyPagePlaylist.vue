@@ -22,7 +22,7 @@
           </a>
         </template>
       </spotify-list-item-track>
-      <infinite-loading v-if="offset < total" @infinite="load_next"><template v-slot:no-more>.</template></infinite-loading>
+      <VueEternalLoading v-if="offset < total" :load="load_next"><template #no-more>.</template></VueEternalLoading>
       <spotify-modal-dialog-track :show="show_track_details_modal" :track="selected_track" :album="selected_track.album" @close="show_track_details_modal = false" />
       <spotify-modal-dialog-playlist :show="show_playlist_details_modal" :playlist="playlist" @close="show_playlist_details_modal = false" />
     </template>
@@ -37,7 +37,9 @@ import SpotifyModalDialogPlaylist from '@/components/SpotifyModalDialogPlaylist.
 import store from '@/store'
 import webapi from '@/webapi'
 import SpotifyWebApi from 'spotify-web-api-js'
-import InfiniteLoading from 'vue-infinite-loading'
+import { VueEternalLoading } from '@ts-pro/vue-eternal-loading'
+
+const PAGE_SIZE = 50
 
 const dataObject = {
   load: function (to) {
@@ -45,7 +47,7 @@ const dataObject = {
     spotifyApi.setAccessToken(store.state.spotify.webapi_token)
     return Promise.all([
       spotifyApi.getPlaylist(to.params.playlist_id),
-      spotifyApi.getPlaylistTracks(to.params.playlist_id, { limit: 50, offset: 0 })
+      spotifyApi.getPlaylistTracks(to.params.playlist_id, { limit: PAGE_SIZE, offset: 0 })
     ])
   },
 
@@ -60,7 +62,7 @@ const dataObject = {
 
 export default {
   name: 'SpotifyPagePlaylist',
-  components: { ContentWithHeading, SpotifyListItemTrack, SpotifyModalDialogTrack, SpotifyModalDialogPlaylist, InfiniteLoading },
+  components: { ContentWithHeading, SpotifyListItemTrack, SpotifyModalDialogTrack, SpotifyModalDialogPlaylist, VueEternalLoading },
 
   data () {
     return {
@@ -77,25 +79,19 @@ export default {
   },
 
   methods: {
-    load_next: function ($state) {
+    load_next: function ({ loaded }) {
       const spotifyApi = new SpotifyWebApi()
       spotifyApi.setAccessToken(this.$store.state.spotify.webapi_token)
-      spotifyApi.getPlaylistTracks(this.playlist.id, { limit: 50, offset: this.offset }).then(data => {
-        this.append_tracks(data, $state)
+      spotifyApi.getPlaylistTracks(this.playlist.id, { limit: PAGE_SIZE, offset: this.offset }).then(data => {
+        this.append_tracks(data)
+        loaded(data.items.length, PAGE_SIZE)
       })
     },
 
-    append_tracks: function (data, $state) {
+    append_tracks: function (data) {
       this.tracks = this.tracks.concat(data.items)
       this.total = data.total
       this.offset += data.limit
-
-      if ($state) {
-        $state.loaded()
-        if (this.offset >= this.total) {
-          $state.complete()
-        }
-      }
     },
 
     play: function () {

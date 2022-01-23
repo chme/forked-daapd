@@ -35,7 +35,7 @@
           </a>
         </template>
       </spotify-list-item-album>
-      <infinite-loading v-if="offset < total" @infinite="load_next"><template v-slot:no-more>.</template></infinite-loading>
+      <VueEternalLoading v-if="offset < total" :load="load_next"><template #no-more>.</template></VueEternalLoading>
       <spotify-modal-dialog-album :show="show_details_modal" :album="selected_album" @close="show_details_modal = false" />
       <spotify-modal-dialog-artist :show="show_artist_details_modal" :artist="artist" @close="show_artist_details_modal = false" />
     </template>
@@ -51,7 +51,9 @@ import CoverArtwork from '@/components/CoverArtwork.vue'
 import store from '@/store'
 import webapi from '@/webapi'
 import SpotifyWebApi from 'spotify-web-api-js'
-import InfiniteLoading from 'vue-infinite-loading'
+import { VueEternalLoading } from '@ts-pro/vue-eternal-loading'
+
+const PAGE_SIZE = 50
 
 const dataObject = {
   load: function (to) {
@@ -59,7 +61,7 @@ const dataObject = {
     spotifyApi.setAccessToken(store.state.spotify.webapi_token)
     return Promise.all([
       spotifyApi.getArtist(to.params.artist_id),
-      spotifyApi.getArtistAlbums(to.params.artist_id, { limit: 50, offset: 0, include_groups: 'album,single', market: store.state.spotify.webapi_country })
+      spotifyApi.getArtistAlbums(to.params.artist_id, { limit: PAGE_SIZE, offset: 0, include_groups: 'album,single', market: store.state.spotify.webapi_country })
     ])
   },
 
@@ -75,7 +77,7 @@ const dataObject = {
 
 export default {
   name: 'SpotifyPageArtist',
-  components: { ContentWithHeading, SpotifyListItemAlbum, SpotifyModalDialogAlbum, SpotifyModalDialogArtist, InfiniteLoading, CoverArtwork },
+  components: { ContentWithHeading, SpotifyListItemAlbum, SpotifyModalDialogAlbum, SpotifyModalDialogArtist, VueEternalLoading, CoverArtwork },
 
   data () {
     return {
@@ -98,25 +100,19 @@ export default {
   },
 
   methods: {
-    load_next: function ($state) {
+    load_next: function ({ loaded }) {
       const spotifyApi = new SpotifyWebApi()
       spotifyApi.setAccessToken(this.$store.state.spotify.webapi_token)
-      spotifyApi.getArtistAlbums(this.artist.id, { limit: 50, offset: this.offset, include_groups: 'album,single' }).then(data => {
-        this.append_albums(data, $state)
+      spotifyApi.getArtistAlbums(this.artist.id, { limit: PAGE_SIZE, offset: this.offset, include_groups: 'album,single' }).then(data => {
+        this.append_albums(data)
+        loaded(data.items.length, PAGE_SIZE)
       })
     },
 
-    append_albums: function (data, $state) {
+    append_albums: function (data) {
       this.albums = this.albums.concat(data.items)
       this.total = data.total
       this.offset += data.limit
-
-      if ($state) {
-        $state.loaded()
-        if (this.offset >= this.total) {
-          $state.complete()
-        }
-      }
     },
 
     play: function () {

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@aacassandra/vue3-progressbar": "^1.0.3",
+    "@ts-pro/vue-eternal-loading": "^1.2.0",
     "@vueform/slider": "^2.0.8",
     "axios": "^0.25.0",
     "bulma": "^0.9.3",
@@ -20,7 +21,6 @@
     "spotify-web-api-js": "^1.5.2",
     "string-to-color": "^2.2.2",
     "vue": "^3.2.25",
-    "vue-infinite-loading": "github:nvitius/vue-infinite-loading#next",
     "vue-observe-visibility": "^1.0.0",
     "vue-router": "^4.0.12",
     "vue-scrollto": "^2.20.0",
