@@ -21,14 +21,21 @@
       <p class="heading has-text-centered-mobile">{{ album.track_count }} tracks</p>
       <list-item-track v-for="track in tracks" :key="track.id" :track="track" @click="play_track(track)">
         <template v-slot:progress>
-          <range-slider
+          <Slider v-model="track.seek_ms"
+            :min="0"
+            :max="track.length_ms"
+            :step="1"
+            :tooltips="false"
+            :disabled="true"
+            :classes="{ target: 'track-progress'}" />
+          <!--<range-slider
             class="track-progress"
             min="0"
             :max="track.length_ms"
             step="1"
             :disabled="true"
             :value="track.seek_ms" >
-          </range-slider>
+          </range-slider>-->
         </template>
         <template v-slot:actions>
           <a @click="open_dialog(track)">
@@ -71,6 +78,7 @@ import ModalDialogTrack from '@/components/ModalDialogTrack.vue'
 import ModalDialogAlbum from '@/components/ModalDialogAlbum.vue'
 import ModalDialog from '@/components/ModalDialog.vue'
 //import RangeSlider from 'vue-range-slider'
+import Slider from '@vueform/slider'
 import webapi from '@/webapi'
 
 const dataObject = {
@@ -94,6 +102,7 @@ export default {
     ListItemTrack,
     ModalDialogTrack,
 //    RangeSlider,
+    Slider,
     ModalDialogAlbum,
     ModalDialog
   },
