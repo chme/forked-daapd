@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="fd-page-with-tabs">
     <tabs-music></tabs-music>
 
     <!-- Recently added -->

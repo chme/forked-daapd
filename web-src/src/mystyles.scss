@@ -154,6 +154,14 @@ section.hero + section.fd-content {
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
+.fd-page {
+  margin-top: 3.25rem;
+}
+
+.fd-page-with-tabs {
+  margin-top: 6.25rem !important;
+}
+
 /* Set minimum height to hide "option" section */
 .fd-content-with-option {
   min-height: calc(100vh - 3.25rem - 3.25rem - 5rem);

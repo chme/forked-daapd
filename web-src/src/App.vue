@@ -4,7 +4,7 @@
     <vue-progress-bar class="fd-progress-bar" />
     <router-view v-slot="{ Component }">
       <transition name="fade">
-        <component :is="Component" />
+        <component :is="Component" class="fd-page" />
       </transition>
     </router-view>
 
