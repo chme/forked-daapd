@@ -12,7 +12,8 @@
 
 - [ ] JS error on Podacst page
 
-- [ ] Index navigation is broken (jump to "A")
+- [x] Index navigation is broken (jump to "A")
+  - Change in `$router.push` syntax, hash has to be passed as a separate parameter instead of as part of the path
 
 - [x] `vue-range-slider` is not compatible with vue3
   - replacement option: <https://github.com/vueform/slider>
