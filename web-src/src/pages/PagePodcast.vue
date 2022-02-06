@@ -21,14 +21,16 @@
       <p class="heading has-text-centered-mobile">{{ album.track_count }} tracks</p>
       <list-item-track v-for="track in tracks" :key="track.id" :track="track" @click="play_track(track)">
         <template v-slot:progress>
-          <Slider v-model="track.seek_ms"
+          <progress class="progress is-info" value="0" max="{{ parseInt(track.length_ms / 1000, 10) }}">45%</progress>
+          {{ track.seek_ms / 1000 }} / {{ parseInt(track.length_ms / 1000, 10) }}
+          <!--<Slider v-model="track.seek_ms"
             :min="0"
             :max="track.length_ms"
             :step="1"
             :tooltips="false"
             :disabled="true"
             :classes="{ target: 'track-progress'}" />
-          <!--<range-slider
+          <range-slider
             class="track-progress"
             min="0"
             :max="track.length_ms"

@@ -12,6 +12,8 @@
 
 - [ ] JS error on Podacst page
 
+- [ ] vue-router scroll-behavior
+
 - [x] Index navigation is broken (jump to "A")
   - Change in `$router.push` syntax, hash has to be passed as a separate parameter instead of as part of the path
 
