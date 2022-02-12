@@ -17,14 +17,14 @@
     <template v-slot:content>
         <list-item-track v-for="track in new_episodes.items" :key="track.id" :track="track" @click="play_track(track)">
           <template v-slot:progress>
-            <Slider v-model="track.seek_ms"
+            <!--<Slider v-model="track.seek_ms"
               :min="0"
               :max="track.length_ms"
               :step="1"
               :tooltips="false"
               :disabled="true"
               :classes="{ target: 'track-progress'}" />
-            <!--<range-slider
+            <range-slider
               class="track-progress"
               min="0"
               :max="track.length_ms"
@@ -84,13 +84,9 @@ import ListItemTrack from '@/components/ListItemTrack.vue'
 import ListAlbums from '@/components/ListAlbums.vue'
 import ModalDialogTrack from '@/components/ModalDialogTrack.vue'
 import ModalDialogAddRss from '@/components/ModalDialogAddRss.vue'
-<<<<<<< Upstream, based on master
 import * as types from '@/store/mutation_types'
-import RangeSlider from 'vue-range-slider'
-=======
 //import RangeSlider from 'vue-range-slider'
 import Slider from '@vueform/slider'
->>>>>>> 7efff2d wip! [vue3] Replace range-slider with vueform/slider in podcasts track progress
 import webapi from '@/webapi'
 
 const dataObject = {
@@ -109,9 +105,6 @@ const dataObject = {
 
 export default {
   name: 'PagePodcasts',
-<<<<<<< Upstream, based on master
-  components: { ContentWithHeading, ListItemTrack, ListAlbums, ModalDialogTrack, ModalDialogAddRss, RangeSlider },
-=======
   components: {
     ContentWithHeading,
     ListItemTrack,
@@ -121,7 +114,6 @@ export default {
     Slider
 //    RangeSlider
   },
->>>>>>> 7efff2d wip! [vue3] Replace range-slider with vueform/slider in podcasts track progress
 
   data () {
     return {
