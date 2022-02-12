@@ -8,11 +8,19 @@
 
 - [ ] Add linting (ESLint) ?
 
-- [ ] Check transitions
-
 - [ ] JS error on Podacst page
+  - Problem caused by the Slider component
+  - Replace with plain html?
 
 - [ ] vue-router scroll-behavior
+  - [ ] Index list not always hidden
+  - [ ] Check transitions
+
+- [ ] Index navigation "scroll up/down" button does not scroll down, if index is visible
+
+- [ ] Performance with huge artists/albums/tracks list (no functional template supported any more)
+
+- [ ] Update to latest dependency versions (vite, vue, etc.)
 
 - [x] Index navigation is broken (jump to "A")
   - Change in `$router.push` syntax, hash has to be passed as a separate parameter instead of as part of the path
