@@ -5,6 +5,16 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   resolve: { alias: { '@': '/src' } },
   plugins: [vue()],
+  build: {
+    outDir: '../htdocs',
+    rollupOptions: {
+      output: {
+        entryFileNames: `assets/[name].js`,
+        chunkFileNames: `assets/[name].js`,
+        assetFileNames: `assets/[name].[ext]`
+      }
+    }
+  },
   server: {
     proxy: {
       '/api': {
