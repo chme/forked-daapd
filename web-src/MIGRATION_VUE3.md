@@ -10,7 +10,7 @@
 
 - [ ] Add linting (ESLint) ?
 
-- [ ] Update dialog is missing scan options
+- [x] Update dialog is missing scan options
 
 - [ ] Performance with huge artists/albums/tracks list (no functional template supported any more)
   - [ ] Do not reload data, if using the index-nav
