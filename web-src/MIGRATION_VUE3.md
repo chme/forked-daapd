@@ -6,7 +6,19 @@
   - <https://stackoverflow.com/questions/66389043/how-can-i-use-vite-env-variables-in-vite-config-js>
   - <https://github.com/vitejs/vite/issues/1930>
 
+- [ ] Documentation update
+
 - [ ] Add linting (ESLint) ?
+
+- [ ] Update dialog is missing scan options
+
+- [ ] Performance with huge artists/albums/tracks list (no functional template supported any more)
+  - [ ] Do not reload data, if using the index-nav
+    - [x] PageAlbums
+    - [ ] PageArtists
+    - [ ] ...
+  - [ ] Albums page is slow to load (because of the number of vue components?)
+    - [ ] Evaluate virtual scroller <https://github.com/Akryum/vue-virtual-scroller/tree/next/packages/vue-virtual-scroller>
 
 - [x] JS error on Podacst page
   - Problem caused by the Slider component
@@ -17,12 +29,6 @@
   - [x] Check transitions
 
 - [x] Index navigation "scroll up/down" button does not scroll down, if index is visible
-
-- [ ] Performance with huge artists/albums/tracks list (no functional template supported any more)
-  - [ ] Do not reload data, if using the index-nav
-    - [x] PageAlbums
-    - [ ] PageArtists
-    - [ ] ...
 
 - [x] Update to latest dependency versions (vite, vue, etc.)
 
