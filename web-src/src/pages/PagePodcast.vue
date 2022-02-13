@@ -21,7 +21,7 @@
       <p class="heading has-text-centered-mobile">{{ album.track_count }} tracks</p>
       <list-item-track v-for="track in tracks" :key="track.id" :track="track" @click="play_track(track)">
         <template v-slot:progress>
-          <progress class="progress is-info is-small my-3" :value="parseInt(track.seek_ms / 1000)" :max="parseInt(track.length_ms / 1000, 10)"></progress>
+          <progress-bar :max="track.length_ms" :value="track.seek_ms" />
         </template>
         <template v-slot:actions>
           <a @click.prevent.stop="open_dialog(track)">
@@ -63,6 +63,7 @@ import ListItemTrack from '@/components/ListItemTrack.vue'
 import ModalDialogTrack from '@/components/ModalDialogTrack.vue'
 import ModalDialogAlbum from '@/components/ModalDialogAlbum.vue'
 import ModalDialog from '@/components/ModalDialog.vue'
+import ProgressBar from '@/components/ProgressBar.vue'
 import webapi from '@/webapi'
 
 const dataObject = {
@@ -86,7 +87,8 @@ export default {
     ListItemTrack,
     ModalDialogTrack,
     ModalDialogAlbum,
-    ModalDialog
+    ModalDialog,
+    ProgressBar
   },
 
   data () {

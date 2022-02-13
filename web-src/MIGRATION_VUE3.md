@@ -8,9 +8,9 @@
 
 - [ ] Add linting (ESLint) ?
 
-- [ ] JS error on Podacst page
+- [x] JS error on Podacst page
   - Problem caused by the Slider component
-  - Replace with plain html?
+  - Replace with plain html
 
 - [ ] vue-router scroll-behavior
   - [ ] Index list not always hidden

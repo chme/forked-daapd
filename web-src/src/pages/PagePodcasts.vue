@@ -17,7 +17,7 @@
     <template v-slot:content>
         <list-item-track v-for="track in new_episodes.items" :key="track.id" :track="track" @click="play_track(track)">
           <template v-slot:progress>
-            <progress class="progress is-info is-small my-3" :value="parseInt(track.seek_ms / 1000)" :max="parseInt(track.length_ms / 1000, 10)"></progress>
+            <progress-bar :max="track.length_ms" :value="track.seek_ms" />
           </template>
           <template v-slot:actions>
             <a @click="open_track_dialog(track)">
@@ -70,6 +70,7 @@ import ListItemTrack from '@/components/ListItemTrack.vue'
 import ListAlbums from '@/components/ListAlbums.vue'
 import ModalDialogTrack from '@/components/ModalDialogTrack.vue'
 import ModalDialogAddRss from '@/components/ModalDialogAddRss.vue'
+import ProgressBar from '@/components/ProgressBar.vue'
 import * as types from '@/store/mutation_types'
 import webapi from '@/webapi'
 
@@ -94,7 +95,8 @@ export default {
     ListItemTrack,
     ListAlbums,
     ModalDialogTrack,
-    ModalDialogAddRss
+    ModalDialogAddRss,
+    ProgressBar
   },
 
   data () {
