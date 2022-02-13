@@ -20,7 +20,7 @@
 
 - [ ] Performance with huge artists/albums/tracks list (no functional template supported any more)
 
-- [ ] Update to latest dependency versions (vite, vue, etc.)
+- [x] Update to latest dependency versions (vite, vue, etc.)
 
 - [x] Index navigation is broken (jump to "A")
   - Change in `$router.push` syntax, hash has to be passed as a separate parameter instead of as part of the path

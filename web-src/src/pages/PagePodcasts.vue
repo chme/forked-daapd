@@ -17,21 +17,7 @@
     <template v-slot:content>
         <list-item-track v-for="track in new_episodes.items" :key="track.id" :track="track" @click="play_track(track)">
           <template v-slot:progress>
-            <!--<Slider v-model="track.seek_ms"
-              :min="0"
-              :max="track.length_ms"
-              :step="1"
-              :tooltips="false"
-              :disabled="true"
-              :classes="{ target: 'track-progress'}" />
-            <range-slider
-              class="track-progress"
-              min="0"
-              :max="track.length_ms"
-              step="1"
-              :disabled="true"
-              :value="track.seek_ms" >
-            </range-slider>-->
+            <progress class="progress is-info is-small my-3" :value="parseInt(track.seek_ms / 1000)" :max="parseInt(track.length_ms / 1000, 10)"></progress>
           </template>
           <template v-slot:actions>
             <a @click="open_track_dialog(track)">
@@ -85,8 +71,6 @@ import ListAlbums from '@/components/ListAlbums.vue'
 import ModalDialogTrack from '@/components/ModalDialogTrack.vue'
 import ModalDialogAddRss from '@/components/ModalDialogAddRss.vue'
 import * as types from '@/store/mutation_types'
-//import RangeSlider from 'vue-range-slider'
-import Slider from '@vueform/slider'
 import webapi from '@/webapi'
 
 const dataObject = {
@@ -110,9 +94,7 @@ export default {
     ListItemTrack,
     ListAlbums,
     ModalDialogTrack,
-    ModalDialogAddRss,
-    Slider
-//    RangeSlider
+    ModalDialogAddRss
   },
 
   data () {
