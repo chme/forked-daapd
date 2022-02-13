@@ -289,20 +289,32 @@ export const router = createRouter({
   scrollBehavior (to, from, savedPosition) {
     // console.log(to.path + '_' + from.path + '__' + to.hash + ' savedPosition:' + savedPosition)
     if (savedPosition) {
+      // We have saved scroll position (browser back/forward navigation), use this position
       return new Promise((resolve, reject) => {
         setTimeout(() => {
           resolve(savedPosition)
-        }, 10)
+        }, 100)
       })
-    } else if (to.path === from.path && to.hash) {
+    }
+
+    if (to.path === from.path && to.hash) {
+      // We are staying on the same page and are jumping to an anker (e. g. index nav)
+      // We don't have a transition, so don't add a timeout!
       return { el: to.hash, top: 120 }
-    } else if (to.hash) {
+    }
+
+    if (to.hash) {
+      // We are navigating to an anker of a new page, add a timeout to let the transition effect finish before scrolling
       return new Promise((resolve, reject) => {
         setTimeout(() => {
           resolve({ el: to.hash, top: 120 })
-        }, 10)
+        }, 500)
       })
-    } else if (to.meta.has_index) {
+    }
+
+    if (to.meta.has_index) {
+      // We are navigating to a page with index nav, that should be hidden automatically
+      // Dependending on wether we have a tab navigation, add an offset to the "top" anker
       return new Promise((resolve, reject) => {
         setTimeout(() => {
           if (to.meta.has_tabs) {
@@ -310,11 +322,11 @@ export const router = createRouter({
           } else {
             resolve({ el: '#top', top: 100 })
           }
-        }, 10)
+        }, 500)
       })
-    } else {
-      return { left: 0, top: 0 }
     }
+
+    return { left: 0, top: 0 }
   }
 })
 
