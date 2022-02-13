@@ -2,7 +2,6 @@ import { createApp } from 'vue'
 import store from './store'
 import { router } from './router'
 import VueProgressBar from '@aacassandra/vue3-progressbar'
-import { ObserveVisibility } from 'vue-observe-visibility'
 import VueClickAway from "vue3-click-away"
 import VueLazyLoad from 'vue3-lazyload'
 import VueScrollTo from 'vue-scrollto'
@@ -27,11 +26,6 @@ const app = createApp(App)
     log: false
   })
   .use(VueScrollTo)
-  .directive('observe-visibility', {
-    beforeMount: ObserveVisibility.beforeMount,
-    update: ObserveVisibility.update,
-    unmounted: ObserveVisibility.unbind
-  })
 
 app.config.globalProperties.$filters = filters
 app.mount('#app')

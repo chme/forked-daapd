@@ -12,11 +12,11 @@
   - Problem caused by the Slider component
   - Replace with plain html
 
-- [ ] vue-router scroll-behavior
+- [x] vue-router scroll-behavior
   - [x] Index list not always hidden
   - [x] Check transitions
 
-- [ ] Index navigation "scroll up/down" button does not scroll down, if index is visible
+- [x] Index navigation "scroll up/down" button does not scroll down, if index is visible
 
 - [ ] Performance with huge artists/albums/tracks list (no functional template supported any more)
   - [ ] Do not reload data, if using the index-nav
