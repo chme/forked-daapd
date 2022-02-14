@@ -28,6 +28,7 @@
   - [x] Index list not always hidden
   - [x] Check transitions
   - [ ] Page display is "jumpy"
+    - Workaround is removing the page transition effect
 
 - [x] Index navigation "scroll up/down" button does not scroll down, if index is visible
   - [x] Use native intersection observer solves it in desktop mode

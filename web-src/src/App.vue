@@ -3,9 +3,7 @@
     <navbar-top />
     <vue-progress-bar class="fd-progress-bar" />
     <router-view v-slot="{ Component }">
-      <transition name="fade">
-        <component :is="Component" class="fd-page" />
-      </transition>
+      <component :is="Component" class="fd-page" />
     </router-view>
 
     <modal-dialog-remote-pairing :show="pairing_active" @close="pairing_active = false" />

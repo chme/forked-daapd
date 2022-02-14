@@ -133,7 +133,7 @@ export default {
   beforeRouteUpdate (to, from, next) {
     if (this.albums.items.length  > 0) {
       next()
-      return;
+      return
     }
     const vm = this
     dataObject.load(to).then((response) => {
