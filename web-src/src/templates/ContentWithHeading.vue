@@ -54,7 +54,7 @@ export default {
       this.observer = new IntersectionObserver(
         this.onElementObserved, 
         {
-          rootMargin: '-100px',
+          rootMargin: '-82px 0px 0px 0px',
           threshold: 1.0
         }
       )

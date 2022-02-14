@@ -24,11 +24,14 @@
   - Problem caused by the Slider component
   - Replace with plain html
 
-- [x] vue-router scroll-behavior
+- [ ] vue-router scroll-behavior
   - [x] Index list not always hidden
   - [x] Check transitions
+  - [ ] Page display is "jumpy"
 
 - [x] Index navigation "scroll up/down" button does not scroll down, if index is visible
+  - [x] Use native intersection observer solves it in desktop mode
+  - [x] Mobile view still broken
 
 - [x] Update to latest dependency versions (vite, vue, etc.)
 
