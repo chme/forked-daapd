@@ -45,6 +45,7 @@ static bool websocket_exit = false;
 static pthread_mutex_t websocket_write_event_lock;
 // Event mask of events processed by the writeable callback
 static short websocket_write_events;
+static int websocket_event_number = 0;
 
 
 /* Thread: library (the thread the event occurred) */
@@ -53,6 +54,7 @@ listener_cb(short event_mask)
 {
   pthread_mutex_lock(&websocket_write_event_lock);
   websocket_write_events |= event_mask;
+  websocket_event_number++;
   pthread_mutex_unlock(&websocket_write_event_lock);
 
   lws_cancel_service(context);
@@ -80,6 +82,7 @@ struct per_session_data {
   struct lws *wsi;
   short requested_events;
   short write_events;
+  int event_number;
 };
 
 /* one of these is created for each vhost our protocol is used with */
@@ -194,7 +197,7 @@ process_notify_request(short *requested_events, void *in, size_t len)
  * }
  */
 static void
-send_notify_reply(short events, struct lws* wsi)
+send_notify_reply(short events, int event_number, struct lws* wsi)
 {
   unsigned char* buf;
   const char* json_response;
@@ -247,6 +250,7 @@ send_notify_reply(short events, struct lws* wsi)
 
   reply = json_object_new_object();
   json_object_object_add(reply, "notify", notify);
+  json_object_object_add(reply, "event_number", json_object_new_int(event_number));
 
   json_response = json_object_to_json_string(reply);
 
@@ -276,6 +280,7 @@ callback_notify(struct lws *wsi, enum lws_callback_reasons reason, void *user, v
 #endif
     lws_get_protocol(wsi));
   short events = 0;
+  int event_number = 0;
   int ret = 0;
 
   DPRINTF(E_DBG, L_WEB, "notify callback reason: %d\n", reason);
@@ -335,6 +340,7 @@ callback_notify(struct lws *wsi, enum lws_callback_reasons reason, void *user, v
 #if LWS_LIBRARY_VERSION_MAJOR < 3
       pthread_mutex_lock(&websocket_write_event_lock);
       events = websocket_write_events;
+      event_number = websocket_event_number;
       websocket_write_events = 0;
       pthread_mutex_unlock(&websocket_write_event_lock);
       if (vhd && events)
@@ -342,6 +348,7 @@ callback_notify(struct lws *wsi, enum lws_callback_reasons reason, void *user, v
         ppss = &(vhd->pss_list);
         while (*ppss) {
           (*ppss)->write_events |= events;
+          (*ppss)->event_number = event_number;
           ppss = &(*ppss)->pss_list;
         }
       }
@@ -349,7 +356,7 @@ callback_notify(struct lws *wsi, enum lws_callback_reasons reason, void *user, v
       if (pss->requested_events & pss->write_events)
       {
         events = pss->requested_events & pss->write_events;
-        send_notify_reply(events, wsi);
+        send_notify_reply(events, pss->event_number, wsi);
         pss->write_events = 0;
       }
       break;
@@ -364,11 +371,13 @@ callback_notify(struct lws *wsi, enum lws_callback_reasons reason, void *user, v
       {
         pthread_mutex_lock(&websocket_write_event_lock);
         events = websocket_write_events;
+        event_number = websocket_event_number;
         websocket_write_events = 0;
         pthread_mutex_unlock(&websocket_write_event_lock);
         lws_start_foreach_llp(struct per_session_data **, ppss, vhd->pss_list)
         {
           (*ppss)->write_events |= events;
+          (*ppss)->event_number = event_number;
           lws_callback_on_writable((*ppss)->wsi);
         } lws_end_foreach_llp(ppss, pss_list);
       }
