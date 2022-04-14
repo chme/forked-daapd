@@ -2077,7 +2077,7 @@ initscan(void)
 
 /* Thread: library */
 static int
-rescan(void)
+rescan(const char *path)
 {
   scan(SPOTIFY_REQUEST_TYPE_RESCAN);
   return 0;
@@ -2085,7 +2085,7 @@ rescan(void)
 
 /* Thread: library */
 static int
-metarescan(void)
+metarescan(const char *path)
 {
   scan(SPOTIFY_REQUEST_TYPE_METARESCAN);
   return 0;
@@ -2112,7 +2112,7 @@ webapi_fullrescan(void *arg, int *ret)
 static enum command_state
 webapi_rescan(void *arg, int *ret)
 {
-  *ret = rescan();
+  *ret = rescan(NULL);
   return COMMAND_END;
 }
 

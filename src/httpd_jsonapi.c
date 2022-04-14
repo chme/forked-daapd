@@ -1253,10 +1253,12 @@ static int
 jsonapi_reply_update(struct httpd_request *hreq)
 {
   const char *param;
+  const char *path;
 
   param = evhttp_find_header(hreq->query, "scan_kind");
+  path = evhttp_find_header(hreq->query, "path");
 
-  library_rescan(db_scan_kind_enum(param));
+  library_rescan(db_scan_kind_enum(param), path);
   return HTTP_NOCONTENT;
 }
 
@@ -1264,10 +1266,12 @@ static int
 jsonapi_reply_meta_rescan(struct httpd_request *hreq)
 {
   const char *param;
+  const char *path;
 
   param = evhttp_find_header(hreq->query, "scan_kind");
+  path = evhttp_find_header(hreq->query, "path");
 
-  library_metarescan(db_scan_kind_enum(param));
+  library_metarescan(db_scan_kind_enum(param), path);
   return HTTP_NOCONTENT;
 }
 

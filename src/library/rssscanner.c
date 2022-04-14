@@ -597,7 +597,7 @@ rss_refresh(void *arg)
 }
 
 static int
-rss_rescan(void)
+rss_initscan(void)
 {
   rss_scan_all(RSS_SCAN_RESCAN);
 
@@ -605,7 +605,15 @@ rss_rescan(void)
 }
 
 static int
-rss_metascan(void)
+rss_rescan(const char *path)
+{
+  rss_scan_all(RSS_SCAN_RESCAN);
+
+  return LIBRARY_OK;
+}
+
+static int
+rss_metascan(const char *path)
 {
   rss_scan_all(RSS_SCAN_META);
 
@@ -645,7 +653,7 @@ struct library_source rssscanner =
 {
   .scan_kind = SCAN_KIND_RSS,
   .disabled = 0,
-  .initscan = rss_rescan,
+  .initscan = rss_initscan,
   .rescan = rss_rescan,
   .metarescan = rss_metascan,
   .fullrescan = rss_fullscan,

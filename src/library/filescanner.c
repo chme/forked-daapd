@@ -697,7 +697,7 @@ process_file(char *file, struct stat *sb, enum file_type file_type, int scan_typ
 
 	DPRINTF(E_LOG, L_SCAN, "Startup rescan triggered, found init-rescan file: %s\n", file);
 
-	library_rescan(0);
+	library_rescan(0, NULL);
 	break;
 
       case FILE_CTRL_METASCAN:
@@ -706,7 +706,7 @@ process_file(char *file, struct stat *sb, enum file_type file_type, int scan_typ
 
 	DPRINTF(E_LOG, L_SCAN, "Meta rescan triggered, found meta-rescan file: %s\n", file);
 
-	library_metarescan(0);
+	library_metarescan(0, NULL);
 	break;
 
       case FILE_CTRL_FULLSCAN:
@@ -1661,7 +1661,7 @@ filescanner_initscan()
 }
 
 static int
-filescanner_rescan()
+filescanner_rescan(const char *path)
 {
   DPRINTF(E_LOG, L_SCAN, "Startup rescan triggered\n");
 
@@ -1679,7 +1679,7 @@ filescanner_rescan()
 }
 
 static int
-filescanner_metarescan()
+filescanner_metarescan(const char *path)
 {
   DPRINTF(E_LOG, L_SCAN, "meta rescan triggered\n");
 

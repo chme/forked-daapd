@@ -76,12 +76,12 @@ struct library_source
   /*
    * Run rescan (called from the library thread)
    */
-  int (*rescan)(void);
+  int (*rescan)(const char *);
 
   /*
    * Run a metadata rescan of library even if files not changed (called from the library thread)
    */
-  int (*metarescan)(void);
+  int (*metarescan)(const char *);
 
   /*
    * Run a full rescan (purge library entries and rescan) (called from the library thread)
@@ -164,15 +164,16 @@ library_is_exiting();
  * Update is done asynchronously in the library thread.
  *
  * @param library_source 0 to update everything, one of LIBRARY_SOURCE_xxx to only update specific source
+ * @param path If library source is set to a LIBRARY_SOURCE optionally limit scan to the given path
  */
 void
-library_rescan(enum scan_kind library_source);
+library_rescan(enum scan_kind library_source, const char *path);
 
 /*
  * Same as library_rescan but also updates unmodified tracks and playlists
  */
 void
-library_metarescan(enum scan_kind library_source);
+library_metarescan(enum scan_kind library_source, const char *path);
 
 /*
  * Wipe library and do a full rescan of all library sources

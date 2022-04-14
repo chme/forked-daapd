@@ -67,6 +67,12 @@ struct queue_item_add_param
   int *new_item_id;
 };
 
+struct scan_param
+{
+  char path[PATH_MAX];
+  enum scan_kind scan_kind;
+};
+
 static struct commands_base *cmdbase;
 static pthread_t tid_library;
 
@@ -310,7 +316,7 @@ purge_cruft(time_t start, enum scan_kind scan_kind)
 static enum command_state
 rescan(void *arg, int *ret)
 {
-  enum scan_kind *scan_kind;
+  struct scan_param *param;
   time_t starttime;
   time_t endtime;
   int i;
@@ -319,20 +325,20 @@ rescan(void *arg, int *ret)
   listener_notify(LISTENER_UPDATE);
   starttime = time(NULL);
 
-  scan_kind = arg;
+  param = arg;
 
   for (i = 0; sources[i]; i++)
     {
       if (!sources[i]->disabled && sources[i]->rescan)
 	{
-	  if (*scan_kind > 0 && *scan_kind != sources[i]->scan_kind)
+	  if (param->scan_kind > 0 && param->scan_kind != sources[i]->scan_kind)
 	    {
 	      DPRINTF(E_DBG, L_LIB, "Skipping library source '%s'\n", db_scan_kind_label(sources[i]->scan_kind));
 	    }
 	  else
 	    {
 	      DPRINTF(E_INFO, L_LIB, "Rescan library source '%s'\n", db_scan_kind_label(sources[i]->scan_kind));
-	      sources[i]->rescan();
+	      sources[i]->rescan(param->path);
 	    }
 	}
       else
@@ -341,7 +347,7 @@ rescan(void *arg, int *ret)
 	}
     }
 
-  purge_cruft(starttime, *scan_kind);
+  purge_cruft(starttime, param->scan_kind);
 
   DPRINTF(E_DBG, L_LIB, "Running post library scan jobs\n");
   db_hook_post_scan();
@@ -362,7 +368,7 @@ rescan(void *arg, int *ret)
 static enum command_state
 metarescan(void *arg, int *ret)
 {
-  enum scan_kind *scan_kind;
+  struct scan_param *param;
   time_t starttime;
   time_t endtime;
   int i;
@@ -371,20 +377,20 @@ metarescan(void *arg, int *ret)
   listener_notify(LISTENER_UPDATE);
   starttime = time(NULL);
 
-  scan_kind = arg;
+  param = arg;
 
   for (i = 0; sources[i]; i++)
     {
       if (!sources[i]->disabled && sources[i]->metarescan)
 	{
-	  if (*scan_kind > 0 && *scan_kind != sources[i]->scan_kind)
+	  if (param->scan_kind > 0 && param->scan_kind != sources[i]->scan_kind)
 	    {
 	      DPRINTF(E_DBG, L_LIB, "Skipping library source '%s'\n", db_scan_kind_label(sources[i]->scan_kind));
 	    }
 	  else
 	    {
 	      DPRINTF(E_INFO, L_LIB, "Meta rescan library source '%s'\n", db_scan_kind_label(sources[i]->scan_kind));
-	      sources[i]->metarescan();
+	      sources[i]->metarescan(param->path);
 	    }
 	}
       else
@@ -393,7 +399,7 @@ metarescan(void *arg, int *ret)
 	}
     }
 
-  purge_cruft(starttime, *scan_kind);
+  purge_cruft(starttime, param->scan_kind);
 
   DPRINTF(E_DBG, L_LIB, "Running post library scan jobs\n");
   db_hook_post_scan();
@@ -654,9 +660,9 @@ update_trigger(void *arg, int *retval)
 /* ----------------------- LIBRARY EXTERNAL INTERFACE ---------------------- */
 
 void
-library_rescan(enum scan_kind scan_kind)
+library_rescan(enum scan_kind scan_kind, const char *path)
 {
-  int *param;
+  struct scan_param *param;
 
   if (scanning)
     {
@@ -665,16 +671,21 @@ library_rescan(enum scan_kind scan_kind)
     }
 
   scanning = true;
-  param = malloc(sizeof(int));
-  *param = scan_kind;
+  param = calloc(1, sizeof(struct scan_param));
+  param->scan_kind = scan_kind;
+
+  if (path)
+    {
+      strncpy(param->path, path, sizeof(param->path) - 1);
+    }
 
   commands_exec_async(cmdbase, rescan, param);
 }
 
 void
-library_metarescan(enum scan_kind scan_kind)
+library_metarescan(enum scan_kind scan_kind, const char *path)
 {
-  int *param;
+  struct scan_param *param;
 
   if (scanning)
     {
@@ -683,8 +694,13 @@ library_metarescan(enum scan_kind scan_kind)
     }
 
   scanning = true;
-  param = malloc(sizeof(int));
-  *param = scan_kind;
+  param = calloc(1, sizeof(struct scan_param));
+  param->scan_kind = scan_kind;
+
+  if (path)
+    {
+      strncpy(param->path, path, sizeof(param->path) - 1);
+    }
 
   commands_exec_async(cmdbase, metarescan, param);
 }
