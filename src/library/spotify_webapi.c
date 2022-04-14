@@ -1965,6 +1965,30 @@ create_saved_tracks_playlist(void)
   free_pli(&pli, 1);
 }
 
+static int
+scan_playlist(enum spotify_request_type request_type, const char *uri)
+{
+  char *endpoint_uri;
+  json_object *response;
+  int ret;
+
+  endpoint_uri = get_playlist_endpoint_uri(uri);
+  response = request_endpoint_with_token_refresh(endpoint_uri);
+  if (!response)
+    {
+      ret = -1;
+      goto out;
+    }
+
+  ret = saved_playlist_add(response, 0, 1, request_type, NULL);
+  jparse_free(response);
+
+ out:
+  free(endpoint_uri);
+
+  return ret;
+}
+
 /*
  * Add or update playlist folder for all spotify playlists (if enabled in config)
  */
@@ -1999,11 +2023,12 @@ create_base_playlist(void)
 }
 
 static void
-scan(enum spotify_request_type request_type)
+scan(enum spotify_request_type request_type, const char *uri)
 {
   struct spotify_status sp_status;
   time_t start;
   time_t end;
+  enum spotify_item_type uri_type;
 
   if (!token_valid() || scanning)
     {
@@ -2014,14 +2039,32 @@ scan(enum spotify_request_type request_type)
   start = time(NULL);
   scanning = true;
 
-  db_directory_enable_bypath("/spotify:");
-  create_base_playlist();
-  create_saved_tracks_playlist();
-  scan_saved_albums(request_type);
-  scan_playlists(request_type);
-  spotify_status_get(&sp_status);
-  if (sp_status.has_podcast_support)
-    scan_saved_shows(request_type);
+  if (uri)
+    {
+      uri_type = parse_type_from_uri(uri);
+      switch (uri_type)
+	{
+	  case SPOTIFY_ITEM_TYPE_PLAYLIST:
+	    DPRINTF(E_INFO, L_SPOTIFY, "Rescan Spotify playlist with uri '%s'\n", uri);
+	    scan_playlist(request_type, uri);
+	    break;
+
+	  default:
+	    DPRINTF(E_LOG, L_SPOTIFY, "Unknown or unsupported Spotify uri type, ignore scan of path '%s'\n", uri);
+	    break;
+	}
+    }
+  else
+    {
+      db_directory_enable_bypath("/spotify:");
+      create_base_playlist();
+      create_saved_tracks_playlist();
+      scan_saved_albums(request_type);
+      scan_playlists(request_type);
+      spotify_status_get(&sp_status);
+      if (sp_status.has_podcast_support)
+	scan_saved_shows(request_type);
+    }
 
   scanning = false;
   end = time(NULL);
@@ -2070,7 +2113,7 @@ initscan(void)
   /*
    * Scan saved tracks from the web api
    */
-  scan(SPOTIFY_REQUEST_TYPE_RESCAN);
+  scan(SPOTIFY_REQUEST_TYPE_RESCAN, NULL);
 
   return 0;
 }
@@ -2079,7 +2122,7 @@ initscan(void)
 static int
 rescan(const char *path)
 {
-  scan(SPOTIFY_REQUEST_TYPE_RESCAN);
+  scan(SPOTIFY_REQUEST_TYPE_RESCAN, path);
   return 0;
 }
 
@@ -2087,7 +2130,7 @@ rescan(const char *path)
 static int
 metarescan(const char *path)
 {
-  scan(SPOTIFY_REQUEST_TYPE_METARESCAN);
+  scan(SPOTIFY_REQUEST_TYPE_METARESCAN, path);
   return 0;
 }
 
@@ -2096,7 +2139,7 @@ static int
 fullrescan(void)
 {
   db_spotify_purge();
-  scan(SPOTIFY_REQUEST_TYPE_RESCAN);
+  scan(SPOTIFY_REQUEST_TYPE_RESCAN, NULL);
   return 0;
 }
 
@@ -2134,25 +2177,10 @@ static enum command_state
 webapi_pl_save(void *arg, int *ret)
 {
   const char *uri;
-  char *endpoint_uri;
-  json_object *response;
 
   uri = arg;
-  endpoint_uri = get_playlist_endpoint_uri(uri);
 
-  response = request_endpoint_with_token_refresh(endpoint_uri);
-  if (!response)
-    {
-      *ret = -1;
-      goto out;
-    }
-
-  *ret = saved_playlist_add(response, 0, 1, SPOTIFY_REQUEST_TYPE_DEFAULT, NULL);
-
-  jparse_free(response);
-
- out:
-  free(endpoint_uri);
+  *ret = scan_playlist(SPOTIFY_REQUEST_TYPE_DEFAULT, uri);
 
   return COMMAND_END;
 }
