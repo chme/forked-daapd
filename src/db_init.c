@@ -206,6 +206,14 @@
   "   channels            INTEGER DEFAULT 0"				\
   ");"
 
+#define T_HTTPCACHEHEADERS						\
+  "CREATE TABLE IF NOT EXISTS httpcacheheaders ("			\
+  "   url                 VARCHAR(4096) NOT NULL,"			\
+  "   etag                VARCHAR(255) DEFAULT NULL,"			\
+  "   modified_since      VARCHAR(255) DEFAULT NULL,"			\
+  "   db_timestamp        INTEGER DEFAULT 0"				\
+  ");"
+
 #define Q_PL1								\
   "INSERT INTO playlists (id, title, type, query, db_timestamp, path, idx, special_id)" \
   " VALUES(1, 'Library', 0, '1 = 1', 0, '', 0, 0);"
@@ -275,6 +283,7 @@ static const struct db_init_query db_init_table_queries[] =
     { T_INOTIFY,   "create table inotify" },
     { T_DIRECTORIES, "create table directories" },
     { T_QUEUE,     "create table queue" },
+    { T_HTTPCACHEHEADERS, "create table httpcacheheaders" },
 
     { Q_PL1,       "create default playlist" },
     { Q_PL2,       "create default smart playlist 'Music'" },

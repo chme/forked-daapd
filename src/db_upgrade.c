@@ -1227,6 +1227,25 @@ static const struct db_upgrade_query db_upgrade_v2200_queries[] =
     { U_v2200_SCVER_MINOR,    "set schema_version_minor to 00" },
   };
 
+/* ---------------------------- 22.00 -> 22.01 ------------------------------ */
+
+#define U_v2201_CREATE_TABLE_HTTPCACHEHEADERS						\
+		  "CREATE TABLE IF NOT EXISTS httpcacheheaders ("			\
+		  "   url                 VARCHAR(4096) NOT NULL,"			\
+		  "   etag                VARCHAR(255) DEFAULT NULL,"			\
+		  "   modified_since      VARCHAR(255) DEFAULT NULL,"			\
+		  "   db_timestamp        INTEGER DEFAULT 0"				\
+		  ");"
+#define U_v2201_SCVER_MINOR                    \
+  "UPDATE admin SET value = '01' WHERE key = 'schema_version_minor';"
+
+static const struct db_upgrade_query db_upgrade_v2201_queries[] =
+  {
+    { U_v2201_CREATE_TABLE_HTTPCACHEHEADERS, "create table httpcacheheaders" },
+
+    { U_v2201_SCVER_MINOR,    "set schema_version_minor to 01" },
+  };
+
 /* -------------------------- Main upgrade handler -------------------------- */
 
 int
@@ -1434,6 +1453,13 @@ db_upgrade(sqlite3 *hdl, int db_ver)
 
     case 2107:
       ret = db_generic_upgrade(hdl, db_upgrade_v2200_queries, ARRAY_SIZE(db_upgrade_v2200_queries));
+      if (ret < 0)
+	return -1;
+
+      /* FALLTHROUGH */
+
+    case 2200:
+      ret = db_generic_upgrade(hdl, db_upgrade_v2201_queries, ARRAY_SIZE(db_upgrade_v2201_queries));
       if (ret < 0)
 	return -1;
 
