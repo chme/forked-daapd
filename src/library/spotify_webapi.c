@@ -355,8 +355,10 @@ request_endpoint(const char *uri)
   CHECK_NULL(L_SPOTIFY, ctx = calloc(1, sizeof(struct http_client_ctx)));
   CHECK_NULL(L_SPOTIFY, ctx->output_headers = calloc(1, sizeof(struct keyval)));
   CHECK_NULL(L_SPOTIFY, ctx->input_body = evbuffer_new());
+  CHECK_NULL(L_SPOTIFY, ctx->input_headers = keyval_alloc());
 
   ctx->url = uri;
+  ctx->cache_enabled = true;
 
   snprintf(bearer_token, sizeof(bearer_token), "Bearer %s", spotify_credentials.access_token);
   if (keyval_add(ctx->output_headers, "Authorization", bearer_token) < 0)
@@ -393,6 +395,8 @@ request_endpoint(const char *uri)
     DPRINTF(E_DBG, L_SPOTIFY, "Spotify API endpoint request: '%s'\n", uri);
 
  out:
+  keyval_clear(ctx->input_headers);
+  free(ctx->input_headers);
   free_http_client_ctx(ctx);
 
   return json_response;
