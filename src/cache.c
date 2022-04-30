@@ -42,9 +42,10 @@
 #include "cache.h"
 #include "listener.h"
 #include "commands.h"
+#include "misc.h"
 
 
-#define CACHE_VERSION 3
+#define CACHE_VERSION 4
 
 
 struct cache_arg
@@ -160,6 +161,16 @@ cache_create_tables(void)
   "CREATE INDEX IF NOT EXISTS idx_persistentidwh ON artwork(type, persistentid, max_w, max_h);"
 #define I_ARTWORK_PATH				\
   "CREATE INDEX IF NOT EXISTS idx_pathtime ON artwork(filepath, db_timestamp);"
+#define T_HTTPCACHE						\
+  "CREATE TABLE IF NOT EXISTS httpcache ("			\
+  "   url                 VARCHAR(4096) PRIMARY KEY NOT NULL,"	\
+  "   etag                VARCHAR(255) DEFAULT NULL,"		\
+  "   modified_since      VARCHAR(255) DEFAULT NULL,"		\
+  "   db_timestamp        INTEGER DEFAULT 0,"			\
+  "   response_body       BLOB"					\
+  ");"
+#define I_HTTPCACHE_URL_ETAG					\
+  "CREATE INDEX IF NOT EXISTS idx_httpcache_url_etag ON httpcache (url, etag);"
 #define T_ADMIN_CACHE	\
   "CREATE TABLE IF NOT EXISTS admin_cache("	\
   " key VARCHAR(32) PRIMARY KEY NOT NULL,"	\
@@ -168,84 +179,34 @@ cache_create_tables(void)
 #define Q_CACHE_VERSION	\
   "INSERT INTO admin_cache (key, value) VALUES ('cache_version', '%d');"
 
+  static char *queries[] = {
+      T_REPLIES,
+      T_QUERIES,
+      I_QUERY,
+      T_ARTWORK,
+      I_ARTWORK_ID,
+      I_ARTWORK_PATH,
+      T_HTTPCACHE,
+      T_ADMIN_CACHE
+  };
+
   char *query;
   char *errmsg;
+  int i;
   int ret;
 
-
-  // Create reply cache table
-  ret = sqlite3_exec(g_db_hdl, T_REPLIES, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
+  for (i = 0; i < (sizeof(queries) / sizeof(queries[0])); i++)
     {
-      DPRINTF(E_FATAL, L_CACHE, "Error creating cache table 'replies': %s\n", errmsg);
+      DPRINTF(E_DBG, L_CACHE, "DB init cache query: %s\n", queries[i]);
 
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
-    }
+      ret = sqlite3_exec(g_db_hdl, queries[i], NULL, NULL, &errmsg);
+      if (ret != SQLITE_OK)
+	{
+	  DPRINTF(E_FATAL, L_CACHE, "DB init cache error: %s\n", errmsg);
 
-  // Create query table (the queries for which we will generate and cache replies)
-  ret = sqlite3_exec(g_db_hdl, T_QUERIES, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
-    {
-      DPRINTF(E_FATAL, L_CACHE, "Error creating cache table 'queries': %s\n", errmsg);
-
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
-    }
-
-  // Create index
-  ret = sqlite3_exec(g_db_hdl, I_QUERY, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
-    {
-      DPRINTF(E_FATAL, L_CACHE, "Error creating index on replies(query): %s\n", errmsg);
-
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
-    }
-
-  // Create artwork table
-  ret = sqlite3_exec(g_db_hdl, T_ARTWORK, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
-    {
-      DPRINTF(E_FATAL, L_CACHE, "Error creating cache table 'artwork': %s\n", errmsg);
-
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
-    }
-
-  // Create index
-  ret = sqlite3_exec(g_db_hdl, I_ARTWORK_ID, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
-    {
-      DPRINTF(E_FATAL, L_CACHE, "Error creating index on artwork(type, persistentid, max_w, max_h): %s\n", errmsg);
-
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
-    }
-  ret = sqlite3_exec(g_db_hdl, I_ARTWORK_PATH, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
-    {
-      DPRINTF(E_FATAL, L_CACHE, "Error creating index on artwork(filepath, db_timestamp): %s\n", errmsg);
-
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
-    }
-
-  // Create admin cache table
-  ret = sqlite3_exec(g_db_hdl, T_ADMIN_CACHE, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
-    {
-      DPRINTF(E_FATAL, L_CACHE, "Error creating cache table 'admin_cache': %s\n", errmsg);
-
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
+	  sqlite3_free(errmsg);
+	  return -1;
+	}
     }
 
   query = sqlite3_mprintf(Q_CACHE_VERSION, CACHE_VERSION);
@@ -269,6 +230,7 @@ cache_create_tables(void)
 #undef T_ARTWORK
 #undef I_ARTWORK_ID
 #undef I_ARTWORK_PATH
+#undef T_HTTPCACHE
 #undef T_ADMIN_CACHE
 #undef Q_CACHE_VERSION
 }
@@ -282,97 +244,40 @@ cache_drop_tables(void)
 #define D_ARTWORK	"DROP TABLE IF EXISTS artwork;"
 #define D_ARTWORK_ID	"DROP INDEX IF EXISTS idx_persistentidwh;"
 #define D_ARTWORK_PATH	"DROP INDEX IF EXISTS idx_pathtime;"
+#define D_HTTPCACHE	"DROP TABLE IF EXISTS httpcache;"
 #define D_ADMIN_CACHE	"DROP TABLE IF EXISTS admin_cache;"
 #define Q_VACUUM	"VACUUM;"
 
   char *errmsg;
+  int i;
   int ret;
 
+  const char *queries[] = {
+      D_REPLIES,
+      D_QUERIES,
+      D_QUERY,
+      D_ARTWORK,
+      D_ARTWORK_ID,
+      D_ARTWORK_PATH,
+      D_HTTPCACHE,
+      D_ADMIN_CACHE,
+      Q_VACUUM
+  };
 
-  // Drop reply cache table
-  ret = sqlite3_exec(g_db_hdl, D_REPLIES, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
+
+  for (i = 0; i < (sizeof(queries) / sizeof(queries[0])); i++)
     {
-      DPRINTF(E_FATAL, L_CACHE, "Error dropping reply cache table: %s\n", errmsg);
+      DPRINTF(E_DBG, L_CACHE, "DB drop cache query: %s\n", queries[i]);
 
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
-    }
+      ret = sqlite3_exec(g_db_hdl, queries[i], NULL, NULL, &errmsg);
+      if (ret != SQLITE_OK)
+	{
+	  DPRINTF(E_FATAL, L_CACHE, "DB drop cache error: %s\n", errmsg);
 
-  // Drop query table
-  ret = sqlite3_exec(g_db_hdl, D_QUERIES, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
-    {
-      DPRINTF(E_FATAL, L_CACHE, "Error dropping query table: %s\n", errmsg);
-
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
-    }
-
-  // Drop index
-  ret = sqlite3_exec(g_db_hdl, D_QUERY, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
-    {
-      DPRINTF(E_FATAL, L_CACHE, "Error dropping query index: %s\n", errmsg);
-
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
-    }
-
-  // Drop artwork table
-  ret = sqlite3_exec(g_db_hdl, D_ARTWORK, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
-    {
-      DPRINTF(E_FATAL, L_CACHE, "Error dropping artwork table: %s\n", errmsg);
-
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
-    }
-
-  // Drop index
-  ret = sqlite3_exec(g_db_hdl, D_ARTWORK_ID, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
-    {
-      DPRINTF(E_FATAL, L_CACHE, "Error dropping artwork id index: %s\n", errmsg);
-
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
-    }
-  ret = sqlite3_exec(g_db_hdl, D_ARTWORK_PATH, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
-    {
-      DPRINTF(E_FATAL, L_CACHE, "Error dropping artwork path index: %s\n", errmsg);
-
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
-    }
-
-  // Drop admin cache table
-  ret = sqlite3_exec(g_db_hdl, D_ADMIN_CACHE, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
-    {
-      DPRINTF(E_FATAL, L_CACHE, "Error dropping admin cache table: %s\n", errmsg);
-
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
-    }
-
-  // Vacuum
-  ret = sqlite3_exec(g_db_hdl, Q_VACUUM, NULL, NULL, &errmsg);
-  if (ret != SQLITE_OK)
-    {
-      DPRINTF(E_LOG, L_CACHE, "Error vacuuming cache database: %s\n", errmsg);
-
-      sqlite3_free(errmsg);
-      sqlite3_close(g_db_hdl);
-      return -1;
+	  sqlite3_free(errmsg);
+	  sqlite3_close(g_db_hdl);
+	  return -1;
+	}
     }
 
   DPRINTF(E_DBG, L_CACHE, "Cache tables dropped\n");
@@ -384,6 +289,7 @@ cache_drop_tables(void)
 #undef D_ARTWORK
 #undef D_ARTWORK_ID
 #undef D_ARTWORK_PATH
+#undef D_HTTPCACHE
 #undef D_ADMIN_CACHE
 #undef Q_VACUUM
 }
@@ -1580,6 +1486,192 @@ cache_artwork_read(struct evbuffer *evbuf, const char *path, int *format)
   return ret;
 }
 
+/* ---------------------------- HTTP cache API  --------------------------- */
+
+int
+cache_httpcache_get(char **etag, const char *url)
+{
+#define Q_TMPL "SELECT etag FROM httpcache h WHERE h.url = '%q';"
+  sqlite3_stmt *stmt;
+  char *query;
+  int ret;
+
+  *etag = NULL;
+
+  query = sqlite3_mprintf(Q_TMPL, url);
+  if (!query)
+    {
+      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+
+      return -1;
+    }
+
+  DPRINTF(E_DBG, L_CACHE, "Running query '%s'\n", query);
+
+  ret = sqlite3_prepare_v2(g_db_hdl, query, -1, &stmt, 0);
+  if (ret != SQLITE_OK)
+    {
+      DPRINTF(E_LOG, L_CACHE, "Could not prepare statement: %s\n", sqlite3_errmsg(g_db_hdl));
+      ret = -1;
+      goto error_get;
+    }
+
+  ret = sqlite3_step(stmt);
+  if (ret != SQLITE_ROW)
+    {
+      if (ret == SQLITE_DONE)
+  	{
+  	  ret = 0;
+  	  DPRINTF(E_DBG, L_CACHE, "No results\n");
+  	}
+      else
+  	{
+  	  ret = -1;
+  	  DPRINTF(E_LOG, L_CACHE, "Could not step: %s\n", sqlite3_errmsg(g_db_hdl));
+  	}
+
+      goto error_get;
+    }
+
+  *etag = safe_strdup((char *) sqlite3_column_text(stmt, 0));
+
+  ret = sqlite3_finalize(stmt);
+  if (ret != SQLITE_OK)
+    DPRINTF(E_LOG, L_CACHE, "Error finalizing query for getting cache: %s\n", sqlite3_errmsg(g_db_hdl));
+
+  DPRINTF(E_DBG, L_CACHE, "Cache hit: %s\n", query);
+
+  sqlite3_free(query);
+
+  return ret;
+
+ error_get:
+  sqlite3_finalize(stmt);
+  sqlite3_free(query);
+  return ret;
+
+#undef Q_TMPL
+}
+
+int
+cache_httpcache_get_response_body(struct evbuffer *evbuf, const char *url)
+{
+#define Q_TMPL "SELECT response_body FROM httpcache h WHERE h.url = %Q;"
+  sqlite3_stmt *stmt;
+  char *query;
+  int datalen;
+  int ret;
+
+  query = sqlite3_mprintf(Q_TMPL, url);
+  if (!query)
+    {
+      DPRINTF(E_LOG, L_CACHE, "Out of memory for query string\n");
+      return -1;
+    }
+
+  DPRINTF(E_DBG, L_CACHE, "Running query '%s'\n", query);
+
+  ret = sqlite3_prepare_v2(g_db_hdl, query, -1, &stmt, 0);
+  if (ret != SQLITE_OK)
+    {
+      DPRINTF(E_LOG, L_CACHE, "Could not prepare statement: %s\n", sqlite3_errmsg(g_db_hdl));
+      ret = -1;
+      goto error_get;
+    }
+
+  ret = sqlite3_step(stmt);
+  if (ret != SQLITE_ROW)
+    {
+      if (ret == SQLITE_DONE)
+	{
+	  ret = 0;
+	  DPRINTF(E_DBG, L_CACHE, "No results\n");
+	}
+      else
+	{
+	  ret = -1;
+	  DPRINTF(E_LOG, L_CACHE, "Could not step: %s\n", sqlite3_errmsg(g_db_hdl));
+	}
+
+      goto error_get;
+    }
+
+  datalen = sqlite3_column_bytes(stmt, 0);
+  if (!evbuf)
+    {
+      DPRINTF(E_LOG, L_CACHE, "Error: evbuffer is NULL\n");
+      ret = -1;
+      goto error_get;
+    }
+
+  ret = evbuffer_add(evbuf, sqlite3_column_blob(stmt, 0), datalen);
+  if (ret < 0)
+    {
+      DPRINTF(E_LOG, L_CACHE, "Out of memory for evbuffer\n");
+      ret = -1;
+      goto error_get;
+    }
+
+  ret = sqlite3_finalize(stmt);
+  if (ret != SQLITE_OK)
+    DPRINTF(E_LOG, L_CACHE, "Error finalizing query for getting cache: %s\n", sqlite3_errmsg(g_db_hdl));
+
+  DPRINTF(E_DBG, L_CACHE, "Cache hit: %s\n", query);
+
+  sqlite3_free(query);
+
+  return 0;
+
+ error_get:
+  sqlite3_finalize(stmt);
+  sqlite3_free(query);
+
+  return ret;
+#undef Q_TMPL
+}
+
+int
+cache_httpcache_add(const char *url, const char *etag, struct evbuffer *evbuf)
+{
+#define Q_TMPL "INSERT OR REPLACE INTO httpcache (url, etag, response_body) VALUES (?, ?, ?);"
+  sqlite3_stmt *stmt;
+  uint8_t *data;
+  int datalen;
+  int ret;
+
+  ret = sqlite3_prepare_v2(g_db_hdl, Q_TMPL, -1, &stmt, 0);
+  if (ret != SQLITE_OK)
+    {
+      DPRINTF(E_LOG, L_CACHE, "Could not prepare statement: %s\n", sqlite3_errmsg(g_db_hdl));
+      return -1;
+    }
+
+  datalen = evbuffer_get_length(evbuf);
+  data = evbuffer_pullup(evbuf, -1);
+
+  sqlite3_bind_text(stmt, 1, url, -1, SQLITE_STATIC);
+  sqlite3_bind_text(stmt, 2, etag, -1, SQLITE_STATIC);
+  sqlite3_bind_blob(stmt, 3, data, datalen, SQLITE_STATIC);
+
+  ret = sqlite3_step(stmt);
+  if (ret != SQLITE_DONE)
+    {
+      DPRINTF(E_LOG, L_CACHE, "Error stepping query for artwork add: %s\n", sqlite3_errmsg(g_db_hdl));
+      sqlite3_finalize(stmt);
+      return -1;
+    }
+
+  ret = sqlite3_finalize(stmt);
+  if (ret != SQLITE_OK)
+    {
+      DPRINTF(E_LOG, L_CACHE, "Error finalizing query for artwork add: %s\n", sqlite3_errmsg(g_db_hdl));
+      return -1;
+    }
+
+  return 0;
+
+#undef Q_TMPL
+}
 
 /* -------------------------- Cache general API --------------------------- */
 

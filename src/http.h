@@ -35,6 +35,9 @@ struct http_client_ctx
    */
   int headers_only;
 
+  /* Enable caching of responses */
+  bool cache_enabled;
+
   /* HTTP Response code */
   int response_code;
 

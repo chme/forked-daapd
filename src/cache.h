@@ -48,6 +48,17 @@ cache_artwork_stash(struct evbuffer *evbuf, const char *path, int format);
 int
 cache_artwork_read(struct evbuffer *evbuf, const char *path, int *format);
 
+/* ---------------------------- HTTP cache API  --------------------------- */
+
+int
+cache_httpcache_get(char **etag, const char *url);
+
+int
+cache_httpcache_get_response_body(struct evbuffer *evbuf, const char *url);
+
+int
+cache_httpcache_add(const char *url, const char *etag, struct evbuffer *evbuf);
+
 /* ---------------------------- Cache API  --------------------------- */
 
 int

@@ -44,6 +44,7 @@
 #include "logger.h"
 #include "misc.h"
 #include "conffile.h"
+#include "cache.h"
 
 /* Formats we can read so far */
 #define PLAYLIST_UNK 0
@@ -84,6 +85,35 @@ curl_headers_save(struct keyval *kv, CURL *curl)
     }
 }
 
+static size_t header_callback(char *buffer, size_t size,
+                              size_t nitems, void *userdata)
+{
+  struct keyval *kv = userdata;
+  char header[nitems + 1];
+  char *val;
+  const char *ptr;
+
+  if (kv)
+    {
+      // buffer is not a 0-terminated string
+      header[nitems] = '\0';
+      strncpy(header, buffer, nitems);
+
+      if (strncasecmp(header, "ETag: ", strlen("ETag: ")) == 0)
+	{
+	  ptr = strcasestr(header, "ETag: ") + 6;
+	  val = atrim(ptr);
+	  keyval_add(kv, "ETag", val);
+
+	  DPRINTF(E_DBG, L_HTTP, "Response header ETag found with value '%s'\n", val);
+	}
+    }
+
+  /* received header is nitems * size long in 'buffer' NOT ZERO TERMINATED */
+  /* 'userdata' is set with CURLOPT_HEADERDATA */
+  return nitems * size;
+}
+
 static size_t
 curl_request_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
 {
@@ -115,9 +145,12 @@ http_client_request(struct http_client_ctx *ctx, struct http_client_session *ses
   struct curl_slist *headers;
   struct onekeyval *okv;
   const char *user_agent;
+  char *etag;
+  const char *etag_response;
   long verifypeer;
   char header[1024];
   long response_code;
+  bool is_get_request;
 
   if (session)
     {
@@ -141,9 +174,22 @@ http_client_request(struct http_client_ctx *ctx, struct http_client_session *ses
   verifypeer = cfg_getbool(cfg_getsec(cfg, "general"), "ssl_verifypeer");
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, verifypeer);
 
+  is_get_request = !ctx->output_body && !ctx->headers_only;
   headers = NULL;
   if (ctx->output_headers)
     {
+      if (ctx->cache_enabled && is_get_request)
+        {
+	  // Caching is enabled and it is a GET request, check cache for existing ETag value for the url
+	  cache_httpcache_get(&etag, ctx->url);
+	  if (etag)
+	    {
+	      DPRINTF(E_DBG, L_HTTP, "Found ETag in cache adding If-None-Match header to request: %s\n", etag);
+	      keyval_add(ctx->output_headers, "If-None-Match", etag);
+	      free(etag);
+	    }
+	}
+
       for (okv = ctx->output_headers->head; okv; okv = okv->next)
 	{
 	  snprintf(header, sizeof(header), "%s: %s", okv->name, okv->value);
@@ -161,6 +207,8 @@ http_client_request(struct http_client_ctx *ctx, struct http_client_session *ses
   curl_easy_setopt(curl, CURLOPT_TIMEOUT, HTTP_CLIENT_TIMEOUT);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_request_cb);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, ctx);
+  curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback);
+  curl_easy_setopt(curl, CURLOPT_HEADERDATA, ctx->input_headers);
 
   // Artwork and playlist requests might require redirects
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
@@ -184,6 +232,26 @@ http_client_request(struct http_client_ctx *ctx, struct http_client_session *ses
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
   ctx->response_code = (int) response_code;
   curl_headers_save(ctx->input_headers, curl);
+
+  if (ctx->cache_enabled && ctx->input_headers && is_get_request)
+    {
+      if (ctx->response_code == HTTP_NOTMODIFIED)
+	{
+	  // Response did not change, return response body from cache
+	  DPRINTF(E_DBG, L_HTTP, "Got 304 Not Modified response using cached response for request: %s\n", ctx->url);
+	  cache_httpcache_get_response_body(ctx->input_body, ctx->url);
+	}
+      else
+	{
+	  // Response changed, update cache
+	  etag_response = keyval_get(ctx->input_headers, "ETag");
+	  if (etag_response && evbuffer_get_length(ctx->input_body) > 0)
+	    {
+	      DPRINTF(E_DBG, L_HTTP, "Found ETag header in response, adding response to cache for request: %s\n", ctx->url);
+	      cache_httpcache_add(ctx->url, etag_response, ctx->input_body);
+	    }
+	}
+    }
 
   curl_slist_free_all(headers);
   if (!session)
