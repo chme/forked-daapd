@@ -138,8 +138,6 @@ static pthread_mutex_t token_lck;
 
 // The base playlist id for all Spotify playlists in the db
 static int spotify_base_plid;
-// The base playlist id for Spotify saved tracks in the db
-static int spotify_saved_plid;
 
 // Flag to avoid triggering playlist change events while the (re)scan is running
 static bool scanning;
@@ -1667,7 +1665,6 @@ saved_album_add(json_object *item, int index, int total, enum spotify_request_ty
   int track_count;
   int dir_id;
   int i;
-  int ret;
 
   if (!json_object_object_get_ex(item, "album", &jsonalbum))
     {
@@ -1706,10 +1703,7 @@ saved_album_add(json_object *item, int index, int total, enum spotify_request_ty
       parse_metadata_track(jsontrack, &track, 0);
       track.mtime = album.mtime;
 
-      ret = track_add(&track, &album, NULL, dir_id, request_type);
-
-      if (ret == 0 && spotify_saved_plid)
-	db_pl_add_item_bypath(spotify_saved_plid, track.uri);
+      track_add(&track, &album, NULL, dir_id, request_type);
     }
 
   db_transaction_end();
@@ -1744,7 +1738,6 @@ saved_episodes_add(json_object *item, int index, int total, enum spotify_request
   struct spotify_album *show = arg;
   struct spotify_track episode;
   int dir_id;
-  int ret;
 
   DPRINTF(E_DBG, L_SPOTIFY, "saved_episodes_add: %s\n", json_object_to_json_string(item));
 
@@ -1754,10 +1747,7 @@ saved_episodes_add(json_object *item, int index, int total, enum spotify_request
   // Get or create the directory structure for this album
   dir_id = prepare_directories(show->artist, show->name);
 
-  ret = track_add(&episode, show, NULL, dir_id, request_type);
-
-  if (ret == 0 && spotify_saved_plid)
-	db_pl_add_item_bypath(spotify_saved_plid, episode.uri);
+  track_add(&episode, show, NULL, dir_id, request_type);
 
   return 0;
 }
@@ -1946,30 +1936,6 @@ scan_playlists(enum spotify_request_type request_type)
   return ret;
 }
 
-static void
-create_saved_tracks_playlist(void)
-{
-  struct playlist_info pli =
-    {
-      .path = strdup("spotify:savedtracks"),
-      .title = strdup("Spotify Saved"),
-      .virtual_path = strdup("/spotify:/Spotify Saved"),
-      .type = PL_PLAIN,
-      .parent_id = spotify_base_plid,
-      .directory_id = DIR_SPOTIFY,
-      .scan_kind = SCAN_KIND_SPOTIFY,
-    };
-
-  spotify_saved_plid = playlist_add_or_update(&pli);
-  if (spotify_saved_plid < 0)
-    {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error adding playlist for saved tracks\n");
-      spotify_saved_plid = 0;
-    }
-
-  free_pli(&pli, 1);
-}
-
 /*
  * Add or update playlist folder for all spotify playlists (if enabled in config)
  */
@@ -2021,7 +1987,6 @@ scan(enum spotify_request_type request_type)
 
   db_directory_enable_bypath("/spotify:");
   create_base_playlist();
-  create_saved_tracks_playlist();
   scan_saved_albums(request_type);
   scan_playlists(request_type);
   spotify_status_get(&sp_status);
@@ -2052,8 +2017,6 @@ initscan(void)
 
       return 0;
     }
-
-  spotify_saved_plid = 0;
 
   /*
    * Check that the playback Spotify backend can log in, so we don't add tracks
