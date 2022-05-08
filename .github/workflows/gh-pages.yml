@@ -2,7 +2,8 @@ name: build and deploy mkdocs to github pages
 on:
   push:
     branches:
-      - master 
+      - master
+      - temp/mkdocs-ghp-test
 jobs:
   deploy:
     runs-on: ubuntu-latest
