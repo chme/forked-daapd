@@ -89,6 +89,23 @@ export function byDateSinceToday(field, defaultValue = '0000') {
   }
 }
 
+export function byRating({ direction = 'desc', defaultValue = 0 }) {
+  return {
+    compareFn: (a, b) => {
+      const fieldA = a['rating'] || defaultValue
+      const fieldB = b['rating'] || defaultValue
+
+      const result = fieldA < fieldB ? -1 : fieldA > fieldB ? 1 : 0
+      return direction === 'asc' ? result : result * -1
+    },
+
+    groupKeyFn: (item) => {
+      const fieldValue = item['rating'] || defaultValue
+      return Math.floor(fieldValue / 10)
+    }
+  }
+}
+
 export class GroupByList {
   constructor({ items = [], total = 0, offset = 0, limit = -1 } = {}) {
     this.items = items
