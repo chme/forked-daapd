@@ -1,0 +1,106 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "[owntone-server] autoreconf",
+            "type": "shell",
+            "command": "autoreconf -i",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "[owntone-server] configure",
+            "type": "shell",
+            "command": "./configure",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "[owntone-server] make",
+            "type": "shell",
+            "command": "make",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "[owntone-server] scan-build",
+            "type": "shell",
+            "command": "make clean && scan-build --status-bugs -disable-checker deadcode.DeadStores --exclude src/parsers make",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "[owntone-server] clean",
+            "type": "shell",
+            "command": "make clean",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "[owntone-web] install",
+            "type": "npm",
+            "script": "install",
+            "options": {
+                "cwd": "${workspaceFolder}/web-src"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "[owntone-web] build",
+            "type": "npm",
+            "script": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/web-src"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "[owntone-web] serve",
+            "type": "npm",
+            "script": "serve",
+            "options": {
+                "cwd": "${workspaceFolder}/web-src"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "[owntone-docs] serve",
+            "type": "shell",
+            "command": "mkdocs serve",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        },
+        {
+            "label": "[owntone-docs] build",
+            "type": "shell",
+            "command": "mkdocs build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
