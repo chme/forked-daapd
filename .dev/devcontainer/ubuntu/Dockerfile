@@ -51,14 +51,13 @@ RUN apt-get -y update \
         gdb \
         valgrind \
         # Additional terminal utility applications
+        pipx \
         # bat - replacement for cat
         bat \
         # eza (https://eza.rocks/) - replacement for ls
         eza \
         # fuzzy search
         fzf \
-    # Build tools for mmkdocs (OwnTone documentation)
-    && pip3 install --break-system-packages mkdocs-material mkdocs-minify-plugin \
     # Create folders and set ownership for folders that might be mounted as volumes
     && mkdir -p /home/$USERNAME/.local/share \
     && chown -R $USERNAME /home/$USERNAME/.local \

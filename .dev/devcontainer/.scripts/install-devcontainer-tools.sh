@@ -1,8 +1,8 @@
 #!/bin/sh
 
 # Install mkdocs with mkdocs-material theme
-#pipx install --include-deps mkdocs-material
-#pipx inject mkdocs-material mkdocs-minify-plugin
+pipx install --include-deps mkdocs-material
+pipx inject mkdocs-material mkdocs-minify-plugin
 
 # Starfish (https://starship.rs/) - shell prompt
 if [ "$ENABLE_STARSHIP" = "1" ]
@@ -24,3 +24,7 @@ then
     curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
     echo 'eval "$(zoxide init bash)"' >> ~/.bashrc
 fi
+
+pipx install harlequin
+pipx install toolong
+pipx install posting
