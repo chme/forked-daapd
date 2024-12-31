@@ -20,62 +20,62 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <grp.h>
+#include <limits.h>
+#include <signal.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <signal.h>
-#include <limits.h>
-#include <grp.h>
-#include <stdint.h>
+#include <unistd.h>
 
 #ifdef HAVE_SIGNALFD
-# include <sys/signalfd.h>
+#include <sys/signalfd.h>
 #else
-# include <sys/time.h>
-# include <sys/event.h>
+#include <sys/event.h>
+#include <sys/time.h>
 #endif
 
-#include <getopt.h>
+#include <curl/curl.h>
 #include <event2/event.h>
 #include <event2/thread.h>
+#include <getopt.h>
+#include <libavfilter/avfilter.h>
+#include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/log.h>
-#include <libavformat/avformat.h>
-#include <libavfilter/avfilter.h>
-#include <curl/curl.h>
 
-#include <pthread.h>
 #include <gcrypt.h>
+#include <pthread.h>
 
+#include "cache.h"
 #include "conffile.h"
 #include "db.h"
-#include "logger.h"
-#include "misc.h"
-#include "cache.h"
 #include "httpd.h"
-#include "mpd.h"
-#include "mdns.h"
-#include "remote_pairing.h"
-#include "player.h"
-#include "worker.h"
 #include "library.h"
+#include "logger.h"
+#include "mdns.h"
+#include "misc.h"
+#include "mpd.h"
+#include "player.h"
+#include "remote_pairing.h"
+#include "worker.h"
 #ifdef LASTFM
-# include "lastfm.h"
+#include "lastfm.h"
 #endif
 
-#define PIDFILE          STATEDIR "/run/" PACKAGE ".pid"
-#define WEB_ROOT         DATADIR "/htdocs"
-#define SQLITE_EXT_PATH  PKGLIBDIR "/" PACKAGE_NAME "-sqlext.so"
+#define PIDFILE STATEDIR "/run/" PACKAGE ".pid"
+#define WEB_ROOT DATADIR "/htdocs"
+#define SQLITE_EXT_PATH PKGLIBDIR "/" PACKAGE_NAME "-sqlext.so"
 
 struct event_base *evbase_main;
 
@@ -161,7 +161,7 @@ daemonize(bool background, char *pidfile)
 	}
 
       pid_ret = setsid();
-      if (pid_ret == (pid_t) -1)
+      if (pid_ret == (pid_t)-1)
 	{
 	  DPRINTF(E_FATAL, L_MAIN, "setsid() failed: %s\n", strerror(errno));
 
@@ -181,7 +181,7 @@ daemonize(bool background, char *pidfile)
 
       ret = chdir("/");
       if (ret < 0)
-        DPRINTF(E_WARN, L_MAIN, "chdir() failed: %s\n", strerror(errno));
+	DPRINTF(E_WARN, L_MAIN, "chdir() failed: %s\n", strerror(errno));
 
       umask(0);
 
@@ -191,7 +191,7 @@ daemonize(bool background, char *pidfile)
       DPRINTF(E_DBG, L_MAIN, "PID: %d\n", getpid());
     }
 
-  if (geteuid() == (uid_t) 0)
+  if (geteuid() == (uid_t)0)
     {
       runas = cfg_getstr(cfg_getsec(cfg, "general"), "uid");
 
@@ -352,13 +352,12 @@ register_services(char *ffid, bool no_web, bool no_rsp, bool no_daap, bool no_mp
   if (!no_mpd && mpd_port > 0)
     {
       ret = mdns_register(libname, "_mpd._tcp", mpd_port, NULL);
-            if (ret < 0)
-      	return ret;
+      if (ret < 0)
+	return ret;
     }
 
   return 0;
 }
-
 
 #ifdef HAVE_SIGNALFD
 static void
@@ -371,26 +370,26 @@ signal_signalfd_cb(int fd, short event, void *arg)
     {
       switch (info.ssi_signo)
 	{
-	  case SIGCHLD:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGCHLD\n");
+	case SIGCHLD:
+	  DPRINTF(E_LOG, L_MAIN, "Got SIGCHLD\n");
 
-	    while (waitpid(-1, &status, WNOHANG) > 0)
-	      /* Nothing. */ ;
-	    break;
+	  while (waitpid(-1, &status, WNOHANG) > 0)
+	    /* Nothing. */;
+	  break;
 
-	  case SIGINT:
-	  case SIGTERM:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGTERM or SIGINT\n");
+	case SIGINT:
+	case SIGTERM:
+	  DPRINTF(E_LOG, L_MAIN, "Got SIGTERM or SIGINT\n");
 
-	    main_exit = 1;
-	    break;
+	  main_exit = 1;
+	  break;
 
-	  case SIGHUP:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGHUP\n");
+	case SIGHUP:
+	  DPRINTF(E_LOG, L_MAIN, "Got SIGHUP\n");
 
-	    if (!main_exit)
-	      logger_reinit();
-	    break;
+	  if (!main_exit)
+	    logger_reinit();
+	  break;
 	}
     }
 
@@ -416,26 +415,26 @@ signal_kqueue_cb(int fd, short event, void *arg)
     {
       switch (ke.ident)
 	{
-	  case SIGCHLD:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGCHLD\n");
+	case SIGCHLD:
+	  DPRINTF(E_LOG, L_MAIN, "Got SIGCHLD\n");
 
-	    while (waitpid(-1, &status, WNOHANG) > 0)
-	      /* Nothing. */ ;
-	    break;
+	  while (waitpid(-1, &status, WNOHANG) > 0)
+	    /* Nothing. */;
+	  break;
 
-	  case SIGINT:
-	  case SIGTERM:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGTERM or SIGINT\n");
+	case SIGINT:
+	case SIGTERM:
+	  DPRINTF(E_LOG, L_MAIN, "Got SIGTERM or SIGINT\n");
 
-	    main_exit = 1;
-	    break;
+	  main_exit = 1;
+	  break;
 
-	  case SIGHUP:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGHUP\n");
+	case SIGHUP:
+	  DPRINTF(E_LOG, L_MAIN, "Got SIGHUP\n");
 
-	    if (!main_exit)
-	      logger_reinit();
-	    break;
+	  if (!main_exit)
+	    logger_reinit();
+	  break;
 	}
     }
 
@@ -452,27 +451,27 @@ ffmpeg_lockmgr(void **pmutex, enum AVLockOp op)
 {
   switch (op)
     {
-      case AV_LOCK_CREATE:
-	*pmutex = malloc(sizeof(pthread_mutex_t));
-	if (!*pmutex)
-	  return 1;
-        CHECK_ERR(L_MAIN, mutex_init(*pmutex));
-	return 0;
+    case AV_LOCK_CREATE:
+      *pmutex = malloc(sizeof(pthread_mutex_t));
+      if (!*pmutex)
+	return 1;
+      CHECK_ERR(L_MAIN, mutex_init(*pmutex));
+      return 0;
 
-      case AV_LOCK_OBTAIN:
-        CHECK_ERR(L_MAIN, pthread_mutex_lock(*pmutex));
-	return 0;
+    case AV_LOCK_OBTAIN:
+      CHECK_ERR(L_MAIN, pthread_mutex_lock(*pmutex));
+      return 0;
 
-      case AV_LOCK_RELEASE:
-        CHECK_ERR(L_MAIN, pthread_mutex_unlock(*pmutex));
-	return 0;
+    case AV_LOCK_RELEASE:
+      CHECK_ERR(L_MAIN, pthread_mutex_unlock(*pmutex));
+      return 0;
 
-      case AV_LOCK_DESTROY:
-	CHECK_ERR(L_MAIN, pthread_mutex_destroy(*pmutex));
-	free(*pmutex);
-        *pmutex = NULL;
+    case AV_LOCK_DESTROY:
+      CHECK_ERR(L_MAIN, pthread_mutex_destroy(*pmutex));
+      free(*pmutex);
+      *pmutex = NULL;
 
-	return 0;
+      return 0;
     }
 
   return 1;
@@ -509,96 +508,95 @@ main(int argc, char **argv)
   int i;
   int ret;
 
-  struct option option_map[] =
-    {
-      { "ffid",         1, NULL, 'b' },
-      { "debug",        1, NULL, 'd' },
-      { "logdomains",   1, NULL, 'D' },
-      { "foreground",   0, NULL, 'f' },
-      { "config",       1, NULL, 'c' },
-      { "pidfile",      1, NULL, 'P' },
-      { "version",      0, NULL, 'v' },
-      { "webroot",      1, NULL, 'w' },
-      { "sqliteext",    1, NULL, 's' },
-      { "testrun",      0, NULL, 't' }, // Used for CI, not documented to user
+  struct option option_map[] = {
+    { "ffid",          1, NULL, 'b' },
+    { "debug",         1, NULL, 'd' },
+    { "logdomains",    1, NULL, 'D' },
+    { "foreground",    0, NULL, 'f' },
+    { "config",        1, NULL, 'c' },
+    { "pidfile",       1, NULL, 'P' },
+    { "version",       0, NULL, 'v' },
+    { "webroot",       1, NULL, 'w' },
+    { "sqliteext",     1, NULL, 's' },
+    { "testrun",       0, NULL, 't' }, // Used for CI, not documented to user
 
-      { "mdns-no-rsp",  0, NULL, 512 },
-      { "mdns-no-daap", 0, NULL, 513 },
-      { "mdns-no-cname",0, NULL, 514 },
-      { "mdns-no-web",  0, NULL, 515 },
+    { "mdns-no-rsp",   0, NULL, 512 },
+    { "mdns-no-daap",  0, NULL, 513 },
+    { "mdns-no-cname", 0, NULL, 514 },
+    { "mdns-no-web",   0, NULL, 515 },
 
-      { NULL,           0, NULL, 0 }
-    };
+    { NULL,            0, NULL, 0   }
+  };
 
   while ((option = getopt_long(argc, argv, "D:d:c:P:ftb:vw:s:", option_map, NULL)) != -1)
     {
       switch (option)
 	{
-	  case 512:
-	    mdns_no_rsp = true;
-	    break;
+	case 512:
+	  mdns_no_rsp = true;
+	  break;
 
-	  case 513:
-	    mdns_no_daap = true;
-	    break;
+	case 513:
+	  mdns_no_daap = true;
+	  break;
 
-	  case 514:
-	    mdns_no_cname = true;
-	    break;
+	case 514:
+	  mdns_no_cname = true;
+	  break;
 
-	  case 515:
-	    mdns_no_web = true;
-	    break;
+	case 515:
+	  mdns_no_web = true;
+	  break;
 
-	  case 't':
-	    testrun = true;
-	    break;
+	case 't':
+	  testrun = true;
+	  break;
 
-	  case 'b':
-	    ffid = optarg;
-	    break;
+	case 'b':
+	  ffid = optarg;
+	  break;
 
-	  case 'd':
-	    ret = safe_atoi32(optarg, &option);
-	    if (ret < 0)
-	      fprintf(stderr, "Error: loglevel must be an integer in '-d %s'\n", optarg);
-	    else
-	      loglevel = option;
-	    break;
+	case 'd':
+	  ret = safe_atoi32(optarg, &option);
+	  if (ret < 0)
+	    fprintf(stderr, "Error: loglevel must be an integer in '-d %s'\n", optarg);
+	  else
+	    loglevel = option;
+	  break;
 
-	  case 'D':
-	    logdomains = optarg;
-	    break;
+	case 'D':
+	  logdomains = optarg;
+	  break;
 
-	  case 'f':
-	    background = false;
-	    break;
+	case 'f':
+	  background = false;
+	  break;
 
-	  case 'c':
-	    configfile = optarg;
-	    break;
+	case 'c':
+	  configfile = optarg;
+	  break;
 
-	  case 'P':
-	    pidfile = optarg;
-	    break;
+	case 'P':
+	  pidfile = optarg;
+	  break;
 
-	  case 'v':
-	    version();
-	    return EXIT_SUCCESS;
-	    break;
+	case 'v':
+	  version();
+	  return EXIT_SUCCESS;
+	  break;
 
-	  case 'w':
-	    webroot = optarg;
-	    break;
+	case 'w':
+	  webroot = optarg;
+	  break;
 
-	  case 's':
-	    sqlite_extension_path = optarg;
-	    break;
+	case 's':
+	  sqlite_extension_path = optarg;
+	  break;
 
-	  default:
-	    usage(argv[0]);
-	    return EXIT_FAILURE;
-	    break;
+	default:
+	  usage(argv[0]);
+	  return EXIT_FAILURE;
+	  break;
 	}
     }
 
@@ -922,54 +920,54 @@ main(int argc, char **argv)
   DPRINTF(E_LOG, L_MAIN, "mDNS deinit\n");
   mdns_deinit();
 
- sig_event_fail:
- signalfd_fail:
- mdns_reg_fail:
+sig_event_fail:
+signalfd_fail:
+mdns_reg_fail:
   DPRINTF(E_LOG, L_MAIN, "Remote pairing deinit\n");
   remote_pairing_deinit();
 
- remote_fail:
+remote_fail:
 #ifdef MPD
   DPRINTF(E_LOG, L_MAIN, "MPD deinit\n");
   mpd_deinit();
 
- mpd_fail:
+mpd_fail:
 #endif
   DPRINTF(E_LOG, L_MAIN, "HTTPd deinit\n");
   httpd_deinit();
 
- httpd_fail:
+httpd_fail:
   DPRINTF(E_LOG, L_MAIN, "Player deinit\n");
   player_deinit();
 
- player_fail:
+player_fail:
   DPRINTF(E_LOG, L_MAIN, "Library scanner deinit\n");
   library_deinit();
 
- library_fail:
+library_fail:
   DPRINTF(E_LOG, L_MAIN, "Cache deinit\n");
   cache_deinit();
 
- cache_fail:
+cache_fail:
   DPRINTF(E_LOG, L_MAIN, "Worker deinit\n");
   worker_deinit();
 
- worker_fail:
+worker_fail:
   DPRINTF(E_LOG, L_MAIN, "Database deinit\n");
   db_perthread_deinit();
   db_deinit();
 
- db_fail:
+db_fail:
   if (ret == EXIT_FAILURE)
     {
       DPRINTF(E_LOG, L_MAIN, "mDNS deinit\n");
       mdns_deinit();
     }
 
- mdns_fail:
+mdns_fail:
   event_base_free(evbase_main);
 
- daemon_fail:
+daemon_fail:
   if (background)
     {
       ret = seteuid(0);
@@ -983,8 +981,8 @@ main(int argc, char **argv)
 	}
     }
 
- signal_block_fail:
- gcrypt_init_fail:
+signal_block_fail:
+gcrypt_init_fail:
   curl_global_cleanup();
 #if HAVE_DECL_AVFORMAT_NETWORK_INIT
   avformat_network_deinit();
@@ -992,7 +990,7 @@ main(int argc, char **argv)
 
 #if (LIBAVCODEC_VERSION_MAJOR < 58) || ((LIBAVCODEC_VERSION_MAJOR == 58) && (LIBAVCODEC_VERSION_MINOR < 18))
   av_lockmgr_register(NULL);
- ffmpeg_init_fail:
+ffmpeg_init_fail:
 #endif
 
   DPRINTF(E_LOG, L_MAIN, "Exiting.\n");

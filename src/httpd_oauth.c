@@ -17,25 +17,24 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <errno.h>
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <errno.h>
-#include <stdint.h>
-#include <inttypes.h>
+#include <unistd.h>
 
+#include "conffile.h"
 #include "httpd_internal.h"
 #include "logger.h"
 #include "misc.h"
-#include "conffile.h"
 #ifdef SPOTIFY
-# include "library/spotify_webapi.h"
+#include "library/spotify_webapi.h"
 #endif
-
 
 /* --------------------------- REPLY HANDLERS ------------------------------- */
 
@@ -75,18 +74,10 @@ oauth_reply_spotify(struct httpd_request *hreq)
 }
 #endif
 
-static struct httpd_uri_map oauth_handlers[] =
-  {
-    {
-      .regexp = "^/oauth/spotify$",
-      .handler = oauth_reply_spotify
-    },
-    {
-      .regexp = NULL,
-      .handler = NULL
-    }
-  };
-
+static struct httpd_uri_map oauth_handlers[] = {
+  { .regexp = "^/oauth/spotify$", .handler = oauth_reply_spotify },
+  { .regexp = NULL,               .handler = NULL                }
+};
 
 /* ------------------------------- OAUTH API -------------------------------- */
 
@@ -104,13 +95,12 @@ oauth_request(struct httpd_request *hreq)
   hreq->handler(hreq);
 }
 
-struct httpd_module httpd_oauth =
-{
+struct httpd_module httpd_oauth = {
   .name = "OAuth",
   .type = MODULE_OAUTH,
   .logdomain = L_WEB,
   .subpaths = { "/oauth/", NULL },
-  .fullpaths = { "/oauth", NULL },
+  .fullpaths = { "/oauth",  NULL },
   .handlers = oauth_handlers,
   .request = oauth_request,
 };

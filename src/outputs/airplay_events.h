@@ -10,4 +10,4 @@ airplay_events_init(void);
 void
 airplay_events_deinit(void);
 
-#endif  /* !__AIRPLAY_EVENTS_H__ */
+#endif /* !__AIRPLAY_EVENTS_H__ */

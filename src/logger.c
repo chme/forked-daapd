@@ -17,20 +17,20 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #include "logger.h"
 
-#include <stdio.h>
-#include <unistd.h>
+#include <ctype.h> // for isprint()
+#include <errno.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <errno.h>
 #include <sys/stat.h>
-#include <ctype.h> // for isprint()
+#include <time.h>
+#include <unistd.h>
 
 #include <event2/event.h>
 
@@ -42,12 +42,18 @@
 #define LOGGER_REPEAT_MAX 10
 
 /* We need our own check to avoid nested locking or recursive calls */
-#define LOGGER_CHECK_ERR(f) \
-  do { int lerr; lerr = f; if (lerr != 0) { \
-      vlogger_fatal("%s failed at line %d, err %d (%s)\n", #f, __LINE__, \
-                    lerr, strerror(lerr)); \
-      abort(); \
-    } } while(0)
+#define LOGGER_CHECK_ERR(f)                                                                                            \
+  do                                                                                                                   \
+    {                                                                                                                  \
+      int lerr;                                                                                                        \
+      lerr = f;                                                                                                        \
+      if (lerr != 0)                                                                                                   \
+	{                                                                                                              \
+	  vlogger_fatal("%s failed at line %d, err %d (%s)\n", #f, __LINE__, lerr, strerror(lerr));                    \
+	  abort();                                                                                                     \
+	}                                                                                                              \
+    }                                                                                                                  \
+  while (0)
 
 static pthread_mutex_t logger_lck;
 static int logger_initialized;
@@ -58,9 +64,10 @@ static uint32_t logger_repeat_counter;
 static uint32_t logger_last_hash;
 static char *logfilename;
 static FILE *logfile;
-static char *labels[] = { "config", "daap", "db", "httpd", "http", "main", "mdns", "misc", "rsp", "scan", "xcode", "event", "remote", "dacp", "ffmpeg", "artwork", "player", "raop", "laudio", "dmap", "dbperf", "spotify", "lastfm", "cache", "mpd", "stream", "cast", "fifo", "lib", "web", "airplay", "rcp" };
+static char *labels[] = { "config", "daap", "db", "httpd", "http", "main", "mdns", "misc", "rsp", "scan", "xcode",
+  "event", "remote", "dacp", "ffmpeg", "artwork", "player", "raop", "laudio", "dmap", "dbperf", "spotify", "lastfm",
+  "cache", "mpd", "stream", "cast", "fifo", "lib", "web", "airplay", "rcp" };
 static char *severities[] = { "FATAL", "LOG", "WARN", "INFO", "DEBUG", "SPAM" };
-
 
 static int
 set_logdomains(char *domains)
@@ -186,7 +193,7 @@ static void
 vlogger(int severity, int domain, const char *fmt, va_list args)
 {
 
-  if(! logger_initialized)
+  if (!logger_initialized)
     {
       /* lock not initialized, use stderr */
       vlogger_writer(severity, domain, fmt, args);
@@ -234,14 +241,14 @@ hexdump(int severity, int domain, const unsigned char *data, int len, const char
 	  logger_write(" %04x ", i);
 	}
 
-	logger_write(" %02x", pc[i]);
+      logger_write(" %02x", pc[i]);
 
-	if (isprint(pc[i]))
-	  buff[i % 16] = pc[i];
-	else
-	  buff[i % 16] = '.';
+      if (isprint(pc[i]))
+	buff[i % 16] = pc[i];
+      else
+	buff[i % 16] = '.';
 
-	buff[(i % 16) + 1] = '\0';
+      buff[(i % 16) + 1] = '\0';
     }
 
   while ((i % 16) != 0)
@@ -316,25 +323,25 @@ logger_libevent(int severity, const char *msg)
 {
   switch (severity)
     {
-      case EVENT_LOG_DEBUG:
-	severity = E_DBG;
-	break;
+    case EVENT_LOG_DEBUG:
+      severity = E_DBG;
+      break;
 
-      case EVENT_LOG_ERR:
-	severity = E_LOG;
-	break;
+    case EVENT_LOG_ERR:
+      severity = E_LOG;
+      break;
 
-      case EVENT_LOG_WARN:
-	severity = E_WARN;
-	break;
+    case EVENT_LOG_WARN:
+      severity = E_WARN;
+      break;
 
-      case EVENT_LOG_MSG:
-	severity = E_INFO;
-	break;
+    case EVENT_LOG_MSG:
+      severity = E_INFO;
+      break;
 
-      default:
-	severity = E_LOG;
-	break;
+    default:
+      severity = E_LOG;
+      break;
     }
 
   DPRINTF(severity, L_EVENT, "%s\n", msg);
@@ -373,10 +380,9 @@ logger_reinit(void)
   fclose(logfile);
   logfile = fp;
 
- out:
+out:
   LOGGER_CHECK_ERR(pthread_mutex_unlock(&logger_lck));
 }
-
 
 int
 logger_severity(void)
@@ -466,7 +472,7 @@ logger_deinit(void)
       logfile = NULL;
     }
 
-  if(logger_initialized)
+  if (logger_initialized)
     {
       /* logging w/o locks to stderr now */
       logger_initialized = 0;

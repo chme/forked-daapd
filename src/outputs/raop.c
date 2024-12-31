@@ -33,75 +33,75 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdio.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <stdint.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <inttypes.h>
 #include <math.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <netdb.h>
-#include <fcntl.h>
-#include <time.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <strings.h> // strcasecmp
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <arpa/inet.h>
 #include <net/if.h>
 #include <netinet/in.h>
 
-#include <event2/event.h>
 #include <event2/buffer.h>
+#include <event2/event.h>
 #include <gcrypt.h>
 
-#include "evrtsp/evrtsp.h"
+#include "artwork.h"
 #include "conffile.h"
+#include "db.h"
+#include "dmap_common.h"
+#include "evrtsp/evrtsp.h"
 #include "logger.h"
 #include "mdns.h"
 #include "misc.h"
-#include "player.h"
-#include "db.h"
-#include "artwork.h"
-#include "dmap_common.h"
-#include "rtp_common.h"
-#include "transcode.h"
 #include "outputs.h"
 #include "pair_ap/pair.h"
+#include "player.h"
+#include "rtp_common.h"
+#include "transcode.h"
 
-#define ALAC_HEADER_LEN                      3
+#define ALAC_HEADER_LEN 3
 
-#define RAOP_QUALITY_SAMPLE_RATE_DEFAULT     44100
+#define RAOP_QUALITY_SAMPLE_RATE_DEFAULT 44100
 #define RAOP_QUALITY_BITS_PER_SAMPLE_DEFAULT 16
-#define RAOP_QUALITY_CHANNELS_DEFAULT        2
+#define RAOP_QUALITY_CHANNELS_DEFAULT 2
 
 // AirTunes v2 number of samples per packet
 // Probably using this value because 44100/352 and 48000/352 has good 32 byte
 // alignment, which improves performance of some encoders
-#define RAOP_SAMPLES_PER_PACKET              352
+#define RAOP_SAMPLES_PER_PACKET 352
 
-#define RAOP_RTP_PAYLOADTYPE                 0x60
+#define RAOP_RTP_PAYLOADTYPE 0x60
 
 // How many RTP packets keep in a buffer for retransmission
-#define RAOP_PACKET_BUFFER_SIZE    1000
+#define RAOP_PACKET_BUFFER_SIZE 1000
 
-#define RAOP_MD_DELAY_STARTUP      15360
-#define RAOP_MD_DELAY_SWITCH       (RAOP_MD_DELAY_STARTUP * 2)
-#define RAOP_MD_WANTS_TEXT         (1 << 0)
-#define RAOP_MD_WANTS_ARTWORK      (1 << 1)
-#define RAOP_MD_WANTS_PROGRESS     (1 << 2)
+#define RAOP_MD_DELAY_STARTUP 15360
+#define RAOP_MD_DELAY_SWITCH (RAOP_MD_DELAY_STARTUP * 2)
+#define RAOP_MD_WANTS_TEXT (1 << 0)
+#define RAOP_MD_WANTS_ARTWORK (1 << 1)
+#define RAOP_MD_WANTS_PROGRESS (1 << 2)
 
 // ATV4 and Homepod disconnect for reasons that are not clear, but sending them
 // progress metadata at regular intervals reduces the problem. The below
 // interval was determined via testing, see:
 // https://github.com/owntone/owntone-server/issues/734#issuecomment-622959334
-#define RAOP_KEEP_ALIVE_INTERVAL   25
+#define RAOP_KEEP_ALIVE_INTERVAL 25
 
 // This is an arbitrary value which just needs to be kept in sync with the config
-#define RAOP_CONFIG_MAX_VOLUME     11
+#define RAOP_CONFIG_MAX_VOLUME 11
 
 enum raop_devtype {
   RAOP_DEV_APEX1_80211G,
@@ -114,21 +114,21 @@ enum raop_devtype {
 };
 
 // Session is starting up
-#define RAOP_STATE_F_STARTUP    (1 << 13)
+#define RAOP_STATE_F_STARTUP (1 << 13)
 // Streaming is up (connection established)
-#define RAOP_STATE_F_CONNECTED  (1 << 14)
+#define RAOP_STATE_F_CONNECTED (1 << 14)
 // Couldn't start device
-#define RAOP_STATE_F_FAILED     (1 << 15)
+#define RAOP_STATE_F_FAILED (1 << 15)
 
 enum raop_state {
   // Device is stopped (no session)
-  RAOP_STATE_STOPPED   = 0,
+  RAOP_STATE_STOPPED = 0,
   // Session startup
-  RAOP_STATE_STARTUP   = RAOP_STATE_F_STARTUP | 0x01,
-  RAOP_STATE_OPTIONS   = RAOP_STATE_F_STARTUP | 0x02,
-  RAOP_STATE_ANNOUNCE  = RAOP_STATE_F_STARTUP | 0x03,
-  RAOP_STATE_SETUP     = RAOP_STATE_F_STARTUP | 0x04,
-  RAOP_STATE_RECORD    = RAOP_STATE_F_STARTUP | 0x05,
+  RAOP_STATE_STARTUP = RAOP_STATE_F_STARTUP | 0x01,
+  RAOP_STATE_OPTIONS = RAOP_STATE_F_STARTUP | 0x02,
+  RAOP_STATE_ANNOUNCE = RAOP_STATE_F_STARTUP | 0x03,
+  RAOP_STATE_SETUP = RAOP_STATE_F_STARTUP | 0x04,
+  RAOP_STATE_RECORD = RAOP_STATE_F_STARTUP | 0x05,
   // Session established
   // - streaming ready (RECORD sent and acked, connection established)
   // - commands (SET_PARAMETER) are possible
@@ -136,16 +136,15 @@ enum raop_state {
   // Media data is being sent
   RAOP_STATE_STREAMING = RAOP_STATE_F_CONNECTED | 0x02,
   // Session teardown in progress (-> going to STOPPED state)
-  RAOP_STATE_TEARDOWN  = RAOP_STATE_F_CONNECTED | 0x03,
+  RAOP_STATE_TEARDOWN = RAOP_STATE_F_CONNECTED | 0x03,
   // Session is failed, couldn't startup or error occurred
-  RAOP_STATE_FAILED    = RAOP_STATE_F_FAILED | 0x01,
+  RAOP_STATE_FAILED = RAOP_STATE_F_FAILED | 0x01,
   // Password issue: unknown password or bad password, or pending PIN from user
-  RAOP_STATE_PASSWORD  = RAOP_STATE_F_FAILED | 0x02,
+  RAOP_STATE_PASSWORD = RAOP_STATE_F_FAILED | 0x02,
 };
 
 // Info about the device, which is not required by the player, only internally
-struct raop_extra
-{
+struct raop_extra {
   enum raop_devtype devtype;
 
   uint16_t wanted_metadata;
@@ -153,8 +152,7 @@ struct raop_extra
   bool supports_auth_setup;
 };
 
-struct raop_master_session
-{
+struct raop_master_session {
   struct evbuffer *input_buffer;
   int input_buffer_samples;
 
@@ -181,8 +179,7 @@ struct raop_master_session
   struct raop_master_session *next;
 };
 
-struct raop_session
-{
+struct raop_session {
   uint64_t device_id;
   int callback_id;
 
@@ -237,15 +234,13 @@ struct raop_session
   struct raop_session *next;
 };
 
-struct raop_metadata
-{
+struct raop_metadata {
   struct evbuffer *metadata;
   struct evbuffer *artwork;
   int artwork_fmt;
 };
 
-struct raop_service
-{
+struct raop_service {
   int fd;
   unsigned short port;
   struct event *ev;
@@ -254,45 +249,39 @@ struct raop_service
 typedef void (*evrtsp_req_cb)(struct evrtsp_request *req, void *arg);
 
 /* NTP timestamp definitions */
-#define FRAC             4294967296. /* 2^32 as a double */
-#define NTP_EPOCH_DELTA  0x83aa7e80  /* 2208988800 - that's 1970 - 1900 in seconds */
+#define FRAC 4294967296.           /* 2^32 as a double */
+#define NTP_EPOCH_DELTA 0x83aa7e80 /* 2208988800 - that's 1970 - 1900 in seconds */
 
 // TODO move to rtp_common
-struct ntp_stamp
-{
+struct ntp_stamp {
   uint32_t sec;
   uint32_t frac;
 };
 
-
-static const uint8_t raop_rsa_pubkey[] =
-  "\xe7\xd7\x44\xf2\xa2\xe2\x78\x8b\x6c\x1f\x55\xa0\x8e\xb7\x05\x44"
-  "\xa8\xfa\x79\x45\xaa\x8b\xe6\xc6\x2c\xe5\xf5\x1c\xbd\xd4\xdc\x68"
-  "\x42\xfe\x3d\x10\x83\xdd\x2e\xde\xc1\xbf\xd4\x25\x2d\xc0\x2e\x6f"
-  "\x39\x8b\xdf\x0e\x61\x48\xea\x84\x85\x5e\x2e\x44\x2d\xa6\xd6\x26"
-  "\x64\xf6\x74\xa1\xf3\x04\x92\x9a\xde\x4f\x68\x93\xef\x2d\xf6\xe7"
-  "\x11\xa8\xc7\x7a\x0d\x91\xc9\xd9\x80\x82\x2e\x50\xd1\x29\x22\xaf"
-  "\xea\x40\xea\x9f\x0e\x14\xc0\xf7\x69\x38\xc5\xf3\x88\x2f\xc0\x32"
-  "\x3d\xd9\xfe\x55\x15\x5f\x51\xbb\x59\x21\xc2\x01\x62\x9f\xd7\x33"
-  "\x52\xd5\xe2\xef\xaa\xbf\x9b\xa0\x48\xd7\xb8\x13\xa2\xb6\x76\x7f"
-  "\x6c\x3c\xcf\x1e\xb4\xce\x67\x3d\x03\x7b\x0d\x2e\xa3\x0c\x5f\xff"
-  "\xeb\x06\xf8\xd0\x8a\xdd\xe4\x09\x57\x1a\x9c\x68\x9f\xef\x10\x72"
-  "\x88\x55\xdd\x8c\xfb\x9a\x8b\xef\x5c\x89\x43\xef\x3b\x5f\xaa\x15"
-  "\xdd\xe6\x98\xbe\xdd\xf3\x59\x96\x03\xeb\x3e\x6f\x61\x37\x2b\xb6"
-  "\x28\xf6\x55\x9f\x59\x9a\x78\xbf\x50\x06\x87\xaa\x7f\x49\x76\xc0"
-  "\x56\x2d\x41\x29\x56\xf8\x98\x9e\x18\xa6\x35\x5b\xd8\x15\x97\x82"
-  "\x5e\x0f\xc8\x75\x34\x3e\xc7\x82\x11\x76\x25\xcd\xbf\x98\x44\x7b";
+static const uint8_t raop_rsa_pubkey[] = "\xe7\xd7\x44\xf2\xa2\xe2\x78\x8b\x6c\x1f\x55\xa0\x8e\xb7\x05\x44"
+                                         "\xa8\xfa\x79\x45\xaa\x8b\xe6\xc6\x2c\xe5\xf5\x1c\xbd\xd4\xdc\x68"
+                                         "\x42\xfe\x3d\x10\x83\xdd\x2e\xde\xc1\xbf\xd4\x25\x2d\xc0\x2e\x6f"
+                                         "\x39\x8b\xdf\x0e\x61\x48\xea\x84\x85\x5e\x2e\x44\x2d\xa6\xd6\x26"
+                                         "\x64\xf6\x74\xa1\xf3\x04\x92\x9a\xde\x4f\x68\x93\xef\x2d\xf6\xe7"
+                                         "\x11\xa8\xc7\x7a\x0d\x91\xc9\xd9\x80\x82\x2e\x50\xd1\x29\x22\xaf"
+                                         "\xea\x40\xea\x9f\x0e\x14\xc0\xf7\x69\x38\xc5\xf3\x88\x2f\xc0\x32"
+                                         "\x3d\xd9\xfe\x55\x15\x5f\x51\xbb\x59\x21\xc2\x01\x62\x9f\xd7\x33"
+                                         "\x52\xd5\xe2\xef\xaa\xbf\x9b\xa0\x48\xd7\xb8\x13\xa2\xb6\x76\x7f"
+                                         "\x6c\x3c\xcf\x1e\xb4\xce\x67\x3d\x03\x7b\x0d\x2e\xa3\x0c\x5f\xff"
+                                         "\xeb\x06\xf8\xd0\x8a\xdd\xe4\x09\x57\x1a\x9c\x68\x9f\xef\x10\x72"
+                                         "\x88\x55\xdd\x8c\xfb\x9a\x8b\xef\x5c\x89\x43\xef\x3b\x5f\xaa\x15"
+                                         "\xdd\xe6\x98\xbe\xdd\xf3\x59\x96\x03\xeb\x3e\x6f\x61\x37\x2b\xb6"
+                                         "\x28\xf6\x55\x9f\x59\x9a\x78\xbf\x50\x06\x87\xaa\x7f\x49\x76\xc0"
+                                         "\x56\x2d\x41\x29\x56\xf8\x98\x9e\x18\xa6\x35\x5b\xd8\x15\x97\x82"
+                                         "\x5e\x0f\xc8\x75\x34\x3e\xc7\x82\x11\x76\x25\xcd\xbf\x98\x44\x7b";
 
 static const uint8_t raop_rsa_exp[] = "\x01\x00\x01";
 
-static const uint8_t raop_auth_setup_pubkey[] =
-  "\x59\x02\xed\xe9\x0d\x4e\xf2\xbd\x4c\xb6\x8a\x63\x30\x03\x82\x07"
-  "\xa9\x4d\xbd\x50\xd8\xaa\x46\x5b\x5d\x8c\x01\x2a\x0c\x7e\x1d\x4e";
-
+static const uint8_t raop_auth_setup_pubkey[] = "\x59\x02\xed\xe9\x0d\x4e\xf2\xbd\x4c\xb6\x8a\x63\x30\x03\x82\x07"
+                                                "\xa9\x4d\xbd\x50\xd8\xaa\x46\x5b\x5d\x8c\x01\x2a\x0c\x7e\x1d\x4e";
 
 /* Keep in sync with enum raop_devtype */
-static const char *raop_devtype[] =
-{
+static const char *raop_devtype[] = {
   "AirPort Express 1 - 802.11g",
   "AirPort Express 2 - 802.11n",
   "AirPort Express 3 - 802.11n",
@@ -303,12 +292,8 @@ static const char *raop_devtype[] =
 };
 
 /* Struct with default quality levels */
-static struct media_quality raop_quality_default =
-{
-  RAOP_QUALITY_SAMPLE_RATE_DEFAULT,
-  RAOP_QUALITY_BITS_PER_SAMPLE_DEFAULT,
-  RAOP_QUALITY_CHANNELS_DEFAULT
-};
+static struct media_quality raop_quality_default
+    = { RAOP_QUALITY_SAMPLE_RATE_DEFAULT, RAOP_QUALITY_BITS_PER_SAMPLE_DEFAULT, RAOP_QUALITY_CHANNELS_DEFAULT };
 
 /* From player.c */
 extern struct event_base *evbase_player;
@@ -345,7 +330,6 @@ static bool raop_uncompressed_alac;
 // Forwards
 static int
 raop_device_start(struct output_device *rd, int callback_id);
-
 
 /* ------------------------------- MISC HELPERS ----------------------------- */
 
@@ -450,7 +434,8 @@ alac_encode_no_xcode(struct evbuffer *evbuf, uint8_t *rawbuf, size_t rawbuf_size
 }
 
 static int
-alac_encode_xcode(struct evbuffer *evbuf, struct encode_ctx *encode_ctx, uint8_t *rawbuf, size_t rawbuf_size, int nsamples, struct media_quality *quality)
+alac_encode_xcode(struct evbuffer *evbuf, struct encode_ctx *encode_ctx, uint8_t *rawbuf, size_t rawbuf_size,
+    int nsamples, struct media_quality *quality)
 {
   transcode_frame *frame;
   int len;
@@ -474,7 +459,8 @@ alac_encode_xcode(struct evbuffer *evbuf, struct encode_ctx *encode_ctx, uint8_t
 }
 
 static int
-alac_encode(struct evbuffer *evbuf, struct encode_ctx *encode_ctx, uint8_t *rawbuf, size_t rawbuf_size, int nsamples, struct media_quality *quality)
+alac_encode(struct evbuffer *evbuf, struct encode_ctx *encode_ctx, uint8_t *rawbuf, size_t rawbuf_size, int nsamples,
+    struct media_quality *quality)
 {
   if (raop_uncompressed_alac)
     return alac_encode_no_xcode(evbuf, rawbuf, rawbuf_size);
@@ -521,7 +507,6 @@ timing_get_clock_ntp(struct ntp_stamp *ns)
 
   return 0;
 }
-
 
 /* ----------------------- RAOP crypto stuff - from VLC --------------------- */
 
@@ -587,7 +572,8 @@ raop_crypt_mgf1(uint8_t *mask, size_t l, const uint8_t *z, const size_t zlen, co
  * named after the specification.
  */
 static int
-raop_crypt_add_oaep_padding(uint8_t *em, const size_t emlen, const uint8_t *m, const size_t mlen, const uint8_t *p, const size_t plen)
+raop_crypt_add_oaep_padding(
+    uint8_t *em, const size_t emlen, const uint8_t *m, const size_t mlen, const uint8_t *p, const size_t plen)
 {
   uint8_t *seed;
   uint8_t *db;
@@ -712,9 +698,9 @@ raop_crypt_add_oaep_padding(uint8_t *em, const size_t emlen, const uint8_t *m, c
 
   ret = 0;
 
- out_free_all:
+out_free_all:
   free(seed);
- out_free_alloced:
+out_free_alloced:
   free(db);
   free(db_mask);
   free(seed_mask);
@@ -844,26 +830,25 @@ raop_crypt_encrypt_aes_key_base64(void)
 
   free(value);
 
- out_free_mpi_output:
+out_free_mpi_output:
   gcry_mpi_release(mpi_output);
- out_free_sexp_token_a:
+out_free_sexp_token_a:
   gcry_sexp_release(sexp_token_a);
- out_free_sexp_encrypted:
+out_free_sexp_encrypted:
   gcry_sexp_release(sexp_encrypted);
- out_free_sexp_input:
+out_free_sexp_input:
   gcry_sexp_release(sexp_input);
- out_free_sexp_params:
+out_free_sexp_params:
   gcry_sexp_release(sexp_rsa_params);
- out_free_mpi_input:
+out_free_mpi_input:
   gcry_mpi_release(mpi_input);
- out_free_mpi_exp:
+out_free_mpi_exp:
   gcry_mpi_release(mpi_exp);
- out_free_mpi_pubkey:
+out_free_mpi_pubkey:
   gcry_mpi_release(mpi_pubkey);
 
   return result;
 }
-
 
 /* ------------------ Helpers for sending RAOP/RTSP requests ---------------- */
 
@@ -982,7 +967,7 @@ raop_add_auth(struct raop_session *rs, struct evrtsp_request *req, const char *m
 
   /* Build header */
   ret = snprintf(auth, sizeof(auth), "Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"",
-		 username, rs->realm, rs->nonce, uri, ha1);
+      username, rs->realm, rs->nonce, uri, ha1);
   if ((ret < 0) || (ret >= sizeof(auth)))
     {
       DPRINTF(E_LOG, L_RAOP, "Authorization value header exceeds buffer size\n");
@@ -1097,7 +1082,7 @@ raop_parse_auth(struct raop_session *rs, struct evrtsp_request *req)
   free(auth);
   return 0;
 
- error:
+error:
   free(auth);
   return -1;
 }
@@ -1166,26 +1151,26 @@ raop_check_cseq(struct raop_session *rs, struct evrtsp_request *req)
 static int
 raop_make_sdp(struct raop_session *rs, struct evrtsp_request *req, char *address, int family, uint32_t session_id)
 {
-#define SDP_PLD_FMT							\
-  "v=0\r\n"								\
-    "o=iTunes %u 0 IN %s %s\r\n"					\
-    "s=iTunes\r\n"							\
-    "c=IN %s %s\r\n"							\
-    "t=0 0\r\n"								\
-    "m=audio 0 RTP/AVP 96\r\n"						\
-    "a=rtpmap:96 AppleLossless\r\n"					\
-    "a=fmtp:96 %d 0 16 40 10 14 2 255 0 0 44100\r\n"			\
-    "a=rsaaeskey:%s\r\n"						\
-    "a=aesiv:%s\r\n"
-#define SDP_PLD_FMT_NO_ENC						\
-  "v=0\r\n"								\
-    "o=iTunes %u 0 IN %s %s\r\n"					\
-    "s=iTunes\r\n"							\
-    "c=IN %s %s\r\n"							\
-    "t=0 0\r\n"								\
-    "m=audio 0 RTP/AVP 96\r\n"						\
-    "a=rtpmap:96 AppleLossless\r\n"					\
-    "a=fmtp:96 %d 0 16 40 10 14 2 255 0 0 44100\r\n"
+#define SDP_PLD_FMT                                                                                                    \
+  "v=0\r\n"                                                                                                            \
+  "o=iTunes %u 0 IN %s %s\r\n"                                                                                         \
+  "s=iTunes\r\n"                                                                                                       \
+  "c=IN %s %s\r\n"                                                                                                     \
+  "t=0 0\r\n"                                                                                                          \
+  "m=audio 0 RTP/AVP 96\r\n"                                                                                           \
+  "a=rtpmap:96 AppleLossless\r\n"                                                                                      \
+  "a=fmtp:96 %d 0 16 40 10 14 2 255 0 0 44100\r\n"                                                                     \
+  "a=rsaaeskey:%s\r\n"                                                                                                 \
+  "a=aesiv:%s\r\n"
+#define SDP_PLD_FMT_NO_ENC                                                                                             \
+  "v=0\r\n"                                                                                                            \
+  "o=iTunes %u 0 IN %s %s\r\n"                                                                                         \
+  "s=iTunes\r\n"                                                                                                       \
+  "c=IN %s %s\r\n"                                                                                                     \
+  "t=0 0\r\n"                                                                                                          \
+  "m=audio 0 RTP/AVP 96\r\n"                                                                                           \
+  "a=rtpmap:96 AppleLossless\r\n"                                                                                      \
+  "a=fmtp:96 %d 0 16 40 10 14 2 255 0 0 44100\r\n"
 
   const char *af;
   const char *rs_af;
@@ -1201,12 +1186,11 @@ raop_make_sdp(struct raop_session *rs, struct evrtsp_request *req, char *address
 
   /* Add SDP payload - but don't add RSA/AES key/iv if no encryption - important for ATV3 update 6.0 */
   if (rs->encrypt)
-    ret = evbuffer_add_printf(req->output_buffer, SDP_PLD_FMT,
-			      session_id, af, address, rs_af, rs->address, RAOP_SAMPLES_PER_PACKET,
-			      raop_aes_key_b64, raop_aes_iv_b64);
+    ret = evbuffer_add_printf(req->output_buffer, SDP_PLD_FMT, session_id, af, address, rs_af, rs->address,
+        RAOP_SAMPLES_PER_PACKET, raop_aes_key_b64, raop_aes_iv_b64);
   else
-    ret = evbuffer_add_printf(req->output_buffer, SDP_PLD_FMT_NO_ENC,
-			      session_id, af, address, rs_af, rs->address, RAOP_SAMPLES_PER_PACKET);
+    ret = evbuffer_add_printf(
+        req->output_buffer, SDP_PLD_FMT_NO_ENC, session_id, af, address, rs_af, rs->address, RAOP_SAMPLES_PER_PACKET);
 
   if (p)
     *p = '%';
@@ -1224,7 +1208,6 @@ raop_make_sdp(struct raop_session *rs, struct evrtsp_request *req, char *address
 #undef SDP_PLD_FMT
 #undef SDP_PLD_FMT_NO_ENC
 }
-
 
 /* ----------------- Handlers for sending RAOP/RTSP requests ---------------- */
 
@@ -1345,7 +1328,8 @@ raop_send_req_flush(struct raop_session *rs, evrtsp_req_cb cb, const char *log_c
 }
 
 static int
-raop_send_req_set_parameter(struct raop_session *rs, struct evbuffer *evbuf, char *ctype, char *rtpinfo, evrtsp_req_cb cb, const char *log_caller)
+raop_send_req_set_parameter(struct raop_session *rs, struct evbuffer *evbuf, char *ctype, char *rtpinfo,
+    evrtsp_req_cb cb, const char *log_caller)
 {
   struct evrtsp_request *req;
   int ret;
@@ -1475,7 +1459,7 @@ raop_send_req_setup(struct raop_session *rs, evrtsp_req_cb cb, const char *log_c
 
   /* Request UDP transport, AirTunes v2 streaming */
   ret = snprintf(hdr, sizeof(hdr), "RTP/AVP/UDP;unicast;interleaved=0-1;mode=record;control_port=%u;timing_port=%u",
-		 rs->control_svc->port, rs->timing_svc->port);
+      rs->control_svc->port, rs->timing_svc->port);
   if ((ret < 0) || (ret >= sizeof(hdr)))
     {
       DPRINTF(E_LOG, L_RAOP, "Transport header exceeds buffer length\n");
@@ -1613,7 +1597,7 @@ raop_send_req_announce(struct raop_session *rs, evrtsp_req_cb cb, const char *lo
 
   return 0;
 
- cleanup_req:
+cleanup_req:
   evrtsp_request_free(req);
 
   return -1;
@@ -1759,7 +1743,6 @@ raop_send_req_pin_start(struct raop_session *rs, evrtsp_req_cb cb, const char *l
   return 0;
 }
 
-
 /* ------------------------------ Session handling -------------------------- */
 
 // Maps our internal state to the generic output state and then makes a callback
@@ -1771,31 +1754,31 @@ raop_status(struct raop_session *rs)
 
   switch (rs->state)
     {
-      case RAOP_STATE_PASSWORD:
-	state = OUTPUT_STATE_PASSWORD;
-	break;
-      case RAOP_STATE_FAILED:
-	state = OUTPUT_STATE_FAILED;
-	break;
-      case RAOP_STATE_STOPPED:
-	state = OUTPUT_STATE_STOPPED;
-	break;
-      case RAOP_STATE_STARTUP ... RAOP_STATE_RECORD:
-	state = OUTPUT_STATE_STARTUP;
-	break;
-      case RAOP_STATE_CONNECTED:
-	state = OUTPUT_STATE_CONNECTED;
-	break;
-      case RAOP_STATE_STREAMING:
-	state = OUTPUT_STATE_STREAMING;
-	break;
-      case RAOP_STATE_TEARDOWN:
-	DPRINTF(E_LOG, L_RAOP, "Bug! raop_status() called with transitional state (TEARDOWN)\n");
-	state = OUTPUT_STATE_STOPPED;
-	break;
-      default:
-	DPRINTF(E_LOG, L_RAOP, "Bug! Unhandled state in raop_status(): %d\n", rs->state);
-	state = OUTPUT_STATE_FAILED;
+    case RAOP_STATE_PASSWORD:
+      state = OUTPUT_STATE_PASSWORD;
+      break;
+    case RAOP_STATE_FAILED:
+      state = OUTPUT_STATE_FAILED;
+      break;
+    case RAOP_STATE_STOPPED:
+      state = OUTPUT_STATE_STOPPED;
+      break;
+    case RAOP_STATE_STARTUP ... RAOP_STATE_RECORD:
+      state = OUTPUT_STATE_STARTUP;
+      break;
+    case RAOP_STATE_CONNECTED:
+      state = OUTPUT_STATE_CONNECTED;
+      break;
+    case RAOP_STATE_STREAMING:
+      state = OUTPUT_STATE_STREAMING;
+      break;
+    case RAOP_STATE_TEARDOWN:
+      DPRINTF(E_LOG, L_RAOP, "Bug! raop_status() called with transitional state (TEARDOWN)\n");
+      state = OUTPUT_STATE_STOPPED;
+      break;
+    default:
+      DPRINTF(E_LOG, L_RAOP, "Bug! Unhandled state in raop_status(): %d\n", rs->state);
+      state = OUTPUT_STATE_FAILED;
     }
 
   outputs_cb(rs->callback_id, rs->device_id, state);
@@ -1829,7 +1812,7 @@ master_session_cleanup(struct raop_master_session *rms)
   struct raop_session *rs;
 
   // First check if any other session is using the master session
-  for (rs = raop_sessions; rs; rs=rs->next)
+  for (rs = raop_sessions; rs; rs = rs->next)
     {
       if (rs->master_session == rms)
 	return;
@@ -1869,7 +1852,8 @@ master_session_make(struct media_quality *quality, bool encrypt)
   ret = outputs_quality_subscribe(quality);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not subscribe to required audio quality (%d/%d/%d)\n", quality->sample_rate, quality->bits_per_sample, quality->channels);
+      DPRINTF(E_LOG, L_RAOP, "Could not subscribe to required audio quality (%d/%d/%d)\n", quality->sample_rate,
+          quality->bits_per_sample, quality->channels);
       return NULL;
     }
 
@@ -1913,7 +1897,7 @@ master_session_make(struct media_quality *quality, bool encrypt)
 
   return rms;
 
- error:
+error:
   master_session_free(rms);
   return NULL;
 }
@@ -2014,7 +1998,8 @@ session_teardown_cb(struct evrtsp_request *req, void *arg)
   if (!req)
     DPRINTF(E_LOG, L_RAOP, "TEARDOWN request failed in session shutdown\n");
   else if (req->response_code != RTSP_OK)
-    DPRINTF(E_LOG, L_RAOP, "TEARDOWN request failed in session shutdown: %d %s\n", req->response_code, req->response_code_line);
+    DPRINTF(E_LOG, L_RAOP, "TEARDOWN request failed in session shutdown: %d %s\n", req->response_code,
+        req->response_code_line);
 
   rs->state = RAOP_STATE_STOPPED;
 
@@ -2070,54 +2055,55 @@ session_connection_setup(struct raop_session *rs, struct output_device *rd, int 
 
   switch (family)
     {
-      case AF_INET:
-	if (!rd->v4_address)
-	  return -1;
-
-	address = rd->v4_address;
-	port = rd->v4_port;
-
-	ret = inet_pton(AF_INET, address, &rs->naddr.sin.sin_addr);
-	break;
-
-      case AF_INET6:
-	if (!rd->v6_address)
-	  return -1;
-
-	address = rd->v6_address;
-	port = rd->v6_port;
-
-	intf = strchr(address, '%');
-	if (intf)
-	  *intf = '\0';
-
-	ret = inet_pton(AF_INET6, address, &rs->naddr.sin6.sin6_addr);
-
-	if (intf)
-	  {
-	    *intf = '%';
-
-	    intf++;
-
-	    rs->naddr.sin6.sin6_scope_id = if_nametoindex(intf);
-	    if (rs->naddr.sin6.sin6_scope_id == 0)
-	      {
-		DPRINTF(E_LOG, L_RAOP, "Could not find interface %s\n", intf);
-
-		ret = -1;
-		break;
-	      }
-	  }
-
-	break;
-
-      default:
+    case AF_INET:
+      if (!rd->v4_address)
 	return -1;
+
+      address = rd->v4_address;
+      port = rd->v4_port;
+
+      ret = inet_pton(AF_INET, address, &rs->naddr.sin.sin_addr);
+      break;
+
+    case AF_INET6:
+      if (!rd->v6_address)
+	return -1;
+
+      address = rd->v6_address;
+      port = rd->v6_port;
+
+      intf = strchr(address, '%');
+      if (intf)
+	*intf = '\0';
+
+      ret = inet_pton(AF_INET6, address, &rs->naddr.sin6.sin6_addr);
+
+      if (intf)
+	{
+	  *intf = '%';
+
+	  intf++;
+
+	  rs->naddr.sin6.sin6_scope_id = if_nametoindex(intf);
+	  if (rs->naddr.sin6.sin6_scope_id == 0)
+	    {
+	      DPRINTF(E_LOG, L_RAOP, "Could not find interface %s\n", intf);
+
+	      ret = -1;
+	      break;
+	    }
+	}
+
+      break;
+
+    default:
+      return -1;
     }
 
   if (ret <= 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Device '%s' has invalid address (%s) for %s\n", rd->name, address, (family == AF_INET) ? "ipv4" : "ipv6");
+      DPRINTF(E_LOG, L_RAOP, "Device '%s' has invalid address (%s) for %s\n", rd->name, address,
+          (family == AF_INET) ? "ipv4" : "ipv6");
       return -1;
     }
 
@@ -2174,7 +2160,6 @@ session_make(struct output_device *rd, int callback_id, bool only_probe)
 
   re = rd->extra_device_info;
 
-
   CHECK_NULL(L_RAOP, rs = calloc(1, sizeof(struct raop_session)));
   CHECK_NULL(L_RAOP, rs->deferredev = evtimer_new(evbase_player, deferredev_cb, rs));
 
@@ -2198,34 +2183,34 @@ session_make(struct output_device *rd, int callback_id, bool only_probe)
 
   switch (re->devtype)
     {
-      case RAOP_DEV_APEX1_80211G:
-	rs->encrypt = 1;
-	rs->auth_quirk_itunes = 1;
-	break;
+    case RAOP_DEV_APEX1_80211G:
+      rs->encrypt = 1;
+      rs->auth_quirk_itunes = 1;
+      break;
 
-      case RAOP_DEV_APEX2_80211N:
-	rs->encrypt = 1;
-	rs->auth_quirk_itunes = 0;
-	break;
+    case RAOP_DEV_APEX2_80211N:
+      rs->encrypt = 1;
+      rs->auth_quirk_itunes = 0;
+      break;
 
-      case RAOP_DEV_APEX3_80211N:
-	rs->encrypt = 0;
-	rs->auth_quirk_itunes = 0;
-	break;
+    case RAOP_DEV_APEX3_80211N:
+      rs->encrypt = 0;
+      rs->auth_quirk_itunes = 0;
+      break;
 
-      case RAOP_DEV_APPLETV:
-	rs->encrypt = 0;
-	rs->auth_quirk_itunes = 0;
-	break;
+    case RAOP_DEV_APPLETV:
+      rs->encrypt = 0;
+      rs->auth_quirk_itunes = 0;
+      break;
 
-      case RAOP_DEV_APPLETV4:
-	rs->encrypt = 0;
-	rs->auth_quirk_itunes = 0;
-	break;
+    case RAOP_DEV_APPLETV4:
+      rs->encrypt = 0;
+      rs->auth_quirk_itunes = 0;
+      break;
 
-      default:
-	rs->encrypt = re->encrypt;
-	rs->auth_quirk_itunes = 0;
+    default:
+      rs->encrypt = re->encrypt;
+      rs->auth_quirk_itunes = 0;
     }
 
   rs->timing_svc = &raop_timing_svc;
@@ -2255,12 +2240,11 @@ session_make(struct output_device *rd, int callback_id, bool only_probe)
 
   return rs;
 
- error:
+error:
   session_free(rs);
 
   return NULL;
 }
-
 
 /* ----------------------------- Metadata handling -------------------------- */
 
@@ -2345,7 +2329,9 @@ raop_cb_metadata(struct evrtsp_request *req, void *arg)
     goto error;
 
   if (req->response_code != RTSP_OK)
-    DPRINTF(E_WARN, L_RAOP, "SET_PARAMETER metadata/artwork/progress request to '%s' failed (proceeding anyway): %d %s\n", rs->devname, req->response_code, req->response_code_line);
+    DPRINTF(E_WARN, L_RAOP,
+        "SET_PARAMETER metadata/artwork/progress request to '%s' failed (proceeding anyway): %d %s\n", rs->devname,
+        req->response_code, req->response_code_line);
 
   ret = raop_check_cseq(rs, req);
   if (ret < 0)
@@ -2360,12 +2346,13 @@ raop_cb_metadata(struct evrtsp_request *req, void *arg)
 
   return;
 
- error:
+error:
   session_failure(rs);
 }
 
 static void
-raop_metadata_rtptimes_get(uint32_t *start, uint32_t *display, uint32_t *pos, uint32_t *end, struct raop_master_session *rms, struct output_metadata *metadata)
+raop_metadata_rtptimes_get(uint32_t *start, uint32_t *display, uint32_t *pos, uint32_t *end,
+    struct raop_master_session *rms, struct output_metadata *metadata)
 {
   struct rtp_session *rtp_session = rms->rtp_session;
   // All the calculations with long ints to avoid surprises
@@ -2382,14 +2369,16 @@ raop_metadata_rtptimes_get(uint32_t *start, uint32_t *display, uint32_t *pos, ui
   // - the time is now rms->cur_stamp.ts and the position is rms->cur_stamp.pos
   // -> time since item started is elapsed_ms = metadata->pos_ms + (rms->cur_stamp.ts - metadata->pts)
   // -> start must then be start = rms->cur_stamp.pos - elapsed_ms * sample_rate;
-  diff_ms         = (rms->cur_stamp.ts.tv_sec - metadata->pts.tv_sec) * 1000L + (rms->cur_stamp.ts.tv_nsec - metadata->pts.tv_nsec) / 1000000L;
-  elapsed_ms      = (int64_t)metadata->pos_ms + diff_ms;
+  diff_ms = (rms->cur_stamp.ts.tv_sec - metadata->pts.tv_sec) * 1000L
+            + (rms->cur_stamp.ts.tv_nsec - metadata->pts.tv_nsec) / 1000000L;
+  elapsed_ms = (int64_t)metadata->pos_ms + diff_ms;
   elapsed_samples = elapsed_ms * sample_rate / 1000;
-  *start          = rms->cur_stamp.pos - elapsed_samples;
+  *start = rms->cur_stamp.pos - elapsed_samples;
 
-/*  DPRINTF(E_DBG, L_RAOP, "pos_ms=%u, len_ms=%u, startup=%d, metadata.pts=%ld.%09ld, player.ts=%ld.%09ld, diff_ms=%" PRIi64 ", elapsed_ms=%" PRIi64 "\n",
-    metadata->pos_ms, metadata->len_ms, metadata->startup, metadata->pts.tv_sec, metadata->pts.tv_nsec, rms->cur_stamp.ts.tv_sec, rms->cur_stamp.ts.tv_nsec, diff_ms, elapsed_ms);
-*/
+  /*  DPRINTF(E_DBG, L_RAOP, "pos_ms=%u, len_ms=%u, startup=%d, metadata.pts=%ld.%09ld, player.ts=%ld.%09ld, diff_ms=%"
+     PRIi64 ", elapsed_ms=%" PRIi64 "\n", metadata->pos_ms, metadata->len_ms, metadata->startup, metadata->pts.tv_sec,
+     metadata->pts.tv_nsec, rms->cur_stamp.ts.tv_sec, rms->cur_stamp.ts.tv_nsec, diff_ms, elapsed_ms);
+  */
   // Here's the deal with progress values:
   // - display is always start minus a delay
   //    -> delay x1 if streaming is starting for this device (joining or not)
@@ -2400,17 +2389,18 @@ raop_metadata_rtptimes_get(uint32_t *start, uint32_t *display, uint32_t *pos, ui
   //    -> start of song + offset if device is joining in the middle of a song,
   //       or getting out of a pause or seeking
   // - end is the RTP time of the last sample for this song
-  len_samples     = (int64_t)metadata->len_ms * sample_rate / 1000;
-  *display        = metadata->startup ? *start - RAOP_MD_DELAY_STARTUP : *start - RAOP_MD_DELAY_SWITCH;
-  *pos            = MAX(rms->cur_stamp.pos, *start);
-  *end            = len_samples ? *start + len_samples : *pos;
+  len_samples = (int64_t)metadata->len_ms * sample_rate / 1000;
+  *display = metadata->startup ? *start - RAOP_MD_DELAY_STARTUP : *start - RAOP_MD_DELAY_SWITCH;
+  *pos = MAX(rms->cur_stamp.pos, *start);
+  *end = len_samples ? *start + len_samples : *pos;
 
-  DPRINTF(E_SPAM, L_RAOP, "start=%u, display=%u, pos=%u, end=%u, rtp_session.pos=%u, cur_stamp.pos=%u\n",
-    *start, *display, *pos, *end, rtp_session->pos, rms->cur_stamp.pos);
+  DPRINTF(E_SPAM, L_RAOP, "start=%u, display=%u, pos=%u, end=%u, rtp_session.pos=%u, cur_stamp.pos=%u\n", *start,
+      *display, *pos, *end, rtp_session->pos, rms->cur_stamp.pos);
 }
 
 static int
-raop_metadata_send_progress(struct raop_session *rs, struct evbuffer *evbuf, struct raop_metadata *rmd, uint32_t display, uint32_t pos, uint32_t end)
+raop_metadata_send_progress(struct raop_session *rs, struct evbuffer *evbuf, struct raop_metadata *rmd,
+    uint32_t display, uint32_t pos, uint32_t end)
 {
   int ret;
 
@@ -2438,17 +2428,17 @@ raop_metadata_send_artwork(struct raop_session *rs, struct evbuffer *evbuf, stru
 
   switch (rmd->artwork_fmt)
     {
-      case ART_FMT_PNG:
-	ctype = "image/png";
-	break;
+    case ART_FMT_PNG:
+      ctype = "image/png";
+      break;
 
-      case ART_FMT_JPEG:
-	ctype = "image/jpeg";
-	break;
+    case ART_FMT_JPEG:
+      ctype = "image/jpeg";
+      break;
 
-      default:
-	DPRINTF(E_LOG, L_RAOP, "Unsupported artwork format %d\n", rmd->artwork_fmt);
-	return -1;
+    default:
+      DPRINTF(E_LOG, L_RAOP, "Unsupported artwork format %d\n", rmd->artwork_fmt);
+      return -1;
     }
 
   buf = evbuffer_pullup(rmd->artwork, -1);
@@ -2539,7 +2529,7 @@ raop_metadata_send_generic(struct raop_session *rs, struct output_metadata *meta
   evbuffer_free(evbuf);
   return 0;
 
- error:
+error:
   evbuffer_free(evbuf);
   return -1;
 }
@@ -2592,7 +2582,6 @@ raop_metadata_send(struct output_metadata *metadata)
   raop_metadata_purge();
   raop_cur_metadata = metadata;
 }
-
 
 /* ------------------------------ Volume handling --------------------------- */
 
@@ -2665,7 +2654,8 @@ raop_set_volume_internal(struct raop_session *rs, int volume, evrtsp_req_cb cb)
 
   /* Don't let locales get in the way here */
   /* We use -%d and -(int)raop_volume so -0.3 won't become 0.3 */
-  ret = evbuffer_add_printf(evbuf, "volume: -%d.%06d\r\n", -(int)raop_volume, -(int)(1000000.0 * (raop_volume - (int)raop_volume)));
+  ret = evbuffer_add_printf(
+      evbuf, "volume: -%d.%06d\r\n", -(int)raop_volume, -(int)(1000000.0 * (raop_volume - (int)raop_volume)));
   if (ret < 0)
     {
       DPRINTF(E_LOG, L_RAOP, "Out of memory for SET_PARAMETER payload (volume)\n");
@@ -2698,7 +2688,8 @@ raop_cb_set_volume(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "SET_PARAMETER request to '%s' failed for stream volume: %d %s\n", rs->devname, req->response_code, req->response_code_line);
+      DPRINTF(E_LOG, L_RAOP, "SET_PARAMETER request to '%s' failed for stream volume: %d %s\n", rs->devname,
+          req->response_code, req->response_code_line);
 
       goto error;
     }
@@ -2715,7 +2706,7 @@ raop_cb_set_volume(struct evrtsp_request *req, void *arg)
 
   return;
 
- error:
+error:
   session_failure(rs);
 }
 
@@ -2755,7 +2746,8 @@ raop_cb_flush(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "FLUSH request to '%s' failed: %d %s\n", rs->devname, req->response_code, req->response_code_line);
+      DPRINTF(E_LOG, L_RAOP, "FLUSH request to '%s' failed: %d %s\n", rs->devname, req->response_code,
+          req->response_code_line);
 
       goto error;
     }
@@ -2774,7 +2766,7 @@ raop_cb_flush(struct evrtsp_request *req, void *arg)
 
   return;
 
- error:
+error:
   session_failure(rs);
 }
 
@@ -2799,7 +2791,6 @@ raop_keep_alive_timer_cb(int fd, short what, void *arg)
 
   evtimer_add(keep_alive_timer, &keep_alive_tv);
 }
-
 
 /* -------------------- Creation and sending of RTP packets  ---------------- */
 
@@ -2863,13 +2854,13 @@ packet_send(struct raop_session *rs, struct rtp_packet *pkt)
       return -1;
     }
 
-/*  DPRINTF(E_DBG, L_RAOP, "RTP PACKET seqnum %u, rtptime %u, payload 0x%x, pktbuf_s %zu\n",
-    rs->master_session->rtp_session->seqnum,
-    rs->master_session->rtp_session->pos,
-    pkt->header[1],
-    rs->master_session->rtp_session->pktbuf_len
-    );
-*/
+  /*  DPRINTF(E_DBG, L_RAOP, "RTP PACKET seqnum %u, rtptime %u, payload 0x%x, pktbuf_s %zu\n",
+      rs->master_session->rtp_session->seqnum,
+      rs->master_session->rtp_session->pos,
+      pkt->header[1],
+      rs->master_session->rtp_session->pktbuf_len
+      );
+  */
   return 0;
 }
 
@@ -2881,19 +2872,19 @@ control_packet_send(struct raop_session *rs, struct rtp_packet *pkt)
 
   switch (rs->family)
     {
-      case AF_INET:
-	rs->naddr.sin.sin_port = htons(rs->control_port);
-	addrlen = sizeof(rs->naddr.sin);
-	break;
+    case AF_INET:
+      rs->naddr.sin.sin_port = htons(rs->control_port);
+      addrlen = sizeof(rs->naddr.sin);
+      break;
 
-      case AF_INET6:
-	rs->naddr.sin6.sin6_port = htons(rs->control_port);
-	addrlen = sizeof(rs->naddr.sin6);
-	break;
+    case AF_INET6:
+      rs->naddr.sin6.sin6_port = htons(rs->control_port);
+      addrlen = sizeof(rs->naddr.sin6);
+      break;
 
-      default:
-	DPRINTF(E_WARN, L_RAOP, "Unknown family %d\n", rs->family);
-	return;
+    default:
+      DPRINTF(E_WARN, L_RAOP, "Unknown family %d\n", rs->family);
+      return;
     }
 
   ret = sendto(rs->control_svc->fd, pkt->data, pkt->data_len, 0, &rs->naddr.sa, addrlen);
@@ -2912,8 +2903,9 @@ packets_resend(struct raop_session *rs, uint16_t seqnum, int len)
 
   rtp_session = rs->master_session->rtp_session;
 
-  DPRINTF(E_DBG, L_RAOP, "Got retransmit request from '%s': seqnum %" PRIu16 " (len %d), next RTP session seqnum %" PRIu16 " (len %zu)\n",
-    rs->devname, seqnum, len, rtp_session->seqnum, rtp_session->pktbuf_len);
+  DPRINTF(E_DBG, L_RAOP,
+      "Got retransmit request from '%s': seqnum %" PRIu16 " (len %d), next RTP session seqnum %" PRIu16 " (len %zu)\n",
+      rs->devname, seqnum, len, rtp_session->seqnum, rtp_session->pktbuf_len);
 
   // Note that seqnum may wrap around, so we don't use it for counting
   for (i = 0, s = seqnum; i < len; i++, s++)
@@ -2926,8 +2918,10 @@ packets_resend(struct raop_session *rs, uint16_t seqnum, int len)
     }
 
   if (pkt_missing)
-    DPRINTF(E_WARN, L_RAOP, "Device '%s' retransmit request for seqnum %" PRIu16 " (len %d) is outside buffer range (next seqnum %" PRIu16 ", len %zu)\n",
-      rs->devname, seqnum, len, rtp_session->seqnum, rtp_session->pktbuf_len);
+    DPRINTF(E_WARN, L_RAOP,
+        "Device '%s' retransmit request for seqnum %" PRIu16 " (len %d) is outside buffer range (next seqnum %" PRIu16
+        ", len %zu)\n",
+        rs->devname, seqnum, len, rtp_session->seqnum, rtp_session->pktbuf_len);
 }
 
 static int
@@ -2938,7 +2932,8 @@ packets_send(struct raop_master_session *rms)
   int len;
   int ret;
 
-  len = alac_encode(rms->encoded_buffer, rms->encode_ctx, rms->rawbuf, rms->rawbuf_size, rms->samples_per_packet, &rms->quality);
+  len = alac_encode(
+      rms->encoded_buffer, rms->encode_ctx, rms->rawbuf, rms->rawbuf_size, rms->samples_per_packet, &rms->quality);
   if (len < 0)
     {
       return -1;
@@ -3042,8 +3037,11 @@ packets_sync_send(struct raop_master_session *rms)
 	  sync_pkt = rtp_sync_packet_next(rms->rtp_session, rms->cur_stamp, 0x90);
 	  control_packet_send(rs, sync_pkt);
 
-	  DPRINTF(E_DBG, L_RAOP, "Start sync packet sent to '%s': cur_pos=%" PRIu32 ", cur_ts=%ld.%09ld, clock=%ld.%09ld, rtptime=%" PRIu32 "\n",
-	    rs->devname, rms->cur_stamp.pos, rms->cur_stamp.ts.tv_sec, rms->cur_stamp.ts.tv_nsec, ts.tv_sec, ts.tv_nsec, rms->rtp_session->pos);
+	  DPRINTF(E_DBG, L_RAOP,
+	      "Start sync packet sent to '%s': cur_pos=%" PRIu32 ", cur_ts=%ld.%09ld, clock=%ld.%09ld, rtptime=%" PRIu32
+	      "\n",
+	      rs->devname, rms->cur_stamp.pos, rms->cur_stamp.ts.tv_sec, rms->cur_stamp.ts.tv_nsec, ts.tv_sec,
+	      ts.tv_nsec, rms->rtp_session->pos);
 	}
       else if (is_sync_time && rs->state == RAOP_STATE_STREAMING)
 	{
@@ -3052,7 +3050,6 @@ packets_sync_send(struct raop_master_session *rms)
 	}
     }
 }
-
 
 /* ------------------------- Time and control service ----------------------- */
 
@@ -3095,7 +3092,7 @@ service_start(struct raop_service *svc, event_callback_fn cb, unsigned short por
 
   return 0;
 
- error:
+error:
   service_stop(svc);
   return -1;
 }
@@ -3137,7 +3134,8 @@ timing_svc_cb(int fd, short what, void *arg)
 
   if ((req[0] != 0x80) || (req[1] != 0xd2))
     {
-      DPRINTF(E_WARN, L_RAOP, "Packet header doesn't match timing request (got 0x%02x%02x, expected 0x80d2)\n", req[0], req[1]);
+      DPRINTF(E_WARN, L_RAOP, "Packet header doesn't match timing request (got 0x%02x%02x, expected 0x80d2)\n", req[0],
+          req[1]);
       return;
     }
 
@@ -3215,7 +3213,8 @@ control_svc_cb(int fd, short what, void *arg)
 
   if ((req[0] != 0x80) || (req[1] != 0xd5))
     {
-      DPRINTF(E_WARN, L_RAOP, "Packet header doesn't match retransmit request (got 0x%02x%02x, expected 0x80d5)\n", req[0], req[1]);
+      DPRINTF(E_WARN, L_RAOP, "Packet header doesn't match retransmit request (got 0x%02x%02x, expected 0x80d5)\n",
+          req[0], req[1]);
       return;
     }
 
@@ -3235,7 +3234,6 @@ control_svc_cb(int fd, short what, void *arg)
 
   packets_resend(rs, seq_start, seq_len);
 }
-
 
 /* ------------------------------ Session startup --------------------------- */
 
@@ -3313,7 +3311,8 @@ raop_cb_pin_start(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "Request for starting PIN verification failed: %d %s\n", req->response_code, req->response_code_line);
+      DPRINTF(E_LOG, L_RAOP, "Request for starting PIN verification failed: %d %s\n", req->response_code,
+          req->response_code_line);
 
       goto error;
     }
@@ -3324,7 +3323,7 @@ raop_cb_pin_start(struct evrtsp_request *req, void *arg)
 
   rs->state = RAOP_STATE_PASSWORD;
 
- error:
+error:
   session_failure(rs);
 }
 
@@ -3341,7 +3340,8 @@ raop_cb_startup_volume(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "SET_PARAMETER request failed for startup volume: %d %s\n", req->response_code, req->response_code_line);
+      DPRINTF(E_LOG, L_RAOP, "SET_PARAMETER request failed for startup volume: %d %s\n", req->response_code,
+          req->response_code_line);
 
       goto cleanup;
     }
@@ -3368,7 +3368,7 @@ raop_cb_startup_volume(struct evrtsp_request *req, void *arg)
 
   return;
 
- cleanup:
+cleanup:
   raop_startup_cancel(rs);
 }
 
@@ -3386,7 +3386,8 @@ raop_cb_startup_record(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "RECORD request failed in session startup: %d %s\n", req->response_code, req->response_code_line);
+      DPRINTF(E_LOG, L_RAOP, "RECORD request failed in session startup: %d %s\n", req->response_code,
+          req->response_code_line);
 
       goto cleanup;
     }
@@ -3409,7 +3410,7 @@ raop_cb_startup_record(struct evrtsp_request *req, void *arg)
 
   return;
 
- cleanup:
+cleanup:
   raop_startup_cancel(rs);
 }
 
@@ -3431,7 +3432,8 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "SETUP request failed in session startup: %d %s\n", req->response_code, req->response_code_line);
+      DPRINTF(E_LOG, L_RAOP, "SETUP request failed in session startup: %d %s\n", req->response_code,
+          req->response_code_line);
 
       goto cleanup;
     }
@@ -3493,10 +3495,10 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
       DPRINTF(E_SPAM, L_RAOP, "token: %s\n", token);
 
       if (strcmp(token, "server_port") == 0)
-        {
-          token = strtok_r(NULL, ";=", &ptr);
-          if (!token)
-            break;
+	{
+	  token = strtok_r(NULL, ";=", &ptr);
+	  if (!token)
+	    break;
 
 	  ret = safe_atoi32(token, &tmp);
 	  if (ret < 0)
@@ -3507,12 +3509,12 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
 	    }
 
 	  rs->server_port = tmp;
-        }
+	}
       else if (strcmp(token, "control_port") == 0)
-        {
-          token = strtok_r(NULL, ";=", &ptr);
-          if (!token)
-            break;
+	{
+	  token = strtok_r(NULL, ";=", &ptr);
+	  if (!token)
+	    break;
 
 	  ret = safe_atoi32(token, &tmp);
 	  if (ret < 0)
@@ -3523,12 +3525,12 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
 	    }
 
 	  rs->control_port = tmp;
-        }
+	}
       else if (strcmp(token, "timing_port") == 0)
-        {
-          token = strtok_r(NULL, ";=", &ptr);
-          if (!token)
-            break;
+	{
+	  token = strtok_r(NULL, ";=", &ptr);
+	  if (!token)
+	    break;
 
 	  ret = safe_atoi32(token, &tmp);
 	  if (ret < 0)
@@ -3539,7 +3541,7 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
 	    }
 
 	  rs->timing_port = tmp;
-        }
+	}
 
       token = strtok_r(NULL, ";=", &ptr);
     }
@@ -3554,7 +3556,8 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
       goto cleanup;
     }
 
-  DPRINTF(E_DBG, L_RAOP, "Negotiated AirTunes v2 UDP streaming session %s; ports s=%u c=%u t=%u\n", rs->session, rs->server_port, rs->control_port, rs->timing_port);
+  DPRINTF(E_DBG, L_RAOP, "Negotiated AirTunes v2 UDP streaming session %s; ports s=%u c=%u t=%u\n", rs->session,
+      rs->server_port, rs->control_port, rs->timing_port);
 
   rs->state = RAOP_STATE_SETUP;
 
@@ -3565,7 +3568,7 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
 
   return;
 
- cleanup:
+cleanup:
   raop_startup_cancel(rs);
 }
 
@@ -3582,7 +3585,8 @@ raop_cb_startup_announce(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "ANNOUNCE request failed in session startup: %d %s\n", req->response_code, req->response_code_line);
+      DPRINTF(E_LOG, L_RAOP, "ANNOUNCE request failed in session startup: %d %s\n", req->response_code,
+          req->response_code_line);
 
       goto cleanup;
     }
@@ -3600,7 +3604,7 @@ raop_cb_startup_announce(struct evrtsp_request *req, void *arg)
 
   return;
 
- cleanup:
+cleanup:
   raop_startup_cancel(rs);
 }
 
@@ -3616,7 +3620,8 @@ raop_cb_startup_auth_setup(struct evrtsp_request *req, void *arg)
     goto cleanup;
 
   if (req->response_code != RTSP_OK)
-    DPRINTF(E_WARN, L_RAOP, "Unexpected reply to auth-setup from '%s', proceeding anyway (%d %s)\n", rs->devname, req->response_code, req->response_code_line);
+    DPRINTF(E_WARN, L_RAOP, "Unexpected reply to auth-setup from '%s', proceeding anyway (%d %s)\n", rs->devname,
+        req->response_code, req->response_code_line);
 
   // Send ANNOUNCE
   ret = raop_send_req_announce(rs, raop_cb_startup_announce, "startup_auth_setup");
@@ -3625,7 +3630,7 @@ raop_cb_startup_auth_setup(struct evrtsp_request *req, void *arg)
 
   return;
 
- cleanup:
+cleanup:
   raop_startup_cancel(rs);
 }
 
@@ -3646,9 +3651,11 @@ raop_cb_startup_options(struct evrtsp_request *req, void *arg)
       goto cleanup;
     }
 
-  if ((req->response_code != RTSP_OK) && (req->response_code != RTSP_UNAUTHORIZED) && (req->response_code != RTSP_FORBIDDEN))
+  if ((req->response_code != RTSP_OK) && (req->response_code != RTSP_UNAUTHORIZED)
+      && (req->response_code != RTSP_FORBIDDEN))
     {
-      DPRINTF(E_LOG, L_RAOP, "OPTIONS request failed '%s' (%s): %d %s\n", rs->devname, rs->address, req->response_code, req->response_code_line);
+      DPRINTF(E_LOG, L_RAOP, "OPTIONS request failed '%s' (%s): %d %s\n", rs->devname, rs->address, req->response_code,
+          req->response_code_line);
 
       goto cleanup;
     }
@@ -3674,7 +3681,8 @@ raop_cb_startup_options(struct evrtsp_request *req, void *arg)
       ret = raop_send_req_options(rs, raop_cb_startup_options, "startup_options");
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_RAOP, "Could not re-run OPTIONS request with authentication for '%s' (%s)\n", rs->devname, rs->address);
+	  DPRINTF(E_LOG, L_RAOP, "Could not re-run OPTIONS request with authentication for '%s' (%s)\n", rs->devname,
+	      rs->address);
 	  goto cleanup;
 	}
 
@@ -3692,7 +3700,8 @@ raop_cb_startup_options(struct evrtsp_request *req, void *arg)
       ret = raop_send_req_pin_start(rs, raop_cb_pin_start, "startup_options");
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_RAOP, "Could not request PIN from '%s' (%s) for device verification\n", rs->devname, rs->address);
+	  DPRINTF(E_LOG, L_RAOP, "Could not request PIN from '%s' (%s) for device verification\n", rs->devname,
+	      rs->address);
 	  goto cleanup;
 	}
 
@@ -3705,7 +3714,8 @@ raop_cb_startup_options(struct evrtsp_request *req, void *arg)
   if (param)
     rs->supports_post = (strstr(param, "POST") != NULL);
   else
-    DPRINTF(E_DBG, L_RAOP, "Could not find 'Public' header in OPTIONS reply from '%s' (%s)\n", rs->devname, rs->address);
+    DPRINTF(
+        E_DBG, L_RAOP, "Could not find 'Public' header in OPTIONS reply from '%s' (%s)\n", rs->devname, rs->address);
 
   if (rs->only_probe)
     {
@@ -3732,13 +3742,12 @@ raop_cb_startup_options(struct evrtsp_request *req, void *arg)
 
   return;
 
- cleanup:
+cleanup:
   if (rs->only_probe)
     session_failure(rs);
   else
     raop_startup_cancel(rs);
 }
-
 
 /* ------------------------- tvOS device verification ----------------------- */
 /*                 e.g. for the ATV4 (read it from the bottom and up)         */
@@ -3761,7 +3770,8 @@ raop_pair_response_process(int step, struct evrtsp_request *req, struct raop_ses
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "Verification step %d to '%s' failed with error code %d: %s\n", step, rs->devname, req->response_code, req->response_code_line);
+      DPRINTF(E_LOG, L_RAOP, "Verification step %d to '%s' failed with error code %d: %s\n", step, rs->devname,
+          req->response_code, req->response_code_line);
       return -1;
     }
 
@@ -3770,28 +3780,28 @@ raop_pair_response_process(int step, struct evrtsp_request *req, struct raop_ses
 
   switch (step)
     {
-      case 1:
-	ret = pair_setup_response1(rs->pair_setup_ctx, response, len);
-	errmsg = pair_setup_errmsg(rs->pair_setup_ctx);
-	break;
-      case 2:
-	ret = pair_setup_response2(rs->pair_setup_ctx, response, len);
-	errmsg = pair_setup_errmsg(rs->pair_setup_ctx);
-	break;
-      case 3:
-	ret = pair_setup_response3(rs->pair_setup_ctx, response, len);
-	errmsg = pair_setup_errmsg(rs->pair_setup_ctx);
-	break;
-      case 4:
-	ret = pair_verify_response1(rs->pair_verify_ctx, response, len);
-	errmsg = pair_verify_errmsg(rs->pair_verify_ctx);
-	break;
-      case 5:
-	ret = 0;
-	break;
-      default:
-	ret = -1;
-	errmsg = "Bug! Bad step number";
+    case 1:
+      ret = pair_setup_response1(rs->pair_setup_ctx, response, len);
+      errmsg = pair_setup_errmsg(rs->pair_setup_ctx);
+      break;
+    case 2:
+      ret = pair_setup_response2(rs->pair_setup_ctx, response, len);
+      errmsg = pair_setup_errmsg(rs->pair_setup_ctx);
+      break;
+    case 3:
+      ret = pair_setup_response3(rs->pair_setup_ctx, response, len);
+      errmsg = pair_setup_errmsg(rs->pair_setup_ctx);
+      break;
+    case 4:
+      ret = pair_verify_response1(rs->pair_verify_ctx, response, len);
+      errmsg = pair_verify_errmsg(rs->pair_verify_ctx);
+      break;
+    case 5:
+      ret = 0;
+      break;
+    default:
+      ret = -1;
+      errmsg = "Bug! Bad step number";
     }
 
   if (ret < 0)
@@ -3813,39 +3823,39 @@ raop_pair_request_send(int step, struct raop_session *rs, void (*cb)(struct evrt
 
   switch (step)
     {
-      case 1:
-	body    = pair_setup_request1(&len, rs->pair_setup_ctx);
-	errmsg  = pair_setup_errmsg(rs->pair_setup_ctx);
-	url     = "/pair-setup-pin";
-	ctype   = "application/x-apple-binary-plist";
-	break;
-      case 2:
-	body    = pair_setup_request2(&len, rs->pair_setup_ctx);
-	errmsg  = pair_setup_errmsg(rs->pair_setup_ctx);
-	url     = "/pair-setup-pin";
-	ctype   = "application/x-apple-binary-plist";
-	break;
-      case 3:
-	body    = pair_setup_request3(&len, rs->pair_setup_ctx);
-	errmsg  = pair_setup_errmsg(rs->pair_setup_ctx);
-	url     = "/pair-setup-pin";
-	ctype   = "application/x-apple-binary-plist";
-	break;
-      case 4:
-	body    = pair_verify_request1(&len, rs->pair_verify_ctx);
-	errmsg  = pair_verify_errmsg(rs->pair_verify_ctx);
-	url     = "/pair-verify";
-	ctype   = "application/octet-stream";
-	break;
-      case 5:
-	body    = pair_verify_request2(&len, rs->pair_verify_ctx);
-	errmsg  = pair_verify_errmsg(rs->pair_verify_ctx);
-	url     = "/pair-verify";
-	ctype   = "application/octet-stream";
-	break;
-      default:
-	body    = NULL;
-	errmsg  = "Bug! Bad step number";
+    case 1:
+      body = pair_setup_request1(&len, rs->pair_setup_ctx);
+      errmsg = pair_setup_errmsg(rs->pair_setup_ctx);
+      url = "/pair-setup-pin";
+      ctype = "application/x-apple-binary-plist";
+      break;
+    case 2:
+      body = pair_setup_request2(&len, rs->pair_setup_ctx);
+      errmsg = pair_setup_errmsg(rs->pair_setup_ctx);
+      url = "/pair-setup-pin";
+      ctype = "application/x-apple-binary-plist";
+      break;
+    case 3:
+      body = pair_setup_request3(&len, rs->pair_setup_ctx);
+      errmsg = pair_setup_errmsg(rs->pair_setup_ctx);
+      url = "/pair-setup-pin";
+      ctype = "application/x-apple-binary-plist";
+      break;
+    case 4:
+      body = pair_verify_request1(&len, rs->pair_verify_ctx);
+      errmsg = pair_verify_errmsg(rs->pair_verify_ctx);
+      url = "/pair-verify";
+      ctype = "application/octet-stream";
+      break;
+    case 5:
+      body = pair_verify_request2(&len, rs->pair_verify_ctx);
+      errmsg = pair_verify_errmsg(rs->pair_verify_ctx);
+      url = "/pair-verify";
+      ctype = "application/octet-stream";
+      break;
+    default:
+      body = NULL;
+      errmsg = "Bug! Bad step number";
     }
 
   if (!body)
@@ -3919,7 +3929,7 @@ raop_cb_pair_verify_step2(struct evrtsp_request *req, void *arg)
 
   return;
 
- error:
+error:
   rs->state = RAOP_STATE_PASSWORD;
   session_failure(rs);
 }
@@ -3950,7 +3960,7 @@ raop_cb_pair_verify_step1(struct evrtsp_request *req, void *arg)
 
   return;
 
- error:
+error:
   pair_verify_free(rs->pair_verify_ctx);
   rs->pair_verify_ctx = NULL;
 
@@ -3984,7 +3994,7 @@ raop_pair_verify(struct raop_session *rs)
 
   return 0;
 
- error:
+error:
   pair_verify_free(rs->pair_verify_ctx);
   rs->pair_verify_ctx = NULL;
   return -1;
@@ -4024,7 +4034,7 @@ raop_cb_pair_setup_step3(struct evrtsp_request *req, void *arg)
   // No longer RAOP_STATE_PASSWORD
   rs->state = RAOP_STATE_STOPPED;
 
- out:
+out:
   pair_setup_free(rs->pair_setup_ctx);
   rs->pair_setup_ctx = NULL;
 
@@ -4052,7 +4062,7 @@ raop_cb_pair_setup_step2(struct evrtsp_request *req, void *arg)
 
   return;
 
- error:
+error:
   pair_setup_free(rs->pair_setup_ctx);
   rs->pair_setup_ctx = NULL;
   session_failure(rs);
@@ -4074,7 +4084,7 @@ raop_cb_pair_setup_step1(struct evrtsp_request *req, void *arg)
 
   return;
 
- error:
+error:
   pair_setup_free(rs->pair_setup_ctx);
   rs->pair_setup_ctx = NULL;
   session_failure(rs);
@@ -4100,7 +4110,7 @@ raop_pair_setup(struct raop_session *rs, const char *pin)
 
   return 0;
 
- error:
+error:
   pair_setup_free(rs->pair_setup_ctx);
   rs->pair_setup_ctx = NULL;
   return -1;
@@ -4120,7 +4130,8 @@ raop_device_authorize(struct output_device *device, const char *pin, int callbac
   ret = raop_pair_setup(rs, pin);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not send verification setup request to '%s' (address %s)\n", device->name, rs->address);
+      DPRINTF(
+          E_LOG, L_RAOP, "Could not send verification setup request to '%s' (address %s)\n", device->name, rs->address);
       session_cleanup(rs);
       return -1;
     }
@@ -4128,42 +4139,53 @@ raop_device_authorize(struct output_device *device, const char *pin, int callbac
   return 1;
 }
 
-
 /* ------------------ RAOP devices discovery - mDNS callback ---------------- */
 /*                              Thread: main (mdns)                           */
 
-
 /* Examples of txt content:
  * HomePod
-     ["cn=0,1,2,3" "da=true" "et=0,3,5" "ft=0x4A7FCA00,0x56BD0" "sf=0x404" "md=0,1,2" "am=AudioAccessory1,1" "pk=1...f" "tp=UDP" "vn=65537" "vs=356.19" "ov=11.2.5" "vv=2"]
+     ["cn=0,1,2,3" "da=true" "et=0,3,5" "ft=0x4A7FCA00,0x56BD0" "sf=0x404" "md=0,1,2" "am=AudioAccessory1,1" "pk=1...f"
+ "tp=UDP" "vn=65537" "vs=356.19" "ov=11.2.5" "vv=2"]
  * Apple TV 2:
-     ["sf=0x4" "am=AppleTV2,1" "vs=130.14" "vn=65537" "tp=UDP" "ss=16" "sr=4 4100" "sv=false" "pw=false" "md=0,1,2" "et=0,3,5" "da=true" "cn=0,1,2,3" "ch=2"]
-     ["sf=0x4" "am=AppleTV2,1" "vs=105.5" "md=0,1,2" "tp=TCP,UDP" "vn=65537" "pw=false" "ss=16" "sr=44100" "da=true" "sv=false" "et=0,3" "cn=0,1" "ch=2" "txtvers=1"]
+     ["sf=0x4" "am=AppleTV2,1" "vs=130.14" "vn=65537" "tp=UDP" "ss=16" "sr=4 4100" "sv=false" "pw=false" "md=0,1,2"
+ "et=0,3,5" "da=true" "cn=0,1,2,3" "ch=2"]
+     ["sf=0x4" "am=AppleTV2,1" "vs=105.5" "md=0,1,2" "tp=TCP,UDP" "vn=65537" "pw=false" "ss=16" "sr=44100" "da=true"
+ "sv=false" "et=0,3" "cn=0,1" "ch=2" "txtvers=1"]
  * Apple TV 3:
-     ["vv=2" "vs=200.54" "vn=65537" "tp=UDP" "sf=0x44" "pk=8...f" "am=AppleTV3,1" "md=0,1,2" "ft=0x5A7FFFF7,0xE" "et=0,3,5" "da=true" "cn=0,1,2,3"]
+     ["vv=2" "vs=200.54" "vn=65537" "tp=UDP" "sf=0x44" "pk=8...f" "am=AppleTV3,1" "md=0,1,2" "ft=0x5A7FFFF7,0xE"
+ "et=0,3,5" "da=true" "cn=0,1,2,3"]
  * Apple TV 4:
-     ["vv=2" "vs=301.44.3" "vn=65537" "tp=UDP" "pk=9...f" "am=AppleTV5,3" "md=0,1,2" "sf=0x44" "ft=0x5A7FFFF7,0x4DE" "et=0,3,5" "da=true" "cn=0,1,2,3"]
-     ["vv=2" "ov=11.4.1" "vs=366.75.2" "vn=65537" "tp=UDP" "pk=c...8" "am=AppleTV5,3" "md=0,1,2" "sf=0x10244" "ft=0x5A7FFFF7,0x155FDE" "et=0,3,5" "da=true" "cn=0,1,2,3"]
+     ["vv=2" "vs=301.44.3" "vn=65537" "tp=UDP" "pk=9...f" "am=AppleTV5,3" "md=0,1,2" "sf=0x44" "ft=0x5A7FFFF7,0x4DE"
+ "et=0,3,5" "da=true" "cn=0,1,2,3"]
+     ["vv=2" "ov=11.4.1" "vs=366.75.2" "vn=65537" "tp=UDP" "pk=c...8" "am=AppleTV5,3" "md=0,1,2" "sf=0x10244"
+ "ft=0x5A7FFFF7,0x155FDE" "et=0,3,5" "da=true" "cn=0,1,2,3"]
  * Apple TV 4k:
-     ["vv=2" "ov=13.3" "vs=415.3" "vn=65537" "tp=UDP" "pk=1...9" "am=AppleTV6,2" "md=0,1,2" "sf=0x30644" "ft=0x4A7FFFF7,0x3C155FDE" "et=0,3,5" "da=true" "cn=0,1,2,3"]
+     ["vv=2" "ov=13.3" "vs=415.3" "vn=65537" "tp=UDP" "pk=1...9" "am=AppleTV6,2" "md=0,1,2" "sf=0x30644"
+ "ft=0x4A7FFFF7,0x3C155FDE" "et=0,3,5" "da=true" "cn=0,1,2,3"]
  * Sony STR-DN1040:
-     ["fv=s9327.1090.0" "am=STR-DN1040" "vs=141.9" "vn=65537" "tp=UDP" "ss=16" "sr=44100" "sv=false" "pw=false" "md=0,2" "ft=0x44F0A00" "et=0,4" "da=true" "cn=0,1" "ch=2" "txtvers=1"]
+     ["fv=s9327.1090.0" "am=STR-DN1040" "vs=141.9" "vn=65537" "tp=UDP" "ss=16" "sr=44100" "sv=false" "pw=false" "md=0,2"
+ "ft=0x44F0A00" "et=0,4" "da=true" "cn=0,1" "ch=2" "txtvers=1"]
  * AirFoil:
-     ["rastx=iafs" "sm=false" "raver=3.5.3.0" "ek=1" "md=0,1,2" "ramach=Win32NT.6" "et=0,1" "cn=0,1" "sr=44100" "ss=16" "raAudioFormats=ALAC" "raflakyzeroconf=true" "pw=false" "rast=afs" "vn=3" "sv=false" "txtvers=1" "ch=2" "tp=UDP"]
+     ["rastx=iafs" "sm=false" "raver=3.5.3.0" "ek=1" "md=0,1,2" "ramach=Win32NT.6" "et=0,1" "cn=0,1" "sr=44100" "ss=16"
+ "raAudioFormats=ALAC" "raflakyzeroconf=true" "pw=false" "rast=afs" "vn=3" "sv=false" "txtvers=1" "ch=2" "tp=UDP"]
  * Xbmc 13:
-     ["am=Xbmc,1" "md=0,1,2" "vs=130.14" "da=true" "vn=3" "pw=false" "sr=44100" "ss=16" "sm=false" "tp=UDP" "sv=false" "et=0,1" "ek=1" "ch=2" "cn=0,1" "txtvers=1"]
+     ["am=Xbmc,1" "md=0,1,2" "vs=130.14" "da=true" "vn=3" "pw=false" "sr=44100" "ss=16" "sm=false" "tp=UDP" "sv=false"
+ "et=0,1" "ek=1" "ch=2" "cn=0,1" "txtvers=1"]
  * Shairport (abrasive/1.0):
      ["pw=false" "txtvers=1" "vn=3" "sr=44100" "ss=16" "ch=2" "cn=0,1" "et=0,1" "ek=1" "sm=false" "tp=UDP"]
  * JB2:
-     ["fv=95.8947" "am=JB2 Gen" "vs=103.2" "tp=UDP" "vn=65537" "pw=false" "s s=16" "sr=44100" "da=true" "sv=false" "et=0,4" "cn=0,1" "ch=2" "txtvers=1"]
+     ["fv=95.8947" "am=JB2 Gen" "vs=103.2" "tp=UDP" "vn=65537" "pw=false" "s s=16" "sr=44100" "da=true" "sv=false"
+ "et=0,4" "cn=0,1" "ch=2" "txtvers=1"]
  * Airport Express 802.11g (Gen 1):
-     ["tp=TCP,UDP" "sm=false" "sv=false" "ek=1" "et=0,1" "cn=0,1" "ch=2" "ss=16" "sr=44100" "pw=false" "vn=3" "txtvers=1"]
+     ["tp=TCP,UDP" "sm=false" "sv=false" "ek=1" "et=0,1" "cn=0,1" "ch=2" "ss=16" "sr=44100" "pw=false" "vn=3"
+ "txtvers=1"]
  * Airport Express 802.11n:
      802.11n Gen 2 model (firmware 7.6.4): "am=Airport4,107", "et=0,1"
      802.11n Gen 3 model (firmware 7.6.4): "am=Airport10,115", "et=0,4"
  */
 static void
-raop_device_cb(const char *name, const char *type, const char *domain, const char *hostname, int family, const char *address, int port, struct keyval *txt)
+raop_device_cb(const char *name, const char *type, const char *domain, const char *hostname, int family,
+    const char *address, int port, struct keyval *txt)
 {
   struct output_device *rd;
   struct raop_extra *re;
@@ -4196,7 +4218,8 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
     }
   device_name++;
 
-  DPRINTF(E_DBG, L_RAOP, "Event for AirPlay device '%s' (port %d, id %" PRIx64 ", Active-Remote %" PRIu32 ")\n", device_name, port, id, (uint32_t)id);
+  DPRINTF(E_DBG, L_RAOP, "Event for AirPlay device '%s' (port %d, id %" PRIx64 ", Active-Remote %" PRIu32 ")\n",
+      device_name, port, id, (uint32_t)id);
 
   devcfg = cfg_gettsec(cfg, "airplay", device_name);
   if (devcfg && cfg_getbool(devcfg, "exclude"))
@@ -4237,13 +4260,13 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
       // Device stopped advertising
       switch (family)
 	{
-	  case AF_INET:
-	    rd->v4_port = 1;
-	    break;
+	case AF_INET:
+	  rd->v4_port = 1;
+	  break;
 
-	  case AF_INET6:
-	    rd->v6_port = 1;
-	    break;
+	case AF_INET6:
+	  rd->v6_port = 1;
+	  break;
 	}
 
       ret = player_device_remove(rd);
@@ -4332,13 +4355,15 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
     rd->quality.channels = RAOP_QUALITY_CHANNELS_DEFAULT;
 
   if (!quality_is_equal(&rd->quality, &raop_quality_default))
-    DPRINTF(E_LOG, L_RAOP, "Device '%s' requested non-default audio quality (%d/%d/%d)\n", rd->name, rd->quality.sample_rate, rd->quality.bits_per_sample, rd->quality.channels);
+    DPRINTF(E_LOG, L_RAOP, "Device '%s' requested non-default audio quality (%d/%d/%d)\n", rd->name,
+        rd->quality.sample_rate, rd->quality.bits_per_sample, rd->quality.channels);
 
   // Max volume
   rd->max_volume = devcfg ? cfg_getint(devcfg, "max_volume") : RAOP_CONFIG_MAX_VOLUME;
   if ((rd->max_volume < 1) || (rd->max_volume > RAOP_CONFIG_MAX_VOLUME))
     {
-      DPRINTF(E_LOG, L_RAOP, "Config has bad max_volume (%d) for device '%s', using default instead\n", rd->max_volume, device_name);
+      DPRINTF(E_LOG, L_RAOP, "Config has bad max_volume (%d) for device '%s', using default instead\n", rd->max_volume,
+          device_name);
       rd->max_volume = RAOP_CONFIG_MAX_VOLUME;
     }
 
@@ -4412,23 +4437,29 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
 
   switch (family)
     {
-      case AF_INET:
-	rd->v4_address = strdup(address);
-	rd->v4_port = port;
-	DPRINTF(E_INFO, L_RAOP, "Adding AirPlay device '%s': password: %u, verification: %u, encrypt: %u, authsetup: %u, metadata: %u, type %s, address %s:%d\n", 
-	  device_name, rd->has_password, rd->requires_auth, re->encrypt, re->supports_auth_setup, re->wanted_metadata, raop_devtype[re->devtype], address, port);
-	break;
+    case AF_INET:
+      rd->v4_address = strdup(address);
+      rd->v4_port = port;
+      DPRINTF(E_INFO, L_RAOP,
+          "Adding AirPlay device '%s': password: %u, verification: %u, encrypt: %u, authsetup: %u, metadata: %u, type "
+          "%s, address %s:%d\n",
+          device_name, rd->has_password, rd->requires_auth, re->encrypt, re->supports_auth_setup, re->wanted_metadata,
+          raop_devtype[re->devtype], address, port);
+      break;
 
-      case AF_INET6:
-	rd->v6_address = strdup(address);
-	rd->v6_port = port;
-	DPRINTF(E_INFO, L_RAOP, "Adding AirPlay device '%s': password: %u, verification: %u, encrypt: %u, authsetup: %u, metadata: %u, type %s, address [%s]:%d\n", 
-	  device_name, rd->has_password, rd->requires_auth, re->encrypt, re->supports_auth_setup, re->wanted_metadata, raop_devtype[re->devtype], address, port);
-	break;
+    case AF_INET6:
+      rd->v6_address = strdup(address);
+      rd->v6_port = port;
+      DPRINTF(E_INFO, L_RAOP,
+          "Adding AirPlay device '%s': password: %u, verification: %u, encrypt: %u, authsetup: %u, metadata: %u, type "
+          "%s, address [%s]:%d\n",
+          device_name, rd->has_password, rd->requires_auth, re->encrypt, re->supports_auth_setup, re->wanted_metadata,
+          raop_devtype[re->devtype], address, port);
+      break;
 
-      default:
-	DPRINTF(E_LOG, L_RAOP, "Error: AirPlay device '%s' has neither ipv4 og ipv6 address\n", device_name);
-	goto free_rd;
+    default:
+      DPRINTF(E_LOG, L_RAOP, "Error: AirPlay device '%s' has neither ipv4 og ipv6 address\n", device_name);
+      goto free_rd;
     }
 
   ret = player_device_add(rd);
@@ -4437,10 +4468,9 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
 
   return;
 
- free_rd:
+free_rd:
   outputs_device_free(rd);
 }
-
 
 /* ---------------------------- Module definitions -------------------------- */
 /*                                Thread: player                              */
@@ -4475,7 +4505,8 @@ raop_device_start_generic(struct output_device *device, int callback_id, bool on
 
   if (ret < 0)
     {
-      DPRINTF(E_WARN, L_RAOP, "Could not send verification or OPTIONS request to '%s' (address %s)\n", device->name, rs->address);
+      DPRINTF(E_WARN, L_RAOP, "Could not send verification or OPTIONS request to '%s' (address %s)\n", device->name,
+          rs->address);
       session_cleanup(rs);
       return -1;
     }
@@ -4685,16 +4716,16 @@ raop_init(void)
 
   return 0;
 
- out_stop_control:
+out_stop_control:
   service_stop(&raop_control_svc);
- out_stop_timing:
+out_stop_timing:
   service_stop(&raop_timing_svc);
- out_free_timer:
+out_free_timer:
   event_free(keep_alive_timer);
   free(raop_aes_iv_b64);
- out_free_b64_key:
+out_free_b64_key:
   free(raop_aes_key_b64);
- out_close_cipher:
+out_close_cipher:
   gcry_cipher_close(raop_aes_ctx);
 
   return -1;
@@ -4723,8 +4754,7 @@ raop_deinit(void)
   free(raop_aes_iv_b64);
 }
 
-struct output_definition output_raop =
-{
+struct output_definition output_raop = {
   .name = "AirPlay 1",
   .type = OUTPUT_TYPE_RAOP,
 #ifdef PREFER_AIRPLAY2

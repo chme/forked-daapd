@@ -15,8 +15,7 @@
 #define PAIR_AP_POST_LIST "POST /pair-list"
 #define PAIR_AP_POST_REMOVE "POST /pair-remove"
 
-enum pair_type
-{
+enum pair_type {
   // This is the pairing type required for Apple TV device verification, which
   // became mandatory with tvOS 10.2.
   PAIR_CLIENT_FRUIT,
@@ -56,8 +55,7 @@ enum pair_type
  *  PAIR_SERVER_HOMEKIT (normal)    | client public key, client id  | shared secret
  *  PAIR_SERVER_HOMEKIT (transient) | shared secret                 | n/a
  */
-struct pair_result
-{
+struct pair_result {
   char device_id[PAIR_AP_DEVICE_ID_LEN_MAX]; // ID of the peer
   uint8_t client_private_key[64];
   uint8_t client_public_key[32];
@@ -72,7 +70,6 @@ struct pair_cipher_context;
 
 typedef int (*pair_cb)(uint8_t public_key[32], const char *device_id, void *cb_arg);
 typedef void (*pair_list_cb)(pair_cb list_cb, void *list_cb_arg, void *cb_arg);
-
 
 /* ------------------------------- pair setup ------------------------------- */
 
@@ -139,7 +136,6 @@ pair_setup_response2(struct pair_setup_context *sctx, const uint8_t *in, size_t 
 int
 pair_setup_response3(struct pair_setup_context *sctx, const uint8_t *in, size_t in_len);
 
-
 /* ------------------------------ pair verify ------------------------------- */
 
 /* Client
@@ -160,7 +156,8 @@ pair_setup_response3(struct pair_setup_context *sctx, const uint8_t *in, size_t 
  * it has not completed pair-setup), return -1.
  */
 struct pair_verify_context *
-pair_verify_new(enum pair_type type, const char *client_setup_keys, pair_cb get_cb, void *cb_arg, const char *device_id);
+pair_verify_new(
+    enum pair_type type, const char *client_setup_keys, pair_cb get_cb, void *cb_arg, const char *device_id);
 void
 pair_verify_free(struct pair_verify_context *vctx);
 
@@ -195,7 +192,6 @@ pair_verify_response1(struct pair_verify_context *vctx, const uint8_t *in, size_
 int
 pair_verify_response2(struct pair_verify_context *vctx, const uint8_t *in, size_t in_len);
 
-
 /* ------------------------------- ciphering -------------------------------- */
 
 /* When you have completed the verification you can extract a shared secret with
@@ -218,14 +214,16 @@ pair_cipher_errmsg(struct pair_cipher_context *cctx);
  * returned.
  */
 ssize_t
-pair_encrypt(uint8_t **ciphertext, size_t *ciphertext_len, const uint8_t *plaintext, size_t plaintext_len, struct pair_cipher_context *cctx);
+pair_encrypt(uint8_t **ciphertext, size_t *ciphertext_len, const uint8_t *plaintext, size_t plaintext_len,
+    struct pair_cipher_context *cctx);
 
 /* The return value equals length of ciphertext that was decrypted, so if the
  * return value == ciphertext_len then everything was decrypted. On error -1 is
  * returned.
  */
 ssize_t
-pair_decrypt(uint8_t **plaintext, size_t *plaintext_len, const uint8_t *ciphertext, size_t ciphertext_len, struct pair_cipher_context *cctx);
+pair_decrypt(uint8_t **plaintext, size_t *plaintext_len, const uint8_t *ciphertext, size_t ciphertext_len,
+    struct pair_cipher_context *cctx);
 
 /* Rolls back the nonce
  */
@@ -233,7 +231,6 @@ void
 pair_encrypt_rollback(struct pair_cipher_context *cctx);
 void
 pair_decrypt_rollback(struct pair_cipher_context *cctx);
-
 
 /* --------------------------------- other ---------------------------------- */
 
@@ -243,13 +240,16 @@ pair_decrypt_rollback(struct pair_cipher_context *cctx);
  * TODO this part is currenly not working
  */
 int
-pair_add(enum pair_type type, uint8_t **out, size_t *out_len, pair_cb add_cb, void *cb_arg, const uint8_t *in, size_t in_len);
+pair_add(enum pair_type type, uint8_t **out, size_t *out_len, pair_cb add_cb, void *cb_arg, const uint8_t *in,
+    size_t in_len);
 
 int
-pair_remove(enum pair_type type, uint8_t **out, size_t *out_len, pair_cb remove_cb, void *cb_arg, const uint8_t *in, size_t in_len);
+pair_remove(enum pair_type type, uint8_t **out, size_t *out_len, pair_cb remove_cb, void *cb_arg, const uint8_t *in,
+    size_t in_len);
 
 int
-pair_list(enum pair_type type, uint8_t **out, size_t *out_len, pair_list_cb list_cb, void *cb_arg, const uint8_t *in, size_t in_len);
+pair_list(enum pair_type type, uint8_t **out, size_t *out_len, pair_list_cb list_cb, void *cb_arg, const uint8_t *in,
+    size_t in_len);
 
 /* For parsing an incoming message to see what type ("state") it is. Mostly
  * useful for servers. Returns 1-6 for pair-setup and 1-4 for pair-verify.
@@ -263,4 +263,4 @@ pair_state_get(enum pair_type type, const char **errmsg, const uint8_t *in, size
 void
 pair_public_key_get(enum pair_type type, uint8_t server_public_key[32], const char *device_id);
 
-#endif  /* !__PAIR_AP_H__ */
+#endif /* !__PAIR_AP_H__ */

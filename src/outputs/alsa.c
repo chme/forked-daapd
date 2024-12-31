@@ -24,26 +24,25 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <errno.h>
-#include <stdint.h>
 #include <inttypes.h>
 #include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include <alsa/asoundlib.h>
 
-#include "misc.h"
 #include "conffile.h"
 #include "logger.h"
-#include "player.h"
+#include "misc.h"
 #include "outputs.h"
-
+#include "player.h"
 
 // For setting volume, treat everything below this as linear scale
 #define MAX_LINEAR_DB_SCALE 24
@@ -74,15 +73,13 @@
 #define ALSA_ERROR_DEVICE -4
 #define ALSA_ERROR_DEVICE_BUSY -5
 
-enum alsa_sync_state
-{
+enum alsa_sync_state {
   ALSA_SYNC_OK,
   ALSA_SYNC_AHEAD,
   ALSA_SYNC_BEHIND,
 };
 
-struct alsa_mixer
-{
+struct alsa_mixer {
   snd_mixer_t *hdl;
   snd_mixer_elem_t *vol_elem;
 
@@ -90,8 +87,7 @@ struct alsa_mixer
   long vol_max;
 };
 
-struct alsa_playback_session
-{
+struct alsa_playback_session {
   snd_pcm_t *pcm;
 
   int buffer_nsamp;
@@ -122,16 +118,14 @@ struct alsa_playback_session
 };
 
 // Info about the device, which is not required by the player, only internally
-struct alsa_extra
-{
+struct alsa_extra {
   const char *card_name;
   const char *mixer_name;
   const char *mixer_device_name;
   int offset_ms;
 };
 
-struct alsa_session
-{
+struct alsa_session {
   enum output_device_state state;
 
   uint64_t device_id;
@@ -161,12 +155,10 @@ static int alsa_latency_history_size;
 static struct media_quality alsa_fallback_quality = { 44100, 16, 2, 0 };
 static struct media_quality alsa_last_quality;
 
-
 /* -------------------------------- FORWARDS -------------------------------- */
 
 static void
 alsa_status(struct alsa_session *as);
-
 
 /* ------------------------------- MISC HELPERS ----------------------------- */
 
@@ -194,7 +186,7 @@ dump_config(snd_pcm_t *pcm)
 static void
 dump_card(int card, snd_ctl_card_info_t *info)
 {
-  char hwdev[14];  // 'hw:' (3) + max_uint (10)
+  char hwdev[14]; // 'hw:' (3) + max_uint (10)
   snd_ctl_t *hdl;
   snd_mixer_t *mixer;
   snd_mixer_elem_t *elem;
@@ -249,7 +241,7 @@ dump_card(int card, snd_ctl_card_info_t *info)
   for (elem = snd_mixer_first_elem(mixer); elem; elem = snd_mixer_elem_next(elem))
     {
       if (snd_mixer_selem_has_common_volume(elem) || !snd_mixer_selem_has_playback_volume(elem))
-        continue;
+	continue;
 
       safe_snprintf_cat(mixerstr, sizeof(mixerstr), " '%s'", snd_mixer_selem_get_name(elem));
     }
@@ -257,7 +249,8 @@ dump_card(int card, snd_ctl_card_info_t *info)
   if (mixerstr[0] == '\0')
     sprintf(mixerstr, " (no mixers found)");
 
-  DPRINTF(E_INFO, L_LAUDIO, "Available ALSA playback mixer(s) on %s CARD=%s (%s):%s\n", hwdev, snd_ctl_card_info_get_id(info), snd_ctl_card_info_get_name(info), mixerstr);
+  DPRINTF(E_INFO, L_LAUDIO, "Available ALSA playback mixer(s) on %s CARD=%s (%s):%s\n", hwdev,
+      snd_ctl_card_info_get_id(info), snd_ctl_card_info_get_name(info), mixerstr);
 
 errormixer:
   snd_mixer_close(mixer);
@@ -297,7 +290,6 @@ bps2format(int bits_per_sample)
   else
     return SND_PCM_FORMAT_UNKNOWN;
 }
-
 
 /* from alsa-utils/alsamixer/volume_mapping.c
  *
@@ -382,7 +374,7 @@ volume_set(struct alsa_mixer *mixer, int volume)
 
   DPRINTF(E_DBG, L_LAUDIO, "Setting ALSA volume to %d\n", volume);
 
-  ret = volume_normalized_set(mixer->vol_elem, volume >= 0 && volume <= 100 ? volume/100.0 : 0.75, 0);
+  ret = volume_normalized_set(mixer->vol_elem, volume >= 0 && volume <= 100 ? volume / 100.0 : 0.75, 0);
   if (ret < 0)
     {
       DPRINTF(E_LOG, L_LAUDIO, "Failed to set ALSA volume to %d\n: %s", volume, snd_strerror(ret));
@@ -450,7 +442,7 @@ mixer_open(struct alsa_mixer *mixer, const char *mixer_device_name, const char *
 	  break;
 	}
       else if (strcmp(snd_mixer_selem_id_get_name(sid), "PCM") == 0)
-        pcm = elem;
+	pcm = elem;
       else if (strcmp(snd_mixer_selem_id_get_name(sid), "Master") == 0)
 	master = elem;
     }
@@ -486,9 +478,9 @@ mixer_open(struct alsa_mixer *mixer, const char *mixer_device_name, const char *
 
   return 0;
 
- out_detach:
+out_detach:
   snd_mixer_detach(mixer_hdl, mixer_device_name);
- out_close:
+out_close:
   snd_mixer_close(mixer_hdl);
 
   return -1;
@@ -547,7 +539,8 @@ pcm_open(snd_pcm_t **pcm, const char *device_name, struct media_quality *quality
   ret = snd_pcm_hw_params_set_format(hdl, hw_params, bps2format(quality->bits_per_sample));
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not set format (bits per sample %d): %s\n", quality->bits_per_sample, snd_strerror(ret));
+      DPRINTF(E_LOG, L_LAUDIO, "Could not set format (bits per sample %d): %s\n", quality->bits_per_sample,
+          snd_strerror(ret));
       goto out_fail;
     }
 
@@ -573,7 +566,7 @@ pcm_open(snd_pcm_t **pcm, const char *device_name, struct media_quality *quality
     }
 
   // Enable this line to simulate devices with low buffer size
-  //bufsize = 32768;
+  // bufsize = 32768;
 
   ret = snd_pcm_hw_params_set_buffer_size_max(hdl, hw_params, &bufsize);
   if (ret < 0)
@@ -595,7 +588,7 @@ pcm_open(snd_pcm_t **pcm, const char *device_name, struct media_quality *quality
 
   return 0;
 
- out_fail:
+out_fail:
   snd_pcm_hw_params_free(hw_params);
   snd_pcm_close(hdl);
 
@@ -656,7 +649,7 @@ pcm_configure(snd_pcm_t *hdl)
 
   return 0;
 
- out_fail:
+out_fail:
   snd_pcm_sw_params_free(sw_params);
 
   return -1;
@@ -686,7 +679,7 @@ playback_session_remove(struct alsa_session *as, struct alsa_playback_session *p
   struct alsa_playback_session *s;
 
   DPRINTF(E_DBG, L_LAUDIO, "Removing playback session (quality %d/%d/%d) from ALSA device '%s'\n",
-    pb->quality.sample_rate, pb->quality.bits_per_sample, pb->quality.channels, as->devname);
+      pb->quality.sample_rate, pb->quality.bits_per_sample, pb->quality.channels, as->devname);
 
   if (pb == as->pb)
     as->pb = as->pb->next;
@@ -726,8 +719,8 @@ playback_session_add(struct alsa_session *as, struct media_quality *quality, str
   size_t size;
   int ret;
 
-  DPRINTF(E_DBG, L_LAUDIO, "Adding playback session (quality %d/%d/%d) to ALSA device '%s'\n",
-    quality->sample_rate, quality->bits_per_sample, quality->channels, as->devname);
+  DPRINTF(E_DBG, L_LAUDIO, "Adding playback session (quality %d/%d/%d) to ALSA device '%s'\n", quality->sample_rate,
+      quality->bits_per_sample, quality->channels, as->devname);
 
   CHECK_NULL(L_LAUDIO, pb = calloc(1, sizeof(struct alsa_playback_session)));
   CHECK_NULL(L_LAUDIO, pb->latency_history = calloc(alsa_latency_history_size, sizeof(double)));
@@ -735,19 +728,23 @@ playback_session_add(struct alsa_session *as, struct media_quality *quality, str
   ret = pcm_open(&pb->pcm, as->devname, quality);
   if (ret == ALSA_ERROR_DEVICE_BUSY)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "ALSA device '%s' won't open due to existing session (no support for concurrent audio), truncating audio\n", as->devname);
+      DPRINTF(E_LOG, L_LAUDIO,
+          "ALSA device '%s' won't open due to existing session (no support for concurrent audio), truncating audio\n",
+          as->devname);
       playback_session_remove_all(as);
       ret = pcm_open(&pb->pcm, as->devname, quality);
       if (ret == ALSA_ERROR_DEVICE_BUSY)
 	{
-	  DPRINTF(E_LOG, L_LAUDIO, "ALSA device '%s' failed: Device still busy after closing previous sessions\n", as->devname);
+	  DPRINTF(E_LOG, L_LAUDIO, "ALSA device '%s' failed: Device still busy after closing previous sessions\n",
+	      as->devname);
 	  goto error;
 	}
     }
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Device '%s' does not support quality (%d/%d/%d), falling back to default\n", as->devname, quality->sample_rate, quality->bits_per_sample, quality->channels);
+      DPRINTF(E_LOG, L_LAUDIO, "Device '%s' does not support quality (%d/%d/%d), falling back to default\n",
+          as->devname, quality->sample_rate, quality->bits_per_sample, quality->channels);
       ret = pcm_open(&pb->pcm, as->devname, &alsa_fallback_quality);
       if (ret < 0)
 	{
@@ -787,7 +784,7 @@ playback_session_add(struct alsa_session *as, struct media_quality *quality, str
   if (as->pb)
     {
       for (tail_pb = as->pb; tail_pb->next; tail_pb = tail_pb->next)
-        ; // Fast forward
+	; // Fast forward
       tail_pb->next = pb;
     }
   else
@@ -795,7 +792,7 @@ playback_session_add(struct alsa_session *as, struct media_quality *quality, str
 
   return 0;
 
- error:
+error:
   playback_session_free(pb);
 
   return -1;
@@ -835,7 +832,8 @@ buffer_write(struct alsa_playback_session *pb, struct output_data *odata, snd_pc
       if (bufsize == 0)
 	return 0;
 
-//      DPRINTF(E_DBG, L_LAUDIO, "Writing prebuffer (read_avail=%zu, bufsize=%zu, avail=%li)\n", pb->prebuf.read_avail, bufsize, avail);
+      //      DPRINTF(E_DBG, L_LAUDIO, "Writing prebuffer (read_avail=%zu, bufsize=%zu, avail=%li)\n",
+      //      pb->prebuf.read_avail, bufsize, avail);
 
       nsamp = snd_pcm_bytes_to_frames(pb->pcm, bufsize);
 
@@ -896,12 +894,16 @@ sync_check(double *drift, double *latency, struct alsa_playback_session *pb, snd
   if (elapsed < 0)
     return ALSA_SYNC_OK;
 
-  cur_pos = (uint64_t)pb->pos - pb->stamp_pos - (delay + BTOS(pb->prebuf.read_avail, pb->quality.bits_per_sample, pb->quality.channels));
+  cur_pos = (uint64_t)pb->pos - pb->stamp_pos
+            - (delay + BTOS(pb->prebuf.read_avail, pb->quality.bits_per_sample, pb->quality.channels));
   exp_pos = (uint64_t)elapsed * pb->quality.sample_rate / 1000;
   diff = cur_pos - exp_pos;
 
-  DPRINTF(E_SPAM, L_LAUDIO, "counter %d/%d, stamp %lu:%lu, now %lu:%lu, elapsed is %d ms, cur_pos=%" PRIu64 ", exp_pos=%" PRIu64 ", diff=%d\n",
-    pb->latency_counter, alsa_latency_history_size, pb->stamp_pts.tv_sec, pb->stamp_pts.tv_nsec / 1000000, ts.tv_sec, ts.tv_nsec / 1000000, elapsed, cur_pos, exp_pos, diff);
+  DPRINTF(E_SPAM, L_LAUDIO,
+      "counter %d/%d, stamp %lu:%lu, now %lu:%lu, elapsed is %d ms, cur_pos=%" PRIu64 ", exp_pos=%" PRIu64
+      ", diff=%d\n",
+      pb->latency_counter, alsa_latency_history_size, pb->stamp_pts.tv_sec, pb->stamp_pts.tv_nsec / 1000000, ts.tv_sec,
+      ts.tv_nsec / 1000000, elapsed, cur_pos, exp_pos, diff);
 
   // Add the latency to our measurement history
   pb->latency_history[pb->latency_counter] = (double)diff;
@@ -934,7 +936,8 @@ sync_check(double *drift, double *latency, struct alsa_playback_session *pb, snd
 
   if (sync != ALSA_SYNC_OK && r2 < ALSA_MAX_VARIANCE)
     {
-      DPRINTF(E_DBG, L_LAUDIO, "Too much variance in latency measurements (r2=%f/%f), won't try to compensate\n", r2, ALSA_MAX_VARIANCE);
+      DPRINTF(E_DBG, L_LAUDIO, "Too much variance in latency measurements (r2=%f/%f), won't try to compensate\n", r2,
+          ALSA_MAX_VARIANCE);
       sync = ALSA_SYNC_OK;
     }
 
@@ -944,7 +947,8 @@ sync_check(double *drift, double *latency, struct alsa_playback_session *pb, snd
 }
 
 static void
-sync_correct(struct alsa_playback_session *pb, double drift, double latency, struct timespec pts, snd_pcm_sframes_t delay)
+sync_correct(
+    struct alsa_playback_session *pb, double drift, double latency, struct timespec pts, snd_pcm_sframes_t delay)
 {
   int step;
   int sign;
@@ -987,10 +991,13 @@ sync_correct(struct alsa_playback_session *pb, double drift, double latency, str
 
   // Reset position so next sync_correct latency correction is only based on
   // what has elapsed since our correction
-  pb->stamp_pos = (uint64_t)pb->pos - (delay + BTOS(pb->prebuf.read_avail, pb->quality.bits_per_sample, pb->quality.channels));;
+  pb->stamp_pos
+      = (uint64_t)pb->pos - (delay + BTOS(pb->prebuf.read_avail, pb->quality.bits_per_sample, pb->quality.channels));
+  ;
   pb->stamp_pts = pts;
 
-  DPRINTF(E_INFO, L_LAUDIO, "Adjusted sample rate to %d to sync ALSA device (drift=%f, latency=%f)\n", pb->quality.sample_rate, drift, latency);
+  DPRINTF(E_INFO, L_LAUDIO, "Adjusted sample rate to %d to sync ALSA device (drift=%f, latency=%f)\n",
+      pb->quality.sample_rate, drift, latency);
 }
 
 static int
@@ -1031,7 +1038,8 @@ playback_drain(struct alsa_playback_session *pb)
   if (bufsize == 0)
     return 0; // avail too low to actually write anything
 
-//  DPRINTF(E_DBG, L_LAUDIO, "Draining prebuffer (read_avail=%zu, bufsize=%zu, avail=%li)\n", pb->prebuf.read_avail / 4, bufsize, avail);
+  //  DPRINTF(E_DBG, L_LAUDIO, "Draining prebuffer (read_avail=%zu, bufsize=%zu, avail=%li)\n", pb->prebuf.read_avail /
+  //  4, bufsize, avail);
 
   nsamp = snd_pcm_bytes_to_frames(pb->pcm, bufsize);
 
@@ -1095,7 +1103,7 @@ playback_write(struct alsa_playback_session *pb, struct output_buffer *obuf)
 
   return 0;
 
- alsa_error:
+alsa_error:
   if (ret == -EPIPE)
     {
       DPRINTF(E_WARN, L_LAUDIO, "ALSA buffer underrun, restarting session\n");
@@ -1105,7 +1113,6 @@ playback_write(struct alsa_playback_session *pb, struct output_buffer *obuf)
   DPRINTF(E_LOG, L_LAUDIO, "ALSA write error: %s\n", snd_strerror(ret));
   return ALSA_ERROR_WRITE;
 }
-
 
 /* ---------------------------- SESSION HANDLING ---------------------------- */
 
@@ -1189,9 +1196,9 @@ alsa_session_make(struct output_device *device, int callback_id)
 
   return as;
 
- error_mixer_close:
+error_mixer_close:
   mixer_close(&as->mixer, as->mixer_device_name);
- error_free_session:
+error_free_session:
   free(as);
   return NULL;
 }
@@ -1205,7 +1212,6 @@ alsa_status(struct alsa_session *as)
   if (as->state == OUTPUT_STATE_FAILED || as->state == OUTPUT_STATE_STOPPED)
     alsa_session_cleanup(as);
 }
-
 
 /* ------------------ INTERFACE FUNCTIONS CALLED BY OUTPUTS.C --------------- */
 
@@ -1360,7 +1366,7 @@ alsa_write(struct output_buffer *obuf)
 }
 
 static void
-alsa_device_add(cfg_t* cfg_audio, int id)
+alsa_device_add(cfg_t *cfg_audio, int id)
 {
   struct output_device *device;
   struct alsa_extra *ae;
@@ -1394,7 +1400,7 @@ alsa_device_add(cfg_t* cfg_audio, int id)
   if (abs(ae->offset_ms) > 1000)
     {
       DPRINTF(E_LOG, L_LAUDIO, "The ALSA offset_ms (%d) set in the configuration is out of bounds\n", ae->offset_ms);
-      ae->offset_ms = 1000 * (ae->offset_ms/abs(ae->offset_ms));
+      ae->offset_ms = 1000 * (ae->offset_ms / abs(ae->offset_ms));
     }
 
   DPRINTF(E_INFO, L_LAUDIO, "Adding ALSA device '%s' with name '%s'\n", ae->card_name, device->name);
@@ -1432,10 +1438,10 @@ alsa_init(void)
   else
     {
       for (i = 0; i < alsa_cfg_secn; ++i)
-        {
-          cfg_alsasec = cfg_getnsec(cfg, "alsa", i);
-          alsa_device_add(cfg_alsasec, i);
-        }
+	{
+	  cfg_alsasec = cfg_getnsec(cfg, "alsa", i);
+	  alsa_device_add(cfg_alsasec, i);
+	}
     }
 
   snd_lib_error_set_handler(logger_alsa);
@@ -1457,8 +1463,7 @@ alsa_deinit(void)
     }
 }
 
-struct output_definition output_alsa =
-{
+struct output_definition output_alsa = {
   .name = "ALSA",
   .type = OUTPUT_TYPE_ALSA,
   .priority = 3,

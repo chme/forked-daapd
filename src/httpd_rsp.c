@@ -20,33 +20,33 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/queue.h>
 #include <sys/types.h>
-#include <limits.h>
 
+#include "conffile.h"
+#include "db.h"
 #include "httpd_internal.h"
 #include "logger.h"
-#include "db.h"
-#include "conffile.h"
 #include "misc.h"
 #include "misc_xml.h"
-#include "transcode.h"
 #include "parsers/rsp_parser.h"
+#include "transcode.h"
 
 #define RSP_VERSION "1.0"
 #define RSP_XML_DECLARATION "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?>"
 
-#define F_FULL     (1 << 0)
-#define F_BROWSE   (1 << 1)
-#define F_ID       (1 << 2)
+#define F_FULL (1 << 0)
+#define F_BROWSE (1 << 1)
+#define F_ID (1 << 2)
 #define F_DETAILED (1 << 3)
-#define F_ALWAYS   (F_FULL | F_BROWSE | F_ID | F_DETAILED)
+#define F_ALWAYS (F_FULL | F_BROWSE | F_ID | F_DETAILED)
 
 struct field_map {
   char *field;
@@ -56,65 +56,62 @@ struct field_map {
 
 static char rsp_filter_files[32];
 
-static const struct field_map pl_fields[] =
-  {
-    { "id",           dbpli_offsetof(id),           F_ALWAYS },
-    { "title",        dbpli_offsetof(title),        F_FULL | F_BROWSE | F_DETAILED },
-    { "type",         dbpli_offsetof(type),         F_DETAILED },
-    { "items",        dbpli_offsetof(items),        F_FULL | F_BROWSE | F_DETAILED },
-    { "query",        dbpli_offsetof(query),        F_DETAILED },
-    { "db_timestamp", dbpli_offsetof(db_timestamp), F_DETAILED },
-    { "path",         dbpli_offsetof(path),         F_DETAILED },
-    { "index",        dbpli_offsetof(index),        F_DETAILED },
-    { NULL,           0,                            0 }
-  };
+static const struct field_map pl_fields[] = {
+  { "id",           dbpli_offsetof(id),           F_ALWAYS                       },
+  { "title",        dbpli_offsetof(title),        F_FULL | F_BROWSE | F_DETAILED },
+  { "type",         dbpli_offsetof(type),         F_DETAILED                     },
+  { "items",        dbpli_offsetof(items),        F_FULL | F_BROWSE | F_DETAILED },
+  { "query",        dbpli_offsetof(query),        F_DETAILED                     },
+  { "db_timestamp", dbpli_offsetof(db_timestamp), F_DETAILED                     },
+  { "path",         dbpli_offsetof(path),         F_DETAILED                     },
+  { "index",        dbpli_offsetof(index),        F_DETAILED                     },
+  { NULL,           0,                            0                              }
+};
 
-static const struct field_map rsp_fields[] =
-  {
-    { "id",            dbmfi_offsetof(id),            F_ALWAYS },
-    { "path",          dbmfi_offsetof(path),          F_DETAILED },
-    { "fname",         dbmfi_offsetof(fname),         F_DETAILED },
-    { "title",         dbmfi_offsetof(title),         F_ALWAYS },
-    { "artist",        dbmfi_offsetof(artist),        F_DETAILED | F_FULL | F_BROWSE },
-    { "album",         dbmfi_offsetof(album),         F_DETAILED | F_FULL | F_BROWSE },
-    { "genre",         dbmfi_offsetof(genre),         F_DETAILED | F_FULL },
-    { "comment",       dbmfi_offsetof(comment),       F_DETAILED | F_FULL },
-    { "type",          dbmfi_offsetof(type),          F_ALWAYS },
-    { "composer",      dbmfi_offsetof(composer),      F_DETAILED | F_FULL },
-    { "orchestra",     dbmfi_offsetof(orchestra),     F_DETAILED | F_FULL },
-    { "conductor",     dbmfi_offsetof(conductor),     F_DETAILED | F_FULL },
-    { "url",           dbmfi_offsetof(url),           F_DETAILED | F_FULL },
-    { "bitrate",       dbmfi_offsetof(bitrate),       F_DETAILED | F_FULL },
-    { "samplerate",    dbmfi_offsetof(samplerate),    F_DETAILED | F_FULL },
-    { "song_length",   dbmfi_offsetof(song_length),   F_DETAILED | F_FULL },
-    { "file_size",     dbmfi_offsetof(file_size),     F_DETAILED | F_FULL },
-    { "year",          dbmfi_offsetof(year),          F_DETAILED | F_FULL },
-    { "track",         dbmfi_offsetof(track),         F_DETAILED | F_FULL | F_BROWSE },
-    { "total_tracks",  dbmfi_offsetof(total_tracks),  F_DETAILED | F_FULL },
-    { "disc",          dbmfi_offsetof(disc),          F_DETAILED | F_FULL | F_BROWSE },
-    { "total_discs",   dbmfi_offsetof(total_discs),   F_DETAILED | F_FULL },
-    { "bpm",           dbmfi_offsetof(bpm),           F_DETAILED | F_FULL },
-    { "compilation",   dbmfi_offsetof(compilation),   F_DETAILED | F_FULL },
-    { "rating",        dbmfi_offsetof(rating),        F_DETAILED | F_FULL },
-    { "play_count",    dbmfi_offsetof(play_count),    F_DETAILED | F_FULL },
-    { "skip_count",    dbmfi_offsetof(skip_count),    F_DETAILED | F_FULL },
-    { "data_kind",     dbmfi_offsetof(data_kind),     F_DETAILED },
-    { "item_kind",     dbmfi_offsetof(item_kind),     F_DETAILED },
-    { "description",   dbmfi_offsetof(description),   F_DETAILED | F_FULL },
-    { "time_added",    dbmfi_offsetof(time_added),    F_DETAILED | F_FULL },
-    { "time_modified", dbmfi_offsetof(time_modified), F_DETAILED | F_FULL },
-    { "time_played",   dbmfi_offsetof(time_played),   F_DETAILED | F_FULL },
-    { "time_skipped",  dbmfi_offsetof(time_skipped),  F_DETAILED | F_FULL },
-    { "db_timestamp",  dbmfi_offsetof(db_timestamp),  F_DETAILED },
-    { "disabled",      dbmfi_offsetof(disabled),      F_ALWAYS },
-    { "sample_count",  dbmfi_offsetof(sample_count),  F_DETAILED },
-    { "codectype",     dbmfi_offsetof(codectype),     F_ALWAYS },
-    { "idx",           dbmfi_offsetof(idx),           F_DETAILED },
-    { "has_video",     dbmfi_offsetof(has_video),     F_DETAILED },
-    { "contentrating", dbmfi_offsetof(contentrating), F_DETAILED },
-    { NULL,            0,                             0 }
-  };
-
+static const struct field_map rsp_fields[] = {
+  { "id",            dbmfi_offsetof(id),            F_ALWAYS                       },
+  { "path",          dbmfi_offsetof(path),          F_DETAILED                     },
+  { "fname",         dbmfi_offsetof(fname),         F_DETAILED                     },
+  { "title",         dbmfi_offsetof(title),         F_ALWAYS                       },
+  { "artist",        dbmfi_offsetof(artist),        F_DETAILED | F_FULL | F_BROWSE },
+  { "album",         dbmfi_offsetof(album),         F_DETAILED | F_FULL | F_BROWSE },
+  { "genre",         dbmfi_offsetof(genre),         F_DETAILED | F_FULL            },
+  { "comment",       dbmfi_offsetof(comment),       F_DETAILED | F_FULL            },
+  { "type",          dbmfi_offsetof(type),          F_ALWAYS                       },
+  { "composer",      dbmfi_offsetof(composer),      F_DETAILED | F_FULL            },
+  { "orchestra",     dbmfi_offsetof(orchestra),     F_DETAILED | F_FULL            },
+  { "conductor",     dbmfi_offsetof(conductor),     F_DETAILED | F_FULL            },
+  { "url",           dbmfi_offsetof(url),           F_DETAILED | F_FULL            },
+  { "bitrate",       dbmfi_offsetof(bitrate),       F_DETAILED | F_FULL            },
+  { "samplerate",    dbmfi_offsetof(samplerate),    F_DETAILED | F_FULL            },
+  { "song_length",   dbmfi_offsetof(song_length),   F_DETAILED | F_FULL            },
+  { "file_size",     dbmfi_offsetof(file_size),     F_DETAILED | F_FULL            },
+  { "year",          dbmfi_offsetof(year),          F_DETAILED | F_FULL            },
+  { "track",         dbmfi_offsetof(track),         F_DETAILED | F_FULL | F_BROWSE },
+  { "total_tracks",  dbmfi_offsetof(total_tracks),  F_DETAILED | F_FULL            },
+  { "disc",          dbmfi_offsetof(disc),          F_DETAILED | F_FULL | F_BROWSE },
+  { "total_discs",   dbmfi_offsetof(total_discs),   F_DETAILED | F_FULL            },
+  { "bpm",           dbmfi_offsetof(bpm),           F_DETAILED | F_FULL            },
+  { "compilation",   dbmfi_offsetof(compilation),   F_DETAILED | F_FULL            },
+  { "rating",        dbmfi_offsetof(rating),        F_DETAILED | F_FULL            },
+  { "play_count",    dbmfi_offsetof(play_count),    F_DETAILED | F_FULL            },
+  { "skip_count",    dbmfi_offsetof(skip_count),    F_DETAILED | F_FULL            },
+  { "data_kind",     dbmfi_offsetof(data_kind),     F_DETAILED                     },
+  { "item_kind",     dbmfi_offsetof(item_kind),     F_DETAILED                     },
+  { "description",   dbmfi_offsetof(description),   F_DETAILED | F_FULL            },
+  { "time_added",    dbmfi_offsetof(time_added),    F_DETAILED | F_FULL            },
+  { "time_modified", dbmfi_offsetof(time_modified), F_DETAILED | F_FULL            },
+  { "time_played",   dbmfi_offsetof(time_played),   F_DETAILED | F_FULL            },
+  { "time_skipped",  dbmfi_offsetof(time_skipped),  F_DETAILED | F_FULL            },
+  { "db_timestamp",  dbmfi_offsetof(db_timestamp),  F_DETAILED                     },
+  { "disabled",      dbmfi_offsetof(disabled),      F_ALWAYS                       },
+  { "sample_count",  dbmfi_offsetof(sample_count),  F_DETAILED                     },
+  { "codectype",     dbmfi_offsetof(codectype),     F_ALWAYS                       },
+  { "idx",           dbmfi_offsetof(idx),           F_DETAILED                     },
+  { "has_video",     dbmfi_offsetof(has_video),     F_DETAILED                     },
+  { "contentrating", dbmfi_offsetof(contentrating), F_DETAILED                     },
+  { NULL,            0,                             0                              }
+};
 
 /* -------------------------------- HELPERS --------------------------------- */
 
@@ -186,7 +183,7 @@ rsp_send_error(struct httpd_request *hreq, char *errmsg)
   xml_free(response);
   return;
 
- error:
+error:
   httpd_send_error(hreq, HTTP_SERVUNAVAIL, "Internal Server Error");
   xml_free(response);
 }
@@ -308,7 +305,6 @@ rsp_request_authorize(struct httpd_request *hreq)
   return 0;
 }
 
-
 /* --------------------------- REPLY HANDLERS ------------------------------- */
 
 static int
@@ -382,11 +378,11 @@ rsp_reply_db(struct httpd_request *hreq)
 	{
 	  if (pl_fields[i].flags & F_FULL)
 	    {
-	      strval = (char **) ((char *)&dbpli + pl_fields[i].offset);
+	      strval = (char **)((char *)&dbpli + pl_fields[i].offset);
 
 	      xml_new_node(pl, pl_fields[i].field, *strval);
-            }
-        }
+	    }
+	}
     }
 
   if (ret < 0)
@@ -415,7 +411,8 @@ rsp_reply_db(struct httpd_request *hreq)
 }
 
 static int
-item_add(xml_node *parent, struct query_params *qp, enum transcode_profile spk_profile, const char *user_agent, const char *accept_codecs, int mode)
+item_add(xml_node *parent, struct query_params *qp, enum transcode_profile spk_profile, const char *user_agent,
+    const char *accept_codecs, int mode)
 {
   struct media_quality quality = { 0 };
   struct db_media_file_info dbmfi;
@@ -445,7 +442,7 @@ item_add(xml_node *parent, struct query_params *qp, enum transcode_profile spk_p
       orgcodec = dbmfi.codectype;
 
       if (safe_atou32(dbmfi.song_length, &len_ms) < 0)
-        len_ms = 3 * 60 * 1000; // just a fallback default
+	len_ms = 3 * 60 * 1000; // just a fallback default
 
       safe_atoi32(dbmfi.samplerate, &quality.sample_rate);
       safe_atoi32(dbmfi.bits_per_sample, &quality.bits_per_sample);
@@ -453,11 +450,11 @@ item_add(xml_node *parent, struct query_params *qp, enum transcode_profile spk_p
       quality.bit_rate = cfg_getint(cfg_getsec(cfg, "streaming"), "bit_rate");
 
       transcode_metadata_strings_set(&xcode_metadata, profile, &quality, len_ms);
-      dbmfi.type        = xcode_metadata.type;
-      dbmfi.codectype   = xcode_metadata.codectype;
+      dbmfi.type = xcode_metadata.type;
+      dbmfi.codectype = xcode_metadata.codectype;
       dbmfi.description = xcode_metadata.description;
-      dbmfi.file_size   = xcode_metadata.file_size;
-      dbmfi.bitrate     = xcode_metadata.bitrate;
+      dbmfi.file_size = xcode_metadata.file_size;
+      dbmfi.bitrate = xcode_metadata.bitrate;
     }
 
   // Now add block with content
@@ -468,7 +465,7 @@ item_add(xml_node *parent, struct query_params *qp, enum transcode_profile spk_p
       if (!(rsp_fields[i].flags & mode))
 	continue;
 
-      strval = (char **) ((char *)&dbmfi + rsp_fields[i].offset);
+      strval = (char **)((char *)&dbmfi + rsp_fields[i].offset);
       if (!(*strval) || (strlen(*strval) == 0))
 	continue;
 
@@ -735,34 +732,17 @@ rsp_stream(struct httpd_request *hreq)
 // 'accept-codecs': 'wma,mpeg,wav,mp4a,alac'
 // 'rsp-version': '0.1'
 // 'transcode-codecs': 'wav,mp3'
-static struct httpd_uri_map rsp_handlers[] =
+static struct httpd_uri_map rsp_handlers[] = {
+  { .regexp = "^/rsp/info$", .handler = rsp_reply_info },
+  { .regexp = "^/rsp/db$", .handler = rsp_reply_db },
+  { .regexp = "^/rsp/db/[[:digit:]]+$", .handler = rsp_reply_playlist },
+  { .regexp = "^/rsp/db/[[:digit:]]+/[^/]+$", .handler = rsp_reply_browse },
   {
-    {
-      .regexp = "^/rsp/info$",
-      .handler = rsp_reply_info
-    },
-    {
-      .regexp = "^/rsp/db$",
-      .handler = rsp_reply_db
-    },
-    {
-      .regexp = "^/rsp/db/[[:digit:]]+$",
-      .handler = rsp_reply_playlist
-    },
-    {
-      .regexp = "^/rsp/db/[[:digit:]]+/[^/]+$",
-      .handler = rsp_reply_browse
-    },
-    {
-      .regexp = "^/rsp/stream/[[:digit:]]+$",
-      .handler = rsp_stream,
-    },
-    { 
-      .regexp = NULL,
-      .handler = NULL
-    }
-  };
-
+   .regexp = "^/rsp/stream/[[:digit:]]+$",
+   .handler = rsp_stream,
+   },
+  { .regexp = NULL, .handler = NULL }
+};
 
 /* -------------------------------- RSP API --------------------------------- */
 
@@ -798,8 +778,7 @@ rsp_init(void)
   return 0;
 }
 
-struct httpd_module httpd_rsp =
-{
+struct httpd_module httpd_rsp = {
   .name = "RSP",
   .type = MODULE_RSP,
   .logdomain = L_RSP,

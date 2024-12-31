@@ -1,13 +1,7 @@
 #ifndef __EVTHR_H__
 #define __EVTHR_H__
 
-enum evthr_res {
-    EVTHR_RES_OK = 0,
-    EVTHR_RES_BACKLOG,
-    EVTHR_RES_RETRY,
-    EVTHR_RES_NOCB,
-    EVTHR_RES_FATAL
-};
+enum evthr_res { EVTHR_RES_OK = 0, EVTHR_RES_BACKLOG, EVTHR_RES_RETRY, EVTHR_RES_NOCB, EVTHR_RES_FATAL };
 
 struct evthr_pool;
 struct evthr;

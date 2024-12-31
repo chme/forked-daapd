@@ -2,20 +2,18 @@
 #ifndef __HTTP_H__
 #define __HTTP_H__
 
+#include "misc.h"
+#include <curl/curl.h>
 #include <event2/buffer.h>
 #include <event2/http.h>
-#include <curl/curl.h>
-#include "misc.h"
 
 #include <libavformat/avformat.h>
 
-struct http_client_session
-{
+struct http_client_session {
   CURL *curl;
 };
 
-struct http_client_ctx
-{
+struct http_client_ctx {
   /* Destination URL, header and body of outgoing request body. If output_body
    * is set, the request will be POST, otherwise it will be GET
    */
@@ -43,8 +41,7 @@ struct http_client_ctx
   void *evbase;
 };
 
-struct http_icy_metadata
-{
+struct http_icy_metadata {
   uint32_t id;
 
   /* Static stream metadata from icy_metadata_headers */
@@ -76,7 +73,6 @@ http_client_session_deinit(struct http_client_session *session);
 int
 http_client_request(struct http_client_ctx *ctx, struct http_client_session *session);
 
-
 /* Converts the keyval dictionary to a application/x-www-form-urlencoded string.
  * The values will be uri_encoded. Example output: "key1=foo%20bar&key2=123".
  *
@@ -85,7 +81,6 @@ http_client_request(struct http_client_ctx *ctx, struct http_client_session *ses
  */
 char *
 http_form_urlencode(struct keyval *kv);
-
 
 /* Returns a newly allocated string with the first stream in the m3u given in
  * url. If url is not a m3u, the string will be a copy of url.
@@ -96,7 +91,6 @@ http_form_urlencode(struct keyval *kv);
  */
 int
 http_stream_setup(char **stream, const char *url);
-
 
 /* Extracts ICY header and packet metadata (requires libav 10)
  *
@@ -114,7 +108,6 @@ http_stream_setup(char **stream, const char *url);
  */
 struct http_icy_metadata *
 http_icy_metadata_get(AVFormatContext *fmtctx, int packet_only);
-
 
 /* Frees an ICY metadata struct
  *

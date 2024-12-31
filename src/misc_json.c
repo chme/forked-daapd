@@ -57,7 +57,7 @@ jparse_select(json_object *haystack, const char *keys[])
 }
 
 void
-jparse_free(json_object* haystack)
+jparse_free(json_object *haystack)
 {
   if (haystack)
     {
@@ -65,7 +65,7 @@ jparse_free(json_object* haystack)
       json_object_put(haystack);
 #else
       if (json_object_put(haystack) != 1)
-        DPRINTF(E_LOG, L_MISC, "Memleak: JSON parser did not free object\n");
+	DPRINTF(E_LOG, L_MISC, "Memleak: JSON parser did not free object\n");
 #endif
     }
 }
@@ -81,7 +81,7 @@ jparse_contains_key(json_object *haystack, const char *key, json_type type)
 int
 jparse_array_from_obj(json_object *haystack, const char *key, json_object **needle)
 {
-  if (! (json_object_object_get_ex(haystack, key, needle) && json_object_get_type(*needle) == json_type_array) )
+  if (!(json_object_object_get_ex(haystack, key, needle) && json_object_get_type(*needle) == json_type_array))
     return -1;
   else
     return 0;
@@ -166,7 +166,7 @@ jparse_obj_from_evbuffer(struct evbuffer *evbuf)
   // 0-terminate for safety
   evbuffer_add(evbuf, "", 1);
 
-  json_str = (char *) evbuffer_pullup(evbuf, -1);
+  json_str = (char *)evbuffer_pullup(evbuf, -1);
   if (!json_str || (strlen(json_str) == 0))
     {
       DPRINTF(E_LOG, L_MISC, "Failed to parse JSON from input buffer\n");

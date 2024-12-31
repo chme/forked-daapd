@@ -15,28 +15,28 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <fcntl.h>
+#include <pthread.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdint.h>
-#include <fcntl.h>
-#include <pthread.h>
 
 #include <event2/event.h>
 
-#include "input.h"
-#include "misc.h"
-#include "logger.h"
 #include "conffile.h"
-#include "listener.h"
-#include "http.h"
 #include "db.h"
-#include "transcode.h"
-#include "spotify.h"
+#include "http.h"
+#include "input.h"
 #include "librespot-c/librespot-c.h"
+#include "listener.h"
+#include "logger.h"
+#include "misc.h"
+#include "spotify.h"
+#include "transcode.h"
 
 // Haven't actually studied ffmpeg's probe size requirements, this is just a
 // guess
@@ -49,8 +49,7 @@
 // This will also in effect throttle in librespot-c.
 #define SPOTIFY_BUF_MAX (512 * 1024)
 
-struct global_ctx
-{
+struct global_ctx {
   bool is_initialized;
   struct spotify_status status;
 
@@ -58,8 +57,7 @@ struct global_ctx
   enum sp_bitrates bitrate_preferred;
 };
 
-struct download_ctx
-{
+struct download_ctx {
   bool is_started;
   bool is_ended;
   struct transcode_ctx *xcode;
@@ -81,7 +79,6 @@ static pthread_mutex_t spotify_ctx_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static struct media_quality spotify_quality = { 44100, 16, 2, 0 };
 
-
 /* ------------------------------ Utility funcs ----------------------------- */
 
 static void
@@ -98,7 +95,7 @@ hextobin(uint8_t *data, size_t data_len, const char *hexstr, size_t hexstr_len)
     }
 
   ptr = hexstr;
-  for (i = 0; i < data_len; i++, ptr+=2)
+  for (i = 0; i < data_len; i++, ptr += 2)
     {
       memcpy(hex, ptr, 2);
       data[i] = strtol(hex, NULL, 16);
@@ -170,7 +167,7 @@ login_stored_cred(struct global_ctx *ctx, const char *username, const char *db_s
   free(stored_cred);
   return 0;
 
- error:
+error:
   free(stored_cred);
   if (ctx->session)
     librespotc_logout(ctx->session);
@@ -231,7 +228,8 @@ https_get_cb(char **out, const char *url)
   ret = http_client_request(&ctx, NULL);
   if (ret < 0 || ctx.response_code != HTTP_OK)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Failed to get AP list from '%s' (return %d, error code %d)\n", ctx.url, ret, ctx.response_code);
+      DPRINTF(E_LOG, L_SPOTIFY, "Failed to get AP list from '%s' (return %d, error code %d)\n", ctx.url, ret,
+          ctx.response_code);
       goto error;
     }
 
@@ -246,7 +244,7 @@ https_get_cb(char **out, const char *url)
   evbuffer_free(ctx.input_body);
   return 0;
 
- error:
+error:
   evbuffer_free(ctx.input_body);
   return -1;
 }
@@ -282,21 +280,20 @@ logmsg_cb(const char *fmt, ...)
 static void
 hexdump_cb(const char *msg, uint8_t *data, size_t data_len)
 {
-//  DHEXDUMP(E_DBG, L_SPOTIFY, data, data_len, msg);
+  //  DHEXDUMP(E_DBG, L_SPOTIFY, data, data_len, msg);
 }
-
 
 /* ------------------------ librespot-c initialization ---------------------- */
 
 struct sp_callbacks callbacks = {
-  .https_get      = https_get_cb,
-  .tcp_connect    = tcp_connect,
+  .https_get = https_get_cb,
+  .tcp_connect = tcp_connect,
   .tcp_disconnect = tcp_disconnect,
 
   .thread_name_set = thread_name_set,
 
-  .hexdump  = hexdump_cb,
-  .logmsg   = logmsg_cb,
+  .hexdump = hexdump_cb,
+  .logmsg = logmsg_cb,
 };
 
 // Called from main thread as part of player_init, or from library thread as
@@ -324,27 +321,26 @@ initialize(struct global_ctx *ctx)
 
   switch (cfg_getint(spotify_cfg, "bitrate"))
     {
-      case 1:
-	ctx->bitrate_preferred = SP_BITRATE_96;
-	break;
-      case 2:
-	ctx->bitrate_preferred = SP_BITRATE_160;
-	break;
-      case 3:
-	ctx->bitrate_preferred = SP_BITRATE_320;
-	break;
-      default:
-	ctx->bitrate_preferred = SP_BITRATE_ANY;
+    case 1:
+      ctx->bitrate_preferred = SP_BITRATE_96;
+      break;
+    case 2:
+      ctx->bitrate_preferred = SP_BITRATE_160;
+      break;
+    case 3:
+      ctx->bitrate_preferred = SP_BITRATE_320;
+      break;
+    default:
+      ctx->bitrate_preferred = SP_BITRATE_ANY;
     }
 
   ctx->is_initialized = true;
   return 0;
 
- error:
+error:
   ctx->is_initialized = false;
   return -1;
 }
-
 
 /* --------------------- Implementation (input thread) ---------------------- */
 
@@ -357,30 +353,31 @@ download_seek(void *arg, int64_t offset, enum transcode_seek_type type)
 
   switch (type)
     {
-      case XCODE_SEEK_SIZE:
-	out = download->len_bytes;
-	break;
-      case XCODE_SEEK_SET:
-	// Flush read buffer
-	evbuffer_drain(download->read_buf, -1);
+    case XCODE_SEEK_SIZE:
+      out = download->len_bytes;
+      break;
+    case XCODE_SEEK_SET:
+      // Flush read buffer
+      evbuffer_drain(download->read_buf, -1);
 
-	ret = librespotc_seek(download->read_fd, offset);
-	if (ret < 0)
-	  goto error;
-
-	fd_read(NULL, download->read_buf, download->read_fd);
-
-	out = offset;
-	break;
-      default:
+      ret = librespotc_seek(download->read_fd, offset);
+      if (ret < 0)
 	goto error;
+
+      fd_read(NULL, download->read_buf, download->read_fd);
+
+      out = offset;
+      break;
+    default:
+      goto error;
     }
 
-  DPRINTF(E_DBG, L_SPOTIFY, "Seek to offset %" PRIi64 " requested, type %d, returning %" PRIi64 "\n", offset, type, out);
+  DPRINTF(
+      E_DBG, L_SPOTIFY, "Seek to offset %" PRIi64 " requested, type %d, returning %" PRIi64 "\n", offset, type, out);
 
   return out;
 
- error:
+error:
   DPRINTF(E_WARN, L_SPOTIFY, "Seek error\n");
 
   return -1;
@@ -392,7 +389,9 @@ static int
 download_xcode_setup(struct download_ctx *download)
 {
   struct transcode_decode_setup_args decode_args = { .profile = XCODE_OGG, .len_ms = download->len_ms };
-  struct transcode_encode_setup_args encode_args = { .profile = XCODE_PCM16, };
+  struct transcode_encode_setup_args encode_args = {
+    .profile = XCODE_PCM16,
+  };
   struct transcode_evbuf_io xcode_evbuf_io = { 0 };
   struct transcode_ctx *xcode;
 
@@ -409,7 +408,7 @@ download_xcode_setup(struct download_ctx *download)
 
   return 0;
 
- error:
+error:
   transcode_cleanup(&xcode);
   return -1;
 }
@@ -520,7 +519,7 @@ setup(struct input_source *source)
   pthread_mutex_unlock(&spotify_ctx_lock);
   return 0;
 
- error:
+error:
   pthread_mutex_unlock(&spotify_ctx_lock);
   stop(source);
 
@@ -546,7 +545,7 @@ play(struct input_source *source)
     {
       ret = fd_read(&download->is_ended, download->read_buf, download->read_fd);
       if (ret < 0)
-        goto error;
+	goto error;
 
       buflen = evbuffer_get_length(download->read_buf);
       if (buflen < SPOTIFY_BUF_MIN)
@@ -571,12 +570,12 @@ play(struct input_source *source)
 
   return 0;
 
- error:
+error:
   input_write(NULL, NULL, INPUT_FLAG_ERROR);
   stop(source);
   return -1;
 
- wait:
+wait:
   DPRINTF(E_DBG, L_SPOTIFY, "Waiting for data\n");
   input_wait();
   return 0;
@@ -623,8 +622,7 @@ deinit(void)
   pthread_mutex_unlock(&spotify_ctx_lock);
 }
 
-struct input_definition input_spotify =
-{
+struct input_definition input_spotify = {
   .name = "Spotify",
   .type = INPUT_TYPE_SPOTIFY,
   .disabled = 0,
@@ -635,7 +633,6 @@ struct input_definition input_spotify =
   .init = init,
   .deinit = deinit,
 };
-
 
 /* -------------------- Functions exposed via spotify.h --------------------- */
 /*             Called from other threads than the input thread                */
@@ -660,7 +657,7 @@ login(const char *username, const char *password, const char **errmsg)
 
   return 0;
 
- error:
+error:
   if (ctx->session)
     librespotc_logout(ctx->session);
   ctx->session = NULL;
@@ -693,7 +690,7 @@ login_token(const char *username, const char *token, const char **errmsg)
 
   return 0;
 
- error:
+error:
   if (ctx->session)
     librespotc_logout(ctx->session);
   ctx->session = NULL;
@@ -756,7 +753,7 @@ relogin(void)
   pthread_mutex_unlock(&spotify_ctx_lock);
   return 0;
 
- error:
+error:
   free(username);
   free(db_stored_cred);
 
@@ -779,12 +776,10 @@ status_get(struct spotify_status *status)
   pthread_mutex_unlock(&spotify_ctx_lock);
 }
 
-struct spotify_backend spotify_librespotc =
-{
+struct spotify_backend spotify_librespotc = {
   .login = login,
   .login_token = login_token,
   .logout = logout,
   .relogin = relogin,
   .status_get = status_get,
 };
-

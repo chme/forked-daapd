@@ -30,8 +30,7 @@
 #include "logger.h"
 #include "misc.h"
 
-struct command
-{
+struct command {
   pthread_mutex_t lck;
   pthread_cond_t cond;
 
@@ -43,8 +42,7 @@ struct command
   int pending;
 };
 
-struct commands_base
-{
+struct commands_base {
   struct event_base *evbase;
   command_exit_cb exit_cb;
   int command_pipe[2];
@@ -108,8 +106,8 @@ command_cb_sync(struct commands_base *cmdbase, struct command *cmd)
 /*
  * Event callback function
  *
- * Function is triggered by libevent if there is data to read on the command pipe (writing to the command pipe happens through
- * the send_command function).
+ * Function is triggered by libevent if there is data to read on the command pipe (writing to the command pipe happens
+ * through the send_command function).
  */
 static void
 command_cb(int fd, short what, void *arg)
@@ -124,7 +122,8 @@ command_cb(int fd, short what, void *arg)
   ret = read(cmdbase->command_pipe[0], &cmd, sizeof(cmd));
   if (ret != sizeof(cmd))
     {
-      DPRINTF(E_LOG, L_MAIN, "Error reading command from command pipe: expected %zu bytes, read %d bytes\n", sizeof(cmd), ret);
+      DPRINTF(E_LOG, L_MAIN, "Error reading command from command pipe: expected %zu bytes, read %d bytes\n",
+          sizeof(cmd), ret);
 
       event_add(cmdbase->command_event, NULL);
       return;
@@ -244,7 +243,7 @@ int
 commands_exec_returnvalue(struct commands_base *cmdbase)
 {
   if (cmdbase->current_cmd == NULL)
-      return 0;
+    return 0;
 
   return cmdbase->current_cmd->ret;
 }
@@ -407,4 +406,3 @@ commands_base_destroy(struct commands_base *cmdbase)
   commands_exec_sync(cmdbase, cmdloop_exit, NULL, cmdbase);
   commands_base_free(cmdbase);
 }
-

@@ -16,9 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #include <errno.h>
@@ -31,17 +30,16 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "misc.h"
 #include "conffile.h"
 #include "logger.h"
-#include "player.h"
+#include "misc.h"
 #include "outputs.h"
+#include "player.h"
 
 #define FIFO_BUFFER_SIZE 65536 // pipe capacity on Linux >= 2.6.11
 #define FIFO_PACKET_SIZE 1408  // 352 samples/packet * 16 bit/sample * 2 channels
 
-struct fifo_packet
-{
+struct fifo_packet {
   /* pcm data */
   uint8_t *samples;
   size_t samples_size;
@@ -53,8 +51,7 @@ struct fifo_packet
   struct fifo_packet *prev;
 };
 
-struct fifo_buffer
-{
+struct fifo_buffer {
   struct fifo_packet *head;
   struct fifo_packet *tail;
 };
@@ -62,7 +59,6 @@ struct fifo_buffer
 static struct fifo_buffer buffer;
 
 static struct media_quality fifo_quality = { 44100, 16, 2, 0 };
-
 
 static void
 free_buffer()
@@ -82,8 +78,7 @@ free_buffer()
   buffer.head = NULL;
 }
 
-struct fifo_session
-{
+struct fifo_session {
   enum output_device_state state;
 
   char *path;
@@ -98,7 +93,6 @@ struct fifo_session
 };
 
 static struct fifo_session *sessions;
-
 
 /* ---------------------------- FIFO HANDLING ---------------------------- */
 
@@ -268,7 +262,6 @@ fifo_session_make(struct output_device *device, int callback_id)
   return fifo_session;
 }
 
-
 /* ---------------------------- STATUS HANDLERS ----------------------------- */
 
 static void
@@ -402,7 +395,7 @@ fifo_write(struct output_buffer *obuf)
   for (i = 0; obuf->data[i].buffer; i++)
     {
       if (quality_is_equal(&fifo_quality, &obuf->data[i].quality))
-        break;
+	break;
     }
 
   if (!obuf->data[i].buffer)
@@ -449,12 +442,12 @@ fifo_write(struct output_buffer *obuf)
 	{
 	  switch (errno)
 	    {
-	      case EAGAIN:
-		/* The pipe is full, so empty it */
-		fifo_empty(fifo_session);
-		continue;
-	      case EINTR:
-		continue;
+	    case EAGAIN:
+	      /* The pipe is full, so empty it */
+	      fifo_empty(fifo_session);
+	      continue;
+	    case EINTR:
+	      continue;
 	    }
 
 	  DPRINTF(E_LOG, L_FIFO, "Failed to write to FIFO %s: %d\n", fifo_session->path, errno);
@@ -505,8 +498,7 @@ fifo_deinit(void)
   return;
 }
 
-struct output_definition output_fifo =
-{
+struct output_definition output_fifo = {
   .name = "fifo",
   .type = OUTPUT_TYPE_FIFO,
   .priority = 98,

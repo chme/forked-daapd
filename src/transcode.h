@@ -2,12 +2,11 @@
 #ifndef __TRANSCODE_H__
 #define __TRANSCODE_H__
 
-#include <event2/buffer.h>
 #include "http.h"
 #include "misc.h"
+#include <event2/buffer.h>
 
-enum transcode_profile
-{
+enum transcode_profile {
   // Used for errors
   XCODE_UNKNOWN,
   // No transcoding, send as-is
@@ -38,26 +37,23 @@ enum transcode_profile
   XCODE_VP8,
 };
 
-enum transcode_seek_type
-{
+enum transcode_seek_type {
   XCODE_SEEK_SIZE,
   XCODE_SEEK_SET,
   XCODE_SEEK_CUR,
 };
 
 typedef void transcode_frame;
-typedef int64_t(*transcode_seekfn)(void *arg, int64_t offset, enum transcode_seek_type seek_type);
+typedef int64_t (*transcode_seekfn)(void *arg, int64_t offset, enum transcode_seek_type seek_type);
 
 struct decode_ctx;
 struct encode_ctx;
-struct transcode_ctx
-{
+struct transcode_ctx {
   struct decode_ctx *decode_ctx;
   struct encode_ctx *encode_ctx;
 };
 
-struct transcode_evbuf_io
-{
+struct transcode_evbuf_io {
   struct evbuffer *evbuf;
 
   // Set to null if no seek support required
@@ -65,8 +61,7 @@ struct transcode_evbuf_io
   void *seekfn_arg;
 };
 
-struct transcode_decode_setup_args
-{
+struct transcode_decode_setup_args {
   enum transcode_profile profile;
   struct media_quality *quality;
   bool is_http;
@@ -77,8 +72,7 @@ struct transcode_decode_setup_args
   struct transcode_evbuf_io *evbuf_io;
 };
 
-struct transcode_encode_setup_args
-{
+struct transcode_encode_setup_args {
   enum transcode_profile profile;
   struct media_quality *quality;
   struct decode_ctx *src_ctx;
@@ -88,15 +82,13 @@ struct transcode_encode_setup_args
   int height;
 };
 
-struct transcode_metadata_string
-{
+struct transcode_metadata_string {
   char *type;
   char *codectype;
   char *description;
   char file_size[64];
   char bitrate[32];
 };
-
 
 // Setting up
 struct decode_ctx *
@@ -218,7 +210,8 @@ transcode_metadata(struct transcode_ctx *ctx, int *changed);
  * @in  len_ms     Length of source track
  */
 void
-transcode_metadata_strings_set(struct transcode_metadata_string *s, enum transcode_profile profile, struct media_quality *q, uint32_t len_ms);
+transcode_metadata_strings_set(
+    struct transcode_metadata_string *s, enum transcode_profile profile, struct media_quality *q, uint32_t len_ms);
 
 /* Creates a header for later transcoding of a source file. This header can be
  * given to transcode_encode_setup which in some cases will make it faster (MP4)

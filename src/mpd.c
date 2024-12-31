@@ -24,27 +24,27 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <ctype.h>
+#include <ctype.h> // isdigit
+#include <errno.h>
+#include <fcntl.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <netinet/in.h>
+#include <pthread.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <unistd.h>
 #include <string.h>
-#include <ctype.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <errno.h>
-#include <pthread.h>
-#include <inttypes.h>
-#include <netinet/in.h>
-#include <ctype.h> // isdigit
+#include <unistd.h>
 
-#include <event2/event.h>
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
+#include <event2/event.h>
 #include <event2/http.h>
 #include <event2/listener.h>
 
@@ -56,9 +56,9 @@
 #include "listener.h"
 #include "logger.h"
 #include "misc.h"
+#include "parsers/mpd_parser.h"
 #include "player.h"
 #include "remote_pairing.h"
-#include "parsers/mpd_parser.h"
 
 // TODO
 // optimize queries (map albumartist/album groupings to songalbumid/artistid in db.c)
@@ -67,8 +67,15 @@
 
 // Command handlers should use this for returning errors to make sure both
 // ack_error and errmsg are correctly set
-#define RETURN_ERROR(r, ...) \
-  do { out->ack_error = (r); free(out->errmsg); out->errmsg = safe_asprintf(__VA_ARGS__); return -1; } while(0)
+#define RETURN_ERROR(r, ...)                                                                                           \
+  do                                                                                                                   \
+    {                                                                                                                  \
+      out->ack_error = (r);                                                                                            \
+      free(out->errmsg);                                                                                               \
+      out->errmsg = safe_asprintf(__VA_ARGS__);                                                                        \
+      return -1;                                                                                                       \
+    }                                                                                                                  \
+  while (0)
 
 // According to the mpd protocol send "OK MPD <version>\n" to the client, where
 // version is the version of the supported mpd protocol and not the server version
@@ -103,34 +110,34 @@
  *
  * https://github.com/MusicPlayerDaemon/MPD/blob/master/src/client/Config.cxx
  */
-#define MPD_MAX_COMMAND_LIST_SIZE (2048*1024)
+#define MPD_MAX_COMMAND_LIST_SIZE (2048 * 1024)
 
-#define MPD_ALL_IDLE_LISTENER_EVENTS (LISTENER_PLAYER | LISTENER_QUEUE | LISTENER_VOLUME | LISTENER_SPEAKER | LISTENER_OPTIONS | LISTENER_DATABASE | LISTENER_UPDATE | LISTENER_STORED_PLAYLIST | LISTENER_RATING)
+#define MPD_ALL_IDLE_LISTENER_EVENTS                                                                                   \
+  (LISTENER_PLAYER | LISTENER_QUEUE | LISTENER_VOLUME | LISTENER_SPEAKER | LISTENER_OPTIONS | LISTENER_DATABASE        \
+      | LISTENER_UPDATE | LISTENER_STORED_PLAYLIST | LISTENER_RATING)
 #define MPD_RATING_FACTOR 10.0
-#define MPD_BINARY_SIZE 8192  /* MPD MAX_BINARY_SIZE */
-#define MPD_BINARY_SIZE_MIN 64  /* min size from MPD ClientCommands.cxx */
+#define MPD_BINARY_SIZE 8192   /* MPD MAX_BINARY_SIZE */
+#define MPD_BINARY_SIZE_MIN 64 /* min size from MPD ClientCommands.cxx */
 
 // MPD error codes (taken from ack.h)
-enum mpd_ack_error
-{
-  ACK_ERROR_NONE            = 0,
-  ACK_ERROR_NOT_LIST        = 1,
-  ACK_ERROR_ARG             = 2,
-  ACK_ERROR_PASSWORD        = 3,
-  ACK_ERROR_PERMISSION      = 4,
-  ACK_ERROR_UNKNOWN         = 5,
+enum mpd_ack_error {
+  ACK_ERROR_NONE = 0,
+  ACK_ERROR_NOT_LIST = 1,
+  ACK_ERROR_ARG = 2,
+  ACK_ERROR_PASSWORD = 3,
+  ACK_ERROR_PERMISSION = 4,
+  ACK_ERROR_UNKNOWN = 5,
 
-  ACK_ERROR_NO_EXIST        = 50,
-  ACK_ERROR_PLAYLIST_MAX    = 51,
-  ACK_ERROR_SYSTEM          = 52,
-  ACK_ERROR_PLAYLIST_LOAD   = 53,
-  ACK_ERROR_UPDATE_ALREADY  = 54,
-  ACK_ERROR_PLAYER_SYNC     = 55,
-  ACK_ERROR_EXIST           = 56,
+  ACK_ERROR_NO_EXIST = 50,
+  ACK_ERROR_PLAYLIST_MAX = 51,
+  ACK_ERROR_SYSTEM = 52,
+  ACK_ERROR_PLAYLIST_LOAD = 53,
+  ACK_ERROR_UPDATE_ALREADY = 54,
+  ACK_ERROR_PLAYER_SYNC = 55,
+  ACK_ERROR_EXIST = 56,
 };
 
-enum command_list_type
-{
+enum command_list_type {
   COMMAND_LIST_NONE = 0,
   COMMAND_LIST_BEGIN,
   COMMAND_LIST_OK_BEGIN,
@@ -138,8 +145,7 @@ enum command_list_type
   COMMAND_LIST_OK_END,
 };
 
-struct mpd_client_ctx
-{
+struct mpd_client_ctx {
   // True if the connection is already authenticated or does not need authentication
   bool authenticated;
 
@@ -177,8 +183,7 @@ struct mpd_client_ctx
 
 #define MPD_WANTS_NUM_ARGV_MIN 1
 #define MPD_WANTS_NUM_ARGV_MAX 3
-enum command_wants_num
-{
+enum command_wants_num {
   MPD_WANTS_NUM_NONE = 0,
   MPD_WANTS_NUM_ARG1_IVAL = (1 << (0 + MPD_WANTS_NUM_ARGV_MIN)),
   MPD_WANTS_NUM_ARG2_IVAL = (1 << (1 + MPD_WANTS_NUM_ARGV_MIN)),
@@ -188,8 +193,7 @@ enum command_wants_num
   MPD_WANTS_NUM_ARG3_UVAL = (1 << (2 + MPD_WANTS_NUM_ARGV_MIN + MPD_WANTS_NUM_ARGV_MAX)),
 };
 
-struct mpd_command_input
-{
+struct mpd_command_input {
   // Raw argument line
   const char *args_raw;
 
@@ -203,23 +207,20 @@ struct mpd_command_input
   uint32_t argv_u32val[MPD_COMMAND_ARGV_MAX];
 };
 
-struct mpd_command_output
-{
+struct mpd_command_output {
   struct evbuffer *evbuf;
   char *errmsg;
   enum mpd_ack_error ack_error;
 };
 
-struct mpd_command
-{
+struct mpd_command {
   const char *name;
   int (*handler)(struct mpd_command_output *out, struct mpd_command_input *in, struct mpd_client_ctx *ctx);
   int min_argc;
   int wants_num;
 };
 
-struct param_output
-{
+struct param_output {
   struct evbuffer *evbuf;
   uint32_t last_shortid;
 };
@@ -253,39 +254,35 @@ struct mpd_client_ctx *mpd_clients;
  * Some clients rely on a response for the decoder commands (e.g. ncmpccp) therefor return something
  * valid for this command.
  */
-static const char * const ffmpeg_suffixes[] = { "16sv", "3g2", "3gp", "4xm", "8svx", "aa3", "aac", "ac3", "afc", "aif",
-    "aifc", "aiff", "al", "alaw", "amr", "anim", "apc", "ape", "asf", "atrac", "au", "aud", "avi", "avm2", "avs", "bap",
-    "bfi", "c93", "cak", "cin", "cmv", "cpk", "daud", "dct", "divx", "dts", "dv", "dvd", "dxa", "eac3", "film", "flac",
-    "flc", "fli", "fll", "flx", "flv", "g726", "gsm", "gxf", "iss", "m1v", "m2v", "m2t", "m2ts", "m4a", "m4b", "m4v",
-    "mad", "mj2", "mjpeg", "mjpg", "mka", "mkv", "mlp", "mm", "mmf", "mov", "mp+", "mp1", "mp2", "mp3", "mp4", "mpc",
-    "mpeg", "mpg", "mpga", "mpp", "mpu", "mve", "mvi", "mxf", "nc", "nsv", "nut", "nuv", "oga", "ogm", "ogv", "ogx",
-    "oma", "ogg", "omg", "psp", "pva", "qcp", "qt", "r3d", "ra", "ram", "rl2", "rm", "rmvb", "roq", "rpl", "rvc", "shn",
-    "smk", "snd", "sol", "son", "spx", "str", "swf", "tgi", "tgq", "tgv", "thp", "ts", "tsp", "tta", "xa", "xvid", "uv",
-    "uv2", "vb", "vid", "vob", "voc", "vp6", "vmd", "wav", "webm", "wma", "wmv", "wsaud", "wsvga", "wv", "wve",
-    NULL
-};
-static const char * const ffmpeg_mime_types[] = { "application/flv", "application/m4a", "application/mp4",
-    "application/octet-stream", "application/ogg", "application/x-ms-wmz", "application/x-ms-wmd", "application/x-ogg",
-    "application/x-shockwave-flash", "application/x-shorten", "audio/8svx", "audio/16sv", "audio/aac", "audio/ac3",
-    "audio/aiff", "audio/amr", "audio/basic", "audio/flac", "audio/m4a", "audio/mp4", "audio/mpeg", "audio/musepack",
-    "audio/ogg", "audio/qcelp", "audio/vorbis", "audio/vorbis+ogg", "audio/x-8svx", "audio/x-16sv", "audio/x-aac",
-    "audio/x-ac3", "audio/x-aiff", "audio/x-alaw", "audio/x-au", "audio/x-dca", "audio/x-eac3", "audio/x-flac",
-    "audio/x-gsm", "audio/x-mace", "audio/x-matroska", "audio/x-monkeys-audio", "audio/x-mpeg", "audio/x-ms-wma",
-    "audio/x-ms-wax", "audio/x-musepack", "audio/x-ogg", "audio/x-vorbis", "audio/x-vorbis+ogg", "audio/x-pn-realaudio",
-    "audio/x-pn-multirate-realaudio", "audio/x-speex", "audio/x-tta", "audio/x-voc", "audio/x-wav", "audio/x-wma",
-    "audio/x-wv", "video/anim", "video/quicktime", "video/msvideo", "video/ogg", "video/theora", "video/webm",
-    "video/x-dv", "video/x-flv", "video/x-matroska", "video/x-mjpeg", "video/x-mpeg", "video/x-ms-asf",
-    "video/x-msvideo", "video/x-ms-wmv", "video/x-ms-wvx", "video/x-ms-wm", "video/x-ms-wmx", "video/x-nut",
-    "video/x-pva", "video/x-theora", "video/x-vid", "video/x-wmv", "video/x-xvid",
+static const char *const ffmpeg_suffixes[] = { "16sv", "3g2", "3gp", "4xm", "8svx", "aa3", "aac", "ac3", "afc", "aif",
+  "aifc", "aiff", "al", "alaw", "amr", "anim", "apc", "ape", "asf", "atrac", "au", "aud", "avi", "avm2", "avs", "bap",
+  "bfi", "c93", "cak", "cin", "cmv", "cpk", "daud", "dct", "divx", "dts", "dv", "dvd", "dxa", "eac3", "film", "flac",
+  "flc", "fli", "fll", "flx", "flv", "g726", "gsm", "gxf", "iss", "m1v", "m2v", "m2t", "m2ts", "m4a", "m4b", "m4v",
+  "mad", "mj2", "mjpeg", "mjpg", "mka", "mkv", "mlp", "mm", "mmf", "mov", "mp+", "mp1", "mp2", "mp3", "mp4", "mpc",
+  "mpeg", "mpg", "mpga", "mpp", "mpu", "mve", "mvi", "mxf", "nc", "nsv", "nut", "nuv", "oga", "ogm", "ogv", "ogx",
+  "oma", "ogg", "omg", "psp", "pva", "qcp", "qt", "r3d", "ra", "ram", "rl2", "rm", "rmvb", "roq", "rpl", "rvc", "shn",
+  "smk", "snd", "sol", "son", "spx", "str", "swf", "tgi", "tgq", "tgv", "thp", "ts", "tsp", "tta", "xa", "xvid", "uv",
+  "uv2", "vb", "vid", "vob", "voc", "vp6", "vmd", "wav", "webm", "wma", "wmv", "wsaud", "wsvga", "wv", "wve", NULL };
+static const char *const ffmpeg_mime_types[] = { "application/flv", "application/m4a", "application/mp4",
+  "application/octet-stream", "application/ogg", "application/x-ms-wmz", "application/x-ms-wmd", "application/x-ogg",
+  "application/x-shockwave-flash", "application/x-shorten", "audio/8svx", "audio/16sv", "audio/aac", "audio/ac3",
+  "audio/aiff", "audio/amr", "audio/basic", "audio/flac", "audio/m4a", "audio/mp4", "audio/mpeg", "audio/musepack",
+  "audio/ogg", "audio/qcelp", "audio/vorbis", "audio/vorbis+ogg", "audio/x-8svx", "audio/x-16sv", "audio/x-aac",
+  "audio/x-ac3", "audio/x-aiff", "audio/x-alaw", "audio/x-au", "audio/x-dca", "audio/x-eac3", "audio/x-flac",
+  "audio/x-gsm", "audio/x-mace", "audio/x-matroska", "audio/x-monkeys-audio", "audio/x-mpeg", "audio/x-ms-wma",
+  "audio/x-ms-wax", "audio/x-musepack", "audio/x-ogg", "audio/x-vorbis", "audio/x-vorbis+ogg", "audio/x-pn-realaudio",
+  "audio/x-pn-multirate-realaudio", "audio/x-speex", "audio/x-tta", "audio/x-voc", "audio/x-wav", "audio/x-wma",
+  "audio/x-wv", "video/anim", "video/quicktime", "video/msvideo", "video/ogg", "video/theora", "video/webm",
+  "video/x-dv", "video/x-flv", "video/x-matroska", "video/x-mjpeg", "video/x-mpeg", "video/x-ms-asf", "video/x-msvideo",
+  "video/x-ms-wmv", "video/x-ms-wvx", "video/x-ms-wm", "video/x-ms-wmx", "video/x-nut", "video/x-pva", "video/x-theora",
+  "video/x-vid", "video/x-wmv", "video/x-xvid",
 
-    /* special value for the "ffmpeg" input plugin: all streams by
-     the "ffmpeg" input plugin shall be decoded by this
-     plugin */
-    "audio/x-mpd-ffmpeg",
+  /* special value for the "ffmpeg" input plugin: all streams by
+   the "ffmpeg" input plugin shall be decoded by this
+   plugin */
+  "audio/x-mpd-ffmpeg",
 
-    NULL
-};
-
+  NULL };
 
 /* -------------------------------- Helpers --------------------------------- */
 
@@ -476,7 +473,8 @@ to_pos_from_arg(int *to_pos, const char *to_arg)
   if (ret < 0)
     return -1;
 
-  queue_item = (status.status == PLAY_STOPPED) ? db_queue_fetch_bypos(0, status.shuffle) : db_queue_fetch_byitemid(status.item_id);
+  queue_item = (status.status == PLAY_STOPPED) ? db_queue_fetch_bypos(0, status.shuffle)
+                                               : db_queue_fetch_byitemid(status.item_id);
   if (!queue_item)
     return -1;
 
@@ -488,7 +486,7 @@ to_pos_from_arg(int *to_pos, const char *to_arg)
 /*
  * Returns the next unquoted string argument from the input string
  */
-static char*
+static char *
 mpd_next_unquoted(char **input)
 {
   char *arg;
@@ -514,7 +512,7 @@ mpd_next_unquoted(char **input)
  * Returns the next quoted string argument from the input string
  * with the quotes removed
  */
-static char*
+static char *
 mpd_next_quoted(char **input)
 {
   char *arg;
@@ -592,7 +590,7 @@ mpd_split_args(char **argv, int argv_size, int *argc, char **split, const char *
 
   return 0;
 
- error:
+error:
   free(*split);
   *split = NULL;
   return -1;
@@ -651,21 +649,10 @@ mpd_add_db_queue_item(struct evbuffer *evbuf, struct db_queue_item *queue_item)
       "Disc: %d\n"
       "Pos: %d\n"
       "Id: %d\n",
-      (queue_item->virtual_path + 1),
-      modified,
-      (queue_item->song_length / 1000),
-      sanitize(queue_item->artist),
-      sanitize(queue_item->album_artist),
-      sanitize(queue_item->artist_sort),
-      sanitize(queue_item->album_artist_sort),
-      sanitize(queue_item->album),
-      sanitize(queue_item->title),
-      queue_item->track,
-      queue_item->year,
-      sanitize(queue_item->genre),
-      queue_item->disc,
-      queue_item->pos,
-      queue_item->id);
+      (queue_item->virtual_path + 1), modified, (queue_item->song_length / 1000), sanitize(queue_item->artist),
+      sanitize(queue_item->album_artist), sanitize(queue_item->artist_sort), sanitize(queue_item->album_artist_sort),
+      sanitize(queue_item->album), sanitize(queue_item->title), queue_item->track, queue_item->year,
+      sanitize(queue_item->genre), queue_item->disc, queue_item->pos, queue_item->id);
 
   return ret;
 }
@@ -733,20 +720,9 @@ mpd_add_db_media_file_info(struct evbuffer *evbuf, struct db_media_file_info *db
       "Date: %s\n"
       "Genre: %s\n"
       "Disc: %s\n",
-      (dbmfi->virtual_path + 1),
-      modified,
-      (songlength / 1000),
-      ((float) songlength / 1000),
-      sanitize(dbmfi->artist),
-      sanitize(dbmfi->album_artist),
-      sanitize(dbmfi->artist_sort),
-      sanitize(dbmfi->album_artist_sort),
-      sanitize(dbmfi->album),
-      sanitize(dbmfi->title),
-      dbmfi->track,
-      dbmfi->year,
-      sanitize(dbmfi->genre),
-      dbmfi->disc);
+      (dbmfi->virtual_path + 1), modified, (songlength / 1000), ((float)songlength / 1000), sanitize(dbmfi->artist),
+      sanitize(dbmfi->album_artist), sanitize(dbmfi->artist_sort), sanitize(dbmfi->album_artist_sort),
+      sanitize(dbmfi->album), sanitize(dbmfi->title), dbmfi->track, dbmfi->year, sanitize(dbmfi->genre), dbmfi->disc);
 
   return ret;
 }
@@ -789,19 +765,21 @@ args_reassemble(char *args, size_t args_size, int argc, char **argv)
 	}
       else if (i + 1 < filter_end) // Legacy filter format (0.20 and before), we will convert
 	{
-	  safe_snprintf_cat(args, args_size, " %s%s%s\"%s\"%s", i == filter_start ? "((" : "AND (", argv[i], op, argv[i + 1], i + 2 == filter_end ? "))" : ")");
+	  safe_snprintf_cat(args, args_size, " %s%s%s\"%s\"%s", i == filter_start ? "((" : "AND (", argv[i], op,
+	      argv[i + 1], i + 2 == filter_end ? "))" : ")");
 	  i++;
 	}
-      else if (filter_end == filter_start + 1) // Special case: a legacy single token is allowed if listing albums for an artist
+      else if (filter_end
+               == filter_start + 1) // Special case: a legacy single token is allowed if listing albums for an artist
 	{
 	  safe_snprintf_cat(args, args_size, " (AlbumArtist%s\"%s\")", op, argv[i]);
-        }
+	}
     }
 
   for (i = filter_end; i < argc; i++)
     safe_snprintf_cat(args, args_size, " %s", argv[i]);
 
-  // Return an error if the buffer was filled and thus probably truncated 
+  // Return an error if the buffer was filled and thus probably truncated
   return (strlen(args) + 1 < args_size) ? 0 : -1;
 }
 
@@ -905,7 +883,6 @@ notify_idle_client(struct mpd_client_ctx *client_ctx, short events, bool add_ok)
   return 0;
 }
 
-
 /* ----------------------------- Command handlers --------------------------- */
 
 static int
@@ -928,7 +905,7 @@ mpd_command_currentsong(struct mpd_command_output *out, struct mpd_command_input
   ret = mpd_add_db_queue_item(out->evbuf, queue_item);
   free_queue_item(queue_item, 0);
   if (ret < 0)
-    RETURN_ERROR(ACK_ERROR_UNKNOWN, "Error setting media info for file with id: %d", status.id); 
+    RETURN_ERROR(ACK_ERROR_UNKNOWN, "Error setting media info for file with id: %d", status.id);
 
   return 0;
 }
@@ -969,7 +946,7 @@ mpd_command_idle(struct mpd_command_output *out, struct mpd_command_input *in, s
 	  else if (0 == strcmp(key, "stored_playlist"))
 	    ctx->idle_events |= LISTENER_STORED_PLAYLIST;
 	  else if (0 == strcmp(key, "sticker"))
-            ctx->idle_events |= LISTENER_RATING;
+	    ctx->idle_events |= LISTENER_RATING;
 	  else
 	    DPRINTF(E_DBG, L_MPD, "Idle command for '%s' not supported\n", key);
 	}
@@ -1037,17 +1014,17 @@ mpd_command_status(struct mpd_command_output *out, struct mpd_command_input *in,
 
   switch (status.status)
     {
-      case PLAY_PAUSED:
-	state = "pause";
-	break;
+    case PLAY_PAUSED:
+      state = "pause";
+      break;
 
-      case PLAY_PLAYING:
-	state = "play";
-	break;
+    case PLAY_PLAYING:
+      state = "play";
+      break;
 
-      default:
-	state = "stop";
-	break;
+    default:
+      state = "stop";
+      break;
     }
 
   db_admin_getint(&queue_version, DB_ADMIN_QUEUE_VERSION);
@@ -1063,14 +1040,8 @@ mpd_command_status(struct mpd_command_output *out, struct mpd_command_input *in,
       "playlistlength: %d\n"
       "mixrampdb: 0.000000\n"
       "state: %s\n",
-      status.volume,
-      (status.repeat == REPEAT_OFF ? 0 : 1),
-      status.shuffle,
-      (status.repeat == REPEAT_SONG ? 1 : 0),
-      status.consume,
-      queue_version,
-      queue_length,
-      state);
+      status.volume, (status.repeat == REPEAT_OFF ? 0 : 1), status.shuffle, (status.repeat == REPEAT_SONG ? 1 : 0),
+      status.consume, queue_version, queue_length, state);
 
   if (status.status != PLAY_STOPPED)
     queue_item = db_queue_fetch_byitemid(status.item_id);
@@ -1078,27 +1049,25 @@ mpd_command_status(struct mpd_command_output *out, struct mpd_command_input *in,
     queue_item = db_queue_fetch_bypos(0, status.shuffle);
 
   if (queue_item)
-   {
+    {
       evbuffer_add_printf(out->evbuf,
-	  "song: %d\n"
-	  "songid: %d\n",
-	  queue_item->pos,
-	  queue_item->id);
+          "song: %d\n"
+          "songid: %d\n",
+          queue_item->pos, queue_item->id);
 
       itemid = queue_item->id;
       free_queue_item(queue_item, 0);
-   }
+    }
 
   if (status.status != PLAY_STOPPED)
-   {
+    {
       evbuffer_add_printf(out->evbuf,
-	  "time: %d:%d\n"
-	  "elapsed: %#.3f\n"
-	  "bitrate: 128\n"
-	  "audio: 44100:16:2\n",
-	  (status.pos_ms / 1000), (status.len_ms / 1000),
-	  (status.pos_ms / 1000.0));
-   }
+          "time: %d:%d\n"
+          "elapsed: %#.3f\n"
+          "bitrate: 128\n"
+          "audio: 44100:16:2\n",
+          (status.pos_ms / 1000), (status.len_ms / 1000), (status.pos_ms / 1000.0));
+    }
 
   if (library_is_scanning())
     {
@@ -1113,8 +1082,7 @@ mpd_command_status(struct mpd_command_output *out, struct mpd_command_input *in,
 	  evbuffer_add_printf(out->evbuf,
 	      "nextsong: %d\n"
 	      "nextsongid: %d\n",
-	      queue_item->pos,
-	      queue_item->id);
+	      queue_item->pos, queue_item->id);
 
 	  free_queue_item(queue_item, 0);
 	}
@@ -1138,28 +1106,22 @@ mpd_command_stats(struct mpd_command_output *out, struct mpd_command_input *in, 
 
   ret = db_filecount_get(&fci, &qp);
   if (ret < 0)
-    RETURN_ERROR(ACK_ERROR_UNKNOWN, "Could not start query"); 
+    RETURN_ERROR(ACK_ERROR_UNKNOWN, "Could not start query");
 
   db_admin_getint64(&db_start, DB_ADMIN_START_TIME);
-  uptime = difftime(time(NULL), (time_t) db_start);
+  uptime = difftime(time(NULL), (time_t)db_start);
   db_admin_getint64(&db_update, DB_ADMIN_DB_UPDATE);
 
-  //TODO [mpd] Implement missing stats attributes (playtime)
+  // TODO [mpd] Implement missing stats attributes (playtime)
   evbuffer_add_printf(out->evbuf,
       "artists: %d\n"
       "albums: %d\n"
       "songs: %d\n"
-      "uptime: %.f\n" //in seceonds
+      "uptime: %.f\n" // in seceonds
       "db_playtime: %" PRIi64 "\n"
       "db_update: %" PRIi64 "\n"
       "playtime: %d\n",
-      fci.artist_count,
-      fci.album_count,
-      fci.count,
-      uptime,
-      (fci.length / 1000),
-      db_update,
-      7);
+      fci.artist_count, fci.album_count, fci.count, uptime, (fci.length / 1000), db_update, 7);
 
   return 0;
 }
@@ -1251,7 +1213,7 @@ mpd_command_getvol(struct mpd_command_output *out, struct mpd_command_input *in,
 static int
 mpd_command_single(struct mpd_command_output *out, struct mpd_command_input *in, struct mpd_client_ctx *ctx)
 {
-  bool has_enable = (in->has_num & MPD_WANTS_NUM_ARG1_UVAL); 
+  bool has_enable = (in->has_num & MPD_WANTS_NUM_ARG1_UVAL);
   uint32_t enable = in->argv_u32val[1];
   struct player_status status;
 
@@ -1472,7 +1434,7 @@ mpd_command_seek(struct mpd_command_output *out, struct mpd_command_input *in, s
   int seek_target_msec;
   int ret;
 
-  //TODO Allow seeking in songs not currently playing
+  // TODO Allow seeking in songs not currently playing
 
   seek_target_sec = strtof(in->argv[2], NULL);
   seek_target_msec = seek_target_sec * 1000;
@@ -1501,7 +1463,7 @@ mpd_command_seekid(struct mpd_command_output *out, struct mpd_command_input *in,
   int seek_target_msec;
   int ret;
 
-  //TODO Allow seeking in songs not currently playing
+  // TODO Allow seeking in songs not currently playing
   player_get_status(&status);
   if (status.item_id != in->argv_u32val[1])
     RETURN_ERROR(ACK_ERROR_UNKNOWN, "Given song is not the current playing one, seeking is not supported");
@@ -1566,7 +1528,8 @@ mpd_command_stop(struct mpd_command_output *out, struct mpd_command_input *in, s
  * Add media file item with given virtual path to the queue
  *
  * @param path The virtual path
- * @param exact_match If TRUE add only item with exact match, otherwise add all items virtual path start with the given path
+ * @param exact_match If TRUE add only item with exact match, otherwise add all items virtual path start with the given
+ * path
  * @return The queue item id of the last inserted item or -1 on failure
  */
 static int
@@ -1661,8 +1624,7 @@ mpd_command_addid(struct mpd_command_output *out, struct mpd_command_input *in, 
   if (ret < 0)
     RETURN_ERROR(ACK_ERROR_UNKNOWN, "Failed to add song '%s' to playlist", path);
 
-  evbuffer_add_printf(out->evbuf,
-      "Id: %d\n",
+  evbuffer_add_printf(out->evbuf, "Id: %d\n",
       ret); // mpd_queue_add returns the item_id of the last inserted queue item
 
   return 0;
@@ -1766,10 +1728,10 @@ mpd_command_move(struct mpd_command_output *out, struct mpd_command_input *in, s
   //     0  <=  start  <  queue_len
   // start  <   end    <= queue_len
   //     0  <=  to     <= queue_len - count
-  if (!(start_pos >= 0 && start_pos < queue_length
-      && end_pos > start_pos && end_pos <= queue_length
-      && to_pos >= 0 && to_pos <= queue_length - count))
-    RETURN_ERROR(ACK_ERROR_ARG, "Range too large for target position %d or bad song index (count %d, length %u)", to_pos, count, queue_length);
+  if (!(start_pos >= 0 && start_pos < queue_length && end_pos > start_pos && end_pos <= queue_length && to_pos >= 0
+          && to_pos <= queue_length - count))
+    RETURN_ERROR(ACK_ERROR_ARG, "Range too large for target position %d or bad song index (count %d, length %u)",
+        to_pos, count, queue_length);
 
   ret = db_queue_move_bypos_range(start_pos, end_pos, to_pos);
   if (ret < 0)
@@ -1829,7 +1791,7 @@ mpd_command_playlistid(struct mpd_command_output *out, struct mpd_command_input 
 	{
 	  db_queue_enum_end(&qp);
 	  free_query_params(&qp, 1);
-	  RETURN_ERROR(ACK_ERROR_UNKNOWN, "Error adding media info for file"); 
+	  RETURN_ERROR(ACK_ERROR_UNKNOWN, "Error adding media info for file");
 	}
     }
 
@@ -1865,7 +1827,9 @@ mpd_command_playlistinfo(struct mpd_command_output *out, struct mpd_command_inpu
 	RETURN_ERROR(ACK_ERROR_ARG, "Argument doesn't convert to integer or range: '%s'", in->argv[1]);
 
       if (start_pos < 0)
-	DPRINTF(E_DBG, L_MPD, "Command 'playlistinfo' called with pos < 0 (arg = '%s'), ignore arguments and return whole queue\n", in->argv[1]);
+	DPRINTF(E_DBG, L_MPD,
+	    "Command 'playlistinfo' called with pos < 0 (arg = '%s'), ignore arguments and return whole queue\n",
+	    in->argv[1]);
       else
 	qp.filter = db_mprintf("pos >= %d AND pos < %d", start_pos, end_pos);
     }
@@ -2067,10 +2031,9 @@ mpd_command_plchangesposid(struct mpd_command_output *out, struct mpd_command_in
   while ((ret = db_queue_enum_fetch(&qp, &queue_item)) == 0 && queue_item.id > 0)
     {
       evbuffer_add_printf(out->evbuf,
-      	  "cpos: %d\n"
-      	  "Id: %d\n",
-      	  queue_item.pos,
-	  queue_item.id);
+          "cpos: %d\n"
+          "Id: %d\n",
+          queue_item.pos, queue_item.id);
     }
 
   db_queue_enum_end(&qp);
@@ -2119,9 +2082,7 @@ mpd_command_listplaylist(struct mpd_command_output *out, struct mpd_command_inpu
 
   while ((ret = db_query_fetch_file(&dbmfi, &qp)) == 0)
     {
-      evbuffer_add_printf(out->evbuf,
-	  "file: %s\n",
-	  (dbmfi.virtual_path + 1));
+      evbuffer_add_printf(out->evbuf, "file: %s\n", (dbmfi.virtual_path + 1));
     }
 
   db_query_end(&qp);
@@ -2217,10 +2178,9 @@ mpd_command_listplaylists(struct mpd_command_output *out, struct mpd_command_inp
       mpd_time(modified, sizeof(modified), time_modified);
 
       evbuffer_add_printf(out->evbuf,
-	  "playlist: %s\n"
-	  "Last-Modified: %s\n",
-	  (dbpli.virtual_path + 1),
-	  modified);
+          "playlist: %s\n"
+          "Last-Modified: %s\n",
+          (dbpli.virtual_path + 1), modified);
     }
 
   db_query_end(&qp);
@@ -2258,7 +2218,7 @@ mpd_command_load(struct mpd_command_output *out, struct mpd_command_input *in, s
   if (!pli)
     RETURN_ERROR(ACK_ERROR_ARG, "Playlist not found for path '%s'", in->argv[1]);
 
-  //TODO If a second parameter is given only add the specified range of songs to the playqueue
+  // TODO If a second parameter is given only add the specified range of songs to the playqueue
 
   qp.id = pli->id;
   free_pli(pli, 0);
@@ -2410,7 +2370,7 @@ mpd_command_albumart(struct mpd_command_output *out, struct mpd_command_input *i
   evbuffer_remove_buffer(artwork, out->evbuf, len);
   evbuffer_add(out->evbuf, "\n", 1);
 
- out:
+out:
   evbuffer_free(artwork);
   return 0;
 }
@@ -2447,8 +2407,7 @@ mpd_command_count(struct mpd_command_output *out, struct mpd_command_input *in, 
   evbuffer_add_printf(out->evbuf,
       "songs: %d\n"
       "playtime: %" PRIu64 "\n",
-      fci.count,
-      (fci.length / 1000));
+      fci.count, (fci.length / 1000));
 
   db_query_end(&qp);
   free_query_params(&qp, 1);
@@ -2526,7 +2485,7 @@ mpd_command_findadd(struct mpd_command_output *out, struct mpd_command_input *in
   free(pos);
   return 0;
 
- error:
+error:
   free_query_params(&qp, 1);
   free(pos);
   RETURN_ERROR(ACK_ERROR_ARG, "Invalid arguments");
@@ -2602,7 +2561,7 @@ mpd_command_list(struct mpd_command_output *out, struct mpd_command_input *in, s
     {
       for (i = 0; i < ARRAY_SIZE(groups) && groups[i]; i++)
 	{
-	  strval = (char **) ((char *)&dbmfi + groups[i]->dbmfi_offset);
+	  strval = (char **)((char *)&dbmfi + groups[i]->dbmfi_offset);
 
 	  if (!(*strval) || (**strval == '\0'))
 	    continue;
@@ -2648,16 +2607,13 @@ mpd_add_directory(struct mpd_command_output *out, int directory_id, int listall,
 	{
 	  mpd_time(modified, sizeof(modified), time_modified);
 	  evbuffer_add_printf(out->evbuf,
-	    "playlist: %s\n"
-	    "Last-Modified: %s\n",
-	    (dbpli.virtual_path + 1),
-	    modified);
+	      "playlist: %s\n"
+	      "Last-Modified: %s\n",
+	      (dbpli.virtual_path + 1), modified);
 	}
       else
 	{
-	  evbuffer_add_printf(out->evbuf,
-	    "playlist: %s\n",
-	    (dbpli.virtual_path + 1));
+	  evbuffer_add_printf(out->evbuf, "playlist: %s\n", (dbpli.virtual_path + 1));
 	}
     }
   db_query_end(&qp);
@@ -2675,16 +2631,13 @@ mpd_add_directory(struct mpd_command_output *out, int directory_id, int listall,
       if (listinfo)
 	{
 	  evbuffer_add_printf(out->evbuf,
-	    "directory: %s\n"
-	    "Last-Modified: %s\n",
-	    (subdir.virtual_path + 1),
-	    "2015-12-01 00:00");
+	      "directory: %s\n"
+	      "Last-Modified: %s\n",
+	      (subdir.virtual_path + 1), "2015-12-01 00:00");
 	}
       else
 	{
-	  evbuffer_add_printf(out->evbuf,
-	    "directory: %s\n",
-	    (subdir.virtual_path + 1));
+	  evbuffer_add_printf(out->evbuf, "directory: %s\n", (subdir.virtual_path + 1));
 	}
 
       if (listall)
@@ -2718,9 +2671,7 @@ mpd_add_directory(struct mpd_command_output *out, int directory_id, int listall,
 	}
       else
 	{
-	  evbuffer_add_printf(out->evbuf,
-	    "file: %s\n",
-	    (dbmfi.virtual_path + 1));
+	  evbuffer_add_printf(out->evbuf, "file: %s\n", (dbmfi.virtual_path + 1));
 	}
     }
   db_query_end(&qp);
@@ -2736,8 +2687,7 @@ mpd_command_listall(struct mpd_command_output *out, struct mpd_command_input *in
   char parent[PATH_MAX];
   int ret;
 
-  if (in->argc < 2 || strlen(in->argv[1]) == 0
-      || (strncmp(in->argv[1], "/", 1) == 0 && strlen(in->argv[1]) == 1))
+  if (in->argc < 2 || strlen(in->argv[1]) == 0 || (strncmp(in->argv[1], "/", 1) == 0 && strlen(in->argv[1]) == 1))
     {
       ret = snprintf(parent, sizeof(parent), "/");
     }
@@ -2768,8 +2718,7 @@ mpd_command_listallinfo(struct mpd_command_output *out, struct mpd_command_input
   char parent[PATH_MAX];
   int ret;
 
-  if (in->argc < 2 || strlen(in->argv[1]) == 0
-      || (strncmp(in->argv[1], "/", 1) == 0 && strlen(in->argv[1]) == 1))
+  if (in->argc < 2 || strlen(in->argv[1]) == 0 || (strncmp(in->argv[1], "/", 1) == 0 && strlen(in->argv[1]) == 1))
     {
       ret = snprintf(parent, sizeof(parent), "/");
     }
@@ -2805,8 +2754,7 @@ mpd_command_lsinfo(struct mpd_command_output *out, struct mpd_command_input *in,
   int print_playlists;
   int ret;
 
-  if (in->argc < 2 || strlen(in->argv[1]) == 0
-      || (strncmp(in->argv[1], "/", 1) == 0 && strlen(in->argv[1]) == 1))
+  if (in->argc < 2 || strlen(in->argv[1]) == 0 || (strncmp(in->argv[1], "/", 1) == 0 && strlen(in->argv[1]) == 1))
     {
       ret = snprintf(parent, sizeof(parent), "/");
     }
@@ -2832,7 +2780,6 @@ mpd_command_lsinfo(struct mpd_command_output *out, struct mpd_command_input *in,
        */
       print_playlists = 1;
     }
-
 
   // Load dir-id from db for parent-path
   dir_id = db_directory_id_byvirtualpath(parent);
@@ -2983,7 +2930,7 @@ mpd_sticker_list(struct mpd_command_output *out, struct mpd_command_input *in, c
  * sticker find {TYPE} {URI} {NAME} = {VALUE} [sort {SORTTYPE}] [window {START:END}]
  *
  * Example:
- *   sticker find song "/file:/path" rating = 10 
+ *   sticker find song "/file:/path" rating = 10
  */
 static int
 mpd_sticker_find(struct mpd_command_output *out, struct mpd_command_input *in, const char *virtual_path)
@@ -3003,7 +2950,7 @@ mpd_sticker_find(struct mpd_command_output *out, struct mpd_command_input *in, c
       if (strcmp(in->argv[5], "=") != 0 && strcmp(in->argv[5], ">") != 0 && strcmp(in->argv[5], "<") != 0)
 	RETURN_ERROR(ACK_ERROR_ARG, "Invalid operator '%s' given to 'sticker find'", in->argv[5]);
 
-      operator = in->argv[5];
+      operator= in->argv[5];
 
       ret = safe_atou32(in->argv[6], &rating_arg);
       if (ret < 0)
@@ -3013,11 +2960,12 @@ mpd_sticker_find(struct mpd_command_output *out, struct mpd_command_input *in, c
     }
   else
     {
-      operator = ">";
+      operator= ">";
       rating_arg = 0;
     }
 
-  qp.filter = db_mprintf("(f.virtual_path LIKE '%s%%' AND f.rating > 0 AND f.rating %s %d)", virtual_path, operator, rating_arg);
+  qp.filter = db_mprintf(
+      "(f.virtual_path LIKE '%s%%' AND f.rating > 0 AND f.rating %s %d)", virtual_path, operator, rating_arg);
 
   ret = db_query_start(&qp);
   if (ret < 0)
@@ -3031,17 +2979,15 @@ mpd_sticker_find(struct mpd_command_output *out, struct mpd_command_input *in, c
       ret = safe_atou32(dbmfi.rating, &rating);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_MPD, "Error rating=%s doesn't convert to integer, song id: %s\n",
-		  dbmfi.rating, dbmfi.id);
+	  DPRINTF(E_LOG, L_MPD, "Error rating=%s doesn't convert to integer, song id: %s\n", dbmfi.rating, dbmfi.id);
 	  continue;
 	}
 
       rating /= MPD_RATING_FACTOR;
       ret = evbuffer_add_printf(out->evbuf,
-				"file: %s\n"
-				"sticker: rating=%d\n",
-				(dbmfi.virtual_path + 1),
-				rating);
+          "file: %s\n"
+          "sticker: rating=%d\n",
+          (dbmfi.virtual_path + 1), rating);
       if (ret < 0)
 	DPRINTF(E_LOG, L_MPD, "Error adding song to the evbuffer, song id: %s\n", dbmfi.id);
     }
@@ -3057,16 +3003,15 @@ struct mpd_sticker_command {
   int need_args;
 };
 
-static struct mpd_sticker_command mpd_sticker_handlers[] =
-  {
-    /* sticker command    | handler function        | minimum argument count */
-    { "get",                mpd_sticker_get,          5 },
-    { "set",                mpd_sticker_set,          6 },
-    { "delete",             mpd_sticker_delete,       5 },
-    { "list",               mpd_sticker_list,         4 },
-    { "find",               mpd_sticker_find,         6 },
-    { NULL, NULL, 0 },
-  };
+static struct mpd_sticker_command mpd_sticker_handlers[] = {
+  /* sticker command    | handler function        | minimum argument count */
+  { "get",    mpd_sticker_get,    5 },
+  { "set",    mpd_sticker_set,    6 },
+  { "delete", mpd_sticker_delete, 5 },
+  { "list",   mpd_sticker_list,   4 },
+  { "find",   mpd_sticker_find,   6 },
+  { NULL,     NULL,               0 },
+};
 
 /*
  * Command handler function for 'sticker'
@@ -3074,21 +3019,20 @@ static struct mpd_sticker_command mpd_sticker_handlers[] =
  *   sticker get "noth here" rating
  *   ACK [2@0] {sticker} unknown sticker domain
  *
- *   sticker get song "Al Cohn & Shorty Rogers/East Coast - West Coast Scene/04 Shorty Rogers - Cool Sunshine.flac" rating
- *   ACK [50@0] {sticker} no such sticker
+ *   sticker get song "Al Cohn & Shorty Rogers/East Coast - West Coast Scene/04 Shorty Rogers - Cool Sunshine.flac"
+ * rating ACK [50@0] {sticker} no such sticker
  *
- *   sticker get song "Al Cohn & Shorty Rogers/East Coast - West Coast Scene/03 Al Cohn - Serenade For Kathy.flac" rating
- *   sticker: rating=8
- *   OK
+ *   sticker get song "Al Cohn & Shorty Rogers/East Coast - West Coast Scene/03 Al Cohn - Serenade For Kathy.flac"
+ * rating sticker: rating=8 OK
  *
  * From cantata:
- *   sticker set song "file:/srv/music/VA/The Electro Swing Revolution Vol 3 1 - Hop, Hop, Hop/13 Mr. Hotcut - You Are.mp3" rating "6"
- *   OK
+ *   sticker set song "file:/srv/music/VA/The Electro Swing Revolution Vol 3 1 - Hop, Hop, Hop/13 Mr. Hotcut - You
+ * Are.mp3" rating "6" OK
  */
 static int
 mpd_command_sticker(struct mpd_command_output *out, struct mpd_command_input *in, struct mpd_client_ctx *ctx)
 {
-  struct mpd_sticker_command *cmd_param = NULL;  // Quell compiler warning about uninitialized use of cmd_param
+  struct mpd_sticker_command *cmd_param = NULL; // Quell compiler warning about uninitialized use of cmd_param
   char *virtual_path;
   int ret;
   int i;
@@ -3207,19 +3151,16 @@ speaker_enum_cb(struct player_speaker_info *spk, void *arg)
     {
       *q = tolower(*p);
       if (*q == ' ')
-      	*q = '_';
+	*q = '_';
     }
   *q = '\0';
 
   evbuffer_add_printf(param->evbuf,
-		      "outputid: %u\n"
-		      "outputname: %s\n"
-		      "plugin: %s\n"
-		      "outputenabled: %d\n",
-		      spk->index,
-		      spk->name,
-		      plugin,
-		      spk->selected);
+      "outputid: %u\n"
+      "outputname: %s\n"
+      "plugin: %s\n"
+      "outputenabled: %d\n",
+      spk->index, spk->name, plugin, spk->selected);
 
   param->last_shortid = spk->index;
 }
@@ -3245,11 +3186,11 @@ mpd_command_outputs(struct mpd_command_output *out, struct mpd_command_input *in
     {
       mpd_plugin_httpd_shortid = param.last_shortid + 1;
       evbuffer_add_printf(param.evbuf,
-                          "outputid: %u\n"
-                          "outputname: MP3 stream\n"
-                          "plugin: httpd\n"
-                          "outputenabled: 1\n",
-                          mpd_plugin_httpd_shortid);
+          "outputid: %u\n"
+          "outputname: MP3 stream\n"
+          "plugin: httpd\n"
+          "outputenabled: 1\n",
+          mpd_plugin_httpd_shortid);
     }
 
   return 0;
@@ -3296,7 +3237,8 @@ channel_outputvolume(const char *message)
   if (!ptr)
     {
       free(tmp);
-      DPRINTF(E_LOG, L_MPD, "Failed to parse output id and volume from message '%s' (expected format: \"output-id:volume\"\n", message);
+      DPRINTF(E_LOG, L_MPD,
+          "Failed to parse output id and volume from message '%s' (expected format: \"output-id:volume\"\n", message);
       return;
     }
 
@@ -3337,8 +3279,7 @@ channel_verification(const char *message)
   player_raop_verification_kickoff((char **)&message);
 }
 
-struct mpd_channel
-{
+struct mpd_channel {
   /* The channel name */
   const char *channel;
 
@@ -3350,14 +3291,13 @@ struct mpd_channel
   void (*handler)(const char *message);
 };
 
-static struct mpd_channel mpd_channels[] =
-  {
-    /* channel               | handler function */
-    { "outputvolume",          channel_outputvolume },
-    { "pairing",               channel_pairing },
-    { "verification",          channel_verification },
-    { NULL, NULL },
-  };
+static struct mpd_channel mpd_channels[] = {
+  /* channel               | handler function */
+  { "outputvolume", channel_outputvolume },
+  { "pairing",      channel_pairing      },
+  { "verification", channel_verification },
+  { NULL,           NULL                 },
+};
 
 /*
  * Finds the channel handler for the given channel name
@@ -3388,9 +3328,7 @@ mpd_command_channels(struct mpd_command_output *out, struct mpd_command_input *i
 
   for (i = 0; mpd_channels[i].handler; i++)
     {
-      evbuffer_add_printf(out->evbuf,
-	  "channel: %s\n",
-	  mpd_channels[i].channel);
+      evbuffer_add_printf(out->evbuf, "channel: %s\n", mpd_channels[i].channel);
     }
 
   return 0;
@@ -3425,7 +3363,7 @@ mpd_command_sendmessage(struct mpd_command_output *out, struct mpd_command_input
 static int
 mpd_command_ignore(struct mpd_command_output *out, struct mpd_command_input *in, struct mpd_client_ctx *ctx)
 {
-  //do nothing
+  // do nothing
   DPRINTF(E_DBG, L_MPD, "Ignore command %s\n", in->argv[0]);
   return 0;
 }
@@ -3437,9 +3375,7 @@ mpd_command_commands(struct mpd_command_output *out, struct mpd_command_input *i
 
   for (i = 0; mpd_handlers[i].handler; i++)
     {
-      evbuffer_add_printf(out->evbuf,
-	  "command: %s\n",
-	  mpd_handlers[i].name);
+      evbuffer_add_printf(out->evbuf, "command: %s\n", mpd_handlers[i].name);
     }
 
   return 0;
@@ -3474,8 +3410,7 @@ mpd_command_tagtypes(struct mpd_command_output *out, struct mpd_command_input *i
 static int
 mpd_command_urlhandlers(struct mpd_command_output *out, struct mpd_command_input *in, struct mpd_client_ctx *ctx)
 {
-  evbuffer_add_printf(out->evbuf,
-      "handler: http://\n"
+  evbuffer_add_printf(out->evbuf, "handler: http://\n"
       // handlers supported by MPD 0.19.12
       // "handler: https://\n"
       // "handler: mms://\n"
@@ -3492,7 +3427,7 @@ mpd_command_urlhandlers(struct mpd_command_output *out, struct mpd_command_input
       // "handler: nfs://\n"
       // "handler: cdda://\n"
       // "handler: alsa://\n"
-      );
+  );
 
   return 0;
 }
@@ -3532,7 +3467,8 @@ mpd_command_command_list_begin(struct mpd_command_output *out, struct mpd_comman
 }
 
 static int
-mpd_command_command_list_ok_begin(struct mpd_command_output *out, struct mpd_command_input *in, struct mpd_client_ctx *ctx)
+mpd_command_command_list_ok_begin(
+    struct mpd_command_output *out, struct mpd_command_input *in, struct mpd_client_ctx *ctx)
 {
   ctx->cmd_list_type = COMMAND_LIST_OK_BEGIN;
   return 0;
@@ -3551,146 +3487,145 @@ mpd_command_command_list_end(struct mpd_command_output *out, struct mpd_command_
   return 0;
 }
 
-static struct mpd_command mpd_handlers[] =
-  {
-    /* commandname                | handler function                      | min arg count  | handler requires int args */
+static struct mpd_command mpd_handlers[] = {
+  /* commandname                | handler function                      | min arg count  | handler requires int args */
 
-    // Commands for querying status
-    { "clearerror",                 mpd_command_ignore,                     -1 },
-    { "currentsong",                mpd_command_currentsong,                -1 },
-    { "idle",                       mpd_command_idle,                       -1 },
-    { "noidle",                     mpd_command_noidle,                     -1 },
-    { "status",                     mpd_command_status,                     -1 },
-    { "stats",                      mpd_command_stats,                      -1 },
+  // Commands for querying status
+  { "clearerror", mpd_command_ignore, -1 },
+  { "currentsong", mpd_command_currentsong, -1 },
+  { "idle", mpd_command_idle, -1 },
+  { "noidle", mpd_command_noidle, -1 },
+  { "status", mpd_command_status, -1 },
+  { "stats", mpd_command_stats, -1 },
 
-    // Playback options
-    { "consume",                    mpd_command_consume,                     2,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "crossfade",                  mpd_command_ignore,                     -1 },
-    { "mixrampdb",                  mpd_command_ignore,                     -1 },
-    { "mixrampdelay",               mpd_command_ignore,                     -1 },
-    { "random",                     mpd_command_random,                      2,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "repeat",                     mpd_command_repeat,                      2,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "setvol",                     mpd_command_setvol,                      2,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "getvol",                     mpd_command_getvol,                     -1 },
-    { "single",                     mpd_command_single,                      2 },
-    { "replay_gain_mode",           mpd_command_ignore,                     -1 },
-    { "replay_gain_status",         mpd_command_replay_gain_status,         -1 },
-    { "volume",                     mpd_command_volume,                      2,              MPD_WANTS_NUM_ARG1_IVAL },
+  // Playback options
+  { "consume", mpd_command_consume, 2, MPD_WANTS_NUM_ARG1_UVAL },
+  { "crossfade", mpd_command_ignore, -1 },
+  { "mixrampdb", mpd_command_ignore, -1 },
+  { "mixrampdelay", mpd_command_ignore, -1 },
+  { "random", mpd_command_random, 2, MPD_WANTS_NUM_ARG1_UVAL },
+  { "repeat", mpd_command_repeat, 2, MPD_WANTS_NUM_ARG1_UVAL },
+  { "setvol", mpd_command_setvol, 2, MPD_WANTS_NUM_ARG1_UVAL },
+  { "getvol", mpd_command_getvol, -1 },
+  { "single", mpd_command_single, 2 },
+  { "replay_gain_mode", mpd_command_ignore, -1 },
+  { "replay_gain_status", mpd_command_replay_gain_status, -1 },
+  { "volume", mpd_command_volume, 2, MPD_WANTS_NUM_ARG1_IVAL },
 
-    // Controlling playback
-    { "next",                       mpd_command_next,                       -1 },
-    { "pause",                      mpd_command_pause,                       1,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "play",                       mpd_command_play,                        1,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "playid",                     mpd_command_playid,                      1,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "previous",                   mpd_command_previous,                   -1 },
-    { "seek",                       mpd_command_seek,                        3,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "seekid",                     mpd_command_seekid,                      3,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "seekcur",                    mpd_command_seekcur,                     2 },
-    { "stop",                       mpd_command_stop,                       -1 },
+  // Controlling playback
+  { "next", mpd_command_next, -1 },
+  { "pause", mpd_command_pause, 1, MPD_WANTS_NUM_ARG1_UVAL },
+  { "play", mpd_command_play, 1, MPD_WANTS_NUM_ARG1_UVAL },
+  { "playid", mpd_command_playid, 1, MPD_WANTS_NUM_ARG1_UVAL },
+  { "previous", mpd_command_previous, -1 },
+  { "seek", mpd_command_seek, 3, MPD_WANTS_NUM_ARG1_UVAL },
+  { "seekid", mpd_command_seekid, 3, MPD_WANTS_NUM_ARG1_UVAL },
+  { "seekcur", mpd_command_seekcur, 2 },
+  { "stop", mpd_command_stop, -1 },
 
-    // The current playlist
-    { "add",                        mpd_command_add,                         2 },
-    { "addid",                      mpd_command_addid,                       2 },
-    { "clear",                      mpd_command_clear,                      -1 },
-    { "delete",                     mpd_command_delete,                     -1 },
-    { "deleteid",                   mpd_command_deleteid,                    2,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "move",                       mpd_command_move,                        3 },
-    { "moveid",                     mpd_command_moveid,                      3,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "playlist",                   mpd_command_playlistinfo,               -1 }, // According to the mpd protocol the use of "playlist" is deprecated
-    { "playlistfind",               mpd_command_playlistfind,                2 },
-    { "playlistid",                 mpd_command_playlistid,                  1,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "playlistinfo",               mpd_command_playlistinfo,               -1 },
-    { "playlistsearch",             mpd_command_playlistsearch,              2 },
-    { "plchanges",                  mpd_command_plchanges,                   2,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "plchangesposid",             mpd_command_plchangesposid,              2,              MPD_WANTS_NUM_ARG1_UVAL },
-//    { "prio",                       mpd_command_prio,                       -1 },
-//    { "prioid",                     mpd_command_prioid,                     -1 },
-//    { "rangeid",                    mpd_command_rangeid,                    -1 },
-//    { "shuffle",                    mpd_command_shuffle,                    -1 },
-//    { "swap",                       mpd_command_swap,                       -1 },
-//    { "swapid",                     mpd_command_swapid,                     -1 },
-//    { "addtagid",                   mpd_command_addtagid,                   -1 },
-//    { "cleartagid",                 mpd_command_cleartagid,                 -1 },
+  // The current playlist
+  { "add", mpd_command_add, 2 },
+  { "addid", mpd_command_addid, 2 },
+  { "clear", mpd_command_clear, -1 },
+  { "delete", mpd_command_delete, -1 },
+  { "deleteid", mpd_command_deleteid, 2, MPD_WANTS_NUM_ARG1_UVAL },
+  { "move", mpd_command_move, 3 },
+  { "moveid", mpd_command_moveid, 3, MPD_WANTS_NUM_ARG1_UVAL },
+  { "playlist", mpd_command_playlistinfo, -1 }, // According to the mpd protocol the use of "playlist" is deprecated
+  { "playlistfind", mpd_command_playlistfind, 2 },
+  { "playlistid", mpd_command_playlistid, 1, MPD_WANTS_NUM_ARG1_UVAL },
+  { "playlistinfo", mpd_command_playlistinfo, -1 },
+  { "playlistsearch", mpd_command_playlistsearch, 2 },
+  { "plchanges", mpd_command_plchanges, 2, MPD_WANTS_NUM_ARG1_UVAL },
+  { "plchangesposid", mpd_command_plchangesposid, 2, MPD_WANTS_NUM_ARG1_UVAL },
+  //    { "prio",                       mpd_command_prio,                       -1 },
+  //    { "prioid",                     mpd_command_prioid,                     -1 },
+  //    { "rangeid",                    mpd_command_rangeid,                    -1 },
+  //    { "shuffle",                    mpd_command_shuffle,                    -1 },
+  //    { "swap",                       mpd_command_swap,                       -1 },
+  //    { "swapid",                     mpd_command_swapid,                     -1 },
+  //    { "addtagid",                   mpd_command_addtagid,                   -1 },
+  //    { "cleartagid",                 mpd_command_cleartagid,                 -1 },
 
-    // Stored playlists
-    { "listplaylist",               mpd_command_listplaylist,                2 },
-    { "listplaylistinfo",           mpd_command_listplaylistinfo,            2 },
-    { "listplaylists",              mpd_command_listplaylists,              -1 },
-    { "load",                       mpd_command_load,                        2 },
-    { "playlistadd",                mpd_command_playlistadd,                 3 },
-//    { "playlistclear",              mpd_command_playlistclear,              -1 },
-//    { "playlistdelete",             mpd_command_playlistdelete,             -1 },
-//    { "playlistmove",               mpd_command_playlistmove,               -1 },
-//    { "rename",                     mpd_command_rename,                     -1 },
-    { "rm",                         mpd_command_rm,                          2 },
-    { "save",                       mpd_command_save,                        2 },
+  // Stored playlists
+  { "listplaylist", mpd_command_listplaylist, 2 },
+  { "listplaylistinfo", mpd_command_listplaylistinfo, 2 },
+  { "listplaylists", mpd_command_listplaylists, -1 },
+  { "load", mpd_command_load, 2 },
+  { "playlistadd", mpd_command_playlistadd, 3 },
+  //    { "playlistclear",              mpd_command_playlistclear,              -1 },
+  //    { "playlistdelete",             mpd_command_playlistdelete,             -1 },
+  //    { "playlistmove",               mpd_command_playlistmove,               -1 },
+  //    { "rename",                     mpd_command_rename,                     -1 },
+  { "rm", mpd_command_rm, 2 },
+  { "save", mpd_command_save, 2 },
 
-    // The music database
-    { "albumart",                   mpd_command_albumart,                    2,              MPD_WANTS_NUM_ARG2_UVAL },
-    { "count",                      mpd_command_count,                      -1 },
-    { "find",                       mpd_command_find,                        2 },
-    { "findadd",                    mpd_command_findadd,                     2 },
-    { "search",                     mpd_command_find,                        2 },
-    { "searchadd",                  mpd_command_findadd,                     2 },
-    { "list",                       mpd_command_list,                        2 },
-    { "listall",                    mpd_command_listall,                    -1 },
-    { "listallinfo",                mpd_command_listallinfo,                -1 },
-    { "listfiles",                  mpd_command_listfiles,                  -1 },
-    { "lsinfo",                     mpd_command_lsinfo,                     -1 },
-//    { "readcomments",               mpd_command_readcomments,               -1 },
-    { "readpicture",                mpd_command_albumart,                    2,              MPD_WANTS_NUM_ARG2_UVAL },
-//    { "searchaddpl",                mpd_command_searchaddpl,                -1 },
-    { "update",                     mpd_command_update,                     -1 },
-//    { "rescan",                     mpd_command_rescan,                     -1 },
+  // The music database
+  { "albumart", mpd_command_albumart, 2, MPD_WANTS_NUM_ARG2_UVAL },
+  { "count", mpd_command_count, -1 },
+  { "find", mpd_command_find, 2 },
+  { "findadd", mpd_command_findadd, 2 },
+  { "search", mpd_command_find, 2 },
+  { "searchadd", mpd_command_findadd, 2 },
+  { "list", mpd_command_list, 2 },
+  { "listall", mpd_command_listall, -1 },
+  { "listallinfo", mpd_command_listallinfo, -1 },
+  { "listfiles", mpd_command_listfiles, -1 },
+  { "lsinfo", mpd_command_lsinfo, -1 },
+  //    { "readcomments",               mpd_command_readcomments,               -1 },
+  { "readpicture", mpd_command_albumart, 2, MPD_WANTS_NUM_ARG2_UVAL },
+  //    { "searchaddpl",                mpd_command_searchaddpl,                -1 },
+  { "update", mpd_command_update, -1 },
+  //    { "rescan",                     mpd_command_rescan,                     -1 },
 
-    // Mounts and neighbors
-//    { "mount",                      mpd_command_mount,                      -1 },
-//    { "unmount",                    mpd_command_unmount,                    -1 },
-//    { "listmounts",                 mpd_command_listmounts,                 -1 },
-//    { "listneighbors",              mpd_command_listneighbors,              -1 },
+  // Mounts and neighbors
+  //    { "mount",                      mpd_command_mount,                      -1 },
+  //    { "unmount",                    mpd_command_unmount,                    -1 },
+  //    { "listmounts",                 mpd_command_listmounts,                 -1 },
+  //    { "listneighbors",              mpd_command_listneighbors,              -1 },
 
-    // Stickers
-    { "sticker",                    mpd_command_sticker,                     4 },
+  // Stickers
+  { "sticker", mpd_command_sticker, 4 },
 
-    // Connection settings
-    { "close",                      mpd_command_close,                      -1 },
-//    { "kill",                       mpd_command_kill,                       -1 },
-    { "password",                   mpd_command_password,                   -1 },
-    { "ping",                       mpd_command_ignore,                     -1 },
-    { "binarylimit",                mpd_command_binarylimit,                 2,              MPD_WANTS_NUM_ARG1_UVAL },
+  // Connection settings
+  { "close", mpd_command_close, -1 },
+  //    { "kill",                       mpd_command_kill,                       -1 },
+  { "password", mpd_command_password, -1 },
+  { "ping", mpd_command_ignore, -1 },
+  { "binarylimit", mpd_command_binarylimit, 2, MPD_WANTS_NUM_ARG1_UVAL },
 
-    // Audio output devices
-    { "disableoutput",              mpd_command_xoutput,                     2,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "enableoutput",               mpd_command_xoutput,                     2,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "toggleoutput",               mpd_command_xoutput,                     2,              MPD_WANTS_NUM_ARG1_UVAL },
-    { "outputs",                    mpd_command_outputs,                    -1 },
+  // Audio output devices
+  { "disableoutput", mpd_command_xoutput, 2, MPD_WANTS_NUM_ARG1_UVAL },
+  { "enableoutput", mpd_command_xoutput, 2, MPD_WANTS_NUM_ARG1_UVAL },
+  { "toggleoutput", mpd_command_xoutput, 2, MPD_WANTS_NUM_ARG1_UVAL },
+  { "outputs", mpd_command_outputs, -1 },
 
-    // Custom command outputvolume (not supported by mpd)
-    { "outputvolume",               mpd_command_outputvolume,                3,              MPD_WANTS_NUM_ARG1_UVAL | MPD_WANTS_NUM_ARG2_IVAL },
+  // Custom command outputvolume (not supported by mpd)
+  { "outputvolume", mpd_command_outputvolume, 3, MPD_WANTS_NUM_ARG1_UVAL | MPD_WANTS_NUM_ARG2_IVAL },
 
-    // Client to client
-    { "subscribe",                  mpd_command_ignore,                     -1 },
-    { "unsubscribe",                mpd_command_ignore,                     -1 },
-    { "channels",                   mpd_command_channels,                   -1 },
-    { "readmessages",               mpd_command_ignore,                     -1 },
-    { "sendmessage",                mpd_command_sendmessage,                3 },
+  // Client to client
+  { "subscribe", mpd_command_ignore, -1 },
+  { "unsubscribe", mpd_command_ignore, -1 },
+  { "channels", mpd_command_channels, -1 },
+  { "readmessages", mpd_command_ignore, -1 },
+  { "sendmessage", mpd_command_sendmessage, 3 },
 
-    // Reflection
-//    { "config",                     mpd_command_config,                     -1 },
-    { "commands",                   mpd_command_commands,                   -1 },
-    { "notcommands",                mpd_command_ignore,                     -1 },
-    { "tagtypes",                   mpd_command_tagtypes,                   -1 },
-    { "urlhandlers",                mpd_command_urlhandlers,                -1 },
-    { "decoders",                   mpd_command_decoders,                   -1 },
+  // Reflection
+  //    { "config",                     mpd_command_config,                     -1 },
+  { "commands", mpd_command_commands, -1 },
+  { "notcommands", mpd_command_ignore, -1 },
+  { "tagtypes", mpd_command_tagtypes, -1 },
+  { "urlhandlers", mpd_command_urlhandlers, -1 },
+  { "decoders", mpd_command_decoders, -1 },
 
-    // Command lists
-    { "command_list_begin",         mpd_command_command_list_begin,         -1 },
-    { "command_list_ok_begin",      mpd_command_command_list_ok_begin,      -1 },
-    { "command_list_end",           mpd_command_command_list_end,           -1 },
+  // Command lists
+  { "command_list_begin", mpd_command_command_list_begin, -1 },
+  { "command_list_ok_begin", mpd_command_command_list_ok_begin, -1 },
+  { "command_list_end", mpd_command_command_list_end, -1 },
 
-    // NULL command to terminate loop
-    { NULL, NULL, -1 }
-  };
+  // NULL command to terminate loop
+  { NULL, NULL, -1 }
+};
 
 /*
  * Finds the command handler for the given command name
@@ -3698,7 +3633,7 @@ static struct mpd_command mpd_handlers[] =
  * @param name the name of the command
  * @return the command or NULL if it is an unknown/unsupported command
  */
-static struct mpd_command*
+static struct mpd_command *
 mpd_find_command(const char *name)
 {
   int i;
@@ -3750,11 +3685,11 @@ mpd_command_input_create(struct mpd_command_input **out, const char *line)
       if (safe_atou32(in->argv[i], &in->argv_u32val[i]) == 0)
 	in->has_num |= 1 << (i + MPD_WANTS_NUM_ARGV_MAX);
     }
- 
+
   *out = in;
   return 0;
 
- error:
+error:
   mpd_command_input_free(in);
   return -1;
 }
@@ -3764,9 +3699,9 @@ mpd_command_input_create(struct mpd_command_input **out, const char *line)
 static bool
 command_has_num(int wants_num, int has_num, int argc)
 {
-  int ival_mask = (1 << argc) - 1; // If argc == 2 becomes ...00000011
+  int ival_mask = (1 << argc) - 1;                       // If argc == 2 becomes ...00000011
   int uval_mask = (ival_mask << MPD_WANTS_NUM_ARGV_MAX); // If ..MAX == 3 becomes 00011000
-  int mask = (ival_mask | uval_mask); // becomes 00011011
+  int mask = (ival_mask | uval_mask);                    // becomes 00011011
 
   return (wants_num & mask) == (has_num & wants_num & mask);
 }
@@ -3777,7 +3712,8 @@ mpd_must_process_command_now(const char *line, struct mpd_client_ctx *client_ctx
   size_t line_len = strlen(line);
 
   // We're in command list mode, just add command to buffer and return
-  if ((client_ctx->cmd_list_type == COMMAND_LIST_BEGIN || client_ctx->cmd_list_type == COMMAND_LIST_OK_BEGIN) && strcmp(line, "command_list_end") != 0)
+  if ((client_ctx->cmd_list_type == COMMAND_LIST_BEGIN || client_ctx->cmd_list_type == COMMAND_LIST_OK_BEGIN)
+      && strcmp(line, "command_list_end") != 0)
     {
       if (evbuffer_get_length(client_ctx->cmd_list_buffer) + line_len + 1 > MPD_MAX_COMMAND_LIST_SIZE)
 	{
@@ -3871,7 +3807,7 @@ mpd_process_command_line(struct evbuffer *evbuf, const char *line, int cmd_num, 
 
   return out.ack_error;
 
- error:
+error:
   DPRINTF(E_LOG, L_MPD, "Error processing command '%s': %s\n", line, out.errmsg);
 
   if (cmd_name)
@@ -3952,15 +3888,15 @@ mpd_read_cb(struct bufferevent *bev, void *arg)
       free(line);
 
       if (client_ctx->cmd_list_type == COMMAND_LIST_END || client_ctx->cmd_list_type == COMMAND_LIST_OK_END)
-        mpd_process_command_list(output, client_ctx);
+	mpd_process_command_list(output, client_ctx);
 
       if (client_ctx->must_disconnect)
-        goto disconnect;
+	goto disconnect;
     }
 
   return;
 
- disconnect:
+disconnect:
   DPRINTF(E_DBG, L_MPD, "Disconnecting client\n");
 
   // Freeing the bufferevent closes the connection, since it was opened with
@@ -3979,8 +3915,7 @@ mpd_event_cb(struct bufferevent *bev, short events, void *ctx)
 {
   if (events & BEV_EVENT_ERROR)
     {
-      DPRINTF(E_LOG, L_MPD, "Error from bufferevent: %s\n",
-	  evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
+      DPRINTF(E_LOG, L_MPD, "Error from bufferevent: %s\n", evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
     }
 
   if (events & (BEV_EVENT_EOF | BEV_EVENT_ERROR))
@@ -4002,7 +3937,8 @@ mpd_event_cb(struct bufferevent *bev, short events, void *ctx)
  * @return BEV_OK if a complete command sequence was received otherwise BEV_NEED_MORE
  */
 static enum bufferevent_filter_result
-mpd_input_filter(struct evbuffer *src, struct evbuffer *dst, ev_ssize_t lim, enum bufferevent_flush_mode state, void *ctx)
+mpd_input_filter(
+    struct evbuffer *src, struct evbuffer *dst, ev_ssize_t lim, enum bufferevent_flush_mode state, void *ctx)
 {
   char *line;
   int ret;
@@ -4014,7 +3950,7 @@ mpd_input_filter(struct evbuffer *src, struct evbuffer *dst, ev_ssize_t lim, enu
     {
       ret = evbuffer_add_printf(dst, "%s\n", line);
       if (ret < 0)
-        {
+	{
 	  DPRINTF(E_LOG, L_MPD, "Error adding line to buffer: '%s'\n", line);
 	  free(line);
 	  return BEV_ERROR;
@@ -4043,9 +3979,8 @@ mpd_input_filter(struct evbuffer *src, struct evbuffer *dst, ev_ssize_t lim, enu
  * @param ctx (not used)
  */
 static void
-mpd_accept_conn_cb(struct evconnlistener *listener,
-    evutil_socket_t sock, struct sockaddr *address, int socklen,
-    void *ctx)
+mpd_accept_conn_cb(
+    struct evconnlistener *listener, evutil_socket_t sock, struct sockaddr *address, int socklen, void *ctx)
 {
   /*
    * For each new connection setup a new buffer event and wrap it around a filter event.
@@ -4224,13 +4159,13 @@ artwork_cb(struct evhttp_request *req, void *arg)
     {
       switch (format)
 	{
-	  case ART_FMT_PNG:
-	    evhttp_add_header(evhttp_request_get_output_headers(req), "Content-Type", "image/png");
-	    break;
+	case ART_FMT_PNG:
+	  evhttp_add_header(evhttp_request_get_output_headers(req), "Content-Type", "image/png");
+	  break;
 
-	  default:
-	    evhttp_add_header(evhttp_request_get_output_headers(req), "Content-Type", "image/jpeg");
-	    break;
+	default:
+	  evhttp_add_header(evhttp_request_get_output_headers(req), "Content-Type", "image/jpeg");
+	  break;
 	}
 
       evhttp_send_reply(req, HTTP_OK, "OK", evbuffer);
@@ -4240,7 +4175,6 @@ artwork_cb(struct evhttp_request *req, void *arg)
   evhttp_uri_free(decoded);
   free(decoded_path);
 }
-
 
 /* -------------------------------- Event loop ------------------------------ */
 
@@ -4264,7 +4198,6 @@ mpd(void *arg)
 
   pthread_exit(NULL);
 }
-
 
 /* -------------------------------- Init/deinit ----------------------------- */
 
@@ -4356,16 +4289,20 @@ mpd_init(void)
   /* Handle deprecated config options */
   if (0 < cfg_opt_size(cfg_getopt(cfg_getsec(cfg, "mpd"), "allow_modifying_stored_playlists")))
     {
-      DPRINTF(E_LOG, L_MPD, "Found deprecated option 'allow_modifying_stored_playlists' in section 'mpd', please update configuration file (move option to section 'library').\n");
+      DPRINTF(E_LOG, L_MPD,
+          "Found deprecated option 'allow_modifying_stored_playlists' in section 'mpd', please update configuration "
+          "file (move option to section 'library').\n");
       allow_modifying_stored_playlists = cfg_getbool(cfg_getsec(cfg, "mpd"), "allow_modifying_stored_playlists");
     }
   if (0 < cfg_opt_size(cfg_getopt(cfg_getsec(cfg, "mpd"), "default_playlist_directory")))
     {
-      DPRINTF(E_LOG, L_MPD, "Found deprecated option 'default_playlist_directory' in section 'mpd', please update configuration file (move option to section 'library').\n");
+      DPRINTF(E_LOG, L_MPD,
+          "Found deprecated option 'default_playlist_directory' in section 'mpd', please update configuration file "
+          "(move option to section 'library').\n");
       free(default_pl_dir);
       pl_dir = cfg_getstr(cfg_getsec(cfg, "mpd"), "default_playlist_directory");
       if (pl_dir)
-        default_pl_dir = safe_asprintf("/file:%s", pl_dir);
+	default_pl_dir = safe_asprintf("/file:%s", pl_dir);
     }
 
   DPRINTF(E_INFO, L_MPD, "mpd thread init\n");
@@ -4385,13 +4322,13 @@ mpd_init(void)
 
   return 0;
 
- thread_fail:
+thread_fail:
   mpd_httpd_deinit();
- httpd_fail:
+httpd_fail:
   evconnlistener_free(mpd_listener);
- connew_fail:
+connew_fail:
   close(mpd_sockfd);
- bind_fail:
+bind_fail:
   commands_base_free(cmdbase);
   event_base_free(evbase_mpd);
   evbase_mpd = NULL;

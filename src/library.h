@@ -35,8 +35,7 @@ typedef void (*library_cb)(void *arg);
 /*
  * Argument to library_callback_schedule()
  */
-enum library_cb_action
-{
+enum library_cb_action {
   // Add as new callback
   LIBRARY_CB_ADD,
   // Replace callback if it already exists
@@ -47,8 +46,7 @@ enum library_cb_action
   LIBRARY_CB_DELETE,
 };
 
-enum library_attrib
-{
+enum library_attrib {
   LIBRARY_ATTRIB_RATING,
   LIBRARY_ATTRIB_USERMARK,
   LIBRARY_ATTRIB_PLAY_COUNT,
@@ -62,8 +60,7 @@ enum library_attrib
  *
  * A library source is responsible for scanning items into the library db.
  */
-struct library_source
-{
+struct library_source {
   enum scan_kind scan_kind;
   int disabled;
 
@@ -168,7 +165,6 @@ library_callback_schedule(library_cb cb, void *arg, struct timeval *wait, enum l
 bool
 library_is_exiting();
 
-
 /* ------------------------ Library external interface --------------------- */
 
 /*
@@ -262,6 +258,5 @@ library_init();
 
 void
 library_deinit();
-
 
 #endif /* SRC_LIBRARY_H_ */

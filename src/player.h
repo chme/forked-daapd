@@ -13,14 +13,14 @@
 
 enum play_status {
   PLAY_STOPPED = 2,
-  PLAY_PAUSED  = 3,
+  PLAY_PAUSED = 3,
   PLAY_PLAYING = 4,
 };
 
 enum repeat_mode {
-  REPEAT_OFF  = 0,
+  REPEAT_OFF = 0,
   REPEAT_SONG = 1,
-  REPEAT_ALL  = 2,
+  REPEAT_ALL = 2,
 };
 
 enum player_seek_mode {
@@ -73,8 +73,7 @@ struct player_status {
 
 typedef void (*spk_enum_cb)(struct player_speaker_info *spk, void *arg);
 
-struct player_history
-{
+struct player_history {
   /* Buffer index of the oldest remembered song */
   unsigned int start_index;
 

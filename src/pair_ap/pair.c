@@ -21,16 +21,16 @@
  *
  */
 
+#include <assert.h>
+#include <ctype.h> // for isprint()
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h> // for isprint()
-#include <assert.h>
 
 #include <sodium.h>
 
-#include "pair.h"
 #include "pair-internal.h"
+#include "pair.h"
 
 extern struct pair_definition pair_client_fruit;
 extern struct pair_definition pair_client_homekit_normal;
@@ -39,10 +39,10 @@ extern struct pair_definition pair_server_homekit;
 
 // Must be in sync with enum pair_type
 static struct pair_definition *pair[] = {
-    &pair_client_fruit,
-    &pair_client_homekit_normal,
-    &pair_client_homekit_transient,
-    &pair_server_homekit,
+  &pair_client_fruit,
+  &pair_client_homekit_normal,
+  &pair_client_homekit_transient,
+  &pair_server_homekit,
 };
 
 /* ------------------------------ INITIALIZATION ---------------------------- */
@@ -58,13 +58,12 @@ is_initialized(void)
   // initialization steps are not done by a library but by the actual
   // application. A library using Libgcrypt might want to check for finished
   // initialization using:"
-  if (!gcry_control (GCRYCTL_INITIALIZATION_FINISHED_P))
+  if (!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P))
     return false;
 #endif
 
   return true;
 }
-
 
 /* -------------------------- SHARED HASHING HELPERS ------------------------ */
 
@@ -74,13 +73,18 @@ hash_init(enum hash_alg alg, HashCTX *c)
 #if CONFIG_OPENSSL
   switch (alg)
     {
-      case HASH_SHA1  : return SHA1_Init(&c->sha);
-      case HASH_SHA224: return SHA224_Init(&c->sha256);
-      case HASH_SHA256: return SHA256_Init(&c->sha256);
-      case HASH_SHA384: return SHA384_Init(&c->sha512);
-      case HASH_SHA512: return SHA512_Init(&c->sha512);
-      default:
-        return -1;
+    case HASH_SHA1:
+      return SHA1_Init(&c->sha);
+    case HASH_SHA224:
+      return SHA224_Init(&c->sha256);
+    case HASH_SHA256:
+      return SHA256_Init(&c->sha256);
+    case HASH_SHA384:
+      return SHA384_Init(&c->sha512);
+    case HASH_SHA512:
+      return SHA512_Init(&c->sha512);
+    default:
+      return -1;
     };
 #elif CONFIG_GCRYPT
   gcry_error_t err;
@@ -100,13 +104,18 @@ hash_update(enum hash_alg alg, HashCTX *c, const void *data, size_t len)
 #if CONFIG_OPENSSL
   switch (alg)
     {
-      case HASH_SHA1  : return SHA1_Update(&c->sha, data, len);
-      case HASH_SHA224: return SHA224_Update(&c->sha256, data, len);
-      case HASH_SHA256: return SHA256_Update(&c->sha256, data, len);
-      case HASH_SHA384: return SHA384_Update(&c->sha512, data, len);
-      case HASH_SHA512: return SHA512_Update(&c->sha512, data, len);
-      default:
-        return -1;
+    case HASH_SHA1:
+      return SHA1_Update(&c->sha, data, len);
+    case HASH_SHA224:
+      return SHA224_Update(&c->sha256, data, len);
+    case HASH_SHA256:
+      return SHA256_Update(&c->sha256, data, len);
+    case HASH_SHA384:
+      return SHA384_Update(&c->sha512, data, len);
+    case HASH_SHA512:
+      return SHA512_Update(&c->sha512, data, len);
+    default:
+      return -1;
     };
 #elif CONFIG_GCRYPT
   gcry_md_write(*c, data, len);
@@ -120,13 +129,18 @@ hash_final(enum hash_alg alg, HashCTX *c, unsigned char *md)
 #if CONFIG_OPENSSL
   switch (alg)
     {
-      case HASH_SHA1  : return SHA1_Final(md, &c->sha);
-      case HASH_SHA224: return SHA224_Final(md, &c->sha256);
-      case HASH_SHA256: return SHA256_Final(md, &c->sha256);
-      case HASH_SHA384: return SHA384_Final(md, &c->sha512);
-      case HASH_SHA512: return SHA512_Final(md, &c->sha512);
-      default:
-        return -1;
+    case HASH_SHA1:
+      return SHA1_Final(md, &c->sha);
+    case HASH_SHA224:
+      return SHA224_Final(md, &c->sha256);
+    case HASH_SHA256:
+      return SHA256_Final(md, &c->sha256);
+    case HASH_SHA384:
+      return SHA384_Final(md, &c->sha512);
+    case HASH_SHA512:
+      return SHA512_Final(md, &c->sha512);
+    default:
+      return -1;
     };
 #elif CONFIG_GCRYPT
   unsigned char *buf = gcry_md_read(*c, alg);
@@ -145,13 +159,18 @@ hash(enum hash_alg alg, const unsigned char *d, size_t n, unsigned char *md)
 #if CONFIG_OPENSSL
   switch (alg)
     {
-      case HASH_SHA1  : return SHA1(d, n, md);
-      case HASH_SHA224: return SHA224(d, n, md);
-      case HASH_SHA256: return SHA256(d, n, md);
-      case HASH_SHA384: return SHA384(d, n, md);
-      case HASH_SHA512: return SHA512(d, n, md);
-      default:
-        return NULL;
+    case HASH_SHA1:
+      return SHA1(d, n, md);
+    case HASH_SHA224:
+      return SHA224(d, n, md);
+    case HASH_SHA256:
+      return SHA256(d, n, md);
+    case HASH_SHA384:
+      return SHA384(d, n, md);
+    case HASH_SHA512:
+      return SHA512(d, n, md);
+    default:
+      return NULL;
     };
 #elif CONFIG_GCRYPT
   gcry_md_hash_buffer(alg, md, d, n);
@@ -165,13 +184,18 @@ hash_length(enum hash_alg alg)
 #if CONFIG_OPENSSL
   switch (alg)
     {
-      case HASH_SHA1  : return SHA_DIGEST_LENGTH;
-      case HASH_SHA224: return SHA224_DIGEST_LENGTH;
-      case HASH_SHA256: return SHA256_DIGEST_LENGTH;
-      case HASH_SHA384: return SHA384_DIGEST_LENGTH;
-      case HASH_SHA512: return SHA512_DIGEST_LENGTH;
-      default:
-        return -1;
+    case HASH_SHA1:
+      return SHA_DIGEST_LENGTH;
+    case HASH_SHA224:
+      return SHA224_DIGEST_LENGTH;
+    case HASH_SHA256:
+      return SHA256_DIGEST_LENGTH;
+    case HASH_SHA384:
+      return SHA384_DIGEST_LENGTH;
+    case HASH_SHA512:
+      return SHA512_DIGEST_LENGTH;
+    default:
+      return -1;
     };
 #elif CONFIG_GCRYPT
   return gcry_md_get_algo_dlen(alg);
@@ -193,14 +217,14 @@ hash_ab(enum hash_alg alg, unsigned char *md, const unsigned char *m1, int m1_le
 bnum
 H_nn_pad(enum hash_alg alg, const bnum n1, const bnum n2, int padded_len)
 {
-  bnum          bn;
+  bnum bn;
   unsigned char *bin;
   unsigned char buff[SHA512_DIGEST_LENGTH];
-  int           len_n1 = bnum_num_bytes(n1);
-  int           len_n2 = bnum_num_bytes(n2);
-  int           nbytes = 2 * padded_len;
-  int           offset_n1 = padded_len - len_n1;
-  int           offset_n2 = nbytes - len_n2;
+  int len_n1 = bnum_num_bytes(n1);
+  int len_n2 = bnum_num_bytes(n2);
+  int nbytes = 2 * padded_len;
+  int offset_n1 = padded_len - len_n1;
+  int offset_n2 = nbytes - len_n2;
 
   assert(len_n1 <= padded_len);
   assert(len_n2 <= padded_len);
@@ -218,11 +242,11 @@ H_nn_pad(enum hash_alg alg, const bnum n1, const bnum n2, int padded_len)
 bnum
 H_ns(enum hash_alg alg, const bnum n, const unsigned char *bytes, int len_bytes)
 {
-  bnum          bn;
+  bnum bn;
   unsigned char buff[SHA512_DIGEST_LENGTH];
-  int           len_n  = bnum_num_bytes(n);
-  int           nbytes = len_n + len_bytes;
-  unsigned char *bin   = malloc(nbytes);
+  int len_n = bnum_num_bytes(n);
+  int nbytes = len_n + len_bytes;
+  unsigned char *bin = malloc(nbytes);
 
   bnum_bn2bin(n, bin, len_n);
   memcpy(bin + len_n, bytes, len_bytes);
@@ -246,14 +270,13 @@ update_hash_n(enum hash_alg alg, HashCTX *ctx, const bnum n)
 void
 hash_num(enum hash_alg alg, const bnum n, unsigned char *dest)
 {
-  int           nbytes = bnum_num_bytes(n);
-  unsigned char *bin   = malloc(nbytes);
+  int nbytes = bnum_num_bytes(n);
+  unsigned char *bin = malloc(nbytes);
 
   bnum_bn2bin(n, bin, nbytes);
-  hash( alg, bin, nbytes, dest );
+  hash(alg, bin, nbytes, dest);
   free(bin);
 }
-
 
 /* ----------------------------- OTHER HELPERS -------------------------------*/
 
@@ -269,11 +292,11 @@ hexdump(const char *msg, uint8_t *mem, size_t len)
 
   for (i = 0; i < len + ((len % hexdump_cols) ? (hexdump_cols - len % hexdump_cols) : 0); i++)
     {
-      if(i % hexdump_cols == 0)
+      if (i % hexdump_cols == 0)
 	printf("0x%06x: ", i);
 
       if (i < len)
-	printf("%02x ", 0xFF & ((char*)mem)[i]);
+	printf("%02x ", 0xFF & ((char *)mem)[i]);
       else
 	printf("   ");
 
@@ -283,8 +306,8 @@ hexdump(const char *msg, uint8_t *mem, size_t len)
 	    {
 	      if (j >= len)
 		putchar(' ');
-	      else if (isprint(((char*)mem)[j]))
-		putchar(0xFF & ((char*)mem)[j]);
+	      else if (isprint(((char *)mem)[j]))
+		putchar(0xFF & ((char *)mem)[j]);
 	      else
 		putchar('.');
 	    }
@@ -304,7 +327,6 @@ bnum_dump(const char *msg, bnum n)
   free(bin);
 }
 #endif
-
 
 /* ----------------------------------- API -----------------------------------*/
 
@@ -370,47 +392,47 @@ pair_setup(uint8_t **out, size_t *out_len, struct pair_setup_context *sctx, cons
 
   switch (state)
     {
-      case 0:
-        *out = pair_setup_request1(out_len, sctx);
-        break;
-      case 1:
-        ret = pair_setup_response1(sctx, in, in_len);
-        if (ret < 0)
-          break;
-        *out = pair_setup_request1(out_len, sctx);
-        break;
-      case 2:
-        ret = pair_setup_response1(sctx, in, in_len);
-        if (ret < 0)
-          break;
-        *out = pair_setup_request2(out_len, sctx);
-        break;
-      case 3:
-        ret = pair_setup_response2(sctx, in, in_len);
-        if (ret < 0)
-          break;
-        *out = pair_setup_request2(out_len, sctx);
-        break;
-      case 4:
-        ret = pair_setup_response2(sctx, in, in_len);
-        if (ret < 0)
-          break;
-        *out = pair_setup_request3(out_len, sctx);
-        break;
-      case 5:
-        ret = pair_setup_response3(sctx, in, in_len);
-        if (ret < 0)
-          break;
-        *out = pair_setup_request3(out_len, sctx);
-        break;
-      case 6:
-        ret = pair_setup_response3(sctx, in, in_len);
-        if (ret < 0)
-          break;
-        break;
-      default:
-        sctx->errmsg = "Setup: Unsupported state";
-        ret = -1;
+    case 0:
+      *out = pair_setup_request1(out_len, sctx);
+      break;
+    case 1:
+      ret = pair_setup_response1(sctx, in, in_len);
+      if (ret < 0)
+	break;
+      *out = pair_setup_request1(out_len, sctx);
+      break;
+    case 2:
+      ret = pair_setup_response1(sctx, in, in_len);
+      if (ret < 0)
+	break;
+      *out = pair_setup_request2(out_len, sctx);
+      break;
+    case 3:
+      ret = pair_setup_response2(sctx, in, in_len);
+      if (ret < 0)
+	break;
+      *out = pair_setup_request2(out_len, sctx);
+      break;
+    case 4:
+      ret = pair_setup_response2(sctx, in, in_len);
+      if (ret < 0)
+	break;
+      *out = pair_setup_request3(out_len, sctx);
+      break;
+    case 5:
+      ret = pair_setup_response3(sctx, in, in_len);
+      if (ret < 0)
+	break;
+      *out = pair_setup_request3(out_len, sctx);
+      break;
+    case 6:
+      ret = pair_setup_response3(sctx, in, in_len);
+      if (ret < 0)
+	break;
+      break;
+    default:
+      sctx->errmsg = "Setup: Unsupported state";
+      ret = -1;
     }
 
   if (ret < 0 || !(*out))
@@ -578,35 +600,35 @@ pair_verify(uint8_t **out, size_t *out_len, struct pair_verify_context *vctx, co
 
   switch (state)
     {
-      case 0:
-        *out = pair_verify_request1(out_len, vctx);
-        break;
-      case 1:
-        ret = pair_verify_response1(vctx, in, in_len);
-        if (ret < 0)
-          break;
-        *out = pair_verify_request1(out_len, vctx);
-        break;
-      case 2:
-        ret = pair_verify_response1(vctx, in, in_len);
-        if (ret < 0)
-          break;
-        *out = pair_verify_request2(out_len, vctx);
-        break;
-      case 3:
-        ret = pair_verify_response2(vctx, in, in_len);
-        if (ret < 0)
-          break;
-        *out = pair_verify_request2(out_len, vctx);
-        break;
-      case 4:
-        ret = pair_verify_response2(vctx, in, in_len);
-        if (ret < 0)
-          break;
-        break;
-      default:
-        vctx->errmsg = "Verify: Unsupported state";
-        ret = -1;
+    case 0:
+      *out = pair_verify_request1(out_len, vctx);
+      break;
+    case 1:
+      ret = pair_verify_response1(vctx, in, in_len);
+      if (ret < 0)
+	break;
+      *out = pair_verify_request1(out_len, vctx);
+      break;
+    case 2:
+      ret = pair_verify_response1(vctx, in, in_len);
+      if (ret < 0)
+	break;
+      *out = pair_verify_request2(out_len, vctx);
+      break;
+    case 3:
+      ret = pair_verify_response2(vctx, in, in_len);
+      if (ret < 0)
+	break;
+      *out = pair_verify_request2(out_len, vctx);
+      break;
+    case 4:
+      ret = pair_verify_response2(vctx, in, in_len);
+      if (ret < 0)
+	break;
+      break;
+    default:
+      vctx->errmsg = "Verify: Unsupported state";
+      ret = -1;
     }
 
   if (ret < 0 || !(*out))
@@ -714,7 +736,8 @@ pair_cipher_errmsg(struct pair_cipher_context *cctx)
 }
 
 ssize_t
-pair_encrypt(uint8_t **ciphertext, size_t *ciphertext_len, const uint8_t *plaintext, size_t plaintext_len, struct pair_cipher_context *cctx)
+pair_encrypt(uint8_t **ciphertext, size_t *ciphertext_len, const uint8_t *plaintext, size_t plaintext_len,
+    struct pair_cipher_context *cctx)
 {
   if (!cctx->type->pair_encrypt)
     {
@@ -726,7 +749,8 @@ pair_encrypt(uint8_t **ciphertext, size_t *ciphertext_len, const uint8_t *plaint
 }
 
 ssize_t
-pair_decrypt(uint8_t **plaintext, size_t *plaintext_len, const uint8_t *ciphertext, size_t ciphertext_len, struct pair_cipher_context *cctx)
+pair_decrypt(uint8_t **plaintext, size_t *plaintext_len, const uint8_t *ciphertext, size_t ciphertext_len,
+    struct pair_cipher_context *cctx)
 {
   if (!cctx->type->pair_decrypt)
     {
@@ -750,7 +774,8 @@ pair_decrypt_rollback(struct pair_cipher_context *cctx)
 }
 
 int
-pair_add(enum pair_type type, uint8_t **out, size_t *out_len, pair_cb add_cb, void *cb_arg, const uint8_t *in, size_t in_len)
+pair_add(
+    enum pair_type type, uint8_t **out, size_t *out_len, pair_cb add_cb, void *cb_arg, const uint8_t *in, size_t in_len)
 {
   if (!pair[type]->pair_add)
     {
@@ -761,7 +786,8 @@ pair_add(enum pair_type type, uint8_t **out, size_t *out_len, pair_cb add_cb, vo
 }
 
 int
-pair_remove(enum pair_type type, uint8_t **out, size_t *out_len, pair_cb remove_cb, void *cb_arg, const uint8_t *in, size_t in_len)
+pair_remove(enum pair_type type, uint8_t **out, size_t *out_len, pair_cb remove_cb, void *cb_arg, const uint8_t *in,
+    size_t in_len)
 {
   if (!pair[type]->pair_remove)
     {
@@ -772,7 +798,8 @@ pair_remove(enum pair_type type, uint8_t **out, size_t *out_len, pair_cb remove_
 }
 
 int
-pair_list(enum pair_type type, uint8_t **out, size_t *out_len, pair_list_cb list_cb, void *cb_arg, const uint8_t *in, size_t in_len)
+pair_list(enum pair_type type, uint8_t **out, size_t *out_len, pair_list_cb list_cb, void *cb_arg, const uint8_t *in,
+    size_t in_len)
 {
   if (!pair[type]->pair_list)
     {

@@ -31,47 +31,51 @@ typedef enum {
   TLVType_Separator = 0xff,
 } TLVType;
 
-
 typedef enum {
-  TLVError_Unknown = 1,         // Generic error to handle unexpected errors
-  TLVError_Authentication = 2,  // Setup code or signature verification failed
-  TLVError_Backoff = 3,         // Client must look at the retry delay TLV item and
-                                // wait that many seconds before retrying
-  TLVError_MaxPeers = 4,        // Server cannot accept any more pairings
-  TLVError_MaxTries = 5,        // Server reached its maximum number of
-                                // authentication attempts
-  TLVError_Unavailable = 6,     // Server pairing method is unavailable
-  TLVError_Busy = 7,            // Server is busy and cannot accept a pairing
-                                // request at this time
+  TLVError_Unknown = 1,        // Generic error to handle unexpected errors
+  TLVError_Authentication = 2, // Setup code or signature verification failed
+  TLVError_Backoff = 3,        // Client must look at the retry delay TLV item and
+                               // wait that many seconds before retrying
+  TLVError_MaxPeers = 4,       // Server cannot accept any more pairings
+  TLVError_MaxTries = 5,       // Server reached its maximum number of
+                               // authentication attempts
+  TLVError_Unavailable = 6,    // Server pairing method is unavailable
+  TLVError_Busy = 7,           // Server is busy and cannot accept a pairing
+                               // request at this time
 } TLVError;
 
 typedef struct _tlv {
-    struct _tlv *next;
-    uint8_t type;
-    uint8_t *value;
-    size_t size;
+  struct _tlv *next;
+  uint8_t type;
+  uint8_t *value;
+  size_t size;
 } pair_tlv_t;
 
-
 typedef struct {
-    pair_tlv_t *head;
+  pair_tlv_t *head;
 } pair_tlv_values_t;
 
+pair_tlv_values_t *
+pair_tlv_new();
 
-pair_tlv_values_t *pair_tlv_new();
+void
+pair_tlv_free(pair_tlv_values_t *values);
 
-void pair_tlv_free(pair_tlv_values_t *values);
+int
+pair_tlv_add_value(pair_tlv_values_t *values, uint8_t type, const uint8_t *value, size_t size);
 
-int pair_tlv_add_value(pair_tlv_values_t *values, uint8_t type, const uint8_t *value, size_t size);
+pair_tlv_t *
+pair_tlv_get_value(const pair_tlv_values_t *values, uint8_t type);
 
-pair_tlv_t *pair_tlv_get_value(const pair_tlv_values_t *values, uint8_t type);
+int
+pair_tlv_format(const pair_tlv_values_t *values, uint8_t *buffer, size_t *size);
 
-int pair_tlv_format(const pair_tlv_values_t *values, uint8_t *buffer, size_t *size);
-
-int pair_tlv_parse(const uint8_t *buffer, size_t length, pair_tlv_values_t *values);
+int
+pair_tlv_parse(const uint8_t *buffer, size_t length, pair_tlv_values_t *values);
 
 #ifdef DEBUG_PAIR
-void pair_tlv_debug(const pair_tlv_values_t *values);
+void
+pair_tlv_debug(const pair_tlv_values_t *values);
 #endif
 
-#endif  /* !__PAIR_AP_TLV_H__ */
+#endif /* !__PAIR_AP_TLV_H__ */

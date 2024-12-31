@@ -17,19 +17,19 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdio.h>
-#include <inttypes.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <time.h>
-#include <string.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/queue.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <unistd.h>
 
@@ -38,28 +38,25 @@
 #include <event2/event.h>
 
 #include "db.h"
-#include "logger.h"
-#include "worker.h"
 #include "evthr.h"
+#include "logger.h"
 #include "misc.h"
+#include "worker.h"
 
 #define THREADPOOL_NTHREADS 4
 
 static struct evthr_pool *worker_threadpool;
 static __thread struct evthr *worker_thr;
 
-
 /* ----------------------------- CALLBACK EXECUTION ------------------------- */
 /*                                 Worker threads                             */
 
-struct worker_arg
-{
+struct worker_arg {
   void (*cb)(void *);
   void *cb_arg;
   int delay;
   struct event *timer;
 };
-
 
 static void
 execute_cb(int fd, short what, void *arg)
@@ -110,7 +107,6 @@ exit_cb(struct evthr *thr, void *shared)
 
   db_perthread_deinit();
 }
-
 
 /* ---------------------------- Our worker API  --------------------------- */
 
@@ -175,8 +171,8 @@ worker_init(void)
     }
 
   return 0;
-  
- error:
+
+error:
   worker_deinit();
   return -1;
 }

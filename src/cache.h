@@ -21,7 +21,6 @@ cache_daap_add(const char *query, const char *ua, int is_remote, int msec);
 int
 cache_daap_threshold_get(void);
 
-
 /* --------------------------- Transcode cache API  ------------------------- */
 
 int
@@ -29,7 +28,6 @@ cache_xcode_header_get(struct evbuffer *evbuf, int *cached, uint32_t id, const c
 
 int
 cache_xcode_toggle(bool enable);
-
 
 /* ---------------------------- Artwork cache API  -------------------------- */
 
@@ -46,10 +44,12 @@ int
 cache_artwork_purge_cruft(time_t ref);
 
 int
-cache_artwork_add(int type, int64_t persistentid, int max_w, int max_h, int format, char *filename, struct evbuffer *evbuf);
+cache_artwork_add(
+    int type, int64_t persistentid, int max_w, int max_h, int format, char *filename, struct evbuffer *evbuf);
 
 int
-cache_artwork_get(int type, int64_t persistentid, int max_w, int max_h, int *cached, int *format, struct evbuffer *evbuf);
+cache_artwork_get(
+    int type, int64_t persistentid, int max_w, int max_h, int *cached, int *format, struct evbuffer *evbuf);
 
 int
 cache_artwork_stash(struct evbuffer *evbuf, const char *path, int format);

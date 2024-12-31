@@ -2,12 +2,12 @@
 #ifndef __CONFFILE_H__
 #define __CONFFILE_H__
 
-#include <sys/types.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 #include <confuse.h>
 
-#define CONFFILE   CONFDIR "/owntone.conf"
+#define CONFFILE CONFDIR "/owntone.conf"
 
 // Some shorthand macros for poor man's
 #define CFG_NAME_UNKNOWN_TITLE (cfg_getstr(cfg_getsec(cfg, "library"), "name_unknown_title"))

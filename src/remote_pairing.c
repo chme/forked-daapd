@@ -28,37 +28,36 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <errno.h>
+#include <fcntl.h>
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <fcntl.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <errno.h>
+#include <unistd.h>
 
 #ifdef HAVE_EVENTFD
-# include <sys/eventfd.h>
+#include <sys/eventfd.h>
 #endif
 
-#include <event2/event.h>
 #include <event2/buffer.h>
+#include <event2/event.h>
 #include <event2/http.h>
 
 #include <gcrypt.h>
 
-#include "logger.h"
 #include "commands.h"
 #include "conffile.h"
+#include "db.h"
+#include "listener.h"
+#include "logger.h"
 #include "mdns.h"
 #include "misc.h"
-#include "db.h"
 #include "remote_pairing.h"
-#include "listener.h"
-
 
 struct remote_info {
   struct pairing_info pi;
@@ -73,7 +72,6 @@ struct remote_info {
 
   struct evhttp_connection *evcon;
 };
-
 
 /* Main event base, from main.c */
 extern struct event_base *evbase_main;
@@ -143,7 +141,6 @@ itunes_pairing_hash(char *paircode, char *pin)
 
   return strdup(hash);
 }
-
 
 /* Operations on the remote list must happen
  * with the list lock held by the caller
@@ -216,21 +213,21 @@ remove_remote_address_byid(const char *id, int family)
 
   switch (family)
     {
-      case AF_INET:
-	if (ri->v4_address)
-	  {
-	    free(ri->v4_address);
-	    ri->v4_address = NULL;
-	  }
-	break;
+    case AF_INET:
+      if (ri->v4_address)
+	{
+	  free(ri->v4_address);
+	  ri->v4_address = NULL;
+	}
+      break;
 
-      case AF_INET6:
-	if (ri->v6_address)
-	  {
-	    free(ri->v6_address);
-	    ri->v6_address = NULL;
-	  }
-	break;
+    case AF_INET6:
+      if (ri->v6_address)
+	{
+	  free(ri->v6_address);
+	  ri->v6_address = NULL;
+	}
+      break;
     }
 
   if (!ri->v4_address && !ri->v6_address)
@@ -268,27 +265,27 @@ add_remote_mdns_data(const char *id, int family, const char *address, int port, 
 
   switch (family)
     {
-      case AF_INET:
-	free(remote_info->v4_address);
-	remote_info->v4_address = strdup(address);
-	remote_info->v4_port = port;
+    case AF_INET:
+      free(remote_info->v4_address);
+      remote_info->v4_address = strdup(address);
+      remote_info->v4_port = port;
 
-	check_addr = remote_info->v4_address;
-	break;
+      check_addr = remote_info->v4_address;
+      break;
 
-      case AF_INET6:
-	free(remote_info->v6_address);
-	remote_info->v6_address = strdup(address);
-	remote_info->v6_port = port;
+    case AF_INET6:
+      free(remote_info->v6_address);
+      remote_info->v6_address = strdup(address);
+      remote_info->v6_port = port;
 
-	check_addr = remote_info->v6_address;
-	break;
+      check_addr = remote_info->v6_address;
+      break;
 
-      default:
-	DPRINTF(E_LOG, L_REMOTE, "Unknown address family %d\n", family);
+    default:
+      DPRINTF(E_LOG, L_REMOTE, "Unknown address family %d\n", family);
 
-	check_addr = NULL;
-	break;
+      check_addr = NULL;
+      break;
     }
 
   if (!remote_info->pi.remote_id || !check_addr)
@@ -353,16 +350,20 @@ pairing_request_cb(struct evhttp_request *req, void *arg)
       if (ri->v6_address)
 	{
 	  if (response_code != 0)
-	    DPRINTF(E_LOG, L_REMOTE, "Pairing failed with '%s' ([%s]:%d), HTTP response code %d\n", ri->pi.name, ri->v6_address, ri->v6_port, response_code);
+	    DPRINTF(E_LOG, L_REMOTE, "Pairing failed with '%s' ([%s]:%d), HTTP response code %d\n", ri->pi.name,
+	        ri->v6_address, ri->v6_port, response_code);
 	  else
-	    DPRINTF(E_LOG, L_REMOTE, "Pairing failed with '%s' ([%s]:%d), no reply from Remote\n", ri->pi.name, ri->v6_address, ri->v6_port);
+	    DPRINTF(E_LOG, L_REMOTE, "Pairing failed with '%s' ([%s]:%d), no reply from Remote\n", ri->pi.name,
+	        ri->v6_address, ri->v6_port);
 	}
       else
 	{
 	  if (response_code != 0)
-	    DPRINTF(E_LOG, L_REMOTE, "Pairing failed with '%s' (%s:%d), HTTP response code %d\n", ri->pi.name, ri->v4_address, ri->v4_port, response_code);
+	    DPRINTF(E_LOG, L_REMOTE, "Pairing failed with '%s' (%s:%d), HTTP response code %d\n", ri->pi.name,
+	        ri->v4_address, ri->v4_port, response_code);
 	  else
-	    DPRINTF(E_LOG, L_REMOTE, "Pairing failed with '%s' (%s:%d), no reply from Remote\n", ri->pi.name, ri->v4_address, ri->v4_port);
+	    DPRINTF(E_LOG, L_REMOTE, "Pairing failed with '%s' (%s:%d), no reply from Remote\n", ri->pi.name,
+	        ri->v4_address, ri->v4_port);
 	}
 
       ret = REMOTE_INVALID_PIN;
@@ -384,7 +385,8 @@ pairing_request_cb(struct evhttp_request *req, void *arg)
 
   if ((response[0] != 'c') || (response[1] != 'm') || (response[2] != 'p') || (response[3] != 'a'))
     {
-      DPRINTF(E_LOG, L_REMOTE, "Remote %s/%s: unknown pairing response, expected cmpa\n", ri->pi.remote_id, ri->pi.name);
+      DPRINTF(
+          E_LOG, L_REMOTE, "Remote %s/%s: unknown pairing response, expected cmpa\n", ri->pi.remote_id, ri->pi.name);
 
       ret = REMOTE_ERROR;
       goto cleanup;
@@ -393,8 +395,8 @@ pairing_request_cb(struct evhttp_request *req, void *arg)
   len = (response[4] << 24) | (response[5] << 16) | (response[6] << 8) | (response[7]);
   if (buflen < 8 + len)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Remote %s/%s: pairing response truncated (got %d expected %d)\n",
-	      ri->pi.remote_id, ri->pi.name, buflen, len + 8);
+      DPRINTF(E_LOG, L_REMOTE, "Remote %s/%s: pairing response truncated (got %d expected %d)\n", ri->pi.remote_id,
+          ri->pi.name, buflen, len + 8);
 
       ret = REMOTE_ERROR;
       goto cleanup;
@@ -428,7 +430,8 @@ pairing_request_cb(struct evhttp_request *req, void *arg)
 
   ri->pi.guid = strdup(guid);
 
-  DPRINTF(E_LOG, L_REMOTE, "Pairing succeeded with Remote '%s' (id %s), GUID: %s\n", ri->pi.name, ri->pi.remote_id, guid);
+  DPRINTF(
+      E_LOG, L_REMOTE, "Pairing succeeded with Remote '%s' (id %s), GUID: %s\n", ri->pi.name, ri->pi.remote_id, guid);
 
   ret = db_pairing_add(&ri->pi);
   if (ret < 0)
@@ -439,13 +442,12 @@ pairing_request_cb(struct evhttp_request *req, void *arg)
       goto cleanup;
     }
 
- cleanup:
+cleanup:
   evhttp_connection_free(ri->evcon);
   free_remote(ri);
   listener_notify(LISTENER_PAIRING);
   commands_exec_end(cmdbase, ret);
 }
-
 
 /* Thread: main (pairing) */
 static int
@@ -459,24 +461,24 @@ send_pairing_request(struct remote_info *ri, char *req_uri, int family)
 
   switch (family)
     {
-      case AF_INET:
-	if (!ri->v4_address)
-	  return -1;
-
-	address = ri->v4_address;
-	port = ri->v4_port;
-	break;
-
-      case AF_INET6:
-	if (!ri->v6_address)
-	  return -1;
-
-	address = ri->v6_address;
-	port = ri->v6_port;
-	break;
-
-      default:
+    case AF_INET:
+      if (!ri->v4_address)
 	return -1;
+
+      address = ri->v4_address;
+      port = ri->v4_port;
+      break;
+
+    case AF_INET6:
+      if (!ri->v6_address)
+	return -1;
+
+      address = ri->v6_address;
+      port = ri->v6_port;
+      break;
+
+    default:
+      return -1;
     }
 
   evcon = evhttp_connection_base_new(evbase_main, NULL, address, port);
@@ -509,7 +511,7 @@ send_pairing_request(struct remote_info *ri, char *req_uri, int family)
 
   return 0;
 
- request_fail:
+request_fail:
   evhttp_connection_free(evcon);
 
   return -1;
@@ -571,17 +573,17 @@ do_pairing(struct remote_info *ri)
 
   return 0;
 
- pairing_fail:
- req_uri_fail:
- hash_fail:
+pairing_fail:
+req_uri_fail:
+hash_fail:
   free_remote(ri);
   return -1;
 }
 
-
 /* Thread: main (mdns) */
 static void
-touch_remote_cb(const char *name, const char *type, const char *domain, const char *hostname, int family, const char *address, int port, struct keyval *txt)
+touch_remote_cb(const char *name, const char *type, const char *domain, const char *hostname, int family,
+    const char *address, int port, struct keyval *txt)
 {
   const char *p;
   char *devname;
@@ -653,7 +655,8 @@ touch_remote_cb(const char *name, const char *type, const char *domain, const ch
 	  return;
 	}
 
-      DPRINTF(E_LOG, L_REMOTE, "Discovered remote '%s' (id %s) at %s:%d, paircode %s\n", devname, name, address, port, paircode);
+      DPRINTF(E_LOG, L_REMOTE, "Discovered remote '%s' (id %s) at %s:%d, paircode %s\n", devname, name, address, port,
+          paircode);
 
       /* Add the data to the list, adding the remote to the list if needed */
       CHECK_ERR(L_REMOTE, pthread_mutex_lock(&remote_lck));
@@ -675,8 +678,8 @@ touch_remote_cb(const char *name, const char *type, const char *domain, const ch
 }
 
 /*
- * Returns the remote name of the current active pairing request as an allocated string (needs to be freed by the caller)
- * or NULL in case there is no active pairing request.
+ * Returns the remote name of the current active pairing request as an allocated string (needs to be freed by the
+ * caller) or NULL in case there is no active pairing request.
  *
  * Thread: httpd
  */
@@ -769,7 +772,6 @@ remote_pairing_pair(const char *pin)
   return commands_exec_sync(cmdbase, pairing_pair, NULL, &cmdarg);
 }
 
-
 /* Thread: main */
 int
 remote_pairing_init(void)
@@ -793,7 +795,7 @@ remote_pairing_init(void)
 
   return 0;
 
- mdns_browse_fail:
+mdns_browse_fail:
   commands_base_free(cmdbase);
 
   return -1;

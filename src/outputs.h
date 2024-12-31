@@ -2,17 +2,17 @@
 #ifndef __OUTPUTS_H__
 #define __OUTPUTS_H__
 
+#include "misc.h"
+#include <event2/buffer.h>
+#include <event2/event.h>
 #include <stdbool.h>
 #include <time.h>
-#include <event2/event.h>
-#include <event2/buffer.h>
-#include "misc.h"
 
 /* Outputs is a generic interface between the player and a media output method,
  * like for instance AirPlay (raop) or ALSA. The purpose of the interface is to
  * make it easier to add new outputs without messing too much with the player or
  * existing output methods.
- * 
+ *
  * An output method will have a general type, and it will be able to detect
  * supported devices that are available for output. A device will be typically
  * be something like an AirPlay speaker.
@@ -45,7 +45,8 @@
 // device->selected, since that means "has the user selected the device",
 // without taking into account whether it is working or available. This macro
 // is a compound of the factors that determine how to display speaker selection.
-#define OUTPUTS_DEVICE_DISPLAY_SELECTED(device) ((device)->selected && (device)->state >= OUTPUT_STATE_STOPPED && !(device)->busy && !(device)->prevent_playback)
+#define OUTPUTS_DEVICE_DISPLAY_SELECTED(device)                                                                        \
+  ((device)->selected && (device)->state >= OUTPUT_STATE_STOPPED && !(device)->busy && !(device)->prevent_playback)
 
 // Forward declarations
 struct output_device;
@@ -56,8 +57,7 @@ typedef void (*output_status_cb)(struct output_device *device, enum output_devic
 typedef int (*output_metadata_finalize_cb)(struct output_metadata *metadata);
 
 // Must be in sync with outputs[] in outputs.c
-enum output_types
-{
+enum output_types {
   OUTPUT_TYPE_RAOP,
   OUTPUT_TYPE_AIRPLAY,
   OUTPUT_TYPE_STREAMING,
@@ -76,26 +76,24 @@ enum output_types
 };
 
 /* Output session state */
-enum output_device_state
-{
+enum output_device_state {
   // Device is stopped (no session)
-  OUTPUT_STATE_STOPPED   = 0,
+  OUTPUT_STATE_STOPPED = 0,
   // Device is starting up
-  OUTPUT_STATE_STARTUP   = 1,
+  OUTPUT_STATE_STARTUP = 1,
   // Session established (streaming ready and commands are possible)
   OUTPUT_STATE_CONNECTED = 2,
   // Media data is being sent
   OUTPUT_STATE_STREAMING = 3,
   // Session is failed, couldn't startup or error occurred
-  OUTPUT_STATE_FAILED    = -1,
+  OUTPUT_STATE_FAILED = -1,
   // Password issue: unknown password or bad password
-  OUTPUT_STATE_PASSWORD  = -2,
+  OUTPUT_STATE_PASSWORD = -2,
 };
 
 /* Linked list of device info used by the player for each device
  */
-struct output_device
-{
+struct output_device {
   // Device id
   uint64_t id;
 
@@ -112,16 +110,16 @@ struct output_device
   // field must only be set in outputs.c (not in the backends/player).
   enum output_device_state state;
 
-  // Misc device flags 
-  unsigned selected:1;
-  unsigned advertised:1;
-  unsigned has_password:1;
-  unsigned has_video:1;
-  unsigned requires_auth:1;
-  unsigned v6_disabled:1;
-  unsigned prevent_playback:1;
-  unsigned busy:1;
-  unsigned resurrect:1;
+  // Misc device flags
+  unsigned selected : 1;
+  unsigned advertised : 1;
+  unsigned has_password : 1;
+  unsigned has_video : 1;
+  unsigned requires_auth : 1;
+  unsigned v6_disabled : 1;
+  unsigned prevent_playback : 1;
+  unsigned busy : 1;
+  unsigned resurrect : 1;
 
   // Credentials if relevant
   const char *password;
@@ -159,8 +157,7 @@ struct output_device
   struct output_device *next;
 };
 
-struct output_metadata
-{
+struct output_metadata {
   enum output_types type;
   uint32_t item_id;
 
@@ -179,8 +176,7 @@ struct output_metadata
   output_metadata_finalize_cb finalize_cb;
 };
 
-struct output_data
-{
+struct output_data {
   struct media_quality quality;
   struct evbuffer *evbuf;
   uint8_t *buffer;
@@ -188,8 +184,7 @@ struct output_data
   int samples;
 };
 
-struct output_buffer
-{
+struct output_buffer {
   struct timespec pts;
   // The array is two larger than max quality subscriptions because element 0
   // holds the original, untranscoded, data (which might not have any
@@ -197,8 +192,7 @@ struct output_buffer
   struct output_data data[OUTPUTS_MAX_QUALITY_SUBSCRIPTIONS + 2];
 };
 
-struct output_definition
-{
+struct output_definition {
   // Name of the output
   const char *name;
 

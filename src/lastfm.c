@@ -17,31 +17,31 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdio.h>
-#include <inttypes.h>
-#include <stdlib.h>
-#include <stdint.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <time.h>
-#include <string.h>
+#include <inttypes.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
-#include <gcrypt.h>
 #include <event2/buffer.h>
 #include <event2/http.h>
+#include <gcrypt.h>
 
-#include "db.h"
 #include "conffile.h"
+#include "db.h"
+#include "http.h"
 #include "lastfm.h"
 #include "listener.h"
 #include "logger.h"
 #include "misc.h"
 #include "misc_xml.h"
-#include "http.h"
 
 // LastFM becomes disabled if we get a scrobble, try initialising session,
 // but can't (probably no session key in db because user does not use LastFM)
@@ -60,10 +60,7 @@ static const char *auth_url = "https://ws.audioscrobbler.com/2.0/";
 // Session key
 static char *lastfm_session_key = NULL;
 
-
-
 /* --------------------------------- HELPERS ------------------------------- */
-
 
 /* Creates an md5 signature of the concatenated parameters and adds it to keyval */
 static int
@@ -92,7 +89,7 @@ param_sign(struct keyval *kv)
     {
       gcry_md_write(md_hdl, okv->name, strlen(okv->name));
       gcry_md_write(md_hdl, okv->value, strlen(okv->value));
-    }  
+    }
 
   gcry_md_write(md_hdl, lastfm_secret, strlen(lastfm_secret));
 
@@ -114,7 +111,6 @@ param_sign(struct keyval *kv)
 
   return ret;
 }
-
 
 /* --------------------------------- MAIN --------------------------------- */
 
@@ -261,7 +257,7 @@ request_post(const char *url, struct keyval *kv, char **errmsg)
 
   ret = response_process(&ctx, errmsg);
 
- out_free_ctx:
+out_free_ctx:
   free(ctx.output_body);
   evbuffer_free(ctx.input_body);
 
@@ -305,18 +301,11 @@ scrobble(int id)
   snprintf(trackNumber, sizeof(trackNumber), "%" PRIu32, mfi->track);
   snprintf(timestamp, sizeof(timestamp), "%" PRIi64, (int64_t)time(NULL));
 
-  ret = (
-	  (keyval_add(kv, "album", mfi->album) == 0) &&
-	  (keyval_add(kv, "albumArtist", mfi->album_artist) == 0) &&
-	  (keyval_add(kv, "api_key", lastfm_api_key) == 0) &&
-	  (keyval_add(kv, "artist", mfi->artist) == 0) &&
-	  (keyval_add(kv, "duration", duration) == 0) &&
-	  (keyval_add(kv, "method", "track.scrobble") == 0) &&
-	  (keyval_add(kv, "sk", lastfm_session_key) == 0) &&
-	  (keyval_add(kv, "timestamp", timestamp) == 0) &&
-	  (keyval_add(kv, "track", mfi->title) == 0) &&
-	  (keyval_add(kv, "trackNumber", trackNumber) == 0)
-      );
+  ret = ((keyval_add(kv, "album", mfi->album) == 0) && (keyval_add(kv, "albumArtist", mfi->album_artist) == 0)
+         && (keyval_add(kv, "api_key", lastfm_api_key) == 0) && (keyval_add(kv, "artist", mfi->artist) == 0)
+         && (keyval_add(kv, "duration", duration) == 0) && (keyval_add(kv, "method", "track.scrobble") == 0)
+         && (keyval_add(kv, "sk", lastfm_session_key) == 0) && (keyval_add(kv, "timestamp", timestamp) == 0)
+         && (keyval_add(kv, "track", mfi->title) == 0) && (keyval_add(kv, "trackNumber", trackNumber) == 0));
 
   free_mfi(mfi, 0);
 
@@ -336,13 +325,11 @@ scrobble(int id)
 
   return ret;
 
- noscrobble:
+noscrobble:
   free_mfi(mfi, 0);
 
   return -1;
 }
-
-
 
 /* ---------------------------- Our lastfm API  --------------------------- */
 
@@ -376,19 +363,15 @@ lastfm_login_user(const char *user, const char *password, char **errmsg)
   if (!kv)
     return -1;
 
-  ret = (
-	  (keyval_add(kv, "api_key", lastfm_api_key) == 0) &&
-	  (keyval_add(kv, "method", "auth.getMobileSession") == 0) &&
-	  (keyval_add(kv, "password", password) == 0) &&
-	  (keyval_add(kv, "username", user) == 0)
-      );
+  ret = ((keyval_add(kv, "api_key", lastfm_api_key) == 0) && (keyval_add(kv, "method", "auth.getMobileSession") == 0)
+         && (keyval_add(kv, "password", password) == 0) && (keyval_add(kv, "username", user) == 0));
   if (!ret)
     goto out_free_kv;
 
   // Send the login request
   ret = request_post(auth_url, kv, errmsg);
 
- out_free_kv:
+out_free_kv:
   keyval_clear(kv);
   free(kv);
 
@@ -449,4 +432,3 @@ lastfm_init(void)
 
   return 0;
 }
-

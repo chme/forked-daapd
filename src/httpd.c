@@ -17,52 +17,53 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <errno.h>
+#include <fcntl.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <errno.h>
-#include <time.h>
 #include <sys/param.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <stdint.h>
-#include <inttypes.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <event2/event.h>
 
 #include <regex.h>
 #include <zlib.h>
 
-#include "logger.h"
-#include "db.h"
+#include "cache.h"
 #include "conffile.h"
-#include "misc.h"
-#include "worker.h"
+#include "db.h"
 #include "evthr.h"
 #include "httpd.h"
 #include "httpd_internal.h"
-#include "transcode.h"
-#include "cache.h"
 #include "listener.h"
+#include "logger.h"
+#include "misc.h"
 #include "player.h"
+#include "transcode.h"
+#include "worker.h"
 #ifdef LASTFM
-# include "lastfm.h"
+#include "lastfm.h"
 #endif
 #ifdef HAVE_LIBWEBSOCKETS
-# include "websocket.h"
+#include "websocket.h"
 #endif
 
 #define STREAM_CHUNK_SIZE (64 * 1024)
-#define ERR_PAGE "<html>\n<head>\n" \
-  "<title>%d %s</title>\n" \
-  "</head>\n<body>\n" \
-  "<h1>%s</h1>\n" \
+#define ERR_PAGE                                                                                                       \
+  "<html>\n<head>\n"                                                                                                   \
+  "<title>%d %s</title>\n"                                                                                             \
+  "</head>\n<body>\n"                                                                                                  \
+  "<h1>%s</h1>\n"                                                                                                      \
   "</body>\n</html>\n"
 
 extern struct httpd_module httpd_dacp;
@@ -74,17 +75,8 @@ extern struct httpd_module httpd_oauth;
 extern struct httpd_module httpd_rsp;
 
 // Must be in sync with enum httpd_modules
-static struct httpd_module *httpd_modules[] = {
-    &httpd_dacp,
-    &httpd_daap,
-    &httpd_jsonapi,
-    &httpd_artworkapi,
-    &httpd_streaming,
-    &httpd_oauth,
-    &httpd_rsp,
-    NULL
-};
-
+static struct httpd_module *httpd_modules[]
+    = { &httpd_dacp, &httpd_daap, &httpd_jsonapi, &httpd_artworkapi, &httpd_streaming, &httpd_oauth, &httpd_rsp, NULL };
 
 struct content_type_map {
   char *ext;
@@ -106,28 +98,26 @@ struct stream_ctx {
   struct transcode_ctx *xcode;
 };
 
-static const struct content_type_map ext2ctype[] =
-  {
-    { ".html", XCODE_NONE,      "text/html; charset=utf-8" },
-    { ".xml",  XCODE_NONE,      "text/xml; charset=utf-8" },
-    { ".css",  XCODE_NONE,      "text/css; charset=utf-8" },
-    { ".txt",  XCODE_NONE,      "text/plain; charset=utf-8" },
-    { ".js",   XCODE_NONE,      "application/javascript; charset=utf-8" },
-    { ".gif",  XCODE_NONE,      "image/gif" },
-    { ".ico",  XCODE_NONE,      "image/x-ico" },
-    { ".png",  XCODE_PNG,       "image/png" },
-    { ".jpg",  XCODE_JPEG,      "image/jpeg" },
-    { ".mp3",  XCODE_MP3,       "audio/mpeg" },
-    { ".m4a",  XCODE_MP4_ALAC,  "audio/mp4" },
-    { ".wav",  XCODE_WAV,       "audio/wav" },
-    { NULL,    XCODE_NONE,      NULL }
-  };
+static const struct content_type_map ext2ctype[] = {
+  { ".html", XCODE_NONE,     "text/html; charset=utf-8"              },
+  { ".xml",  XCODE_NONE,     "text/xml; charset=utf-8"               },
+  { ".css",  XCODE_NONE,     "text/css; charset=utf-8"               },
+  { ".txt",  XCODE_NONE,     "text/plain; charset=utf-8"             },
+  { ".js",   XCODE_NONE,     "application/javascript; charset=utf-8" },
+  { ".gif",  XCODE_NONE,     "image/gif"                             },
+  { ".ico",  XCODE_NONE,     "image/x-ico"                           },
+  { ".png",  XCODE_PNG,      "image/png"                             },
+  { ".jpg",  XCODE_JPEG,     "image/jpeg"                            },
+  { ".mp3",  XCODE_MP3,      "audio/mpeg"                            },
+  { ".m4a",  XCODE_MP4_ALAC, "audio/mp4"                             },
+  { ".wav",  XCODE_WAV,      "audio/wav"                             },
+  { NULL,    XCODE_NONE,     NULL                                    }
+};
 
 static char webroot_directory[PATH_MAX];
 
 static const char *httpd_allow_origin;
 static int httpd_port;
-
 
 // The server is designed around a single thread listening for requests. When
 // received, the request is passed to a thread from the worker pool, where a
@@ -143,7 +133,6 @@ static int httpd_port;
 #define THREADPOOL_NTHREADS 1
 
 static struct evthr_pool *httpd_threadpool;
-
 
 /* -------------------------------- HELPERS --------------------------------- */
 
@@ -236,11 +225,10 @@ basic_auth_cred_extract(char **user, char **pwd, const char *auth)
   free(decoded);
   return 0;
 
- error:
+error:
   free(decoded);
   return -1;
 }
-
 
 /* --------------------------- MODULES INTERFACE ---------------------------- */
 
@@ -252,7 +240,7 @@ modules_handlers_unset(struct httpd_uri_map *uri_map)
   for (uri = uri_map; uri->preg; uri++)
     {
       regfree(uri->preg); // Frees allocation by regcomp
-      free(uri->preg); // Frees our own calloc
+      free(uri->preg);    // Frees our own calloc
     }
 }
 
@@ -283,7 +271,7 @@ modules_handlers_set(struct httpd_uri_map *uri_map)
 
   return 0;
 
- error:
+error:
   modules_handlers_unset(uri_map);
   return -1;
 }
@@ -357,7 +345,6 @@ modules_search(const char *path)
   return NULL;
 }
 
-
 /* --------------------------- REQUEST HELPERS ------------------------------ */
 
 static void
@@ -373,9 +360,9 @@ cors_headers_add(struct httpd_request *hreq, const char *allow_origin)
 static bool
 is_cors_preflight(struct httpd_request *hreq, const char *allow_origin)
 {
-  return ( hreq->method == HTTPD_METHOD_OPTIONS && hreq->in_headers && allow_origin &&
-           httpd_header_find(hreq->in_headers, "Origin") &&
-           httpd_header_find(hreq->in_headers, "Access-Control-Request-Method") );
+  return (hreq->method == HTTPD_METHOD_OPTIONS && hreq->in_headers && allow_origin
+          && httpd_header_find(hreq->in_headers, "Origin")
+          && httpd_header_find(hreq->in_headers, "Access-Control-Request-Method"));
 }
 
 void
@@ -544,25 +531,25 @@ serve_file(struct httpd_request *hreq)
       strncat(path, ((slashed) ? "index.html" : "/index.html"), sizeof(path) - strlen(path) - 1);
 
       if (!realpath(path, deref))
-        {
-          DPRINTF(E_LOG, L_HTTPD, "Could not dereference %s: %s\n", path, strerror(errno));
+	{
+	  DPRINTF(E_LOG, L_HTTPD, "Could not dereference %s: %s\n", path, strerror(errno));
 
-          httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
-          return;
-        }
+	  httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
+	  return;
+	}
 
       if (strlen(deref) >= PATH_MAX)
-        {
-          DPRINTF(E_LOG, L_HTTPD, "Dereferenced path exceeds PATH_MAX: %s\n", path);
+	{
+	  DPRINTF(E_LOG, L_HTTPD, "Dereferenced path exceeds PATH_MAX: %s\n", path);
 
-          httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
+	  httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
 
-          return;
-        }
+	  return;
+	}
 
       ret = stat(deref, &sb);
       if (ret < 0)
-        {
+	{
 	  DPRINTF(E_LOG, L_HTTPD, "Could not stat() %s: %s\n", path, strerror(errno));
 	  httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
 	  return;
@@ -620,7 +607,7 @@ serve_file(struct httpd_request *hreq)
   close(fd);
   return;
 
- out_fail:
+out_fail:
   httpd_send_error(hreq, HTTP_SERVUNAVAIL, "Internal error");
   close(fd);
 }
@@ -666,8 +653,7 @@ stream_end(struct stream_ctx *st)
 static void
 stream_end_register(struct stream_ctx *st)
 {
-  if (!st->no_register_playback
-      && (st->stream_size > ((st->size * 50) / 100))
+  if (!st->no_register_playback && (st->stream_size > ((st->size * 50) / 100))
       && (st->offset > ((st->size * 80) / 100)))
     {
       st->no_register_playback = true;
@@ -704,14 +690,14 @@ stream_new(struct media_file_info *mfi, struct httpd_request *hreq, event_callba
   st->hreq = hreq;
   return st;
 
- error:
+error:
   stream_free(st);
   return NULL;
 }
 
 static struct stream_ctx *
 stream_new_transcode(struct media_file_info *mfi, enum transcode_profile profile, struct httpd_request *hreq,
-                     int64_t offset, int64_t end_offset, event_callback_fn stream_cb)
+    int64_t offset, int64_t end_offset, event_callback_fn stream_cb)
 {
   struct transcode_decode_setup_args decode_args = { 0 };
   struct transcode_encode_setup_args encode_args = { 0 };
@@ -744,8 +730,8 @@ stream_new_transcode(struct media_file_info *mfi, enum transcode_profile profile
 
   decode_args.profile = profile;
   decode_args.is_http = (mfi->data_kind == DATA_KIND_HTTP);
-  decode_args.path    = mfi->path;
-  decode_args.len_ms  = mfi->song_length;
+  decode_args.path = mfi->path;
+  decode_args.len_ms = mfi->song_length;
   encode_args.profile = profile;
   encode_args.quality = &quality;
   encode_args.prepared_header = prepared_header;
@@ -778,7 +764,7 @@ stream_new_transcode(struct media_file_info *mfi, enum transcode_profile profile
     evbuffer_free(prepared_header);
   return st;
 
- error:
+error:
   if (prepared_header)
     evbuffer_free(prepared_header);
   stream_free(st);
@@ -786,7 +772,8 @@ stream_new_transcode(struct media_file_info *mfi, enum transcode_profile profile
 }
 
 static struct stream_ctx *
-stream_new_raw(struct media_file_info *mfi, struct httpd_request *hreq, int64_t offset, int64_t end_offset, event_callback_fn stream_cb)
+stream_new_raw(struct media_file_info *mfi, struct httpd_request *hreq, int64_t offset, int64_t end_offset,
+    event_callback_fn stream_cb)
 {
   struct stream_ctx *st;
   struct stat sb;
@@ -828,7 +815,7 @@ stream_new_raw(struct media_file_info *mfi, struct httpd_request *hreq, int64_t 
   st->end_offset = end_offset;
 
   pos = lseek(st->fd, offset, SEEK_SET);
-  if (pos == (off_t) -1)
+  if (pos == (off_t)-1)
     {
       DPRINTF(E_LOG, L_HTTPD, "Could not seek into %s: %s\n", mfi->path, strerror(errno));
 
@@ -838,7 +825,7 @@ stream_new_raw(struct media_file_info *mfi, struct httpd_request *hreq, int64_t 
 
   return st;
 
- error:
+error:
   stream_free(st);
   return NULL;
 }
@@ -912,7 +899,7 @@ stream_chunk_raw_cb(int fd, short event, void *arg)
   if (st->end_offset && ((st->offset + STREAM_CHUNK_SIZE) > (st->end_offset + 1)))
     chunk_size = st->end_offset + 1 - st->offset;
   else
-    chunk_size = STREAM_CHUNK_SIZE;  
+    chunk_size = STREAM_CHUNK_SIZE;
 
   ret = evbuffer_read(st->hreq->out_body, st->fd, chunk_size);
   if (ret <= 0)
@@ -942,7 +929,6 @@ stream_fail_cb(void *arg)
 
   stream_free(st);
 }
-
 
 /* -------------------------- SPEAKER/CACHE HANDLING ------------------------ */
 
@@ -976,7 +962,6 @@ httpd_speaker_update_handler(short event_mask)
   worker_execute(speaker_update_handler_cb, NULL, 0, 0);
 }
 
-
 /* ---------------------------- REQUEST CALLBACKS --------------------------- */
 
 // Worker thread, invoked by request_cb() below
@@ -986,7 +971,8 @@ request_async_cb(void *arg)
   struct httpd_request *hreq = *(struct httpd_request **)arg;
 
 #ifdef HAVE_GETTID
-  DPRINTF(E_DBG, hreq->module->logdomain, "%s request '%s' in worker thread %d\n", hreq->module->name, hreq->uri, (int)gettid());
+  DPRINTF(E_DBG, hreq->module->logdomain, "%s request '%s' in worker thread %d\n", hreq->module->name, hreq->uri,
+      (int)gettid());
 #endif
 
   // Some handlers require an evbase to schedule events
@@ -1037,7 +1023,6 @@ request_cb(struct httpd_request *hreq, void *arg)
   // Don't touch hreq here, if async it has been passed to a worker thread
 }
 
-
 /* ------------------------------- HTTPD API -------------------------------- */
 
 void
@@ -1082,7 +1067,9 @@ httpd_stream_file(struct httpd_request *hreq, int id)
 
 	      if (end_offset < offset)
 		{
-		  DPRINTF(E_LOG, L_HTTPD, "End offset < start offset, will stream to end of file (%" PRIi64 " < %" PRIi64 ")\n", end_offset, offset);
+		  DPRINTF(E_LOG, L_HTTPD,
+		      "End offset < start offset, will stream to end of file (%" PRIi64 " < %" PRIi64 ")\n", end_offset,
+		      offset);
 		  end_offset = 0;
 		}
 	    }
@@ -1191,8 +1178,8 @@ httpd_stream_file(struct httpd_request *hreq, int id)
     {
       DPRINTF(E_DBG, L_HTTPD, "Stream request with range %" PRIi64 "-%" PRIi64 "\n", offset, end_offset);
 
-      ret = snprintf(buf, sizeof(buf), "bytes %" PRIi64 "-%" PRIi64 "/%" PRIi64,
-		     offset, (end_offset) ? end_offset : (int64_t)st->size, (int64_t)st->size);
+      ret = snprintf(buf, sizeof(buf), "bytes %" PRIi64 "-%" PRIi64 "/%" PRIi64, offset,
+          (end_offset) ? end_offset : (int64_t)st->size, (int64_t)st->size);
       if ((ret < 0) || (ret >= sizeof(buf)))
 	DPRINTF(E_LOG, L_HTTPD, "Content-Range too large for buffer, dropping\n");
       else
@@ -1211,9 +1198,9 @@ httpd_stream_file(struct httpd_request *hreq, int id)
   if (profile == XCODE_NONE)
     {
       // Hint the OS
-      if ( (ret = posix_fadvise(st->fd, st->start_offset, st->stream_size, POSIX_FADV_WILLNEED)) != 0 ||
-           (ret = posix_fadvise(st->fd, st->start_offset, st->stream_size, POSIX_FADV_SEQUENTIAL)) != 0 ||
-           (ret = posix_fadvise(st->fd, st->start_offset, st->stream_size, POSIX_FADV_NOREUSE)) != 0 )
+      if ((ret = posix_fadvise(st->fd, st->start_offset, st->stream_size, POSIX_FADV_WILLNEED)) != 0
+          || (ret = posix_fadvise(st->fd, st->start_offset, st->stream_size, POSIX_FADV_SEQUENTIAL)) != 0
+          || (ret = posix_fadvise(st->fd, st->start_offset, st->stream_size, POSIX_FADV_NOREUSE)) != 0)
 	DPRINTF(E_DBG, L_HTTPD, "posix_fadvise() failed with error %d\n", ret);
     }
 #endif
@@ -1225,7 +1212,7 @@ httpd_stream_file(struct httpd_request *hreq, int id)
   free_mfi(mfi, 0);
   return;
 
- error:
+error:
   stream_free(st);
   free_mfi(mfi, 0);
 }
@@ -1321,10 +1308,10 @@ httpd_gzip_deflate(struct evbuffer *in)
 
   return out;
 
- out_evbuf_free:
+out_evbuf_free:
   evbuffer_free(out);
 
- out_deflate_end:
+out_deflate_end:
   deflateEnd(&strm);
 
   return NULL;
@@ -1347,11 +1334,9 @@ httpd_send_reply(struct httpd_request *hreq, int code, const char *reason, enum 
   if (!hreq->backend)
     return;
 
-  do_gzip = ( (!(flags & HTTPD_SEND_NO_GZIP)) &&
-              (evbuffer_get_length(hreq->out_body) > 512) &&
-              (param = httpd_header_find(hreq->in_headers, "Accept-Encoding")) &&
-              (strstr(param, "gzip") || strstr(param, "*"))
-            );
+  do_gzip = ((!(flags & HTTPD_SEND_NO_GZIP)) && (evbuffer_get_length(hreq->out_body) > 512)
+             && (param = httpd_header_find(hreq->in_headers, "Accept-Encoding"))
+             && (strstr(param, "gzip") || strstr(param, "*")));
 
   cors_headers_add(hreq, httpd_allow_origin);
 
@@ -1504,7 +1489,7 @@ httpd_basic_auth(struct httpd_request *hreq, const char *user, const char *passw
   free(authpwd);
   return 0;
 
- need_auth:
+need_auth:
   ret = snprintf(header, sizeof(header), "Basic realm=\"%s\"", realm);
   if ((ret < 0) || (ret >= sizeof(header)))
     {
@@ -1598,10 +1583,10 @@ httpd_init(const char *webroot)
   // than we can in thread_init_cb(), where the actual binding takes place.
   ret = bind_test(httpd_port);
   if (ret < 0)
-   {
+    {
       DPRINTF(E_FATAL, L_HTTPD, "Could not create HTTP server on port %d (server already running?)\n", httpd_port);
       return -1;
-   }
+    }
 
   // Prepare modules, e.g. httpd_daap
   ret = modules_init();
@@ -1640,7 +1625,7 @@ httpd_init(const char *webroot)
 
   return 0;
 
- error:
+error:
   httpd_deinit();
   return -1;
 }

@@ -4,15 +4,15 @@
 
 #include "misc.h"
 
-enum mdns_options
-{
+enum mdns_options {
   // Test connection to device and only call back if successful
   MDNS_CONNECTION_TEST = (1 << 1),
   // Only browse for ipv4 services
-  MDNS_IPV4ONLY        = (1 << 2),
+  MDNS_IPV4ONLY = (1 << 2),
 };
 
-typedef void (* mdns_browse_cb)(const char *name, const char *type, const char *domain, const char *hostname, int family, const char *address, int port, struct keyval *txt);
+typedef void (*mdns_browse_cb)(const char *name, const char *type, const char *domain, const char *hostname, int family,
+    const char *address, int port, struct keyval *txt);
 
 /*
  * Start a mDNS client
@@ -24,7 +24,7 @@ int
 mdns_init(void);
 
 /*
- * Removes registered services, stops service browsers and stop the mDNS client 
+ * Removes registered services, stops service browsers and stop the mDNS client
  * Call only from the main thread!
  *
  */

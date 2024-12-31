@@ -17,37 +17,36 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdio.h>
-#include <inttypes.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <errno.h>
-#include <time.h>
-#include <string.h>
+#include <fcntl.h>
+#include <inttypes.h>
 #include <pthread.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <event2/event.h>
 #include <sqlite3.h>
 
+#include "cache.h"
+#include "commands.h"
 #include "conffile.h"
-#include "logger.h"
+#include "db.h"
 #include "httpd.h" // TODO get rid of this, only used for httpd_gzip_deflate
 #include "httpd_daap.h"
-#include "transcode.h"
-#include "db.h"
-#include "worker.h"
-#include "cache.h"
 #include "listener.h"
-#include "commands.h"
+#include "logger.h"
+#include "transcode.h"
+#include "worker.h"
 
-struct cache_arg
-{
+struct cache_arg {
   sqlite3 *hdl; // which cache database
 
   char *query; // daap query
@@ -58,9 +57,9 @@ struct cache_arg
   uint32_t id; // file id
   const char *header_format;
 
-  const char *path;  // artwork path
-  char *pathcopy;  // copy of artwork path (for async operations)
-  int type;    // individual or group artwork
+  const char *path; // artwork path
+  char *pathcopy;   // copy of artwork path (for async operations)
+  int type;         // individual or group artwork
   int64_t persistentid;
   int max_w;
   int max_h;
@@ -72,29 +71,25 @@ struct cache_arg
   struct evbuffer *evbuf;
 };
 
-struct cachelist
-{
+struct cachelist {
   uint32_t id;
   uint32_t ts;
 };
 
-struct cache_db_def
-{
+struct cache_db_def {
   const char *name;
   const char *create_query;
   const char *drop_query;
 };
 
-struct cache_artwork_stash
-{
+struct cache_artwork_stash {
   char *path;
   int format;
   size_t size;
   uint8_t *data;
 };
 
-struct cache_xcode_job
-{
+struct cache_xcode_job {
   const char *format;
   char *file_path;
   int file_id;
@@ -104,7 +99,6 @@ struct cache_xcode_job
 
   struct evbuffer *header;
 };
-
 
 /* --------------------------------- GLOBALS -------------------------------- */
 
@@ -119,14 +113,14 @@ static struct commands_base *cmdbase;
 static bool cache_is_initialized;
 static bool cache_is_suspended;
 
-#define DB_DEF_ADMIN \
-  { \
-    "admin", \
-    "CREATE TABLE IF NOT EXISTS admin(" \
-    " key VARCHAR(32) PRIMARY KEY NOT NULL,"  \
-    " value VARCHAR(32) NOT NULL" \
-    ");", \
-    "DROP TABLE IF EXISTS admin;", \
+#define DB_DEF_ADMIN                                                                                                   \
+  {                                                                                                                    \
+    "admin",                                                                                                           \
+        "CREATE TABLE IF NOT EXISTS admin("                                                                            \
+        " key VARCHAR(32) PRIMARY KEY NOT NULL,"                                                                       \
+        " value VARCHAR(32) NOT NULL"                                                                                  \
+        ");",                                                                                                          \
+        "DROP TABLE IF EXISTS admin;",                                                                                 \
   }
 
 // DAAP cache
@@ -139,31 +133,25 @@ static int cache_daap_threshold;
 static struct cache_db_def cache_daap_db_def[] = {
   DB_DEF_ADMIN,
   {
-    "replies",
-    "CREATE TABLE IF NOT EXISTS replies ("
-    "   id                 INTEGER PRIMARY KEY NOT NULL,"
-    "   query              VARCHAR(4096) NOT NULL,"
-    "   reply              BLOB"
-    ");",
-    "DROP TABLE IF EXISTS replies;",
-  },
+    "replies",  "CREATE TABLE IF NOT EXISTS replies ("
+      "   id                 INTEGER PRIMARY KEY NOT NULL,"
+      "   query              VARCHAR(4096) NOT NULL,"
+      "   reply              BLOB"
+      ");",                         "DROP TABLE IF EXISTS replies;",
+    },
   {
-    "queries",
-    "CREATE TABLE IF NOT EXISTS queries ("
-    "   id                 INTEGER PRIMARY KEY NOT NULL,"
-    "   query              VARCHAR(4096) UNIQUE NOT NULL,"
-    "   user_agent         VARCHAR(1024),"
-    "   is_remote          INTEGER DEFAULT 0,"
-    "   msec               INTEGER DEFAULT 0,"
-    "   timestamp          INTEGER DEFAULT 0"
-    ");",
-    "DROP TABLE IF EXISTS queries;",
-  },
+    "queries",          "CREATE TABLE IF NOT EXISTS queries ("
+      "   id                 INTEGER PRIMARY KEY NOT NULL,"
+      "   query              VARCHAR(4096) UNIQUE NOT NULL,"
+      "   user_agent         VARCHAR(1024),"
+      "   is_remote          INTEGER DEFAULT 0,"
+      "   msec               INTEGER DEFAULT 0,"
+      "   timestamp          INTEGER DEFAULT 0"
+      ");",                                                 "DROP TABLE IF EXISTS queries;",
+    },
   {
-    "idx_query",
-    "CREATE INDEX IF NOT EXISTS idx_query ON replies (query);",
-    "DROP INDEX IF EXISTS idx_query;",
-  },
+    "idx_query", "CREATE INDEX IF NOT EXISTS idx_query ON replies (query);",
+    "DROP INDEX IF EXISTS idx_query;", },
 };
 
 // Artwork cache
@@ -173,30 +161,24 @@ static struct cache_artwork_stash cache_stash;
 static struct cache_db_def cache_artwork_db_def[] = {
   DB_DEF_ADMIN,
   {
-    "artwork",
-    "CREATE TABLE IF NOT EXISTS artwork ("
-    "   id                  INTEGER PRIMARY KEY NOT NULL,"
-    "   type                INTEGER NOT NULL DEFAULT 0,"
-    "   persistentid        INTEGER NOT NULL,"
-    "   max_w               INTEGER NOT NULL,"
-    "   max_h               INTEGER NOT NULL,"
-    "   format              INTEGER NOT NULL,"
-    "   filepath            VARCHAR(4096) NOT NULL,"
-    "   db_timestamp        INTEGER DEFAULT 0,"
-    "   data                BLOB"
-    ");",
-    "DROP TABLE IF EXISTS artwork;",
-  },
+    "artwork",                                                                                      "CREATE TABLE IF NOT EXISTS artwork ("
+      "   id                  INTEGER PRIMARY KEY NOT NULL,"
+      "   type                INTEGER NOT NULL DEFAULT 0,"
+      "   persistentid        INTEGER NOT NULL,"
+      "   max_w               INTEGER NOT NULL,"
+      "   max_h               INTEGER NOT NULL,"
+      "   format              INTEGER NOT NULL,"
+      "   filepath            VARCHAR(4096) NOT NULL,"
+      "   db_timestamp        INTEGER DEFAULT 0,"
+      "   data                BLOB"
+      ");",                        "DROP TABLE IF EXISTS artwork;",
+    },
   {
-    "idx_persistentidwh",
-    "CREATE INDEX IF NOT EXISTS idx_persistentidwh ON artwork(type, persistentid, max_w, max_h);",
-    "DROP INDEX IF EXISTS idx_persistentidwh;",
-  },
+    "idx_persistentidwh",                                                                                              "CREATE INDEX IF NOT EXISTS idx_persistentidwh ON artwork(type, persistentid, max_w, max_h);",
+    "DROP INDEX IF EXISTS idx_persistentidwh;", },
   {
-    "idx_pathtime",
-    "CREATE INDEX IF NOT EXISTS idx_pathtime ON artwork(filepath, db_timestamp);",
-    "DROP INDEX IF EXISTS idx_pathtime;",
-  },
+    "idx_pathtime","CREATE INDEX IF NOT EXISTS idx_pathtime ON artwork(filepath, db_timestamp);",
+    "DROP INDEX IF EXISTS idx_pathtime;", },
 };
 
 // Transcoding cache
@@ -211,32 +193,27 @@ static bool cache_xcode_is_enabled;
 static struct cache_db_def cache_xcode_db_def[] = {
   DB_DEF_ADMIN,
   {
-    "files",
-    "CREATE TABLE IF NOT EXISTS files ("
-    "   id                 INTEGER PRIMARY KEY NOT NULL,"
-    "   time_modified      INTEGER DEFAULT 0,"
-    "   filepath           VARCHAR(4096) NOT NULL"
-    ");",
-    "DROP TABLE IF EXISTS files;",
-  },
+    "files", "CREATE TABLE IF NOT EXISTS files ("
+      "   id                 INTEGER PRIMARY KEY NOT NULL,"
+      "   time_modified      INTEGER DEFAULT 0,"
+      "   filepath           VARCHAR(4096) NOT NULL"
+      ");", "DROP TABLE IF EXISTS files;",
+    },
   {
-    "data",
-    "CREATE TABLE IF NOT EXISTS data ("
-    "   id                 INTEGER PRIMARY KEY NOT NULL,"
-    "   timestamp          INTEGER DEFAULT 0,"
-    "   file_id            INTEGER DEFAULT 0,"
-    "   format             VARCHAR(255) NOT NULL,"
-    "   header             BLOB,"
-    "   UNIQUE(file_id, format) ON CONFLICT REPLACE"
-    ");",
-    "DROP TABLE IF EXISTS data;",
-  },
+    "data",       "CREATE TABLE IF NOT EXISTS data ("
+      "   id                 INTEGER PRIMARY KEY NOT NULL,"
+      "   timestamp          INTEGER DEFAULT 0,"
+      "   file_id            INTEGER DEFAULT 0,"
+      "   format             VARCHAR(255) NOT NULL,"
+      "   header             BLOB,"
+      "   UNIQUE(file_id, format) ON CONFLICT REPLACE"
+      ");",                       "DROP TABLE IF EXISTS data;",
+    },
 };
-
 
 /* --------------------------------- HELPERS -------------------------------- */
 
-/* The purpose of this function is to remove transient tags from a request 
+/* The purpose of this function is to remove transient tags from a request
  * url (query), eg remove session-id=xxx
  */
 static void
@@ -255,7 +232,6 @@ remove_tag(char *in, const char *tag)
   else if (s > in)
     *(s - 1) = '\0';
 }
-
 
 /* ---------------------------------- MAIN ---------------------------------- */
 /*                                Thread: cache                               */
@@ -297,7 +273,7 @@ cache_tables_create(sqlite3 *hdl, int version, struct cache_db_def *db_def, int 
 static int
 cache_tables_drop(sqlite3 *hdl, struct cache_db_def *db_def, int db_def_size)
 {
-#define Q_VACUUM	"VACUUM;"
+#define Q_VACUUM "VACUUM;"
   char *errmsg;
   int ret;
   int i;
@@ -467,7 +443,8 @@ cache_close(void)
 }
 
 static int
-cache_open_one(sqlite3 **hdl, const char *path, const char *name, int want_version, struct cache_db_def *db_def, int db_def_size)
+cache_open_one(
+    sqlite3 **hdl, const char *path, const char *name, int want_version, struct cache_db_def *db_def, int db_def_size)
 {
   sqlite3 *h;
   int have_version;
@@ -489,7 +466,8 @@ cache_open_one(sqlite3 **hdl, const char *path, const char *name, int want_versi
 
   if (have_version > 0 && have_version < want_version)
     {
-      DPRINTF(E_LOG, L_CACHE, "Database schema outdated, deleting cache '%s' v%d -> v%d\n", name, have_version, want_version);
+      DPRINTF(E_LOG, L_CACHE, "Database schema outdated, deleting cache '%s' v%d -> v%d\n", name, have_version,
+          want_version);
 
       ret = cache_tables_drop(h, db_def, db_def_size);
       if (ret < 0)
@@ -514,7 +492,7 @@ cache_open_one(sqlite3 **hdl, const char *path, const char *name, int want_versi
   *hdl = h;
   return 0;
 
- error:
+error:
   sqlite3_close(h);
   return -1;
 }
@@ -540,15 +518,18 @@ cache_open(void)
   CHECK_NULL(L_DB, filename = cfg_getstr(cfg_getsec(cfg, "general"), "cache_xcode_filename"));
   CHECK_NULL(L_DB, xcode_db_path = safe_asprintf("%s%s", directory, filename));
 
-  ret = cache_open_one(&cache_daap_hdl, daap_db_path, "daap", CACHE_DAAP_VERSION, cache_daap_db_def, ARRAY_SIZE(cache_daap_db_def));
+  ret = cache_open_one(
+      &cache_daap_hdl, daap_db_path, "daap", CACHE_DAAP_VERSION, cache_daap_db_def, ARRAY_SIZE(cache_daap_db_def));
   if (ret < 0)
     goto error;
 
-  ret = cache_open_one(&cache_artwork_hdl, artwork_db_path, "artwork", CACHE_ARTWORK_VERSION, cache_artwork_db_def, ARRAY_SIZE(cache_artwork_db_def));
+  ret = cache_open_one(&cache_artwork_hdl, artwork_db_path, "artwork", CACHE_ARTWORK_VERSION, cache_artwork_db_def,
+      ARRAY_SIZE(cache_artwork_db_def));
   if (ret < 0)
     goto error;
 
-  ret = cache_open_one(&cache_xcode_hdl, xcode_db_path, "xcode", CACHE_XCODE_VERSION, cache_xcode_db_def, ARRAY_SIZE(cache_xcode_db_def));
+  ret = cache_open_one(&cache_xcode_hdl, xcode_db_path, "xcode", CACHE_XCODE_VERSION, cache_xcode_db_def,
+      ARRAY_SIZE(cache_xcode_db_def));
   if (ret < 0)
     goto error;
 
@@ -563,14 +544,13 @@ cache_open(void)
   free(xcode_db_path);
   return 0;
 
- error:
+error:
   cache_close();
   free(daap_db_path);
   free(artwork_db_path);
   free(xcode_db_path);
   return -1;
 }
-
 
 /* Adds the reply (stored in evbuf) to the cache */
 static int
@@ -610,7 +590,7 @@ cache_daap_reply_add(sqlite3 *hdl, const char *query, struct evbuffer *evbuf)
       return -1;
     }
 
-  //DPRINTF(E_DBG, L_CACHE, "Wrote cache reply, size %d\n", datalen);
+  // DPRINTF(E_DBG, L_CACHE, "Wrote cache reply, size %d\n", datalen);
 
   return 0;
 #undef Q_TMPL
@@ -620,7 +600,9 @@ cache_daap_reply_add(sqlite3 *hdl, const char *query, struct evbuffer *evbuf)
 static enum command_state
 cache_daap_query_add(void *arg, int *retval)
 {
-#define Q_TMPL "INSERT OR REPLACE INTO queries (user_agent, is_remote, query, msec, timestamp) VALUES ('%q', %d, '%q', %d, %" PRIi64 ");"
+#define Q_TMPL                                                                                                         \
+  "INSERT OR REPLACE INTO queries (user_agent, is_remote, query, msec, timestamp) VALUES ('%q', %d, '%q', %d, "        \
+  "%" PRIi64 ");"
 #define Q_CLEANUP "DELETE FROM queries WHERE id NOT IN (SELECT id FROM queries ORDER BY timestamp DESC LIMIT 20);"
   struct cache_arg *cmdarg = arg;
   struct timeval delay = { 60, 0 };
@@ -636,10 +618,10 @@ cache_daap_query_add(void *arg, int *retval)
     }
 
   // Currently we are only able to pre-build and cache these reply types
-  if ( (strncmp(cmdarg->query, "/databases/1/containers/", strlen("/databases/1/containers/")) != 0) &&
-       (strncmp(cmdarg->query, "/databases/1/groups?", strlen("/databases/1/groups?")) != 0) &&
-       (strncmp(cmdarg->query, "/databases/1/items?", strlen("/databases/1/items?")) != 0) &&
-       (strncmp(cmdarg->query, "/databases/1/browse/", strlen("/databases/1/browse/")) != 0) )
+  if ((strncmp(cmdarg->query, "/databases/1/containers/", strlen("/databases/1/containers/")) != 0)
+      && (strncmp(cmdarg->query, "/databases/1/groups?", strlen("/databases/1/groups?")) != 0)
+      && (strncmp(cmdarg->query, "/databases/1/items?", strlen("/databases/1/items?")) != 0)
+      && (strncmp(cmdarg->query, "/databases/1/browse/", strlen("/databases/1/browse/")) != 0))
     goto error_add;
 
   remove_tag(cmdarg->query, "session-id");
@@ -663,7 +645,8 @@ cache_daap_query_add(void *arg, int *retval)
       goto error_add;
     }
 
-  DPRINTF(E_INFO, L_CACHE, "Slow query (%d ms) added to cache: '%s' (user-agent: '%s')\n", cmdarg->msec, cmdarg->query, cmdarg->ua);
+  DPRINTF(E_INFO, L_CACHE, "Slow query (%d ms) added to cache: '%s' (user-agent: '%s')\n", cmdarg->msec, cmdarg->query,
+      cmdarg->ua);
 
   free(cmdarg->ua);
   free(cmdarg->query);
@@ -685,7 +668,7 @@ cache_daap_query_add(void *arg, int *retval)
   *retval = 0;
   return COMMAND_END;
 
- error_add:
+error_add:
   if (cmdarg->ua)
     free(cmdarg->ua);
 
@@ -727,7 +710,7 @@ cache_daap_query_get(void *arg, int *retval)
   sqlite3_bind_text(stmt, 1, query, -1, SQLITE_STATIC);
 
   ret = sqlite3_step(stmt);
-  if (ret != SQLITE_ROW)  
+  if (ret != SQLITE_ROW)
     {
       if (ret != SQLITE_DONE)
 	DPRINTF(E_LOG, L_CACHE, "Error stepping query for cache update: %s\n", sqlite3_errmsg(cmdarg->hdl));
@@ -760,7 +743,7 @@ cache_daap_query_get(void *arg, int *retval)
   *retval = 0;
   return COMMAND_END;
 
- error_get:
+error_get:
   sqlite3_finalize(stmt);
   free(query);
   *retval = -1;
@@ -871,7 +854,6 @@ cache_daap_update_cb(int fd, short what, void *arg)
   DPRINTF(E_INFO, L_CACHE, "DAAP cache updated\n");
 }
 
-
 /* ----------------------- Caching of transcoded data ----------------------- */
 
 static void
@@ -920,12 +902,12 @@ xcode_header_get(void *arg, int *retval)
 
   DPRINTF(E_DBG, L_CACHE, "Cache header hit (%zu bytes)\n", evbuffer_get_length(cmdarg->evbuf));
 
- end:
+end:
   sqlite3_finalize(stmt);
   *retval = 0;
   return COMMAND_END;
 
- error:
+error:
   DPRINTF(E_LOG, L_CACHE, "Database error getting prepared header from cache: %s\n", sqlite3_errmsg(cmdarg->hdl));
   if (stmt)
     sqlite3_finalize(stmt);
@@ -954,7 +936,7 @@ xcode_toggle(void *arg, int *retval)
   cache_xcode_is_enabled = *enable;
   xcode_trigger();
 
- end:
+end:
   *retval = 0;
   return COMMAND_END;
 }
@@ -1073,14 +1055,15 @@ xcode_sync_with_files(sqlite3 *hdl)
   rowB = NULL;
 
   // Loop while either list ("A" files list, "B" cache list) has remaining items
-  for(i = 0, cmp = 0;;)
+  for (i = 0, cmp = 0;;)
     {
       if (cmp <= 0)
-        rowA = (db_query_fetch_file(&dbmfi, &qp) == 0) ? &dbmfi : NULL;;
+	rowA = (db_query_fetch_file(&dbmfi, &qp) == 0) ? &dbmfi : NULL;
+      ;
       if (cmp >= 0)
-        rowB = (i < cachelist_len) ? &cachelist[i++] : NULL;
+	rowB = (i < cachelist_len) ? &cachelist[i++] : NULL;
       if (!rowA && !rowB)
-        break; // Done with both lists
+	break; // Done with both lists
 
 #if 0
       if (rowA)
@@ -1095,7 +1078,7 @@ xcode_sync_with_files(sqlite3 *hdl)
 	  safe_atou32(rowA->time_modified, &ts);
 	}
 
-      cmp = 0; // In both lists - unless:
+      cmp = 0;                              // In both lists - unless:
       if (!rowB || (rowA && rowB->id > id)) // A had an item not in B
 	{
 	  xcode_add_entry(hdl, id, ts, rowA->path);
@@ -1118,7 +1101,7 @@ xcode_sync_with_files(sqlite3 *hdl)
   free(cachelist);
   return 0;
 
- error:
+error:
   DPRINTF(E_LOG, L_CACHE, "Database error while processing xcode files table\n");
   free(cachelist);
   return -1;
@@ -1158,7 +1141,9 @@ xcode_header_save(sqlite3 *hdl, int file_id, const char *format, uint8_t *data, 
 static int
 xcode_file_next(int *file_id, char **file_path, sqlite3 *hdl, const char *format)
 {
-#define Q_TMPL "SELECT f.id, f.filepath, d.id FROM files f LEFT JOIN data d ON f.id = d.file_id AND d.format = '%q' WHERE d.id IS NULL LIMIT 1;"
+#define Q_TMPL                                                                                                         \
+  "SELECT f.id, f.filepath, d.id FROM files f LEFT JOIN data d ON f.id = d.file_id AND d.format = '%q' WHERE d.id IS " \
+  "NULL LIMIT 1;"
   sqlite3_stmt *stmt;
   char query[256];
   int ret;
@@ -1202,7 +1187,8 @@ xcode_worker(void *arg)
     {
       ret = transcode_prepare_header(&job->header, XCODE_MP4_ALAC, job->file_path);
       if (ret < 0)
-	DPRINTF(E_LOG, L_CACHE, "Error preparing %s header for '%s' (file id %d)\n", job->format, job->file_path, job->file_id);
+	DPRINTF(E_LOG, L_CACHE, "Error preparing %s header for '%s' (file id %d)\n", job->format, job->file_path,
+	    job->file_id);
     }
 
   // Tell the cache thread that we are done. Only the cache thread can save the
@@ -1223,7 +1209,7 @@ cache_xcode_job_complete_cb(int fd, short what, void *arg)
       datalen = evbuffer_get_length(job->header);
       data = evbuffer_pullup(job->header, -1);
 #else
-      data = (unsigned char*)"dummy";
+      data = (unsigned char *)"dummy";
       datalen = 6;
 #endif
       xcode_header_save(cache_xcode_hdl, job->file_id, job->format, data, datalen);
@@ -1297,7 +1283,7 @@ cache_database_update(void *arg, int *retval)
 
   event_add(cache_daap_updateev, &delay_daap);
 
-// TODO unlink or rename cache.db
+  // TODO unlink or rename cache.db
 
   xcode_trigger();
 
@@ -1312,20 +1298,21 @@ cache_daap_listener_cb(short event_mask)
   commands_exec_async(cmdbase, cache_database_update, NULL);
 }
 
-
 /*
  * Updates cached timestamps to current time for all cache entries for the given path, if the file was not modfied
  * after the cached timestamp. All cache entries for the given path are deleted, if the file was
  * modified after the cached timestamp.
  *
- * @param cmdarg->pathcopy the full path to the artwork file (could be an jpg/png image or a media file with embedded artwork)
+ * @param cmdarg->pathcopy the full path to the artwork file (could be an jpg/png image or a media file with embedded
+ * artwork)
  * @param cmdarg->mtime modified timestamp of the artwork file
  * @return 0 if successful, -1 if an error occurred
  */
 static enum command_state
 cache_artwork_ping_impl(void *arg, int *retval)
 {
-#define Q_TMPL_PING "UPDATE artwork SET db_timestamp = %" PRIi64 " WHERE filepath = '%q' AND db_timestamp >= %" PRIi64 ";"
+#define Q_TMPL_PING                                                                                                    \
+  "UPDATE artwork SET db_timestamp = %" PRIi64 " WHERE filepath = '%q' AND db_timestamp >= %" PRIi64 ";"
 #define Q_TMPL_DEL "DELETE FROM artwork WHERE filepath = '%q' AND db_timestamp < %" PRIi64 ";"
   struct cache_arg *cmdarg = arg;
   char *query;
@@ -1366,13 +1353,13 @@ cache_artwork_ping_impl(void *arg, int *retval)
   *retval = 0;
   return COMMAND_END;
 
- error_ping:
+error_ping:
   sqlite3_free(errmsg);
   free(cmdarg->pathcopy);
 
   *retval = -1;
   return COMMAND_END;
-  
+
 #undef Q_TMPL_PING
 #undef Q_TMPL_DEL
 }
@@ -1380,7 +1367,8 @@ cache_artwork_ping_impl(void *arg, int *retval)
 /*
  * Removes all cache entries for the given path
  *
- * @param cmdarg->path the full path to the artwork file (could be an jpg/png image or a media file with embedded artwork)
+ * @param cmdarg->path the full path to the artwork file (could be an jpg/png image or a media file with embedded
+ * artwork)
  * @return 0 if successful, -1 if an error occurred
  */
 static enum command_state
@@ -1461,7 +1449,8 @@ cache_artwork_purge_cruft_impl(void *arg, int *retval)
  * @param cmdarg->max_w maximum image width
  * @param cmdarg->max_h maximum image height
  * @param cmdarg->format ART_FMT_PNG for png, ART_FMT_JPEG for jpeg or 0 if no artwork available
- * @param cmdarg->filename the full path to the artwork file (could be an jpg/png image or a media file with embedded artwork) or empty if no artwork available
+ * @param cmdarg->filename the full path to the artwork file (could be an jpg/png image or a media file with embedded
+ * artwork) or empty if no artwork available
  * @param cmdarg->evbuf event buffer containing the (scaled) image
  * @return 0 if successful, -1 if an error occurred
  */
@@ -1475,7 +1464,8 @@ cache_artwork_add_impl(void *arg, int *retval)
   int datalen;
   int ret;
 
-  query = "INSERT INTO artwork (id, persistentid, max_w, max_h, format, filepath, db_timestamp, data, type) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?);";
+  query = "INSERT INTO artwork (id, persistentid, max_w, max_h, format, filepath, db_timestamp, data, type) VALUES "
+          "(NULL, ?, ?, ?, ?, ?, ?, ?, ?);";
 
   ret = sqlite3_prepare_v2(cmdarg->hdl, query, -1, &stmt, 0);
   if (ret != SQLITE_OK)
@@ -1536,7 +1526,9 @@ cache_artwork_add_impl(void *arg, int *retval)
 static enum command_state
 cache_artwork_get_impl(void *arg, int *retval)
 {
-#define Q_TMPL "SELECT a.format, a.data FROM artwork a WHERE a.type = %d AND a.persistentid = %" PRIi64 " AND a.max_w = %d AND a.max_h = %d;"
+#define Q_TMPL                                                                                                         \
+  "SELECT a.format, a.data FROM artwork a WHERE a.type = %d AND a.persistentid = %" PRIi64                             \
+  " AND a.max_w = %d AND a.max_h = %d;"
   struct cache_arg *cmdarg = arg;
   sqlite3_stmt *stmt;
   char *query;
@@ -1610,7 +1602,7 @@ cache_artwork_get_impl(void *arg, int *retval)
   *retval = 0;
   return COMMAND_END;
 
- error_get:
+error_get:
   sqlite3_finalize(stmt);
   sqlite3_free(query);
 
@@ -1678,7 +1670,8 @@ cache_artwork_read_impl(void *arg, int *retval)
 
   cmdarg->format = cache_stash.format;
 
-  DPRINTF(E_DBG, L_CACHE, "Stash hit (format %d, size %zu): %s\n", cache_stash.format, cache_stash.size, cache_stash.path);
+  DPRINTF(
+      E_DBG, L_CACHE, "Stash hit (format %d, size %zu): %s\n", cache_stash.format, cache_stash.size, cache_stash.path);
 
   *retval = evbuffer_add(cmdarg->evbuf, cache_stash.data, cache_stash.size);
   return COMMAND_END;
@@ -1713,7 +1706,8 @@ cache(void *arg)
   CHECK_NULL(L_CACHE, cache_xcode_prepareev = evtimer_new(evbase_cache, cache_xcode_prepare_cb, NULL));
   CHECK_ERR(L_CACHE, event_priority_set(cache_xcode_prepareev, 0));
   for (i = 0; i < ARRAY_SIZE(cache_xcode_jobs); i++)
-    CHECK_NULL(L_CACHE, cache_xcode_jobs[i].ev = evtimer_new(evbase_cache, cache_xcode_job_complete_cb, &cache_xcode_jobs[i]));
+    CHECK_NULL(
+        L_CACHE, cache_xcode_jobs[i].ev = evtimer_new(evbase_cache, cache_xcode_job_complete_cb, &cache_xcode_jobs[i]));
 
   CHECK_ERR(L_CACHE, listener_add(cache_daap_listener_cb, LISTENER_DATABASE));
 
@@ -1741,7 +1735,6 @@ cache(void *arg)
 
   pthread_exit(NULL);
 }
-
 
 /* ----------------------------- DAAP cache API  ---------------------------- */
 
@@ -1809,7 +1802,6 @@ cache_daap_threshold_get(void)
   return cache_daap_threshold;
 }
 
-
 /* --------------------------- Transcode cache API  ------------------------- */
 
 int
@@ -1842,7 +1834,6 @@ cache_xcode_toggle(bool enable)
   return commands_exec_sync(cmdbase, xcode_toggle, NULL, &enable);
 }
 
-
 /* ---------------------------- Artwork cache API  -------------------------- */
 
 /*
@@ -1854,7 +1845,8 @@ cache_xcode_toggle(bool enable)
  *
  * @param path the full path to the artwork file (could be an jpg/png image or a media file with embedded artwork)
  * @param mtime modified timestamp of the artwork file
- * @param del if > 0 cached entries for the given path are deleted if the cached timestamp (db_timestamp) is older than mtime
+ * @param del if > 0 cached entries for the given path are deleted if the cached timestamp (db_timestamp) is older than
+ * mtime
  * @return 0 if successful, -1 if an error occurred
  */
 void
@@ -1928,12 +1920,14 @@ cache_artwork_purge_cruft(time_t ref)
  * @param max_w maximum image width
  * @param max_h maximum image height
  * @param format ART_FMT_PNG for png, ART_FMT_JPEG for jpeg or 0 if no artwork available
- * @param filename the full path to the artwork file (could be an jpg/png image or a media file with embedded artwork) or empty if no artwork available
+ * @param filename the full path to the artwork file (could be an jpg/png image or a media file with embedded artwork)
+ * or empty if no artwork available
  * @param evbuf event buffer containing the (scaled) image
  * @return 0 if successful, -1 if an error occurred
  */
 int
-cache_artwork_add(int type, int64_t persistentid, int max_w, int max_h, int format, char *filename, struct evbuffer *evbuf)
+cache_artwork_add(
+    int type, int64_t persistentid, int max_w, int max_h, int format, char *filename, struct evbuffer *evbuf)
 {
   struct cache_arg cmdarg;
 
@@ -1967,7 +1961,8 @@ cache_artwork_add(int type, int64_t persistentid, int max_w, int max_h, int form
  * @return 0 if successful, -1 if an error occurred
  */
 int
-cache_artwork_get(int type, int64_t persistentid, int max_w, int max_h, int *cached, int *format, struct evbuffer *evbuf)
+cache_artwork_get(
+    int type, int64_t persistentid, int max_w, int max_h, int *cached, int *format, struct evbuffer *evbuf)
 {
   struct cache_arg cmdarg;
   int ret;
@@ -2043,7 +2038,6 @@ cache_artwork_read(struct evbuffer *evbuf, const char *path, int *format)
 
   return ret;
 }
-
 
 /* --------------------------- Cache general API ---------------------------- */
 

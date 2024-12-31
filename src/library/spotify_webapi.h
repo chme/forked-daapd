@@ -25,9 +25,7 @@
 
 #include "http.h"
 
-
-struct spotifywebapi_status_info
-{
+struct spotifywebapi_status_info {
   bool token_valid;
   char user[100];
   char country[3]; // ISO 3166-1 alpha-2 country code
@@ -35,12 +33,10 @@ struct spotifywebapi_status_info
   char required_scope[250];
 };
 
-struct spotifywebapi_access_token
-{
+struct spotifywebapi_access_token {
   int expires_in;
   char *token;
 };
-
 
 char *
 spotifywebapi_oauth_uri_get(const char *redirect_uri);

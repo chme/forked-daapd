@@ -16,18 +16,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <errno.h>
+#include <fcntl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <sys/types.h>
-#include <stdint.h>
+#include <unistd.h>
 
 #include <gcrypt.h>
 
 #include "rng.h"
-
 
 /* Park & Miller Minimal Standard PRNG
  * w/ Bays-Durham shuffle

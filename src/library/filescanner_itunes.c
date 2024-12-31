@@ -17,36 +17,35 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <sys/mman.h>
 
-#include <stdint.h>
 #include <inttypes.h>
+#include <stdint.h>
 
 #include <plist/plist.h>
 
 #include <event2/http.h>
 
-#include "logger.h"
+#include "conffile.h"
 #include "db.h"
 #include "library.h"
 #include "library/filescanner.h"
-#include "conffile.h"
+#include "logger.h"
 #include "misc.h"
-
 
 /* Mapping between iTunes library IDs and our DB IDs using a "hash" table of
  * size ID_MAP_SIZE
@@ -69,69 +68,68 @@ struct metadata_map {
 /* Example iTunes XML dict
  * TODO Skip Count and Skip Date
  *
-	<dict>
-		<key>Track ID</key><integer>615</integer>
-		<key>Size</key><integer>7602660</integer>
-		<key>Total Time</key><integer>317178</integer>
-		<key>Track Number</key><integer>4</integer>
-		<key>Year</key><integer>1975</integer>
-		<key>BPM</key><integer>122</integer>
-		<key>Date Modified</key><date>2016-08-09T15:07:35Z</date>
-		<key>Date Added</key><date>2009-03-27T15:37:39Z</date>
-		<key>Bit Rate</key><integer>192</integer>
-		<key>Sample Rate</key><integer>44100</integer>
-		<key>Volume Adjustment</key><integer>255</integer>
-		<key>Play Count</key><integer>94</integer>
-		<key>Play Date</key><integer>3598042339</integer>
-		<key>Play Date UTC</key><date>2018-01-06T05:12:19Z</date>
-		<key>Skip Count</key><integer>17</integer>
-		<key>Skip Date</key><date>2018-02-28T22:17:40Z</date>
-		<key>Rating</key><integer>80</integer>
-		<key>Album Rating</key><integer>60</integer>
-		<key>Persistent ID</key><string>735C22B6342B6B74</string>
-		<key>Track Type</key><string>File</string>
-		<key>File Folder Count</key><integer>-1</integer>
-		<key>Library Folder Count</key><integer>-1</integer>
-		<key>Name</key><string>Wish You Were Here</string>
-		<key>Artist</key><string>Pink Floyd</string>
-		<key>Album Artist</key><string>Pink Floyd</string>
-		<key>Composer</key><string>David Gilmour/Roger Waters</string>
-		<key>Album</key><string>Wish You Were Here</string>
-		<key>Genre</key><string>Classic Rock</string>
-		<key>Kind</key><string>MPEG audio file</string>
-		<key>Equalizer</key><string>#!#116#!#</string>
-		<key>Equalizer</key><string>Rock</string>
-		<key>Sort Album</key><string>Wish You Were Here</string>
-		<key>Location</key><string>file://localhost/E:/Music/Pink%20Floyd/Wish%20You%20Were%20Here/04%20Wish%20You%20Were%20Here.mp3</string>
-	</dict>
+        <dict>
+                <key>Track ID</key><integer>615</integer>
+                <key>Size</key><integer>7602660</integer>
+                <key>Total Time</key><integer>317178</integer>
+                <key>Track Number</key><integer>4</integer>
+                <key>Year</key><integer>1975</integer>
+                <key>BPM</key><integer>122</integer>
+                <key>Date Modified</key><date>2016-08-09T15:07:35Z</date>
+                <key>Date Added</key><date>2009-03-27T15:37:39Z</date>
+                <key>Bit Rate</key><integer>192</integer>
+                <key>Sample Rate</key><integer>44100</integer>
+                <key>Volume Adjustment</key><integer>255</integer>
+                <key>Play Count</key><integer>94</integer>
+                <key>Play Date</key><integer>3598042339</integer>
+                <key>Play Date UTC</key><date>2018-01-06T05:12:19Z</date>
+                <key>Skip Count</key><integer>17</integer>
+                <key>Skip Date</key><date>2018-02-28T22:17:40Z</date>
+                <key>Rating</key><integer>80</integer>
+                <key>Album Rating</key><integer>60</integer>
+                <key>Persistent ID</key><string>735C22B6342B6B74</string>
+                <key>Track Type</key><string>File</string>
+                <key>File Folder Count</key><integer>-1</integer>
+                <key>Library Folder Count</key><integer>-1</integer>
+                <key>Name</key><string>Wish You Were Here</string>
+                <key>Artist</key><string>Pink Floyd</string>
+                <key>Album Artist</key><string>Pink Floyd</string>
+                <key>Composer</key><string>David Gilmour/Roger Waters</string>
+                <key>Album</key><string>Wish You Were Here</string>
+                <key>Genre</key><string>Classic Rock</string>
+                <key>Kind</key><string>MPEG audio file</string>
+                <key>Equalizer</key><string>#!#116#!#</string>
+                <key>Equalizer</key><string>Rock</string>
+                <key>Sort Album</key><string>Wish You Were Here</string>
+                <key>Location</key><string>file://localhost/E:/Music/Pink%20Floyd/Wish%20You%20Were%20Here/04%20Wish%20You%20Were%20Here.mp3</string>
+        </dict>
  */
-static struct metadata_map md_map[] =
-  {
-    { "Name",         PLIST_STRING,  mfi_offsetof(title) },
-    { "Artist",       PLIST_STRING,  mfi_offsetof(artist) },
-    { "Album Artist", PLIST_STRING,  mfi_offsetof(album_artist) },
-    { "Composer",     PLIST_STRING,  mfi_offsetof(composer) },
-    { "Album",        PLIST_STRING,  mfi_offsetof(album) },
-    { "Genre",        PLIST_STRING,  mfi_offsetof(genre) },
-    { "Comments",     PLIST_STRING,  mfi_offsetof(comment) },
-    { "Track Count",  PLIST_UINT,    mfi_offsetof(total_tracks) },
-    { "Track Number", PLIST_UINT,    mfi_offsetof(track) },
-    { "Disc Count",   PLIST_UINT,    mfi_offsetof(total_discs) },
-    { "Disc Number",  PLIST_UINT,    mfi_offsetof(disc) },
-    { "Year",         PLIST_UINT,    mfi_offsetof(year) },
-    { "Total Time",   PLIST_UINT,    mfi_offsetof(song_length) },
-    { "Bit Rate",     PLIST_UINT,    mfi_offsetof(bitrate) },
-    { "Sample Rate",  PLIST_UINT,    mfi_offsetof(samplerate) },
-    { "BPM",          PLIST_UINT,    mfi_offsetof(bpm) },
-    { "Rating",       PLIST_UINT,    mfi_offsetof(rating) },
-    { "Compilation",  PLIST_BOOLEAN, mfi_offsetof(compilation) },
-    { "Date Added",   PLIST_DATE,    mfi_offsetof(time_added) },
-    { "Play Date UTC",PLIST_DATE,    mfi_offsetof(time_played) },
-    { "Play Count",   PLIST_UINT,    mfi_offsetof(play_count) },
-    { "Skip Count",   PLIST_UINT,    mfi_offsetof(skip_count) },
-    { "Skip Date",    PLIST_DATE,    mfi_offsetof(time_skipped) },
-    { NULL,           0, 0 }
-  };
+static struct metadata_map md_map[] = {
+  { "Name",          PLIST_STRING,  mfi_offsetof(title)        },
+  { "Artist",        PLIST_STRING,  mfi_offsetof(artist)       },
+  { "Album Artist",  PLIST_STRING,  mfi_offsetof(album_artist) },
+  { "Composer",      PLIST_STRING,  mfi_offsetof(composer)     },
+  { "Album",         PLIST_STRING,  mfi_offsetof(album)        },
+  { "Genre",         PLIST_STRING,  mfi_offsetof(genre)        },
+  { "Comments",      PLIST_STRING,  mfi_offsetof(comment)      },
+  { "Track Count",   PLIST_UINT,    mfi_offsetof(total_tracks) },
+  { "Track Number",  PLIST_UINT,    mfi_offsetof(track)        },
+  { "Disc Count",    PLIST_UINT,    mfi_offsetof(total_discs)  },
+  { "Disc Number",   PLIST_UINT,    mfi_offsetof(disc)         },
+  { "Year",          PLIST_UINT,    mfi_offsetof(year)         },
+  { "Total Time",    PLIST_UINT,    mfi_offsetof(song_length)  },
+  { "Bit Rate",      PLIST_UINT,    mfi_offsetof(bitrate)      },
+  { "Sample Rate",   PLIST_UINT,    mfi_offsetof(samplerate)   },
+  { "BPM",           PLIST_UINT,    mfi_offsetof(bpm)          },
+  { "Rating",        PLIST_UINT,    mfi_offsetof(rating)       },
+  { "Compilation",   PLIST_BOOLEAN, mfi_offsetof(compilation)  },
+  { "Date Added",    PLIST_DATE,    mfi_offsetof(time_added)   },
+  { "Play Date UTC", PLIST_DATE,    mfi_offsetof(time_played)  },
+  { "Play Count",    PLIST_UINT,    mfi_offsetof(play_count)   },
+  { "Skip Count",    PLIST_UINT,    mfi_offsetof(skip_count)   },
+  { "Skip Date",     PLIST_DATE,    mfi_offsetof(time_skipped) },
+  { NULL,            0,             0                          }
+};
 
 static void
 id_map_free(struct itml_to_db_map **id_map)
@@ -234,7 +232,7 @@ get_dictval_date_from_key(plist_t dict, const char *key, uint32_t *val)
   plist_get_date_val(node, &secs, &dummy);
 
   // make it a Unix Timestamp by adding seconds from 1/1/1970 to 1/1/2001
-  *val = (uint32_t) (secs + 978307200);
+  *val = (uint32_t)(secs + 978307200);
 
   return 0;
 }
@@ -316,7 +314,6 @@ get_dictval_array_from_key(plist_t dict, const char *key, plist_t *val)
   return 0;
 }
 
-
 /* We don't actually check anything (yet) despite the name */
 static int
 check_meta(plist_t dict)
@@ -346,8 +343,8 @@ check_meta(plist_t dict)
       return -1;
     }
 
-  DPRINTF(E_INFO, L_SCAN, "iTunes XML playlist Major:%" PRIu64 " Minor:%" PRIu64
-	  " Application:%s Folder:%s\n", major, minor, appver, folder);
+  DPRINTF(E_INFO, L_SCAN, "iTunes XML playlist Major:%" PRIu64 " Minor:%" PRIu64 " Application:%s Folder:%s\n", major,
+      minor, appver, folder);
 
   free(appver);
   free(folder);
@@ -399,7 +396,8 @@ mfi_id_find(const char *path)
 	  break;
 	}
 
-      for (i = 0, a = NULL, b = NULL; (parent_dir(&a, path) == 0) && (parent_dir(&b, dbpath) == 0) && (strcasecmp(a, b) == 0); i++)
+      for (i = 0, a = NULL, b = NULL;
+           (parent_dir(&a, path) == 0) && (parent_dir(&b, dbpath) == 0) && (strcasecmp(a, b) == 0); i++)
 	;
 
       DPRINTF(E_SPAM, L_SCAN, "Comparison of '%s' and '%s' gave score %d\n", dbpath, path, i);
@@ -491,53 +489,53 @@ process_track_file(plist_t trk)
     {
       switch (md_map[i].type)
 	{
-	  case PLIST_UINT:
-	    ret = get_dictval_int_from_key(trk, md_map[i].key, &integer);
-	    if (ret < 0)
-	      break;
-
-	    intval = (uint32_t *) ((char *) mfi + md_map[i].offset);
-
-	    *intval = (uint32_t)integer;
+	case PLIST_UINT:
+	  ret = get_dictval_int_from_key(trk, md_map[i].key, &integer);
+	  if (ret < 0)
 	    break;
 
-	  case PLIST_STRING:
-	    ret = get_dictval_string_from_key(trk, md_map[i].key, &string);
-	    if (ret < 0)
-	      break;
+	  intval = (uint32_t *)((char *)mfi + md_map[i].offset);
 
-	    strval = (char **) ((char *) mfi + md_map[i].offset);
+	  *intval = (uint32_t)integer;
+	  break;
 
-	    if (*strval)
-	      free(*strval);
-
-	    *strval = string;
+	case PLIST_STRING:
+	  ret = get_dictval_string_from_key(trk, md_map[i].key, &string);
+	  if (ret < 0)
 	    break;
 
-	  case PLIST_BOOLEAN:
-	    ret = get_dictval_bool_from_key(trk, md_map[i].key, &boolean);
-	    if (ret < 0)
-	      break;
+	  strval = (char **)((char *)mfi + md_map[i].offset);
 
-	    chrval = (char *) mfi + md_map[i].offset;
+	  if (*strval)
+	    free(*strval);
 
-	    *chrval = boolean;
+	  *strval = string;
+	  break;
+
+	case PLIST_BOOLEAN:
+	  ret = get_dictval_bool_from_key(trk, md_map[i].key, &boolean);
+	  if (ret < 0)
 	    break;
 
-	  case PLIST_DATE:
-	    intval = (uint32_t *) ((char *) mfi + md_map[i].offset);
+	  chrval = (char *)mfi + md_map[i].offset;
 
-	    get_dictval_date_from_key(trk, md_map[i].key, intval);
-	    break;
+	  *chrval = boolean;
+	  break;
 
-	  default:
-	    DPRINTF(E_WARN, L_SCAN, "Unhandled metadata type %d\n", md_map[i].type);
-	    break;
+	case PLIST_DATE:
+	  intval = (uint32_t *)((char *)mfi + md_map[i].offset);
+
+	  get_dictval_date_from_key(trk, md_map[i].key, intval);
+	  break;
+
+	default:
+	  DPRINTF(E_WARN, L_SCAN, "Unhandled metadata type %d\n", md_map[i].type);
+	  break;
 	}
     }
 
   /* Set media_kind to 4 (Podcast) if Podcast is true */
-  ret = get_dictval_bool_from_key(trk, "Podcast", &boolean); 
+  ret = get_dictval_bool_from_key(trk, "Podcast", &boolean);
   if ((ret == 0) && boolean)
     {
       mfi->media_kind = MEDIA_KIND_PODCAST;
@@ -1022,7 +1020,7 @@ scan_itunes_itml(const char *path, time_t mtime, int dir_id)
 
   return;
 
- error:
+error:
   if (fd >= 0)
     close(fd);
   if (itml)

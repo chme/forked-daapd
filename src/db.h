@@ -2,19 +2,14 @@
 #ifndef __DB_H__
 #define __DB_H__
 
-#include <time.h>
+#include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <limits.h>
+#include <time.h>
 
 #include "outputs.h"
 
-enum index_type {
-  I_NONE,
-  I_FIRST,
-  I_LAST,
-  I_SUB
-};
+enum index_type { I_NONE, I_FIRST, I_LAST, I_SUB };
 
 // Keep in sync with sort_clause[]
 enum sort_type {
@@ -37,31 +32,31 @@ enum sort_type {
 #define Q_F_BROWSE (1 << 15)
 
 enum query_type {
-  Q_ITEMS            = 1,
-  Q_PL               = 2,
-  Q_FIND_PL          = 3,
-  Q_PLITEMS          = 4,
-  Q_GROUP_ALBUMS     = 5,
-  Q_GROUP_ARTISTS    = 6,
-  Q_GROUP_ITEMS      = 7,
-  Q_GROUP_DIRS       = 8,
-  Q_COUNT_ITEMS      = 9,
+  Q_ITEMS = 1,
+  Q_PL = 2,
+  Q_FIND_PL = 3,
+  Q_PLITEMS = 4,
+  Q_GROUP_ALBUMS = 5,
+  Q_GROUP_ARTISTS = 6,
+  Q_GROUP_ITEMS = 7,
+  Q_GROUP_DIRS = 8,
+  Q_COUNT_ITEMS = 9,
 
   // Keep in sync with browse_clause[]
-  Q_BROWSE_ARTISTS   = Q_F_BROWSE | 1,
-  Q_BROWSE_ALBUMS    = Q_F_BROWSE | 2,
-  Q_BROWSE_GENRES    = Q_F_BROWSE | 3,
+  Q_BROWSE_ARTISTS = Q_F_BROWSE | 1,
+  Q_BROWSE_ALBUMS = Q_F_BROWSE | 2,
+  Q_BROWSE_GENRES = Q_F_BROWSE | 3,
   Q_BROWSE_COMPOSERS = Q_F_BROWSE | 4,
-  Q_BROWSE_YEARS     = Q_F_BROWSE | 5,
-  Q_BROWSE_DISCS     = Q_F_BROWSE | 6,
-  Q_BROWSE_TRACKS    = Q_F_BROWSE | 7,
-  Q_BROWSE_VPATH     = Q_F_BROWSE | 8,
-  Q_BROWSE_PATH      = Q_F_BROWSE | 9,
+  Q_BROWSE_YEARS = Q_F_BROWSE | 5,
+  Q_BROWSE_DISCS = Q_F_BROWSE | 6,
+  Q_BROWSE_TRACKS = Q_F_BROWSE | 7,
+  Q_BROWSE_VPATH = Q_F_BROWSE | 8,
+  Q_BROWSE_PATH = Q_F_BROWSE | 9,
 };
 
-#define ARTWORK_UNKNOWN   0
-#define ARTWORK_NONE      1
-#define ARTWORK_EMBEDDED  2
+#define ARTWORK_UNKNOWN 0
+#define ARTWORK_NONE 1
+#define ARTWORK_EMBEDDED 2
 
 #define DB_ADMIN_SCHEMA_VERSION_MAJOR "schema_version_major"
 #define DB_ADMIN_SCHEMA_VERSION_MINOR "schema_version_minor"
@@ -156,12 +151,11 @@ db_scan_kind_enum(const char *label);
 
 /* Indicates user marked status on a track  - values can be bitwise enumerated */
 enum usermark {
-  USERMARK_NA  = 0,
+  USERMARK_NA = 0,
   USERMARK_DELETE = 1,
   USERMARK_REXCODE = 2,
   USERMARK_REVIEW = 4,
 };
-
 
 /* Note that fields marked as integers in the metadata map in filescanner_ffmpeg must be uint32_t here */
 struct media_file_info {
@@ -177,12 +171,12 @@ struct media_file_info {
   char *album_artist;
   char *genre;
   char *comment;
-  char *type;            /* daap.songformat */
+  char *type; /* daap.songformat */
   char *composer;
   char *orchestra;
   char *conductor;
   char *grouping;
-  char *url;             /* daap.songdataurl (asul) */
+  char *url; /* daap.songdataurl (asul) */
 
   uint32_t bitrate;
   uint32_t samplerate;
@@ -190,15 +184,15 @@ struct media_file_info {
   uint32_t song_length;
   int64_t file_size;
   uint32_t year;         /* TDRC */
-  int64_t date_released;  // bumped to (signed) int64 since all 32bits are unsigned
+  int64_t date_released; // bumped to (signed) int64 since all 32bits are unsigned
 
-  uint32_t track;        /* TRCK */
+  uint32_t track; /* TRCK */
   uint32_t total_tracks;
 
-  uint32_t disc;         /* TPOS */
+  uint32_t disc; /* TPOS */
   uint32_t total_discs;
 
-  uint32_t bpm;          /* TBPM */
+  uint32_t bpm; /* TBPM */
   uint32_t compilation;
   uint32_t artwork;
   uint32_t rating;
@@ -207,11 +201,11 @@ struct media_file_info {
   uint32_t skip_count;
   uint32_t seek;
 
-  uint32_t data_kind;    /* dmap.datakind (asdk) */
+  uint32_t data_kind; /* dmap.datakind (asdk) */
   uint32_t media_kind;
-  uint32_t item_kind;    /* song or movie */
+  uint32_t item_kind; /* song or movie */
 
-  char *description;     /* daap.songdescription */
+  char *description; /* daap.songdescription */
 
   uint32_t db_timestamp;
   uint32_t time_added;
@@ -219,16 +213,16 @@ struct media_file_info {
   uint32_t time_played;
   uint32_t time_skipped;
 
-  int64_t disabled;      // Long because it stores up to INOTIFY_FAKE_COOKIE
-  uint32_t usermark;     // See enum user_mark { }
+  int64_t disabled;  // Long because it stores up to INOTIFY_FAKE_COOKIE
+  uint32_t usermark; // See enum user_mark { }
 
-  uint64_t sample_count; //TODO [unused] sample count is never set and therefor always 0
+  uint64_t sample_count; // TODO [unused] sample count is never set and therefor always 0
   char *codectype;       /* song.codectype, 4 chars max (32 bits) */
 
   uint32_t idx;
 
-  uint32_t has_video;    /* iTunes 6.0.2 */
-  uint32_t contentrating;/* iTunes 5+ */
+  uint32_t has_video;     /* iTunes 6.0.2 */
+  uint32_t contentrating; /* iTunes 5+ */
 
   uint32_t bits_per_sample;
 
@@ -260,7 +254,7 @@ enum pl_type {
   PL_FOLDER = 1,
   PL_SMART = 2,
   PL_PLAIN = 3,
-  PL_RSS  = 4,
+  PL_RSS = 4,
   PL_MAX,
 };
 
@@ -283,10 +277,10 @@ struct playlist_info {
   char *query_order;     /* order by clause, used by e.g. a smart playlists */
   uint32_t query_limit;  /* limit, used by e.g. smart playlists */
   uint32_t media_kind;
-  char *artwork_url;     /* optional artwork */
+  char *artwork_url;  /* optional artwork */
   uint32_t scan_kind; /* Identifies the library_source that created/updates this item */
-  uint32_t items;        /* number of items (mimc) */
-  uint32_t streams;      /* number of internet streams */
+  uint32_t items;     /* number of items (mimc) */
+  uint32_t streams;   /* number of internet streams */
 };
 
 #define pli_offsetof(field) offsetof(struct playlist_info, field)
@@ -316,14 +310,14 @@ struct db_playlist_info {
 #define dbpli_offsetof(field) offsetof(struct db_playlist_info, field)
 
 struct group_info {
-  uint32_t id;           /* integer id (miid) */
-  uint64_t persistentid; /* ulonglong id (mper) */
-  char *itemname;        /* album or album_artist (minm) */
-  char *itemname_sort;   /* album_sort or album_artist_sort (~mshc) */
-  uint32_t itemcount;    /* number of items (mimc) */
+  uint32_t id;              /* integer id (miid) */
+  uint64_t persistentid;    /* ulonglong id (mper) */
+  char *itemname;           /* album or album_artist (minm) */
+  char *itemname_sort;      /* album_sort or album_artist_sort (~mshc) */
+  uint32_t itemcount;       /* number of items (mimc) */
   uint32_t groupalbumcount; /* number of albums (agac) */
-  char *songalbumartist; /* song album artist (asaa) */
-  uint64_t songartistid; /* song artist id (asri) */
+  char *songalbumartist;    /* song album artist (asaa) */
+  uint64_t songartistid;    /* song artist id (asri) */
   uint32_t song_length;
   uint32_t data_kind;
   uint32_t media_kind;
@@ -480,13 +474,7 @@ struct filecount_info {
 };
 
 /* Directory ids must be in sync with the ids in Q_DIR* in db_init.c */
-enum directory_ids {
-  DIR_ROOT = 1,
-  DIR_FILE = 2,
-  DIR_HTTP = 3,
-  DIR_SPOTIFY = 4,
-  DIR_MAX
-};
+enum directory_ids { DIR_ROOT = 1, DIR_FILE = 2, DIR_HTTP = 3, DIR_SPOTIFY = 4, DIR_MAX };
 
 struct directory_info {
   uint32_t id;
@@ -563,8 +551,7 @@ struct db_queue_item {
 
 #define qi_offsetof(field) offsetof(struct db_queue_item, field)
 
-struct db_queue_add_info
-{
+struct db_queue_add_info {
   int queue_version;
   int start_pos;
   int pos;
@@ -801,7 +788,6 @@ db_groups_cleanup();
 int
 db_group_persistentid_byid(int id, int64_t *persistentid);
 
-
 /* Directories */
 int
 db_directory_id_byvirtualpath(const char *virtual_path);
@@ -896,7 +882,8 @@ int
 db_queue_add_by_queryafteritemid(struct query_params *qp, uint32_t item_id);
 
 int
-db_queue_add_by_query(struct query_params *qp, char reshuffle, uint32_t item_id, int position, int *count, int *new_item_id);
+db_queue_add_by_query(
+    struct query_params *qp, char reshuffle, uint32_t item_id, int position, int *count, int *new_item_id);
 
 int
 db_queue_add_start(struct db_queue_add_info *queue_add_info, int pos);

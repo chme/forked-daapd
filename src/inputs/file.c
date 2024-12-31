@@ -16,17 +16,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdint.h>
 
 #include <event2/buffer.h>
 
-#include "transcode.h"
-#include "misc.h"
-#include "logger.h"
 #include "input.h"
+#include "logger.h"
+#include "misc.h"
+#include "transcode.h"
 
 /*---------------------------- Input implementation --------------------------*/
 
@@ -36,8 +36,11 @@
 static int
 setup(struct input_source *source)
 {
-  struct transcode_decode_setup_args decode_args = { .profile = XCODE_PCM_NATIVE, .path = source->path, .len_ms = source->len_ms };
-  struct transcode_encode_setup_args encode_args = { .profile = XCODE_PCM_NATIVE, };
+  struct transcode_decode_setup_args decode_args
+      = { .profile = XCODE_PCM_NATIVE, .path = source->path, .len_ms = source->len_ms };
+  struct transcode_encode_setup_args encode_args = {
+    .profile = XCODE_PCM_NATIVE,
+  };
   struct transcode_ctx *ctx;
 
   ctx = transcode_setup(decode_args, encode_args);
@@ -104,8 +107,7 @@ seek(struct input_source *source, int seek_ms)
   return transcode_seek(source->input_ctx, seek_ms);
 }
 
-struct input_definition input_file =
-{
+struct input_definition input_file = {
   .name = "file",
   .type = INPUT_TYPE_FILE,
   .disabled = 0,

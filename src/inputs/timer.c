@@ -16,17 +16,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <event2/buffer.h>
 
-#include "misc.h"
-#include "logger.h"
 #include "input.h"
+#include "logger.h"
+#include "misc.h"
 
 #define TIMER_NOISE_INTERVAL 5
 #define TIMER_METADATA_INTERVAL 30
@@ -35,8 +35,7 @@
 #define TIMER_CHANNELS 2
 #define TIMER_BUFSIZE (STOB(TIMER_SAMPLE_RATE, TIMER_BPS, TIMER_CHANNELS) / 20)
 
-struct timer_ctx
-{
+struct timer_ctx {
   uint8_t silence[TIMER_BUFSIZE];
   uint8_t noise[TIMER_BUFSIZE];
   uint64_t pos;
@@ -114,8 +113,7 @@ metadata_get(struct input_metadata *metadata, struct input_source *source)
   return 0;
 }
 
-struct input_definition input_timer =
-{
+struct input_definition input_timer = {
   .name = "timer",
   .type = INPUT_TYPE_TIMER,
   .disabled = 0,
@@ -124,4 +122,3 @@ struct input_definition input_timer =
   .stop = stop,
   .metadata_get = metadata_get,
 };
-

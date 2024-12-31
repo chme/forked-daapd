@@ -2,40 +2,39 @@
 #ifndef __HTTPD_INTERNAL_H__
 #define __HTTPD_INTERNAL_H__
 
+#include <event2/event.h>
 #include <stdbool.h>
 #include <time.h>
-#include <event2/event.h>
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 /* Response codes from event2/http.h */
-#define HTTP_CONTINUE          100	/**< client should proceed to send */
-#define HTTP_SWITCH_PROTOCOLS  101	/**< switching to another protocol */
-#define HTTP_PROCESSING        102	/**< processing the request, but no response is available yet */
-#define HTTP_EARLYHINTS        103	/**< return some response headers */
-#define HTTP_OK                200	/**< request completed ok */
-#define HTTP_CREATED           201	/**< new resource is created */
-#define HTTP_ACCEPTED          202	/**< accepted for processing */
-#define HTTP_NONAUTHORITATIVE  203	/**< returning a modified version of the origin's response */
-#define HTTP_NOCONTENT         204	/**< request does not have content */
-#define HTTP_MOVEPERM          301	/**< the uri moved permanently */
-#define HTTP_MOVETEMP          302	/**< the uri moved temporarily */
-#define HTTP_NOTMODIFIED       304	/**< page was not modified from last */
-#define HTTP_BADREQUEST        400	/**< invalid http request was made */
-#define HTTP_UNAUTHORIZED      401	/**< authentication is required */
-#define HTTP_PAYMENTREQUIRED   402	/**< user exceeded limit on requests */
-#define HTTP_FORBIDDEN         403	/**< user not having the necessary permissions */
-#define HTTP_NOTFOUND          404	/**< could not find content for uri */
-#define HTTP_BADMETHOD         405 	/**< method not allowed for this uri */
-#define HTTP_ENTITYTOOLARGE    413	/**< request is larger than the server is able to process */
-#define HTTP_EXPECTATIONFAILED 417	/**< we can't handle this expectation */
-#define HTTP_INTERNAL          500     /**< internal error */
-#define HTTP_NOTIMPLEMENTED    501     /**< not implemented */
-#define HTTP_BADGATEWAY        502	/**< received an invalid response from the upstream */
-#define HTTP_SERVUNAVAIL       503	/**< the server is not available */
-
+#define HTTP_CONTINUE 100          /**< client should proceed to send */
+#define HTTP_SWITCH_PROTOCOLS 101  /**< switching to another protocol */
+#define HTTP_PROCESSING 102        /**< processing the request, but no response is available yet */
+#define HTTP_EARLYHINTS 103        /**< return some response headers */
+#define HTTP_OK 200                /**< request completed ok */
+#define HTTP_CREATED 201           /**< new resource is created */
+#define HTTP_ACCEPTED 202          /**< accepted for processing */
+#define HTTP_NONAUTHORITATIVE 203  /**< returning a modified version of the origin's response */
+#define HTTP_NOCONTENT 204         /**< request does not have content */
+#define HTTP_MOVEPERM 301          /**< the uri moved permanently */
+#define HTTP_MOVETEMP 302          /**< the uri moved temporarily */
+#define HTTP_NOTMODIFIED 304       /**< page was not modified from last */
+#define HTTP_BADREQUEST 400        /**< invalid http request was made */
+#define HTTP_UNAUTHORIZED 401      /**< authentication is required */
+#define HTTP_PAYMENTREQUIRED 402   /**< user exceeded limit on requests */
+#define HTTP_FORBIDDEN 403         /**< user not having the necessary permissions */
+#define HTTP_NOTFOUND 404          /**< could not find content for uri */
+#define HTTP_BADMETHOD 405         /**< method not allowed for this uri */
+#define HTTP_ENTITYTOOLARGE 413    /**< request is larger than the server is able to process */
+#define HTTP_EXPECTATIONFAILED 417 /**< we can't handle this expectation */
+#define HTTP_INTERNAL 500          /**< internal error */
+#define HTTP_NOTIMPLEMENTED 501    /**< not implemented */
+#define HTTP_BADGATEWAY 502        /**< received an invalid response from the upstream */
+#define HTTP_SERVUNAVAIL 503       /**< the server is not available */
 
 struct httpd_request;
 
@@ -61,39 +60,34 @@ typedef void (*httpd_close_cb)(void *arg);
 typedef void (*httpd_connection_chunkcb)(httpd_connection *conn, void *arg);
 typedef void (*httpd_query_iteratecb)(const char *key, const char *val, void *arg);
 
-enum httpd_methods
-{
-  HTTPD_METHOD_GET     = 1 << 0,
-  HTTPD_METHOD_POST    = 1 << 1,
-  HTTPD_METHOD_HEAD    = 1 << 2,
-  HTTPD_METHOD_PUT     = 1 << 3,
-  HTTPD_METHOD_DELETE  = 1 << 4,
+enum httpd_methods {
+  HTTPD_METHOD_GET = 1 << 0,
+  HTTPD_METHOD_POST = 1 << 1,
+  HTTPD_METHOD_HEAD = 1 << 2,
+  HTTPD_METHOD_PUT = 1 << 3,
+  HTTPD_METHOD_DELETE = 1 << 4,
   HTTPD_METHOD_OPTIONS = 1 << 5,
-  HTTPD_METHOD_TRACE   = 1 << 6,
+  HTTPD_METHOD_TRACE = 1 << 6,
   HTTPD_METHOD_CONNECT = 1 << 7,
-  HTTPD_METHOD_PATCH   = 1 << 8,
+  HTTPD_METHOD_PATCH = 1 << 8,
 };
 
 #define HTTPD_F_REPLY_LAST (1 << 15)
-enum httpd_reply_type
-{
-  HTTPD_REPLY_START    = 1,
-  HTTPD_REPLY_CHUNK    = 2,
-  HTTPD_REPLY_END      = HTTPD_F_REPLY_LAST | 1,
+enum httpd_reply_type {
+  HTTPD_REPLY_START = 1,
+  HTTPD_REPLY_CHUNK = 2,
+  HTTPD_REPLY_END = HTTPD_F_REPLY_LAST | 1,
   HTTPD_REPLY_COMPLETE = HTTPD_F_REPLY_LAST | 2,
 };
 
-enum httpd_send_flags
-{
-  HTTPD_SEND_NO_GZIP =   (1 << 0),
+enum httpd_send_flags {
+  HTTPD_SEND_NO_GZIP = (1 << 0),
 };
-
 
 /*---------------------------------- MODULES ---------------------------------*/
 
 // Must be in sync with modules[] in httpd.c
-enum httpd_modules
-{
+enum httpd_modules {
   MODULE_DACP,
   MODULE_DAAP,
   MODULE_JSONAPI,
@@ -103,16 +97,14 @@ enum httpd_modules
   MODULE_RSP,
 };
 
-enum httpd_handler_flags
-{
+enum httpd_handler_flags {
   // Most requests are pushed to a worker thread, but some handlers deal with
   // requests that must be answered quickly. Can only be used for nonblocking
   // handlers.
   HTTPD_HANDLER_REALTIME = (1 << 0),
 };
 
-struct httpd_module
-{
+struct httpd_module {
   const char *name;
   enum httpd_modules type;
   char initialized;
@@ -133,15 +125,13 @@ struct httpd_module
 /*
  * Maps a regex of the request path to a handler of the request
  */
-struct httpd_uri_map
-{
+struct httpd_uri_map {
   enum httpd_methods method;
   char *regexp;
   int (*handler)(struct httpd_request *hreq);
   void *preg;
   int flags; // See enum httpd_handler_flags
 };
-
 
 /*------------------------------- HTTPD STRUCTS ------------------------------*/
 
@@ -199,7 +189,6 @@ struct httpd_request {
   // A pointer to extra data that the module handling the request might need
   void *extra_data;
 };
-
 
 /*------------------------------ HTTPD FUNCTIONS -----------------------------*/
 
@@ -277,7 +266,6 @@ httpd_request_is_trusted(struct httpd_request *hreq);
 int
 httpd_basic_auth(struct httpd_request *hreq, const char *user, const char *passwd, const char *realm);
 
-
 /*-------------------------- WRAPPERS FOR EVHTTP -----------------------------*/
 
 const char *
@@ -319,13 +307,11 @@ httpd_server_new(struct event_base *evbase, unsigned short port, httpd_request_c
 void
 httpd_server_allow_origin_set(httpd_server *server, bool allow);
 
-
 /*----------------- Only called by httpd.c to send raw replies ---------------*/
 
 void
 httpd_send(struct httpd_request *hreq, enum httpd_reply_type type, int code, const char *reason,
-           httpd_connection_chunkcb cb, void *cbarg);
-
+    httpd_connection_chunkcb cb, void *cbarg);
 
 /*---------- Only called by httpd.c to populate struct httpd_request ---------*/
 

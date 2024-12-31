@@ -15,35 +15,34 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdio.h>
+#include <errno.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <inttypes.h>
-#include <errno.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
-#include <pthread.h>
-#include <event2/event.h>
 #include <event2/buffer.h>
+#include <event2/event.h>
 #include <plist/plist.h>
+#include <pthread.h>
 
 #include "airplay_events.h"
 #include "commands.h"
-#include "misc.h"
 #include "logger.h"
-#include "player.h"
+#include "misc.h"
 #include "pair_ap/pair.h"
+#include "player.h"
 
 #define RTSP_VERSION "RTSP/1.0"
 
-enum airplay_events
-{
+enum airplay_events {
   AIRPLAY_EVENT_UNKNOWN,
   AIRPLAY_EVENT_PLAY,
   AIRPLAY_EVENT_PAUSE,
@@ -51,8 +50,7 @@ enum airplay_events
   AIRPLAY_EVENT_PREV,
 };
 
-struct airplay_events_client
-{
+struct airplay_events_client {
   char *name;
   int fd;
   struct event *listener;
@@ -64,8 +62,7 @@ struct airplay_events_client
   struct airplay_events_client *next;
 };
 
-struct rtsp_message
-{
+struct rtsp_message {
   int content_length;
   char *content_type;
   char *first_line;
@@ -78,7 +75,6 @@ struct rtsp_message
   size_t datalen;
 };
 
-
 static pthread_t thread_id;
 static struct event_base *evbase;
 static struct commands_base *cmdbase;
@@ -87,7 +83,6 @@ static struct airplay_events_client *airplay_events_clients;
 // Forwards
 static void
 incoming_cb(int fd, short what, void *arg);
-
 
 /* ---------------------------- Client handling ----------------------------- */
 
@@ -150,7 +145,8 @@ client_add(const char *name, int fd, const uint8_t *key, size_t key_len)
   client->cipher_ctx = pair_cipher_new(PAIR_CLIENT_HOMEKIT_NORMAL, 1, key, key_len);
   if (!client->cipher_ctx)
     {
-      DPRINTF(E_LOG, L_AIRPLAY, "Could not listen for AirPlay events from '%s': Could not create ciphering context\n", name);
+      DPRINTF(E_LOG, L_AIRPLAY, "Could not listen for AirPlay events from '%s': Could not create ciphering context\n",
+          name);
       goto error;
     }
 
@@ -161,11 +157,10 @@ client_add(const char *name, int fd, const uint8_t *key, size_t key_len)
 
   return 0;
 
- error:
+error:
   client_free(client);
   return -1;
 }
-
 
 /* -------------------------------- Ciphering ------------------------------- */
 
@@ -207,7 +202,6 @@ buffer_encrypt(struct evbuffer *output, uint8_t *in, size_t in_len, struct pair_
   free(out);
   return 0;
 }
-
 
 /* --------------------- Message construction/parsing ----------------------- */
 
@@ -324,13 +318,12 @@ rtsp_parse(enum airplay_events *event, uint8_t *in, size_t in_len)
   plist_free(request);
   return 0;
 
- error:
+error:
   free(type);
   free(value);
   plist_free(request);
   return -1;
 }
-
 
 /* --------------------------- Message handling ----------------------------- */
 
@@ -343,21 +336,21 @@ handle_event(enum airplay_events event)
 
   switch (event)
     {
-      case AIRPLAY_EVENT_PLAY:
-      case AIRPLAY_EVENT_PAUSE:
-	if (status.status == PLAY_PLAYING)
-	  player_playback_pause();
-	else
-	  player_playback_start();
-	break;
-      case AIRPLAY_EVENT_NEXT:
-	player_playback_next();
-	break;
-      case AIRPLAY_EVENT_PREV:
-	player_playback_prev();
-	break;
-      default:
-	return;
+    case AIRPLAY_EVENT_PLAY:
+    case AIRPLAY_EVENT_PAUSE:
+      if (status.status == PLAY_PLAYING)
+	player_playback_pause();
+      else
+	player_playback_start();
+      break;
+    case AIRPLAY_EVENT_NEXT:
+      player_playback_next();
+      break;
+    case AIRPLAY_EVENT_PREV:
+      player_playback_prev();
+      break;
+    default:
+      return;
     }
 }
 
@@ -381,7 +374,8 @@ respond(struct airplay_events_client *client)
   ret = buffer_encrypt(encrypted, plain, plain_len, client->cipher_ctx);
   if (ret < 0)
     {
-      DPRINTF(E_WARN, L_AIRPLAY, "Could not encrypt AirPlay event data response: %s\n", pair_cipher_errmsg(client->cipher_ctx));
+      DPRINTF(E_WARN, L_AIRPLAY, "Could not encrypt AirPlay event data response: %s\n",
+          pair_cipher_errmsg(client->cipher_ctx));
       return -1;
     }
 
@@ -389,14 +383,15 @@ respond(struct airplay_events_client *client)
     {
       ret = evbuffer_write(encrypted, client->fd);
       if (ret <= 0)
-        goto error;
-    } while (evbuffer_get_length(encrypted) > 0);
+	goto error;
+    }
+  while (evbuffer_get_length(encrypted) > 0);
 
   evbuffer_free(encrypted);
   evbuffer_free(response);
   return 0;
 
- error:
+error:
   evbuffer_free(encrypted);
   evbuffer_free(response);
   return -1;
@@ -428,7 +423,8 @@ incoming_cb(int fd, short what, void *arg)
   ret = buffer_decrypt(client->pending, client->incoming, client->cipher_ctx);
   if (ret < 0)
     {
-      DPRINTF(E_WARN, L_AIRPLAY, "Could not decrypt incoming AirPlay event data: %s\n", pair_cipher_errmsg(client->cipher_ctx));
+      DPRINTF(E_WARN, L_AIRPLAY, "Could not decrypt incoming AirPlay event data: %s\n",
+          pair_cipher_errmsg(client->cipher_ctx));
       goto disconnect;
     }
 
@@ -460,7 +456,7 @@ incoming_cb(int fd, short what, void *arg)
 
   return;
 
- disconnect:
+disconnect:
   client_remove(client);
   return;
 }
@@ -474,7 +470,6 @@ airplay_events(void *arg)
 
   pthread_exit(NULL);
 }
-
 
 /* ------------------------------- Interface -------------------------------- */
 
@@ -519,11 +514,11 @@ airplay_events_init(void)
       goto error;
     }
 
-// TODO  thread_name_set(thread_id, "airplay events");
+  // TODO  thread_name_set(thread_id, "airplay events");
 
   return 0;
 
- error:
+error:
   airplay_events_deinit();
   return -1;
 }

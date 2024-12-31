@@ -22,10 +22,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef SRC_MISC_JSON_H_
 #define SRC_MISC_JSON_H_
-
 
 #include <event2/event.h>
 #include <json.h>
@@ -35,7 +33,7 @@
 
 // Convenience macro so that instead of calling jparse with an array of keys
 // to follow, you can call JPARSE_SELECT(haystack, "key1", "key2"...)
-#define JPARSE_SELECT(haystack, ...) jparse_select(haystack, (const char *[]){__VA_ARGS__, NULL})
+#define JPARSE_SELECT(haystack, ...) jparse_select(haystack, (const char *[]){ __VA_ARGS__, NULL })
 
 json_object *
 jparse_select(json_object *haystack, const char *keys[]);

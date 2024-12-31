@@ -17,27 +17,26 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <limits.h>
 #include <sys/param.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <errno.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "logger.h"
 #include "db.h"
+#include "library.h"
+#include "library/filescanner.h"
+#include "logger.h"
 #include "misc.h"
 #include "smartpl_query.h"
-#include "library/filescanner.h"
-#include "library.h"
-
 
 void
 scan_smartpl(const char *file, time_t mtime, int dir_id)
@@ -86,7 +85,7 @@ scan_smartpl(const char *file, time_t mtime, int dir_id)
 
   DPRINTF(E_INFO, L_SCAN, "Added or updated smart playlist '%s' with id %d\n", file, ret);
 
- free_pli:
+free_pli:
   free_pli(pli, 0);
   return;
 }

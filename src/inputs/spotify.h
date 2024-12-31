@@ -4,16 +4,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-struct spotify_status
-{
+struct spotify_status {
   bool installed;
   bool logged_in;
   char username[128];
   bool has_podcast_support;
 };
 
-struct spotify_backend
-{
+struct spotify_backend {
   int (*init)(void);
   void (*deinit)(void);
   int (*login)(const char *username, const char *password, const char **errmsg);

@@ -18,29 +18,28 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <limits.h>
 #include <sys/param.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <errno.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "conffile.h"
-#include "logger.h"
 #include "db.h"
-#include "library/filescanner.h"
-#include "misc.h"
 #include "library.h"
+#include "library/filescanner.h"
+#include "logger.h"
+#include "misc.h"
 
-enum playlist_type
-{
+enum playlist_type {
   PLAYLIST_UNKNOWN = 0,
   PLAYLIST_PLS,
   PLAYLIST_M3U,
@@ -154,7 +153,7 @@ scan_metadata_stream(struct media_file_info *mfi, const char *path)
 
   pos = strchr(path, '#');
   if (pos)
-    mfi->fname = strdup(pos+1);
+    mfi->fname = strdup(pos + 1);
   else
     mfi->fname = strdup(filename_from_path(mfi->path));
 
@@ -231,7 +230,7 @@ process_nested_playlist(int parent_id, const char *path)
 
   return 0;
 
- error:
+error:
   DPRINTF(E_LOG, L_SCAN, "Error processing nested playlist '%s' in playlist %d\n", path, parent_id);
   free_pli(pli, 0);
   free(deref);
@@ -333,7 +332,8 @@ process_regular_file(int pl_id, char *path)
 	  break;
 	}
 
-      for (i = 0, a = NULL, b = NULL; (parent_dir(&a, path) == 0) && (parent_dir(&b, dbpath) == 0) && (strcasecmp(a, b) == 0); i++)
+      for (i = 0, a = NULL, b = NULL;
+           (parent_dir(&a, path) == 0) && (parent_dir(&b, dbpath) == 0) && (strcasecmp(a, b) == 0); i++)
 	;
 
       DPRINTF(E_SPAM, L_SCAN, "Comparison of '%s' and '%s' gave score %d\n", dbpath, path, i);

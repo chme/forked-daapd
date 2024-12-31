@@ -17,21 +17,20 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <string.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "db.h"
-#include "misc.h"
-#include "logger.h"
 #include "dmap_common.h"
+#include "logger.h"
+#include "misc.h"
 #include "parsers/daap_parser.h"
 
 /* gperf static hash, dmap_fields.gperf */
 #include "dmap_fields_hash.h"
-
 
 const struct dmap_field *
 dmap_get_fields_table(int *nfields)
@@ -212,7 +211,8 @@ dmap_add_string(struct evbuffer *evbuf, const char *tag, const char *str)
 void
 dmap_add_field(struct evbuffer *evbuf, const struct dmap_field *df, char *strval, int32_t intval)
 {
-  union {
+  union
+  {
     int32_t v_i32;
     uint32_t v_u32;
     int64_t v_i64;
@@ -224,124 +224,124 @@ dmap_add_field(struct evbuffer *evbuf, const struct dmap_field *df, char *strval
     {
       switch (df->type)
 	{
-	  case DMAP_TYPE_UBYTE:
-	  case DMAP_TYPE_USHORT:
-	  case DMAP_TYPE_UINT:
-	    ret = safe_atou32(strval, &val.v_u32);
-	    if (ret < 0)
-	      val.v_u32 = 0;
-	    break;
+	case DMAP_TYPE_UBYTE:
+	case DMAP_TYPE_USHORT:
+	case DMAP_TYPE_UINT:
+	  ret = safe_atou32(strval, &val.v_u32);
+	  if (ret < 0)
+	    val.v_u32 = 0;
+	  break;
 
-	  case DMAP_TYPE_BYTE:
-	  case DMAP_TYPE_SHORT:
-	  case DMAP_TYPE_INT:
-	    ret = safe_atoi32(strval, &val.v_i32);
-	    if (ret < 0)
-	      val.v_i32 = 0;
-	    break;
+	case DMAP_TYPE_BYTE:
+	case DMAP_TYPE_SHORT:
+	case DMAP_TYPE_INT:
+	  ret = safe_atoi32(strval, &val.v_i32);
+	  if (ret < 0)
+	    val.v_i32 = 0;
+	  break;
 
-	  case DMAP_TYPE_ULONG:
-	    ret = safe_atou64(strval, &val.v_u64);
-	    if (ret < 0)
-	      val.v_u64 = 0;
-	    break;
+	case DMAP_TYPE_ULONG:
+	  ret = safe_atou64(strval, &val.v_u64);
+	  if (ret < 0)
+	    val.v_u64 = 0;
+	  break;
 
-	  case DMAP_TYPE_DATE:
-	  case DMAP_TYPE_LONG:
-	    ret = safe_atoi64(strval, &val.v_i64);
-	    if (ret < 0)
-	      val.v_i64 = 0;
-	    break;
+	case DMAP_TYPE_DATE:
+	case DMAP_TYPE_LONG:
+	  ret = safe_atoi64(strval, &val.v_i64);
+	  if (ret < 0)
+	    val.v_i64 = 0;
+	  break;
 
-	  /* DMAP_TYPE_VERSION & DMAP_TYPE_LIST not handled here */
-	  default:
-	    DPRINTF(E_LOG, L_DAAP, "Unsupported DMAP type %d for DMAP field %s\n", df->type, df->desc);
-	    return;
+	/* DMAP_TYPE_VERSION & DMAP_TYPE_LIST not handled here */
+	default:
+	  DPRINTF(E_LOG, L_DAAP, "Unsupported DMAP type %d for DMAP field %s\n", df->type, df->desc);
+	  return;
 	}
     }
   else if (!strval && (df->type != DMAP_TYPE_STRING))
     {
       switch (df->type)
 	{
-	  case DMAP_TYPE_DATE:
-	  case DMAP_TYPE_UBYTE:
-	  case DMAP_TYPE_USHORT:
-	  case DMAP_TYPE_UINT:
-	    val.v_u32 = intval;
-	    break;
+	case DMAP_TYPE_DATE:
+	case DMAP_TYPE_UBYTE:
+	case DMAP_TYPE_USHORT:
+	case DMAP_TYPE_UINT:
+	  val.v_u32 = intval;
+	  break;
 
-	  case DMAP_TYPE_BYTE:
-	  case DMAP_TYPE_SHORT:
-	  case DMAP_TYPE_INT:
-	    val.v_i32 = intval;
-	    break;
+	case DMAP_TYPE_BYTE:
+	case DMAP_TYPE_SHORT:
+	case DMAP_TYPE_INT:
+	  val.v_i32 = intval;
+	  break;
 
-	  case DMAP_TYPE_ULONG:
-	    val.v_u64 = intval;
-	    break;
+	case DMAP_TYPE_ULONG:
+	  val.v_u64 = intval;
+	  break;
 
-	  case DMAP_TYPE_LONG:
-	    val.v_i64 = intval;
-	    break;
+	case DMAP_TYPE_LONG:
+	  val.v_i64 = intval;
+	  break;
 
-	  /* DMAP_TYPE_VERSION & DMAP_TYPE_LIST not handled here */
-	  default:
-	    DPRINTF(E_LOG, L_DAAP, "Unsupported DMAP type %d for DMAP field %s\n", df->type, df->desc);
-	    return;
+	/* DMAP_TYPE_VERSION & DMAP_TYPE_LIST not handled here */
+	default:
+	  DPRINTF(E_LOG, L_DAAP, "Unsupported DMAP type %d for DMAP field %s\n", df->type, df->desc);
+	  return;
 	}
     }
 
   switch (df->type)
     {
-      case DMAP_TYPE_UBYTE:
-	if (val.v_u32)
-	  dmap_add_char(evbuf, df->tag, val.v_u32);
-	break;
+    case DMAP_TYPE_UBYTE:
+      if (val.v_u32)
+	dmap_add_char(evbuf, df->tag, val.v_u32);
+      break;
 
-      case DMAP_TYPE_BYTE:
-	if (val.v_i32)
-	  dmap_add_char(evbuf, df->tag, val.v_i32);
-	break;
+    case DMAP_TYPE_BYTE:
+      if (val.v_i32)
+	dmap_add_char(evbuf, df->tag, val.v_i32);
+      break;
 
-      case DMAP_TYPE_USHORT:
-	if (val.v_u32)
-	  dmap_add_short(evbuf, df->tag, val.v_u32);
-	break;
+    case DMAP_TYPE_USHORT:
+      if (val.v_u32)
+	dmap_add_short(evbuf, df->tag, val.v_u32);
+      break;
 
-      case DMAP_TYPE_SHORT:
-	if (val.v_i32)
-	  dmap_add_short(evbuf, df->tag, val.v_i32);
-	break;
+    case DMAP_TYPE_SHORT:
+      if (val.v_i32)
+	dmap_add_short(evbuf, df->tag, val.v_i32);
+      break;
 
-      case DMAP_TYPE_DATE:
-      case DMAP_TYPE_UINT:
-	if (val.v_u32)
-	  dmap_add_int(evbuf, df->tag, val.v_u32);
-	break;
+    case DMAP_TYPE_DATE:
+    case DMAP_TYPE_UINT:
+      if (val.v_u32)
+	dmap_add_int(evbuf, df->tag, val.v_u32);
+      break;
 
-      case DMAP_TYPE_INT:
-	if (val.v_i32)
-	  dmap_add_int(evbuf, df->tag, val.v_i32);
-	break;
+    case DMAP_TYPE_INT:
+      if (val.v_i32)
+	dmap_add_int(evbuf, df->tag, val.v_i32);
+      break;
 
-      case DMAP_TYPE_ULONG:
-	if (val.v_u64)
-	  dmap_add_long(evbuf, df->tag, val.v_u64);
-	break;
+    case DMAP_TYPE_ULONG:
+      if (val.v_u64)
+	dmap_add_long(evbuf, df->tag, val.v_u64);
+      break;
 
-      case DMAP_TYPE_LONG:
-	if (val.v_i64)
-	  dmap_add_long(evbuf, df->tag, val.v_i64);
-	break;
+    case DMAP_TYPE_LONG:
+      if (val.v_i64)
+	dmap_add_long(evbuf, df->tag, val.v_i64);
+      break;
 
-      case DMAP_TYPE_STRING:
-	if (strval)
-	  dmap_add_string(evbuf, df->tag, strval);
-	break;
+    case DMAP_TYPE_STRING:
+      if (strval)
+	dmap_add_string(evbuf, df->tag, strval);
+      break;
 
-      case DMAP_TYPE_VERSION:
-      case DMAP_TYPE_LIST:
-	return;
+    case DMAP_TYPE_VERSION:
+    case DMAP_TYPE_LIST:
+      return;
     }
 }
 
@@ -360,7 +360,8 @@ dmap_error_make(struct evbuffer *evbuf, const char *container, const char *errms
 }
 
 int
-dmap_encode_file_metadata(struct evbuffer *songlist, struct evbuffer *song, struct db_media_file_info *dbmfi, const struct dmap_field **meta, int nmeta, int sort_tags)
+dmap_encode_file_metadata(struct evbuffer *songlist, struct evbuffer *song, struct db_media_file_info *dbmfi,
+    const struct dmap_field **meta, int nmeta, int sort_tags)
 {
   const struct dmap_field_map *dfm;
   const struct dmap_field *df;
@@ -431,7 +432,7 @@ dmap_encode_file_metadata(struct evbuffer *songlist, struct evbuffer *song, stru
 
       DPRINTF(E_SPAM, L_DAAP, "Investigating %s\n", df->desc);
 
-      strval = (char **) ((char *)dbmfi + dfm->mfi_offset);
+      strval = (char **)((char *)dbmfi + dfm->mfi_offset);
 
       if (!(*strval) || (**strval == '\0'))
 	continue;
@@ -532,9 +533,9 @@ dmap_encode_queue_metadata(struct evbuffer *songlist, struct evbuffer *song, str
   dmap_add_short(song, "asbr", 1411);
   dmap_add_string(song, "asdt", "wav audio file");
 
-  want_mikd = 1;/* Will be prepended to the list *//* item kind */
-  want_asdk = 1;/* Will be prepended to the list *//* data kind */
-  want_ased = 1;/* Extradata not in media_file_info but flag for reply */
+  want_mikd = 1; /* Will be prepended to the list */ /* item kind */
+  want_asdk = 1; /* Will be prepended to the list */ /* data kind */
+  want_ased = 1;                                     /* Extradata not in media_file_info but flag for reply */
 
   /* Required for artwork in iTunes, set songartworkcount (asac) = 1 */
   if (want_ased)

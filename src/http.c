@@ -17,21 +17,21 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <uniconv.h>
-#include <unistr.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <limits.h>
 #include <sys/param.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <errno.h>
+#include <sys/types.h>
+#include <uniconv.h>
+#include <unistd.h>
+#include <unistr.h>
 
 #include <libavutil/opt.h>
 
@@ -39,10 +39,10 @@
 
 #include <curl/curl.h>
 
+#include "conffile.h"
 #include "http.h"
 #include "logger.h"
 #include "misc.h"
-#include "conffile.h"
 
 /* Formats we can read so far */
 #define PLAYLIST_UNK 0
@@ -53,7 +53,6 @@
 
 // Number of seconds the client will wait for a response before aborting
 #define HTTP_CLIENT_TIMEOUT 8
-
 
 void
 http_client_session_init(struct http_client_session *session)
@@ -147,7 +146,7 @@ http_client_request(struct http_client_ctx *ctx, struct http_client_session *ses
 	{
 	  snprintf(header, sizeof(header), "%s: %s", okv->name, okv->value);
 	  headers = curl_slist_append(headers, header);
-        }
+	}
 
       curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     }
@@ -181,7 +180,7 @@ http_client_request(struct http_client_ctx *ctx, struct http_client_session *ses
     }
 
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-  ctx->response_code = (int) response_code;
+  ctx->response_code = (int)response_code;
   curl_headers_save(ctx->input_headers, curl);
 
   curl_slist_free_all(headers);
@@ -208,7 +207,7 @@ http_form_urlencode(struct keyval *kv)
     {
       k = evhttp_encode_uri(okv->name);
       if (!k)
-        continue;
+	continue;
 
       v = evhttp_encode_uri(okv->value);
       if (!v)
@@ -286,8 +285,7 @@ http_stream_setup(char **stream, const char *url)
   curl_free(path);
   curl_url_cleanup(url_handle);
 
-
-  if (pl_format==PLAYLIST_UNK)
+  if (pl_format == PLAYLIST_UNK)
     {
       *stream = strdup(url);
       return 0;
@@ -344,7 +342,7 @@ http_stream_setup(char **stream, const char *url)
 	  while (*pos == ' ')
 	    ++pos;
 
-          // We are only interested in `FileN=http://foo/bar.mp3` entries
+	  // We are only interested in `FileN=http://foo/bar.mp3` entries
 	  if (strncasecmp(pos, "file", strlen("file")) != 0)
 	    goto line_done;
 
@@ -357,7 +355,7 @@ http_stream_setup(char **stream, const char *url)
 	  ++pos;
 	  while (*pos == ' ')
 	    ++pos;
-        
+
 	  // allocate the value part and proceed as with m3u
 	  pos = strdup(pos);
 	  free(line);
@@ -390,9 +388,7 @@ http_stream_setup(char **stream, const char *url)
   return 0;
 }
 
-
 /* ======================= ICY metadata handling =============================*/
-
 
 static int
 metadata_packet_get(struct http_icy_metadata *metadata, AVFormatContext *fmtctx)
@@ -414,7 +410,7 @@ metadata_packet_get(struct http_icy_metadata *metadata, AVFormatContext *fmtctx)
       utf = u8_strconv_from_encoding((char *)buffer, "ISO−8859−1", iconveh_question_mark);
       av_free(buffer);
       if (utf == NULL)
-        return -1;
+	return -1;
     }
   else
     utf = buffer;
@@ -435,7 +431,7 @@ metadata_packet_get(struct http_icy_metadata *metadata, AVFormatContext *fmtctx)
 
       end = strrchr(ptr, '\'');
       if (end)
-        *end = '\0';
+	*end = '\0';
 
       if ((strncmp(icy_token, "StreamTitle", strlen("StreamTitle")) == 0) && !metadata->title)
 	{
@@ -511,7 +507,8 @@ metadata_header_get(struct http_icy_metadata *metadata, AVFormatContext *fmtctx)
 
       if ((strncmp(icy_token, "icy-name", strlen("icy-name")) == 0) && ptr[0] != '\0' && !metadata->name)
 	metadata->name = strdup(ptr);
-      else if ((strncmp(icy_token, "icy-description", strlen("icy-description")) == 0) && ptr[0] != '\0' && !metadata->description)
+      else if ((strncmp(icy_token, "icy-description", strlen("icy-description")) == 0) && ptr[0] != '\0'
+               && !metadata->description)
 	metadata->description = strdup(ptr);
       else if ((strncmp(icy_token, "icy-genre", strlen("icy-genre")) == 0) && ptr[0] != '\0' && !metadata->genre)
 	metadata->genre = strdup(ptr);
@@ -536,21 +533,21 @@ http_icy_metadata_get(AVFormatContext *fmtctx, int packet_only)
   got_header = (!packet_only) && (metadata_header_get(metadata, fmtctx) == 0);
 
   if (!got_packet && !got_header)
-   {
-     free(metadata);
-     return NULL;
-   }
+    {
+      free(metadata);
+      return NULL;
+    }
 
-/*  DPRINTF(E_DBG, L_HTTP, "Found ICY: N %s, D %s, G %s, T %s, A %s, U %s, I %" PRIu32 "\n",
-	metadata->name,
-	metadata->description,
-	metadata->genre,
-	metadata->title,
-	metadata->artist,
-	metadata->url,
-	metadata->hash
-	);
-*/
+  /*  DPRINTF(E_DBG, L_HTTP, "Found ICY: N %s, D %s, G %s, T %s, A %s, U %s, I %" PRIu32 "\n",
+          metadata->name,
+          metadata->description,
+          metadata->genre,
+          metadata->title,
+          metadata->artist,
+          metadata->url,
+          metadata->hash
+          );
+  */
   return metadata;
 }
 

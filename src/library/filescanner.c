@@ -20,69 +20,66 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <libgen.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <time.h>
-#include <errno.h>
-#include <sys/param.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
 #include <sys/inotify.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <pthread.h>
+#include <sys/ioctl.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
 #ifdef HAVE_PTHREAD_NP_H
-# include <pthread_np.h>
+#include <pthread_np.h>
 #endif
 
 #include <event2/event.h>
 
 #ifdef HAVE_REGEX_H
-# include <regex.h>
+#include <regex.h>
 #endif
 
-#include "logger.h"
-#include "db.h"
-#include "library/filescanner.h"
-#include "conffile.h"
-#include "misc.h"
-#include "remote_pairing.h"
-#include "player.h"
-#include "cache.h"
 #include "artwork.h"
+#include "cache.h"
 #include "commands.h"
+#include "conffile.h"
+#include "db.h"
 #include "library.h"
+#include "library/filescanner.h"
+#include "logger.h"
+#include "misc.h"
+#include "player.h"
+#include "remote_pairing.h"
 
 #ifdef LASTFM
-# include "lastfm.h"
+#include "lastfm.h"
 #endif
 
+#define F_SCAN_BULK (1 << 0)
+#define F_SCAN_RESCAN (1 << 1)
+#define F_SCAN_FAST (1 << 2)
+#define F_SCAN_MOVED (1 << 3)
+#define F_SCAN_METARESCAN (1 << 4)
 
-#define F_SCAN_BULK    (1 << 0)
-#define F_SCAN_RESCAN  (1 << 1)
-#define F_SCAN_FAST    (1 << 2)
-#define F_SCAN_MOVED   (1 << 3)
-#define F_SCAN_METARESCAN  (1 << 4)
-
-#define F_SCAN_TYPE_FILE         (1 << 0)
-#define F_SCAN_TYPE_PODCAST      (1 << 1)
-#define F_SCAN_TYPE_AUDIOBOOK    (1 << 2)
-#define F_SCAN_TYPE_COMPILATION  (1 << 3)
+#define F_SCAN_TYPE_FILE (1 << 0)
+#define F_SCAN_TYPE_PODCAST (1 << 1)
+#define F_SCAN_TYPE_AUDIOBOOK (1 << 2)
+#define F_SCAN_TYPE_COMPILATION (1 << 3)
 
 #ifdef __linux__
-#define INOTIFY_FLAGS  (IN_ATTRIB | IN_CREATE | IN_DELETE | IN_CLOSE_WRITE | IN_MOVE | IN_DELETE | IN_MOVE_SELF)
+#define INOTIFY_FLAGS (IN_ATTRIB | IN_CREATE | IN_DELETE | IN_CLOSE_WRITE | IN_MOVE | IN_DELETE | IN_MOVE_SELF)
 #else
-#define INOTIFY_FLAGS  (IN_CREATE | IN_DELETE | IN_MOVE)
+#define INOTIFY_FLAGS (IN_CREATE | IN_DELETE | IN_MOVE)
 #endif
-
-
 
 enum file_type {
   FILE_UNKNOWN = 0,
@@ -122,8 +119,7 @@ static struct stacked_dir *dirstack;
 extern struct event_base *evbase_lib;
 
 #ifndef __linux__
-struct deferred_file
-{
+struct deferred_file {
   struct watch_info wi;
   char path[PATH_MAX];
 
@@ -163,7 +159,6 @@ filescanner_rescan();
 static int
 filescanner_fullrescan();
 
-
 /* ----------------------- Internal utility functions --------------------- */
 
 static char *
@@ -188,7 +183,8 @@ virtual_path_make(char *virtual_path, int virtual_path_len, const char *path)
   ret = snprintf(virtual_path, virtual_path_len, "/file:%s", path);
   if ((ret < 0) || (ret >= virtual_path_len))
     {
-      DPRINTF(E_LOG, L_SCAN, "Virtual path '/file:%s', virtual_path_len exceeded (%d/%d)\n", path, ret, virtual_path_len);
+      DPRINTF(
+          E_LOG, L_SCAN, "Virtual path '/file:%s', virtual_path_len exceeded (%d/%d)\n", path, ret, virtual_path_len);
       return -1;
     }
 
@@ -317,7 +313,8 @@ file_type_ignore(const char *ext)
 }
 
 static enum file_type
-file_type_get(const char *path) {
+file_type_get(const char *path)
+{
   const char *filename;
   const char *ext;
 
@@ -384,7 +381,6 @@ file_type_get(const char *path) {
   return FILE_REGULAR;
 }
 
-
 /* ----------------- Utility functions used by the scanners --------------- */
 
 const char *
@@ -444,9 +440,9 @@ playlist_fill(struct playlist_info *pli, const char *path)
 
   memset(pli, 0, sizeof(struct playlist_info));
 
-  pli->type  = PL_PLAIN;
-  pli->path  = strdup(path);
-  pli->title = title_from_path(path); // Will alloc
+  pli->type = PL_PLAIN;
+  pli->path = strdup(path);
+  pli->title = title_from_path(path);                // Will alloc
   pli->virtual_path = strip_extension(virtual_path); // Will alloc
   pli->scan_kind = SCAN_KIND_FILES;
 
@@ -476,7 +472,6 @@ playlist_add(const char *path)
 
   return ret;
 }
-
 
 /* --------------------------- Processing procedures ---------------------- */
 
@@ -580,7 +575,7 @@ process_regular_file(const char *file, struct stat *sb, int type, int flags, int
       // always scan.
       ret = db_file_ping_bypath(file, sb->st_mtime);
       if ((sb->st_mtime != 0) && (ret != 0))
-        return;
+	return;
     }
 
   // File is new or modified - (re)scan metadata and update file in library
@@ -636,7 +631,8 @@ process_regular_file(const char *file, struct stat *sb, int type, int flags, int
   library_media_save(&mfi);
 
   cache_artwork_ping(file, sb->st_mtime, !is_bulkscan);
-  // TODO [artworkcache] If entry in artwork cache exists for no artwork available, delete the entry if media file has embedded artwork
+  // TODO [artworkcache] If entry in artwork cache exists for no artwork available, delete the entry if media file has
+  // embedded artwork
 
   free_mfi(&mfi, 1);
 }
@@ -647,95 +643,96 @@ process_file(char *file, struct stat *sb, enum file_type file_type, int scan_typ
 {
   switch (file_type)
     {
-      case FILE_REGULAR:
-	process_regular_file(file, sb, scan_type, flags, dir_id);
+    case FILE_REGULAR:
+      process_regular_file(file, sb, scan_type, flags, dir_id);
 
-	counter++;
+      counter++;
 
-	/* When in bulk mode, split transaction in pieces of 200 */
-	if ((flags & F_SCAN_BULK) && (counter % 200 == 0))
-	  {
-	    DPRINTF(E_LOG, L_SCAN, "Scanned %d files...\n", counter);
-	    db_transaction_end();
-	    db_transaction_begin();
-	  }
-	break;
+      /* When in bulk mode, split transaction in pieces of 200 */
+      if ((flags & F_SCAN_BULK) && (counter % 200 == 0))
+	{
+	  DPRINTF(E_LOG, L_SCAN, "Scanned %d files...\n", counter);
+	  db_transaction_end();
+	  db_transaction_begin();
+	}
+      break;
 
-      case FILE_PLAYLIST:
-      case FILE_ITUNES:
-	if (flags & F_SCAN_BULK)
-	  defer_playlist(file, sb->st_mtime, dir_id);
-	else
-	  process_playlist(file, sb->st_mtime, dir_id);
-	break;
+    case FILE_PLAYLIST:
+    case FILE_ITUNES:
+      if (flags & F_SCAN_BULK)
+	defer_playlist(file, sb->st_mtime, dir_id);
+      else
+	process_playlist(file, sb->st_mtime, dir_id);
+      break;
 
-      case FILE_SMARTPL:
-	DPRINTF(E_DBG, L_SCAN, "Smart playlist file: %s\n", file);
-	scan_smartpl(file, sb->st_mtime, dir_id);
-	break;
+    case FILE_SMARTPL:
+      DPRINTF(E_DBG, L_SCAN, "Smart playlist file: %s\n", file);
+      scan_smartpl(file, sb->st_mtime, dir_id);
+      break;
 
-      case FILE_ARTWORK:
-	DPRINTF(E_DBG, L_SCAN, "Artwork file: %s\n", file);
-	cache_artwork_ping(file, sb->st_mtime, !(flags & F_SCAN_BULK));
+    case FILE_ARTWORK:
+      DPRINTF(E_DBG, L_SCAN, "Artwork file: %s\n", file);
+      cache_artwork_ping(file, sb->st_mtime, !(flags & F_SCAN_BULK));
 
-	// TODO [artworkcache] If entry in artwork cache exists for no artwork available for a album with files in the same directory, delete the entry
+      // TODO [artworkcache] If entry in artwork cache exists for no artwork available for a album with files in the
+      // same directory, delete the entry
 
-	break;
+      break;
 
-      case FILE_CTRL_REMOTE:
-	if (flags & F_SCAN_BULK)
-	  DPRINTF(E_LOG, L_SCAN, "Bulk scan will ignore '%s' (to process, add it after startup)\n", file);
-	else
-	  kickoff(remote_pairing_kickoff, file, 1);
-	break;
+    case FILE_CTRL_REMOTE:
+      if (flags & F_SCAN_BULK)
+	DPRINTF(E_LOG, L_SCAN, "Bulk scan will ignore '%s' (to process, add it after startup)\n", file);
+      else
+	kickoff(remote_pairing_kickoff, file, 1);
+      break;
 
-      case FILE_CTRL_RAOP_VERIFICATION:
-	if (flags & F_SCAN_BULK)
-	  DPRINTF(E_LOG, L_SCAN, "Bulk scan will ignore '%s' (to process, add it after startup)\n", file);
-	else
-	  kickoff(player_raop_verification_kickoff, file, 1);
-	break;
+    case FILE_CTRL_RAOP_VERIFICATION:
+      if (flags & F_SCAN_BULK)
+	DPRINTF(E_LOG, L_SCAN, "Bulk scan will ignore '%s' (to process, add it after startup)\n", file);
+      else
+	kickoff(player_raop_verification_kickoff, file, 1);
+      break;
 
-      case FILE_CTRL_LASTFM:
+    case FILE_CTRL_LASTFM:
 #ifdef LASTFM
-	if (flags & F_SCAN_BULK)
-	  DPRINTF(E_LOG, L_SCAN, "Bulk scan will ignore '%s' (to process, add it after startup)\n", file);
-	else
-	  kickoff(lastfm_login, file, 2);
+      if (flags & F_SCAN_BULK)
+	DPRINTF(E_LOG, L_SCAN, "Bulk scan will ignore '%s' (to process, add it after startup)\n", file);
+      else
+	kickoff(lastfm_login, file, 2);
 #else
-	DPRINTF(E_LOG, L_SCAN, "Found '%s', but this version was built without LastFM support\n", file);
+      DPRINTF(E_LOG, L_SCAN, "Found '%s', but this version was built without LastFM support\n", file);
 #endif
+      break;
+
+    case FILE_CTRL_INITSCAN:
+      if (flags & F_SCAN_BULK)
 	break;
 
-      case FILE_CTRL_INITSCAN:
-	if (flags & F_SCAN_BULK)
-	  break;
+      DPRINTF(E_LOG, L_SCAN, "Startup rescan triggered, found init-rescan file: %s\n", file);
 
-	DPRINTF(E_LOG, L_SCAN, "Startup rescan triggered, found init-rescan file: %s\n", file);
+      library_rescan(0);
+      break;
 
-	library_rescan(0);
+    case FILE_CTRL_METASCAN:
+      if (flags & F_SCAN_BULK)
 	break;
 
-      case FILE_CTRL_METASCAN:
-	if (flags & F_SCAN_BULK)
-	  break;
+      DPRINTF(E_LOG, L_SCAN, "Meta rescan triggered, found meta-rescan file: %s\n", file);
 
-	DPRINTF(E_LOG, L_SCAN, "Meta rescan triggered, found meta-rescan file: %s\n", file);
+      library_metarescan(0);
+      break;
 
-	library_metarescan(0);
+    case FILE_CTRL_FULLSCAN:
+      if (flags & F_SCAN_BULK)
 	break;
 
-      case FILE_CTRL_FULLSCAN:
-	if (flags & F_SCAN_BULK)
-	  break;
+      DPRINTF(E_LOG, L_SCAN, "Full rescan triggered, found full-rescan file: %s\n", file);
 
-	DPRINTF(E_LOG, L_SCAN, "Full rescan triggered, found full-rescan file: %s\n", file);
+      library_fullrescan();
+      break;
 
-	library_fullrescan();
-	break;
-
-      default:
-	DPRINTF(E_WARN, L_SCAN, "Ignoring file: %s\n", file);
+    default:
+      DPRINTF(E_WARN, L_SCAN, "Ignoring file: %s\n", file);
     }
 }
 
@@ -787,14 +784,14 @@ read_attributes(char *resolved_path, const char *path, struct stat *sb, int *is_
       *is_link = 1;
 
       if (!realpath(path, resolved_path))
-        {
+	{
 	  DPRINTF(E_LOG, L_SCAN, "Skipping %s, could not dereference symlink: %s\n", path, strerror(errno));
 	  return -1;
 	}
 
       ret = stat(resolved_path, sb);
       if (ret < 0)
-        {
+	{
 	  DPRINTF(E_LOG, L_SCAN, "Skipping %s, stat() failed: %s\n", resolved_path, strerror(errno));
 	  return -1;
 	}
@@ -898,10 +895,10 @@ process_directory(char *path, int parent_id, int flags)
 	}
 
       if (is_link && !follow_symlinks)
-        {
-          DPRINTF(E_DBG, L_SCAN, "Ignore symlink %s\n", entry);
-          continue;
-        }
+	{
+	  DPRINTF(E_DBG, L_SCAN, "Ignore symlink %s\n", entry);
+	  continue;
+	}
 
       if (S_ISDIR(sb.st_mode))
 	{
@@ -1002,7 +999,6 @@ process_directories(char *root, int parent_id, int flags)
     }
 }
 
-
 /* Thread: scan */
 static void
 bulk_scan(int flags)
@@ -1078,7 +1074,8 @@ bulk_scan(int flags)
 
   if (flags & F_SCAN_FAST)
     {
-      DPRINTF(E_LOG, L_SCAN, "Bulk library scan completed in %.f sec (with file scan disabled)\n", difftime(end, start));
+      DPRINTF(
+          E_LOG, L_SCAN, "Bulk library scan completed in %.f sec (with file scan disabled)\n", difftime(end, start));
     }
   else
     {
@@ -1387,7 +1384,8 @@ process_inotify_file(struct watch_info *wi, char *path, struct inotify_event *ie
       // Add to the list of files where we ignore IN_ATTRIB until the file is closed again
       if (S_ISREG(sb.st_mode))
 	{
-	  DPRINTF(E_SPAM, L_SCAN, "Incoming file created '%s' (%d), index %d\n", path, (int)path_hash, incomingfiles_idx);
+	  DPRINTF(
+	      E_SPAM, L_SCAN, "Incoming file created '%s' (%d), index %d\n", path, (int)path_hash, incomingfiles_idx);
 
 	  incomingfiles_buffer[incomingfiles_idx] = path_hash;
 	  incomingfiles_idx = (incomingfiles_idx + 1) % INCOMINGFILES_BUFFER_SIZE;
@@ -1411,17 +1409,17 @@ process_inotify_file(struct watch_info *wi, char *path, struct inotify_event *ie
 
       ret = read_attributes(resolved_path, path, &sb, &is_link);
       if (ret < 0)
-        {
+	{
 	  DPRINTF(E_LOG, L_SCAN, "Skipping %s, read_attributes() failed\n", path);
 
 	  return;
 	}
 
       if (is_link && !cfg_getbool(cfg_getsec(cfg, "library"), "follow_symlinks"))
-        {
-          DPRINTF(E_DBG, L_SCAN, "Ignore symlink %s\n", path);
-          return;
-        }
+	{
+	  DPRINTF(E_DBG, L_SCAN, "Ignore symlink %s\n", path);
+	  return;
+	}
 
       scan_type = 0;
       if (check_speciallib(path, "compilations"))
@@ -1434,7 +1432,7 @@ process_inotify_file(struct watch_info *wi, char *path, struct inotify_event *ie
       dir_id = get_parent_dir_id(file);
 
       if (S_ISDIR(sb.st_mode))
-        {
+	{
 	  process_inotify_dir(wi, resolved_path, ie);
 
 	  return;
@@ -1500,7 +1498,6 @@ process_inotify_file_defer(struct watch_info *wi, char *path, struct inotify_eve
   event_add(deferred_inoev, &tv);
 }
 #endif
-
 
 /* Thread: scan */
 static void
@@ -1815,7 +1812,7 @@ queue_item_stream_add(const char *path, int position, char reshuffle, uint32_t i
   free_mfi(&mfi, 1);
   return 0;
 
- error:
+error:
   free_queue_item(&qi, 1);
   free_mfi(&mfi, 1);
   return -1;
@@ -1925,7 +1922,8 @@ playlist_path_create(const char *vp_playlist)
   pli = db_pl_fetch_byvirtualpath(vp_playlist);
   if (pli && (pli->type != PL_PLAIN || !has_suffix(pli->path, ".m3u")))
     {
-      DPRINTF(E_LOG, L_SCAN, "Playlist with virtual path '%s' already exists and is not a m3u playlist.\n", vp_playlist);
+      DPRINTF(
+          E_LOG, L_SCAN, "Playlist with virtual path '%s' already exists and is not a m3u playlist.\n", vp_playlist);
       free_pli(pli, 0);
       free(pl_path);
       return NULL;
@@ -1978,11 +1976,11 @@ playlist_add_files(FILE *fp, int pl_id, const char *virtual_path)
   if (qp.results > 0)
     {
       while ((ret = db_query_fetch_file(&dbmfi, &qp)) == 0)
-        {
-	  if ((safe_atou32(dbmfi.data_kind, &data_kind) < 0)
-	      || (data_kind == DATA_KIND_PIPE))
+	{
+	  if ((safe_atou32(dbmfi.data_kind, &data_kind) < 0) || (data_kind == DATA_KIND_PIPE))
 	    {
-	      DPRINTF(E_WARN, L_SCAN, "Item '%s' not added to playlist (id = %d), unsupported data kind\n", dbmfi.path, pl_id);
+	      DPRINTF(E_WARN, L_SCAN, "Item '%s' not added to playlist (id = %d), unsupported data kind\n", dbmfi.path,
+	          pl_id);
 	      continue;
 	    }
 
@@ -2011,7 +2009,7 @@ playlist_add_files(FILE *fp, int pl_id, const char *virtual_path)
 	DPRINTF(E_DBG, L_SCAN, "Item '%s' added to playlist (id = %d)\n", path, pl_id);
     }
 
- out:
+out:
   db_query_end(&qp);
   free(qp.filter);
 
@@ -2059,7 +2057,7 @@ playlist_item_add(const char *vp_playlist, const char *vp_item)
 
   return LIBRARY_OK;
 
- error:
+error:
   if (fp)
     fclose(fp);
   free(pl_path);
@@ -2084,7 +2082,8 @@ playlist_remove(const char *vp_playlist)
   pli = db_pl_fetch_byvirtualpath(vp_playlist);
   if (!pli || pli->type != PL_PLAIN)
     {
-      DPRINTF(E_LOG, L_SCAN, "Playlist with virtual path '%s' does not exist or is not a plain playlist.\n", vp_playlist);
+      DPRINTF(
+          E_LOG, L_SCAN, "Playlist with virtual path '%s' does not exist or is not a plain playlist.\n", vp_playlist);
       free_pli(pli, 0);
       free(pl_path);
       return LIBRARY_ERROR;
@@ -2146,13 +2145,15 @@ queue_save(const char *virtual_path)
     {
       if (queue_item.data_kind == DATA_KIND_PIPE)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Unsupported data kind for playlist file '%s' ignoring item '%s'\n", virtual_path, queue_item.path);
+	  DPRINTF(E_LOG, L_SCAN, "Unsupported data kind for playlist file '%s' ignoring item '%s'\n", virtual_path,
+	      queue_item.path);
 	  continue;
 	}
 
       if (queue_item.file_id == DB_MEDIA_FILE_NON_PERSISTENT_ID)
 	{
-	  // If the queue item is not in the library and it is a http stream, scan and add to the library prior to saving to the playlist file.
+	  // If the queue item is not in the library and it is a http stream, scan and add to the library prior to
+	  // saving to the playlist file.
 	  if (queue_item.data_kind == DATA_KIND_HTTP)
 	    {
 	      DPRINTF(E_DBG, L_SCAN, "Scan stream '%s' and add to playlist (id = %d)\n", queue_item.path, pl_id);
@@ -2164,7 +2165,8 @@ queue_save(const char *virtual_path)
 	    }
 	  else
 	    {
-	      DPRINTF(E_LOG, L_SCAN, "Unsupported item for playlist file '%s' ignoring item '%s'\n", virtual_path, queue_item.path);
+	      DPRINTF(E_LOG, L_SCAN, "Unsupported item for playlist file '%s' ignoring item '%s'\n", virtual_path,
+	          queue_item.path);
 	      continue;
 	    }
 	}
@@ -2195,7 +2197,7 @@ queue_save(const char *virtual_path)
 
   return LIBRARY_OK;
 
- error:
+error:
   if (fp)
     fclose(fp);
   free(pl_path);
@@ -2224,9 +2226,7 @@ filescanner_deinit(void)
   inofd_event_unset();
 }
 
-
-struct library_source filescanner =
-{
+struct library_source filescanner = {
   .scan_kind = SCAN_KIND_FILES,
   .disabled = 0,
   .init = filescanner_init,

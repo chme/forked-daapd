@@ -17,27 +17,27 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <errno.h>
+#include <inttypes.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
 #include <string.h>
-#include <errno.h>
-#include <stdint.h>
-#include <inttypes.h>
+#include <unistd.h>
 
-#include <event2/event.h>
 #include <event2/buffer.h>
+#include <event2/event.h>
 #include <pthread.h>
 
-#include "misc.h"
-#include "logger.h"
-#include "conffile.h"
 #include "commands.h"
+#include "conffile.h"
 #include "input.h"
+#include "logger.h"
+#include "misc.h"
 
 // Disallow further writes to the buffer when its size exceeds this threshold.
 // The below gives us room to buffer 2 seconds of 48000/16/2 audio.
@@ -47,9 +47,9 @@
 // How long (in sec) to keep an input open without the player reading from it
 #define INPUT_OPEN_TIMEOUT 600
 
-//#define DEBUG_INPUT 1
-// For testing http stream underruns
-//#define DEBUG_UNDERRUN 1
+// #define DEBUG_INPUT 1
+//  For testing http stream underruns
+// #define DEBUG_UNDERRUN 1
 
 extern struct input_definition input_file;
 extern struct input_definition input_http;
@@ -63,22 +63,16 @@ extern struct input_definition input_libspotify;
 #endif
 
 // Must be in sync with enum input_types
-static struct input_definition *inputs[] = {
-    &input_file,
-    &input_http,
-    &input_pipe,
-    &input_timer,
+static struct input_definition *inputs[] = { &input_file, &input_http, &input_pipe, &input_timer,
 #ifdef SPOTIFY_LIBRESPOTC
-    &input_spotify,
+  &input_spotify,
 #endif
 #ifdef SPOTIFY_LIBSPOTIFY
-    &input_libspotify,
+  &input_libspotify,
 #endif
-    NULL
-};
+  NULL };
 
-struct marker
-{
+struct marker {
   // Position of marker measured in bytes
   uint64_t pos;
 
@@ -92,8 +86,7 @@ struct marker
   struct marker *prev;
 };
 
-struct input_buffer
-{
+struct input_buffer {
   // Raw pcm stream data
   struct evbuffer *evbuf;
 
@@ -117,8 +110,7 @@ struct input_buffer
   pthread_cond_t cond;
 };
 
-struct input_arg
-{
+struct input_arg {
   uint32_t item_id;
   int seek_ms;
 };
@@ -153,7 +145,6 @@ static size_t debug_elapsed;
 int debug_underrun_trigger;
 #endif
 
-
 /* ------------------------------- MISC HELPERS ----------------------------- */
 
 static int
@@ -165,28 +156,28 @@ map_data_kind(int data_kind)
 
   switch (data_kind)
     {
-      case DATA_KIND_FILE:
-	return INPUT_TYPE_FILE;
+    case DATA_KIND_FILE:
+      return INPUT_TYPE_FILE;
 
-      case DATA_KIND_HTTP:
-	return INPUT_TYPE_HTTP;
+    case DATA_KIND_HTTP:
+      return INPUT_TYPE_HTTP;
 
-      case DATA_KIND_PIPE:
-	return INPUT_TYPE_PIPE;
+    case DATA_KIND_PIPE:
+      return INPUT_TYPE_PIPE;
 
-      case DATA_KIND_SPOTIFY:
+    case DATA_KIND_SPOTIFY:
 #ifdef SPOTIFY_LIBRESPOTC
-	if (!inputs[INPUT_TYPE_SPOTIFY]->disabled)
-	  return INPUT_TYPE_SPOTIFY;
+      if (!inputs[INPUT_TYPE_SPOTIFY]->disabled)
+	return INPUT_TYPE_SPOTIFY;
 #endif
 #ifdef SPOTIFY_LIBSPOTIFY
-	if (!inputs[INPUT_TYPE_LIBSPOTIFY]->disabled)
-	  return INPUT_TYPE_LIBSPOTIFY;
+      if (!inputs[INPUT_TYPE_LIBSPOTIFY]->disabled)
+	return INPUT_TYPE_LIBSPOTIFY;
 #endif
-	return -1;
+      return -1;
 
-      default:
-	return -1;
+    default:
+      return -1;
     }
 }
 
@@ -227,7 +218,7 @@ metadata_get(struct input_source *source)
 
   return metadata;
 
- out_free_metadata:
+out_free_metadata:
   metadata_free(metadata, 0);
   return NULL;
 }
@@ -330,7 +321,6 @@ buffer_full_cb(void)
   input_buffer.full_cb = NULL;
 }
 
-
 /* ------------------------- INPUT SOURCE HANDLING -------------------------- */
 
 static void
@@ -430,14 +420,14 @@ setup(struct input_source *source, struct db_queue_item *queue_item, int seek_ms
   // Avoids memleaks in cases where stop() is not called
   clear(source);
 
-  source->type       = type;
-  source->data_kind  = queue_item->data_kind;
+  source->type = type;
+  source->data_kind = queue_item->data_kind;
   source->media_kind = queue_item->media_kind;
-  source->item_id    = queue_item->id;
-  source->id         = queue_item->file_id;
-  source->len_ms     = queue_item->song_length;
-  source->path       = safe_strdup(queue_item->path);
-  source->evbase     = evbase_input;
+  source->item_id = queue_item->id;
+  source->id = queue_item->file_id;
+  source->len_ms = queue_item->song_length;
+  source->path = safe_strdup(queue_item->path);
+  source->evbase = evbase_input;
 
   DPRINTF(E_DBG, L_PLAYER, "Setting up input item '%s' (item id %" PRIu32 ")\n", source->path, source->item_id);
 
@@ -461,9 +451,9 @@ setup(struct input_source *source, struct db_queue_item *queue_item, int seek_ms
 
   return ret;
 
- seek_error:
+seek_error:
   stop();
- setup_error:
+setup_error:
   clear(source);
   return -1;
 }
@@ -493,7 +483,8 @@ start(void *arg, int *retval)
       queue_item = db_queue_fetch_byitemid(cmdarg->item_id);
       if (!queue_item)
 	{
-	  DPRINTF(E_LOG, L_PLAYER, "Input start was called with an item id that has disappeared (id=%d)\n", cmdarg->item_id);
+	  DPRINTF(E_LOG, L_PLAYER, "Input start was called with an item id that has disappeared (id=%d)\n",
+	      cmdarg->item_id);
 	  goto error;
 	}
 
@@ -504,7 +495,7 @@ start(void *arg, int *retval)
     }
 
   DPRINTF(E_DBG, L_PLAYER, "Starting input read loop for item '%s' (item id %" PRIu32 "), seek %d\n",
-    input_now_reading.path, input_now_reading.item_id, cmdarg->seek_ms);
+      input_now_reading.path, input_now_reading.item_id, cmdarg->seek_ms);
 
   event_add(input_open_timeout_ev, &input_open_timeout);
   event_active(input_ev, 0, 0);
@@ -512,8 +503,9 @@ start(void *arg, int *retval)
   *retval = ret; // Return is the seek result
   return COMMAND_END;
 
- error:
-  DPRINTF(E_WARN, L_PLAYER, "Error starting input read loop (now %d, item_id %d, now item_id %d)\n", input_now_reading.open, cmdarg->item_id, input_now_reading.item_id);
+error:
+  DPRINTF(E_WARN, L_PLAYER, "Error starting input read loop (now %d, item_id %d, now item_id %d)\n",
+      input_now_reading.open, cmdarg->item_id, input_now_reading.item_id);
 
   input_write(NULL, NULL, INPUT_FLAG_ERROR);
   clear(&input_now_reading);
@@ -533,7 +525,8 @@ resume(void *arg, int *retval)
 
   if (cmdarg->item_id == input_now_reading.item_id)
     {
-      DPRINTF(E_DBG, L_PLAYER, "Resuming input read loop for item '%s' (item id %" PRIu32 ")\n", input_now_reading.path, input_now_reading.item_id);
+      DPRINTF(E_DBG, L_PLAYER, "Resuming input read loop for item '%s' (item id %" PRIu32 ")\n", input_now_reading.path,
+          input_now_reading.item_id);
       *retval = cmdarg->seek_ms;
       return COMMAND_END;
     }
@@ -560,7 +553,6 @@ timeout_cb(int fd, short what, void *arg)
 
   stop();
 }
-
 
 /* ---------------------- Interface towards input backends ------------------ */
 /*                           Thread: input and spotify                        */
@@ -738,7 +730,6 @@ play(evutil_socket_t fd, short flags, void *arg)
   event_add(input_ev, &tv);
 }
 
-
 /* ---------------------- Interface towards player thread ------------------- */
 /*                                Thread: player                              */
 
@@ -783,28 +774,24 @@ input_read(void *data, size_t size, short *flag, void **flagdata)
   if (*flag & INPUT_FLAG_QUALITY)
     input_buffer.cur_read_quality = *((struct media_quality *)(*flagdata));
 
-  size_t one_sec_size = STOB(input_buffer.cur_read_quality.sample_rate, input_buffer.cur_read_quality.bits_per_sample, input_buffer.cur_read_quality.channels);
+  size_t one_sec_size = STOB(input_buffer.cur_read_quality.sample_rate, input_buffer.cur_read_quality.bits_per_sample,
+      input_buffer.cur_read_quality.channels);
   debug_elapsed += len;
   if (*flag || (debug_elapsed > 10 * one_sec_size))
     {
       debug_elapsed = 0;
-      DPRINTF(E_DBG, L_PLAYER, "READ %zu bytes (%d/%d/%d), WROTE %zu bytes (%d/%d/%d), DIFF %zu, SIZE %zu/%d, FLAGS %04x\n",
-        input_buffer.bytes_read,
-        input_buffer.cur_read_quality.sample_rate,
-        input_buffer.cur_read_quality.bits_per_sample,
-        input_buffer.cur_read_quality.channels,
-        input_buffer.bytes_written,
-        input_buffer.cur_write_quality.sample_rate,
-        input_buffer.cur_write_quality.bits_per_sample,
-        input_buffer.cur_write_quality.channels,
-        input_buffer.bytes_written - input_buffer.bytes_read,
-        evbuffer_get_length(input_buffer.evbuf),
-        INPUT_BUFFER_THRESHOLD,
-        *flag);
+      DPRINTF(E_DBG, L_PLAYER,
+          "READ %zu bytes (%d/%d/%d), WROTE %zu bytes (%d/%d/%d), DIFF %zu, SIZE %zu/%d, FLAGS %04x\n",
+          input_buffer.bytes_read, input_buffer.cur_read_quality.sample_rate,
+          input_buffer.cur_read_quality.bits_per_sample, input_buffer.cur_read_quality.channels,
+          input_buffer.bytes_written, input_buffer.cur_write_quality.sample_rate,
+          input_buffer.cur_write_quality.bits_per_sample, input_buffer.cur_write_quality.channels,
+          input_buffer.bytes_written - input_buffer.bytes_read, evbuffer_get_length(input_buffer.evbuf),
+          INPUT_BUFFER_THRESHOLD, *flag);
     }
 #endif
 
- out_unlock:
+out_unlock:
   pthread_cond_signal(&input_buffer.cond);
   pthread_mutex_unlock(&input_buffer.mutex);
 
@@ -936,9 +923,9 @@ input_init(void)
 
   return 0;
 
- thread_fail:
+thread_fail:
   commands_base_free(cmdbase);
- input_fail:
+input_fail:
   event_free(input_open_timeout_ev);
   event_free(input_ev);
   evbuffer_free(input_buffer.evbuf);
@@ -960,7 +947,7 @@ input_deinit(void)
 	continue;
 
       if (inputs[i]->deinit)
-        inputs[i]->deinit();
+	inputs[i]->deinit();
     }
 
   input_initialized = false;
@@ -981,4 +968,3 @@ input_deinit(void)
   evbuffer_free(input_buffer.evbuf);
   event_base_free(evbase_input);
 }
-

@@ -17,37 +17,43 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
 #include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
 #include <libavfilter/avfilter.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
-#include <libavutil/opt.h>
-#include <libavutil/time.h>
-#include <libavutil/pixdesc.h>
+#include <libavformat/avformat.h>
 #include <libavutil/channel_layout.h>
 #include <libavutil/mathematics.h>
+#include <libavutil/opt.h>
+#include <libavutil/pixdesc.h>
+#include <libavutil/time.h>
 
-#include "logger.h"
 #include "conffile.h"
+#include "logger.h"
 #include "misc.h"
 #include "transcode.h"
 
 // Switches for compability with ffmpeg's ever changing API
-#define USE_IMAGE2PIPE (LIBAVFORMAT_VERSION_MAJOR > 58) || ((LIBAVFORMAT_VERSION_MAJOR == 58) && (LIBAVFORMAT_VERSION_MINOR > 29))
-#define USE_CONST_AVFORMAT (LIBAVFORMAT_VERSION_MAJOR > 59) || ((LIBAVFORMAT_VERSION_MAJOR == 59) && (LIBAVFORMAT_VERSION_MINOR > 15))
-#define USE_CONST_AVCODEC (LIBAVFORMAT_VERSION_MAJOR > 59) || ((LIBAVFORMAT_VERSION_MAJOR == 59) && (LIBAVFORMAT_VERSION_MINOR > 15))
-#define USE_NO_CLEAR_AVFMT_NOFILE (LIBAVFORMAT_VERSION_MAJOR > 59) || ((LIBAVFORMAT_VERSION_MAJOR == 59) && (LIBAVFORMAT_VERSION_MINOR > 15))
-#define USE_CH_LAYOUT (LIBAVCODEC_VERSION_MAJOR > 59) || ((LIBAVCODEC_VERSION_MAJOR == 59) && (LIBAVCODEC_VERSION_MINOR > 24))
-#define USE_CONST_AVIO_WRITE_PACKET (LIBAVFORMAT_VERSION_MAJOR > 61) || ((LIBAVFORMAT_VERSION_MAJOR == 61) && (LIBAVFORMAT_VERSION_MINOR > 0))
+#define USE_IMAGE2PIPE                                                                                                 \
+  (LIBAVFORMAT_VERSION_MAJOR > 58) || ((LIBAVFORMAT_VERSION_MAJOR == 58) && (LIBAVFORMAT_VERSION_MINOR > 29))
+#define USE_CONST_AVFORMAT                                                                                             \
+  (LIBAVFORMAT_VERSION_MAJOR > 59) || ((LIBAVFORMAT_VERSION_MAJOR == 59) && (LIBAVFORMAT_VERSION_MINOR > 15))
+#define USE_CONST_AVCODEC                                                                                              \
+  (LIBAVFORMAT_VERSION_MAJOR > 59) || ((LIBAVFORMAT_VERSION_MAJOR == 59) && (LIBAVFORMAT_VERSION_MINOR > 15))
+#define USE_NO_CLEAR_AVFMT_NOFILE                                                                                      \
+  (LIBAVFORMAT_VERSION_MAJOR > 59) || ((LIBAVFORMAT_VERSION_MAJOR == 59) && (LIBAVFORMAT_VERSION_MINOR > 15))
+#define USE_CH_LAYOUT                                                                                                  \
+  (LIBAVCODEC_VERSION_MAJOR > 59) || ((LIBAVCODEC_VERSION_MAJOR == 59) && (LIBAVCODEC_VERSION_MINOR > 24))
+#define USE_CONST_AVIO_WRITE_PACKET                                                                                    \
+  (LIBAVFORMAT_VERSION_MAJOR > 61) || ((LIBAVFORMAT_VERSION_MAJOR == 61) && (LIBAVFORMAT_VERSION_MINOR > 0))
 
 // Interval between ICY metadata checks for streams, in seconds
 #define METADATA_ICY_INTERVAL 5
@@ -77,8 +83,7 @@ static char errbuf[64];
 static const uint8_t xcode_seek_marker[8] = { 0x0D, 0x0E, 0x0A, 0x0D, 0x0B, 0x0E, 0x0E, 0x0F };
 
 // The settings struct will be filled out based on the profile enum
-struct settings_ctx
-{
+struct settings_ctx {
   bool encode_video;
   bool encode_audio;
 
@@ -118,8 +123,7 @@ struct settings_ctx
   int width;
 };
 
-struct stream_ctx
-{
+struct stream_ctx {
   AVStream *stream;
   AVCodecContext *codec;
 
@@ -132,8 +136,7 @@ struct stream_ctx
   int64_t offset_pts;
 };
 
-struct decode_ctx
-{
+struct decode_ctx {
   // Settings derived from the profile
   struct settings_ctx settings;
 
@@ -172,8 +175,7 @@ struct decode_ctx
   int64_t timestamp;
 };
 
-struct encode_ctx
-{
+struct encode_ctx {
   // Settings derived from the profile
   struct settings_ctx settings;
 
@@ -207,8 +209,7 @@ struct encode_ctx
   uint32_t icy_hash;
 };
 
-enum probe_type
-{
+enum probe_type {
   PROBE_TYPE_DEFAULT,
   PROBE_TYPE_QUICK,
 };
@@ -220,21 +221,18 @@ struct avio_evbuffer {
   void *seekfn_arg;
 };
 
-struct filter_def
-{
+struct filter_def {
   char name[64];
   char args[512];
 };
 
-struct filters
-{
+struct filters {
   AVFilterContext *av_ctx;
 
   // Function that will create the filter arguments for ffmpeg
   int (*deffn)(struct filter_def *, struct stream_ctx *, struct stream_ctx *, const char *);
   const char *deffn_arg;
 };
-
 
 /* -------------------------- PROFILE CONFIGURATION ------------------------ */
 
@@ -245,129 +243,130 @@ init_settings(struct settings_ctx *settings, enum transcode_profile profile, str
 
   switch (profile)
     {
-      case XCODE_PCM_NATIVE: // Sample rate and bit depth determined by source
-	settings->encode_audio = true;
-	settings->with_icy = true;
-	settings->with_user_filters = true;
-	break;
+    case XCODE_PCM_NATIVE: // Sample rate and bit depth determined by source
+      settings->encode_audio = true;
+      settings->with_icy = true;
+      settings->with_user_filters = true;
+      break;
 
-      case XCODE_WAV:
-	settings->with_wav_header = true;
-	settings->with_user_filters = true;
-      case XCODE_PCM16:
-	settings->encode_audio = true;
-	settings->format = "s16le";
-	settings->audio_codec = AV_CODEC_ID_PCM_S16LE;
-	settings->sample_format = AV_SAMPLE_FMT_S16;
-	break;
+    case XCODE_WAV:
+      settings->with_wav_header = true;
+      settings->with_user_filters = true;
+    case XCODE_PCM16:
+      settings->encode_audio = true;
+      settings->format = "s16le";
+      settings->audio_codec = AV_CODEC_ID_PCM_S16LE;
+      settings->sample_format = AV_SAMPLE_FMT_S16;
+      break;
 
-      case XCODE_PCM24:
-	settings->encode_audio = true;
-	settings->format = "s24le";
-	settings->audio_codec = AV_CODEC_ID_PCM_S24LE;
-	settings->sample_format = AV_SAMPLE_FMT_S32;
-	break;
+    case XCODE_PCM24:
+      settings->encode_audio = true;
+      settings->format = "s24le";
+      settings->audio_codec = AV_CODEC_ID_PCM_S24LE;
+      settings->sample_format = AV_SAMPLE_FMT_S32;
+      break;
 
-      case XCODE_PCM32:
-	settings->encode_audio = true;
-	settings->format = "s32le";
-	settings->audio_codec = AV_CODEC_ID_PCM_S32LE;
-	settings->sample_format = AV_SAMPLE_FMT_S32;
-	break;
+    case XCODE_PCM32:
+      settings->encode_audio = true;
+      settings->format = "s32le";
+      settings->audio_codec = AV_CODEC_ID_PCM_S32LE;
+      settings->sample_format = AV_SAMPLE_FMT_S32;
+      break;
 
-      case XCODE_MP3:
-	settings->encode_audio = true;
-	settings->format = "mp3";
-	settings->audio_codec = AV_CODEC_ID_MP3;
-	settings->sample_format = AV_SAMPLE_FMT_S16P;
-	break;
+    case XCODE_MP3:
+      settings->encode_audio = true;
+      settings->format = "mp3";
+      settings->audio_codec = AV_CODEC_ID_MP3;
+      settings->sample_format = AV_SAMPLE_FMT_S16P;
+      break;
 
-      case XCODE_OPUS:
-	settings->encode_audio = true;
-	settings->format = "data"; // Means we get the raw packet from the encoder, no muxing
-	settings->audio_codec = AV_CODEC_ID_OPUS;
-	settings->sample_format = AV_SAMPLE_FMT_S16; // Only libopus support
-	break;
+    case XCODE_OPUS:
+      settings->encode_audio = true;
+      settings->format = "data"; // Means we get the raw packet from the encoder, no muxing
+      settings->audio_codec = AV_CODEC_ID_OPUS;
+      settings->sample_format = AV_SAMPLE_FMT_S16; // Only libopus support
+      break;
 
-      case XCODE_ALAC:
-	settings->encode_audio = true;
-	settings->format = "data"; // Means we get the raw packet from the encoder, no muxing
-	settings->audio_codec = AV_CODEC_ID_ALAC;
-	settings->sample_format = AV_SAMPLE_FMT_S16P;
-	settings->frame_size = 352;
-	break;
+    case XCODE_ALAC:
+      settings->encode_audio = true;
+      settings->format = "data"; // Means we get the raw packet from the encoder, no muxing
+      settings->audio_codec = AV_CODEC_ID_ALAC;
+      settings->sample_format = AV_SAMPLE_FMT_S16P;
+      settings->frame_size = 352;
+      break;
 
-      case XCODE_MP4_ALAC:
-	settings->with_mp4_header = true;
-	settings->encode_audio = true;
-	settings->format = "data";
-	settings->audio_codec = AV_CODEC_ID_ALAC;
-	break;
+    case XCODE_MP4_ALAC:
+      settings->with_mp4_header = true;
+      settings->encode_audio = true;
+      settings->format = "data";
+      settings->audio_codec = AV_CODEC_ID_ALAC;
+      break;
 
-      case XCODE_MP4_ALAC_HEADER:
-	settings->without_libav_header = true;
-	settings->without_libav_trailer = true;
-	settings->encode_audio = true;
-	settings->format = "ipod"; // ffmpeg default mp4 variant ("mp4" doesn't work with SoundBridge because of the btrt atom in the header)
-	settings->audio_codec = AV_CODEC_ID_ALAC;
-	break;
+    case XCODE_MP4_ALAC_HEADER:
+      settings->without_libav_header = true;
+      settings->without_libav_trailer = true;
+      settings->encode_audio = true;
+      settings->format = "ipod"; // ffmpeg default mp4 variant ("mp4" doesn't work with SoundBridge because of the btrt
+                                 // atom in the header)
+      settings->audio_codec = AV_CODEC_ID_ALAC;
+      break;
 
-      case XCODE_OGG:
-	settings->encode_audio = true;
-	settings->in_format = "ogg";
-	break;
+    case XCODE_OGG:
+      settings->encode_audio = true;
+      settings->in_format = "ogg";
+      break;
 
-      case XCODE_JPEG:
-	settings->encode_video = true;
-	settings->silent = 1;
+    case XCODE_JPEG:
+      settings->encode_video = true;
+      settings->silent = 1;
 // With ffmpeg 4.3 (> libavformet 58.29) "image2" only works for actual file
 // output. It's possible we should have used "image2pipe" all along, but since
 // "image2" has been working we only replace it going forward.
 #if USE_IMAGE2PIPE
-	settings->format = "image2pipe";
+      settings->format = "image2pipe";
 #else
-	settings->format = "image2";
+      settings->format = "image2";
 #endif
 
-	settings->in_format = "mjpeg";
-	settings->pix_fmt = AV_PIX_FMT_YUVJ420P;
-	settings->video_codec = AV_CODEC_ID_MJPEG;
-	break;
+      settings->in_format = "mjpeg";
+      settings->pix_fmt = AV_PIX_FMT_YUVJ420P;
+      settings->video_codec = AV_CODEC_ID_MJPEG;
+      break;
 
-      case XCODE_PNG:
-	settings->encode_video = true;
-	settings->silent = true;
+    case XCODE_PNG:
+      settings->encode_video = true;
+      settings->silent = true;
 // See explanation above
 #if USE_IMAGE2PIPE
-	settings->format = "image2pipe";
+      settings->format = "image2pipe";
 #else
-	settings->format = "image2";
+      settings->format = "image2";
 #endif
-	settings->pix_fmt = AV_PIX_FMT_RGB24;
-	settings->video_codec = AV_CODEC_ID_PNG;
-	break;
+      settings->pix_fmt = AV_PIX_FMT_RGB24;
+      settings->video_codec = AV_CODEC_ID_PNG;
+      break;
 
-      case XCODE_VP8:
-	settings->encode_video = true;
-	settings->silent = true;
+    case XCODE_VP8:
+      settings->encode_video = true;
+      settings->silent = true;
 // See explanation above
 #if USE_IMAGE2PIPE
-	settings->format = "image2pipe";
+      settings->format = "image2pipe";
 #else
-	settings->format = "image2";
+      settings->format = "image2";
 #endif
-	settings->pix_fmt = AV_PIX_FMT_YUVJ420P;
-	settings->video_codec = AV_CODEC_ID_VP8;
-	break;
+      settings->pix_fmt = AV_PIX_FMT_YUVJ420P;
+      settings->video_codec = AV_CODEC_ID_VP8;
+      break;
 
-      default:
-	DPRINTF(E_LOG, L_XCODE, "Bug! Unknown transcoding profile\n");
-	return -1;
+    default:
+      DPRINTF(E_LOG, L_XCODE, "Bug! Unknown transcoding profile\n");
+      return -1;
     }
 
   if (quality && quality->sample_rate)
     {
-      settings->sample_rate    = quality->sample_rate;
+      settings->sample_rate = quality->sample_rate;
     }
 
   if (quality && quality->channels)
@@ -376,18 +375,20 @@ init_settings(struct settings_ctx *settings, enum transcode_profile profile, str
       av_channel_layout_default(&settings->channel_layout, quality->channels);
 #else
       settings->channel_layout = av_get_default_channel_layout(quality->channels);
-      settings->nb_channels    = quality->channels;
+      settings->nb_channels = quality->channels;
 #endif
     }
 
   if (quality && quality->bit_rate)
     {
-      settings->bit_rate    = quality->bit_rate;
+      settings->bit_rate = quality->bit_rate;
     }
 
-  if (quality && quality->bits_per_sample && (quality->bits_per_sample != 8 * av_get_bytes_per_sample(settings->sample_format)))
+  if (quality && quality->bits_per_sample
+      && (quality->bits_per_sample != 8 * av_get_bytes_per_sample(settings->sample_format)))
     {
-      DPRINTF(E_LOG, L_XCODE, "Bug! Mismatch between profile (%d bps) and media quality (%d bps)\n", 8 * av_get_bytes_per_sample(settings->sample_format), quality->bits_per_sample);
+      DPRINTF(E_LOG, L_XCODE, "Bug! Mismatch between profile (%d bps) and media quality (%d bps)\n",
+          8 * av_get_bytes_per_sample(settings->sample_format), quality->bits_per_sample);
       return -1;
     }
 
@@ -395,7 +396,8 @@ init_settings(struct settings_ctx *settings, enum transcode_profile profile, str
 }
 
 static int
-init_settings_from_video(struct settings_ctx *settings, enum transcode_profile profile, struct decode_ctx *src_ctx, int width, int height)
+init_settings_from_video(
+    struct settings_ctx *settings, enum transcode_profile profile, struct decode_ctx *src_ctx, int width, int height)
 {
   settings->width = width;
   settings->height = height;
@@ -404,7 +406,8 @@ init_settings_from_video(struct settings_ctx *settings, enum transcode_profile p
 }
 
 static int
-init_settings_from_audio(struct settings_ctx *settings, enum transcode_profile profile, struct decode_ctx *src_ctx, struct media_quality *quality)
+init_settings_from_audio(struct settings_ctx *settings, enum transcode_profile profile, struct decode_ctx *src_ctx,
+    struct media_quality *quality)
 {
   int src_bytes_per_sample = av_get_bytes_per_sample(src_ctx->audio_stream.codec->sample_fmt);
 
@@ -428,27 +431,27 @@ init_settings_from_audio(struct settings_ctx *settings, enum transcode_profile p
   // Initialize settings that are both source-dependent and profile-dependent
   switch (profile)
     {
-      case XCODE_MP4_ALAC:
-      case XCODE_MP4_ALAC_HEADER:
-	if (!settings->sample_format)
-	  settings->sample_format = (src_bytes_per_sample == 4) ? AV_SAMPLE_FMT_S32P : AV_SAMPLE_FMT_S16P;
-	break;
+    case XCODE_MP4_ALAC:
+    case XCODE_MP4_ALAC_HEADER:
+      if (!settings->sample_format)
+	settings->sample_format = (src_bytes_per_sample == 4) ? AV_SAMPLE_FMT_S32P : AV_SAMPLE_FMT_S16P;
+      break;
 
-      case XCODE_PCM_NATIVE:
-	if (!settings->sample_format)
-	  settings->sample_format = (src_bytes_per_sample == 4) ? AV_SAMPLE_FMT_S32 : AV_SAMPLE_FMT_S16;
-	if (!settings->audio_codec)
-	  settings->audio_codec = (src_bytes_per_sample == 4) ? AV_CODEC_ID_PCM_S32LE : AV_CODEC_ID_PCM_S16LE;
-	if (!settings->format)
-	  settings->format = (src_bytes_per_sample == 4) ? "s32le" : "s16le";
-	break;
+    case XCODE_PCM_NATIVE:
+      if (!settings->sample_format)
+	settings->sample_format = (src_bytes_per_sample == 4) ? AV_SAMPLE_FMT_S32 : AV_SAMPLE_FMT_S16;
+      if (!settings->audio_codec)
+	settings->audio_codec = (src_bytes_per_sample == 4) ? AV_CODEC_ID_PCM_S32LE : AV_CODEC_ID_PCM_S16LE;
+      if (!settings->format)
+	settings->format = (src_bytes_per_sample == 4) ? "s32le" : "s16le";
+      break;
 
-      default:
-	if (settings->sample_format && settings->audio_codec && settings->format)
-	  return 0;
+    default:
+      if (settings->sample_format && settings->audio_codec && settings->format)
+	return 0;
 
-	DPRINTF(E_LOG, L_XCODE, "Bug! Profile %d has unset encoding parameters\n", profile);
-	return -1;
+      DPRINTF(E_LOG, L_XCODE, "Bug! Profile %d has unset encoding parameters\n", profile);
+      return -1;
     }
 
   return 0;
@@ -459,26 +462,25 @@ stream_settings_set(struct stream_ctx *s, struct settings_ctx *settings, enum AV
 {
   if (type == AVMEDIA_TYPE_AUDIO)
     {
-      s->codec->sample_rate    = settings->sample_rate;
+      s->codec->sample_rate = settings->sample_rate;
 #if USE_CH_LAYOUT
       av_channel_layout_copy(&s->codec->ch_layout, &(settings->channel_layout));
 #else
       s->codec->channel_layout = settings->channel_layout;
-      s->codec->channels       = settings->nb_channels;
+      s->codec->channels = settings->nb_channels;
 #endif
-      s->codec->sample_fmt     = settings->sample_format;
-      s->codec->time_base      = (AVRational){1, settings->sample_rate};
-      s->codec->bit_rate       = settings->bit_rate;
+      s->codec->sample_fmt = settings->sample_format;
+      s->codec->time_base = (AVRational){ 1, settings->sample_rate };
+      s->codec->bit_rate = settings->bit_rate;
     }
   else if (type == AVMEDIA_TYPE_VIDEO)
     {
-      s->codec->height         = settings->height;
-      s->codec->width          = settings->width;
-      s->codec->pix_fmt        = settings->pix_fmt;
-      s->codec->time_base      = (AVRational){1, 25};
+      s->codec->height = settings->height;
+      s->codec->width = settings->width;
+      s->codec->pix_fmt = settings->pix_fmt;
+      s->codec->time_base = (AVRational){ 1, 25 };
     }
 }
-
 
 /* -------------------------------- HELPERS -------------------------------- */
 
@@ -562,7 +564,8 @@ dummy_seek(void *arg, int64_t offset, enum transcode_seek_type type)
 }
 
 static off_t
-size_estimate(enum transcode_profile profile, uint32_t bit_rate, uint32_t sample_rate, uint16_t bytes_per_sample, uint16_t channels, uint32_t len_ms)
+size_estimate(enum transcode_profile profile, uint32_t bit_rate, uint32_t sample_rate, uint16_t bytes_per_sample,
+    uint16_t channels, uint32_t len_ms)
 {
   off_t bytes = 0;
   uint64_t nsamples;
@@ -581,7 +584,6 @@ size_estimate(enum transcode_profile profile, uint32_t bit_rate, uint32_t sample
 
   return bytes;
 }
-
 
 /*
  * Checks if this stream index is one that we are decoding
@@ -647,7 +649,8 @@ stream_add(struct encode_ctx *ctx, struct stream_ctx *s, enum AVCodecID codec_id
   if (!s->codec->pix_fmt)
     {
       s->codec->pix_fmt = avcodec_default_get_format(s->codec, encoder->pix_fmts);
-      DPRINTF(E_DBG, L_XCODE, "Pixel format set to %s (encoder is %s)\n", av_get_pix_fmt_name(s->codec->pix_fmt), codec_desc->name);
+      DPRINTF(E_DBG, L_XCODE, "Pixel format set to %s (encoder is %s)\n", av_get_pix_fmt_name(s->codec->pix_fmt),
+          codec_desc->name);
     }
 
   if (ctx->ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
@@ -694,7 +697,7 @@ stream_add(struct encode_ctx *ctx, struct stream_ctx *s, enum AVCodecID codec_id
 
   return 0;
 
- error:
+error:
   if (s->codec)
     avcodec_free_context(&s->codec);
   if (options)
@@ -706,7 +709,7 @@ stream_add(struct encode_ctx *ctx, struct stream_ctx *s, enum AVCodecID codec_id
 /*
  * Called by libavformat while demuxing. Used to interrupt/unblock av_read_frame
  * in case a source (especially a network stream) becomes unavailable.
- * 
+ *
  * @in arg        Will point to the decode context
  * @return        Non-zero if av_read_frame should be interrupted
  */
@@ -785,7 +788,7 @@ packet_prepare(AVPacket *pkt, struct stream_ctx *s)
       pkt->pts = s->prev_pts;
     }
   s->prev_pts = pkt->pts;
-  pkt->dts = pkt->pts; //FIXME
+  pkt->dts = pkt->pts; // FIXME
 
   av_packet_rescale_ts(pkt, s->codec->time_base, s->stream->time_base);
 }
@@ -819,10 +822,10 @@ encode_write(struct encode_ctx *ctx, struct stream_ctx *s, AVFrame *filt_frame)
 
       ret = av_interleaved_write_frame(ctx->ofmt_ctx, ctx->encoded_pkt);
       if (ret < 0)
-        {
+	{
 	  DPRINTF(E_WARN, L_XCODE, "av_interleaved_write_frame() failed: %s\n", err2str(ret));
 	  break;
-        }
+	}
     }
 
   return ret;
@@ -886,7 +889,8 @@ decode_filter_encode_write(struct transcode_ctx *ctx, struct stream_ctx *s, AVPa
   int ret;
 
   ret = avcodec_send_packet(s->codec, pkt);
-  if (ret < 0 && (ret != AVERROR_INVALIDDATA) && (ret != AVERROR(EAGAIN))) // We don't bail on invalid data, some streams work anyway
+  if (ret < 0 && (ret != AVERROR_INVALIDDATA)
+      && (ret != AVERROR(EAGAIN))) // We don't bail on invalid data, some streams work anyway
     {
       DPRINTF(E_LOG, L_XCODE, "Decoder error, avcodec_send_packet said '%s' (%d)\n", err2str(ret), ret);
       return ret;
@@ -1050,9 +1054,11 @@ avio_evbuffer_open(struct transcode_evbuf_io *evbuf_io, int is_output)
   ae->seekfn_arg = evbuf_io->seekfn_arg;
 
   if (is_output)
-    s = avio_alloc_context(ae->buffer, AVIO_BUFFER_SIZE, 1, ae, NULL, avio_evbuffer_write, (evbuf_io->seekfn ? avio_evbuffer_seek : NULL));
+    s = avio_alloc_context(
+        ae->buffer, AVIO_BUFFER_SIZE, 1, ae, NULL, avio_evbuffer_write, (evbuf_io->seekfn ? avio_evbuffer_seek : NULL));
   else
-    s = avio_alloc_context(ae->buffer, AVIO_BUFFER_SIZE, 0, ae, avio_evbuffer_read, NULL, (evbuf_io->seekfn ? avio_evbuffer_seek : NULL));
+    s = avio_alloc_context(
+        ae->buffer, AVIO_BUFFER_SIZE, 0, ae, avio_evbuffer_read, NULL, (evbuf_io->seekfn ? avio_evbuffer_seek : NULL));
 
   if (!s)
     {
@@ -1086,11 +1092,11 @@ avio_evbuffer_close(AVIOContext *s)
   av_free(s);
 }
 
-
 /* ----------------------- CUSTOM HEADER GENERATION ------------------------ */
 
 static int
-make_wav_header(struct evbuffer **wav_header, uint32_t sample_rate, uint16_t bytes_per_sample, uint16_t channels, uint32_t bytes_total)
+make_wav_header(struct evbuffer **wav_header, uint32_t sample_rate, uint16_t bytes_per_sample, uint16_t channels,
+    uint32_t bytes_total)
 {
   uint8_t header[WAV_HEADER_LEN];
 
@@ -1098,9 +1104,9 @@ make_wav_header(struct evbuffer **wav_header, uint32_t sample_rate, uint16_t byt
   add_le32(header + 4, bytes_total - 8); // Total file size - 8 bytes as defined by the format
   memcpy(header + 8, "WAVEfmt ", 8);
   add_le32(header + 16, 16);
-  add_le16(header + 20, 1); // AudioFormat (PCM)
-  add_le16(header + 22, channels);     /* channels */
-  add_le32(header + 24, sample_rate);  /* samplerate */
+  add_le16(header + 20, 1);                                         // AudioFormat (PCM)
+  add_le16(header + 22, channels);                                  /* channels */
+  add_le32(header + 24, sample_rate);                               /* samplerate */
   add_le32(header + 28, sample_rate * channels * bytes_per_sample); /* byte rate */
   add_le16(header + 32, channels * bytes_per_sample);               /* block align */
   add_le16(header + 34, 8 * bytes_per_sample);                      /* bits per sample */
@@ -1145,7 +1151,8 @@ mp4_adjust_moov_stco_offset(uint8_t *moov, size_t moov_len)
 }
 
 static int
-mp4_header_trailer_from_evbuf(uint8_t **header, size_t *header_len, uint8_t **trailer, size_t *trailer_len, struct evbuffer *evbuf, int64_t start_pos)
+mp4_header_trailer_from_evbuf(uint8_t **header, size_t *header_len, uint8_t **trailer, size_t *trailer_len,
+    struct evbuffer *evbuf, int64_t start_pos)
 {
   uint8_t *buf = evbuffer_pullup(evbuf, -1);
   size_t buf_len = evbuffer_get_length(evbuf);
@@ -1177,7 +1184,7 @@ mp4_header_trailer_from_evbuf(uint8_t **header, size_t *header_len, uint8_t **tr
       memcpy(&pos, marker + sizeof(xcode_seek_marker), sizeof(pos));
       buf += len + sizeof(xcode_seek_marker) + sizeof(pos);
       buf_len -= len + sizeof(xcode_seek_marker) + sizeof(pos);
-  }
+    }
 
   evbuffer_drain(evbuf, -1);
   return bytes_added;
@@ -1236,7 +1243,8 @@ make_mp4_header(struct evbuffer **mp4_header, const char *url)
     goto error;
 
   // Writes the obuf to the header buffer, bytes_processed is 0
-  ret = mp4_header_trailer_from_evbuf(&header, &header_len, &trailer, &trailer_len, ctx.encode_ctx->obuf, ctx.encode_ctx->bytes_processed);
+  ret = mp4_header_trailer_from_evbuf(
+      &header, &header_len, &trailer, &trailer_len, ctx.encode_ctx->obuf, ctx.encode_ctx->bytes_processed);
   if (ret < 0)
     goto error;
 
@@ -1254,7 +1262,8 @@ make_mp4_header(struct evbuffer **mp4_header, const char *url)
   // seek forward again to write the trailer. Since we can't actually seek, we
   // instead look for the markers that dummy_seek() inserted.
   av_write_trailer(ctx.encode_ctx->ofmt_ctx);
-  ret = mp4_header_trailer_from_evbuf(&header, &header_len, &trailer, &trailer_len, ctx.encode_ctx->obuf, ctx.encode_ctx->bytes_processed);
+  ret = mp4_header_trailer_from_evbuf(
+      &header, &header_len, &trailer, &trailer_len, ctx.encode_ctx->obuf, ctx.encode_ctx->bytes_processed);
   if (ret < 0 || !header || !trailer)
     goto error;
 
@@ -1289,7 +1298,7 @@ make_mp4_header(struct evbuffer **mp4_header, const char *url)
   evbuffer_free(evbuf_io.evbuf);
   return 0;
 
- error:
+error:
   if (header)
     DHEXDUMP(E_DBG, L_XCODE, header, header_len, "MP4 header\n");
   if (trailer)
@@ -1302,7 +1311,6 @@ make_mp4_header(struct evbuffer **mp4_header, const char *url)
   evbuffer_free(evbuf_io.evbuf);
   return -1;
 }
-
 
 /* --------------------------- INPUT/OUTPUT INIT --------------------------- */
 
@@ -1401,7 +1409,7 @@ open_input(struct decode_ctx *ctx, const char *path, struct transcode_evbuf_io *
       av_dict_set(&options, "reconnect", "1", 0);
       // The below option disabled because it does not work with m3u8 streams,
       // see https://lists.ffmpeg.org/pipermail/ffmpeg-user/2018-September/041109.html
-//      av_dict_set(&options, "reconnect_at_eof", "1", 0);
+      //      av_dict_set(&options, "reconnect_at_eof", "1", 0);
       av_dict_set(&options, "reconnect_streamed", "1", 0);
     }
 
@@ -1479,7 +1487,7 @@ open_input(struct decode_ctx *ctx, const char *path, struct transcode_evbuf_io *
 
   return 0;
 
- out_fail:
+out_fail:
   close_input(ctx);
   return (ret < 0 ? ret : -1); // If we got an error code from ffmpeg then return that
 }
@@ -1498,7 +1506,8 @@ close_output(struct encode_ctx *ctx)
 }
 
 static int
-open_output(struct encode_ctx *ctx, struct transcode_evbuf_io *evbuf_io, struct evbuffer *prepared_header, struct decode_ctx *src_ctx)
+open_output(struct encode_ctx *ctx, struct transcode_evbuf_io *evbuf_io, struct evbuffer *prepared_header,
+    struct decode_ctx *src_ctx)
 {
 #if USE_CONST_AVFORMAT
   const AVOutputFormat *oformat;
@@ -1571,7 +1580,8 @@ open_output(struct encode_ctx *ctx, struct transcode_evbuf_io *evbuf_io, struct 
     }
   if (ctx->settings.with_wav_header)
     {
-      ret = make_wav_header(&header, ctx->settings.sample_rate, av_get_bytes_per_sample(ctx->settings.sample_format), ctx->settings.nb_channels, ctx->bytes_total);
+      ret = make_wav_header(&header, ctx->settings.sample_rate, av_get_bytes_per_sample(ctx->settings.sample_format),
+          ctx->settings.nb_channels, ctx->bytes_total);
       if (ret < 0)
 	{
 	  DPRINTF(E_LOG, L_XCODE, "Error creating WAV header\n");
@@ -1601,13 +1611,14 @@ open_output(struct encode_ctx *ctx, struct transcode_evbuf_io *evbuf_io, struct 
 
   return 0;
 
- error:
+error:
   close_output(ctx);
   return -1;
 }
 
 static int
-filter_def_abuffer(struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
+filter_def_abuffer(
+    struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
 {
 #if USE_CH_LAYOUT
   char buf[64];
@@ -1618,27 +1629,24 @@ filter_def_abuffer(struct filter_def *def, struct stream_ctx *out_stream, struct
 
   av_channel_layout_describe(&in_stream->codec->ch_layout, buf, sizeof(buf));
 
-  snprintf(def->args, sizeof(def->args),
-           "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=%s",
-           in_stream->stream->time_base.num, in_stream->stream->time_base.den,
-           in_stream->codec->sample_rate, av_get_sample_fmt_name(in_stream->codec->sample_fmt),
-           buf);
+  snprintf(def->args, sizeof(def->args), "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=%s",
+      in_stream->stream->time_base.num, in_stream->stream->time_base.den, in_stream->codec->sample_rate,
+      av_get_sample_fmt_name(in_stream->codec->sample_fmt), buf);
 #else
   if (!in_stream->codec->channel_layout)
     in_stream->codec->channel_layout = av_get_default_channel_layout(in_stream->codec->channels);
 
-  snprintf(def->args, sizeof(def->args),
-           "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%"PRIx64,
-           in_stream->stream->time_base.num, in_stream->stream->time_base.den,
-           in_stream->codec->sample_rate, av_get_sample_fmt_name(in_stream->codec->sample_fmt),
-           in_stream->codec->channel_layout);
+  snprintf(def->args, sizeof(def->args), "time_base=%d/%d:sample_rate=%d:sample_fmt=%s:channel_layout=0x%" PRIx64,
+      in_stream->stream->time_base.num, in_stream->stream->time_base.den, in_stream->codec->sample_rate,
+      av_get_sample_fmt_name(in_stream->codec->sample_fmt), in_stream->codec->channel_layout);
 #endif
   snprintf(def->name, sizeof(def->name), "abuffer");
   return 0;
 }
 
 static int
-filter_def_aformat(struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
+filter_def_aformat(
+    struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
 {
 #if USE_CH_LAYOUT
   char buf[64];
@@ -1648,26 +1656,24 @@ filter_def_aformat(struct filter_def *def, struct stream_ctx *out_stream, struct
 
   av_channel_layout_describe(&out_stream->codec->ch_layout, buf, sizeof(buf));
 
-  snprintf(def->args, sizeof(def->args),
-           "sample_fmts=%s:sample_rates=%d:channel_layouts=%s",
-           av_get_sample_fmt_name(out_stream->codec->sample_fmt), out_stream->codec->sample_rate,
-           buf);
+  snprintf(def->args, sizeof(def->args), "sample_fmts=%s:sample_rates=%d:channel_layouts=%s",
+      av_get_sample_fmt_name(out_stream->codec->sample_fmt), out_stream->codec->sample_rate, buf);
 #else
   // For some AIFF files, ffmpeg (3.4.6) will not give us a channel_layout (bug in ffmpeg?)
   if (!out_stream->codec->channel_layout)
     out_stream->codec->channel_layout = av_get_default_channel_layout(out_stream->codec->channels);
 
-  snprintf(def->args, sizeof(def->args),
-           "sample_fmts=%s:sample_rates=%d:channel_layouts=0x%"PRIx64,
-           av_get_sample_fmt_name(out_stream->codec->sample_fmt), out_stream->codec->sample_rate,
-           out_stream->codec->channel_layout);
+  snprintf(def->args, sizeof(def->args), "sample_fmts=%s:sample_rates=%d:channel_layouts=0x%" PRIx64,
+      av_get_sample_fmt_name(out_stream->codec->sample_fmt), out_stream->codec->sample_rate,
+      out_stream->codec->channel_layout);
 #endif
   snprintf(def->name, sizeof(def->name), "aformat");
   return 0;
 }
 
 static int
-filter_def_abuffersink(struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
+filter_def_abuffersink(
+    struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
 {
   snprintf(def->name, sizeof(def->name), "abuffersink");
   *def->args = '\0';
@@ -1675,37 +1681,38 @@ filter_def_abuffersink(struct filter_def *def, struct stream_ctx *out_stream, st
 }
 
 static int
-filter_def_buffer(struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
+filter_def_buffer(
+    struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
 {
   snprintf(def->name, sizeof(def->name), "buffer");
-  snprintf(def->args, sizeof(def->args),
-           "width=%d:height=%d:pix_fmt=%s:time_base=%d/%d:sar=%d/%d",
-           in_stream->codec->width, in_stream->codec->height, av_get_pix_fmt_name(in_stream->codec->pix_fmt),
-           in_stream->stream->time_base.num, in_stream->stream->time_base.den,
-           in_stream->codec->sample_aspect_ratio.num, in_stream->codec->sample_aspect_ratio.den);
+  snprintf(def->args, sizeof(def->args), "width=%d:height=%d:pix_fmt=%s:time_base=%d/%d:sar=%d/%d",
+      in_stream->codec->width, in_stream->codec->height, av_get_pix_fmt_name(in_stream->codec->pix_fmt),
+      in_stream->stream->time_base.num, in_stream->stream->time_base.den, in_stream->codec->sample_aspect_ratio.num,
+      in_stream->codec->sample_aspect_ratio.den);
   return 0;
 }
 
 static int
-filter_def_format(struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
+filter_def_format(
+    struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
 {
   snprintf(def->name, sizeof(def->name), "format");
-  snprintf(def->args, sizeof(def->args),
-           "pix_fmts=%s", av_get_pix_fmt_name(out_stream->codec->pix_fmt));
+  snprintf(def->args, sizeof(def->args), "pix_fmts=%s", av_get_pix_fmt_name(out_stream->codec->pix_fmt));
   return 0;
 }
 
 static int
-filter_def_scale(struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
+filter_def_scale(
+    struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
 {
   snprintf(def->name, sizeof(def->name), "scale");
-  snprintf(def->args, sizeof(def->args),
-           "w=%d:h=%d", out_stream->codec->width, out_stream->codec->height);
+  snprintf(def->args, sizeof(def->args), "w=%d:h=%d", out_stream->codec->width, out_stream->codec->height);
   return 0;
 }
 
 static int
-filter_def_buffersink(struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
+filter_def_buffersink(
+    struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
 {
   snprintf(def->name, sizeof(def->name), "buffersink");
   *def->args = '\0';
@@ -1713,7 +1720,8 @@ filter_def_buffersink(struct filter_def *def, struct stream_ctx *out_stream, str
 }
 
 static int
-filter_def_user(struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
+filter_def_user(
+    struct filter_def *def, struct stream_ctx *out_stream, struct stream_ctx *in_stream, const char *deffn_arg)
 {
   char *ptr;
 
@@ -1740,7 +1748,8 @@ define_audio_filters(struct filters *filters, size_t filters_len, bool with_user
   num_user_filters = cfg_size(cfg_getsec(cfg, "library"), "decode_audio_filters");
   if (filters_len < num_user_filters + 3)
     {
-      DPRINTF(E_LOG, L_XCODE, "Too many audio filters configured (%d, max is %zu)\n", num_user_filters, filters_len - 3);
+      DPRINTF(
+          E_LOG, L_XCODE, "Too many audio filters configured (%d, max is %zu)\n", num_user_filters, filters_len - 3);
       return -1;
     }
 
@@ -1765,7 +1774,8 @@ define_video_filters(struct filters *filters, size_t filters_len, bool with_user
   num_user_filters = cfg_size(cfg_getsec(cfg, "library"), "decode_video_filters");
   if (filters_len < num_user_filters + 3)
     {
-      DPRINTF(E_LOG, L_XCODE, "Too many video filters configured (%d, max is %zu)\n", num_user_filters, filters_len - 3);
+      DPRINTF(
+          E_LOG, L_XCODE, "Too many video filters configured (%d, max is %zu)\n", num_user_filters, filters_len - 3);
       return -1;
     }
 
@@ -1784,7 +1794,7 @@ define_video_filters(struct filters *filters, size_t filters_len, bool with_user
 
 static int
 add_filters(int *num_added, AVFilterGraph *filter_graph, struct filters *filters, size_t filters_len,
-            struct stream_ctx *out_stream, struct stream_ctx *in_stream)
+    struct stream_ctx *out_stream, struct stream_ctx *in_stream)
 {
   const AVFilter *av_filter;
   struct filter_def def;
@@ -1832,7 +1842,8 @@ add_filters(int *num_added, AVFilterGraph *filter_graph, struct filters *filters
 }
 
 static int
-create_filtergraph(struct stream_ctx *out_stream, struct filters *filters, size_t filters_len, struct stream_ctx *in_stream)
+create_filtergraph(
+    struct stream_ctx *out_stream, struct filters *filters, size_t filters_len, struct stream_ctx *in_stream)
 {
   AVFilterGraph *filter_graph;
   int ret;
@@ -1859,7 +1870,7 @@ create_filtergraph(struct stream_ctx *out_stream, struct filters *filters, size_
 
   return 0;
 
- out_fail:
+out_fail:
   avfilter_graph_free(&filter_graph);
   return -1;
 }
@@ -1889,7 +1900,7 @@ open_filters(struct encode_ctx *ctx, struct decode_ctx *src_ctx)
 
       // Many audio encoders require a fixed frame size. This will ensure that
       // the filt_frame from av_buffersink_get_frame has that size (except EOF).
-      if (! (ctx->audio_stream.codec->codec->capabilities & AV_CODEC_CAP_VARIABLE_FRAME_SIZE))
+      if (!(ctx->audio_stream.codec->codec->capabilities & AV_CODEC_CAP_VARIABLE_FRAME_SIZE))
 	av_buffersink_set_frame_size(ctx->audio_stream.buffersink_ctx, ctx->audio_stream.codec->frame_size);
     }
 
@@ -1906,11 +1917,10 @@ open_filters(struct encode_ctx *ctx, struct decode_ctx *src_ctx)
 
   return 0;
 
- out_fail:
+out_fail:
   close_filters(ctx);
   return -1;
 }
-
 
 /* ----------------------------- TRANSCODE API ----------------------------- */
 
@@ -1950,7 +1960,7 @@ transcode_decode_setup(struct transcode_decode_setup_args args)
 
   return ctx;
 
- fail_free:
+fail_free:
   av_packet_free(&ctx->packet);
   av_frame_free(&ctx->decoded_frame);
   free(ctx);
@@ -1976,17 +1986,21 @@ transcode_encode_setup(struct transcode_encode_setup_args args)
   if (init_settings(&ctx->settings, args.profile, args.quality) < 0)
     goto error;
 
-  if (ctx->settings.encode_audio && init_settings_from_audio(&ctx->settings, args.profile, args.src_ctx, args.quality) < 0)
+  if (ctx->settings.encode_audio
+      && init_settings_from_audio(&ctx->settings, args.profile, args.src_ctx, args.quality) < 0)
     goto error;
 
-  if (ctx->settings.encode_video && init_settings_from_video(&ctx->settings, args.profile, args.src_ctx, args.width, args.height) < 0)
+  if (ctx->settings.encode_video
+      && init_settings_from_video(&ctx->settings, args.profile, args.src_ctx, args.width, args.height) < 0)
     goto error;
 
   dst_bytes_per_sample = av_get_bytes_per_sample(ctx->settings.sample_format);
-  ctx->bytes_total = size_estimate(args.profile, ctx->settings.bit_rate, ctx->settings.sample_rate, dst_bytes_per_sample, ctx->settings.nb_channels, args.src_ctx->len_ms);
+  ctx->bytes_total = size_estimate(args.profile, ctx->settings.bit_rate, ctx->settings.sample_rate,
+      dst_bytes_per_sample, ctx->settings.nb_channels, args.src_ctx->len_ms);
 
   if (ctx->settings.with_icy && args.src_ctx->is_http)
-    ctx->icy_interval = METADATA_ICY_INTERVAL * ctx->settings.nb_channels * dst_bytes_per_sample * ctx->settings.sample_rate;
+    ctx->icy_interval
+        = METADATA_ICY_INTERVAL * ctx->settings.nb_channels * dst_bytes_per_sample * ctx->settings.sample_rate;
 
   if (open_output(ctx, args.evbuf_io, args.prepared_header, args.src_ctx) < 0)
     goto error;
@@ -1996,7 +2010,7 @@ transcode_encode_setup(struct transcode_encode_setup_args args)
 
   return ctx;
 
- error:
+error:
   transcode_encode_cleanup(&ctx);
   return NULL;
 }
@@ -2081,10 +2095,10 @@ transcode_decode_setup_raw(enum transcode_profile profile, struct media_quality 
 
   return ctx;
 
- out_free_codec:
+out_free_codec:
   avcodec_free_context(&ctx->audio_stream.codec);
   avformat_free_context(ctx->ifmt_ctx);
- out_free_ctx:
+out_free_ctx:
   free(ctx);
   return NULL;
 }
@@ -2129,7 +2143,8 @@ transcode_needed(const char *user_agent, const char *client_codecs, const char *
     {
       if (strncmp(user_agent, "iTunes", strlen("iTunes")) == 0)
 	client_codecs = itunes_codecs;
-      else if (strncmp(user_agent, "Music/", strlen("Music/")) == 0) // Apple Music, include slash because the name is generic
+      else if (strncmp(user_agent, "Music/", strlen("Music/"))
+               == 0) // Apple Music, include slash because the name is generic
 	client_codecs = itunes_codecs;
       else if (strncmp(user_agent, "QuickTime", strlen("QuickTime")) == 0)
 	client_codecs = itunes_codecs; // Use iTunes codecs
@@ -2182,7 +2197,6 @@ transcode_needed(const char *user_agent, const char *client_codecs, const char *
   return XCODE_UNKNOWN;
 }
 
-
 /*                                  Cleanup                                  */
 
 void
@@ -2226,7 +2240,6 @@ transcode_cleanup(struct transcode_ctx **ctx)
   free(*ctx);
   *ctx = NULL;
 }
-
 
 /*                       Encoding, decoding and transcoding                  */
 
@@ -2362,25 +2375,25 @@ transcode_frame_new(void *data, size_t size, int nsamples, struct media_quality 
       return NULL;
     }
 
-  f->sample_rate    = quality->sample_rate;
-  f->nb_samples     = nsamples;
+  f->sample_rate = quality->sample_rate;
+  f->nb_samples = nsamples;
 #if USE_CH_LAYOUT
   av_channel_layout_default(&f->ch_layout, quality->channels);
 #else
   f->channel_layout = av_get_default_channel_layout(quality->channels);
-# ifdef HAVE_FFMPEG
-  f->channels       = quality->channels;
-# endif
+#ifdef HAVE_FFMPEG
+  f->channels = quality->channels;
 #endif
-  f->pts            = AV_NOPTS_VALUE;
+#endif
+  f->pts = AV_NOPTS_VALUE;
 
   // We don't align because the frame won't be given directly to the encoder
   // anyway, it will first go through the filter (which might align it...?)
   ret = avcodec_fill_audio_frame(f, quality->channels, f->format, data, size, 1);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_XCODE, "Error filling frame with rawbuf, size %zu, samples %d (%d/%d/%d): %s\n",
-	size, nsamples, quality->sample_rate, quality->bits_per_sample, quality->channels, err2str(ret));
+      DPRINTF(E_LOG, L_XCODE, "Error filling frame with rawbuf, size %zu, samples %d (%d/%d/%d): %s\n", size, nsamples,
+          quality->sample_rate, quality->bits_per_sample, quality->channels, err2str(ret));
 
       av_frame_free(&f);
       return NULL;
@@ -2396,7 +2409,6 @@ transcode_frame_free(transcode_frame *frame)
 
   av_frame_free(&f);
 }
-
 
 /*                                  Seeking                                  */
 
@@ -2548,7 +2560,6 @@ transcode_encode_query(struct encode_ctx *ctx, const char *query)
   return -1;
 }
 
-
 /*                                  Metadata                                 */
 
 struct http_icy_metadata *
@@ -2571,7 +2582,8 @@ transcode_metadata(struct transcode_ctx *ctx, int *changed)
 }
 
 void
-transcode_metadata_strings_set(struct transcode_metadata_string *s, enum transcode_profile profile, struct media_quality *q, uint32_t len_ms)
+transcode_metadata_strings_set(
+    struct transcode_metadata_string *s, enum transcode_profile profile, struct media_quality *q, uint32_t len_ms)
 {
   off_t bytes;
 
@@ -2579,41 +2591,43 @@ transcode_metadata_strings_set(struct transcode_metadata_string *s, enum transco
 
   switch (profile)
     {
-      case XCODE_WAV:
-	s->type = "wav";
-	s->codectype = "wav";
-	s->description = "WAV audio file";
+    case XCODE_WAV:
+      s->type = "wav";
+      s->codectype = "wav";
+      s->description = "WAV audio file";
 
-	snprintf(s->bitrate, sizeof(s->bitrate), "%d", 8 * STOB(q->sample_rate, q->bits_per_sample, q->channels) / 1000); // 44100/16/2 -> 1411
+      snprintf(s->bitrate, sizeof(s->bitrate), "%d",
+          8 * STOB(q->sample_rate, q->bits_per_sample, q->channels) / 1000); // 44100/16/2 -> 1411
 
-	bytes = size_estimate(profile, q->bit_rate, q->sample_rate, q->bits_per_sample / 8, q->channels, len_ms);
-	snprintf(s->file_size, sizeof(s->file_size), "%d", (int)bytes);
-	break;
+      bytes = size_estimate(profile, q->bit_rate, q->sample_rate, q->bits_per_sample / 8, q->channels, len_ms);
+      snprintf(s->file_size, sizeof(s->file_size), "%d", (int)bytes);
+      break;
 
-      case XCODE_MP3:
-	s->type = "mp3";
-	s->codectype = "mpeg";
-	s->description = "MPEG audio file";
+    case XCODE_MP3:
+      s->type = "mp3";
+      s->codectype = "mpeg";
+      s->description = "MPEG audio file";
 
-	snprintf(s->bitrate, sizeof(s->bitrate), "%d", q->bit_rate / 1000);
+      snprintf(s->bitrate, sizeof(s->bitrate), "%d", q->bit_rate / 1000);
 
-	bytes = size_estimate(profile, q->bit_rate, q->sample_rate, q->bits_per_sample / 8, q->channels, len_ms);
-	snprintf(s->file_size, sizeof(s->file_size), "%d", (int)bytes);
-	break;
+      bytes = size_estimate(profile, q->bit_rate, q->sample_rate, q->bits_per_sample / 8, q->channels, len_ms);
+      snprintf(s->file_size, sizeof(s->file_size), "%d", (int)bytes);
+      break;
 
-      case XCODE_MP4_ALAC:
-	s->type = "m4a";
-	s->codectype = "alac";
-	s->description = "Apple Lossless audio file";
+    case XCODE_MP4_ALAC:
+      s->type = "m4a";
+      s->codectype = "alac";
+      s->description = "Apple Lossless audio file";
 
-	snprintf(s->bitrate, sizeof(s->bitrate), "%d", 8 * STOB(q->sample_rate, q->bits_per_sample, q->channels) / 1000); // 44100/16/2 -> 1411
+      snprintf(s->bitrate, sizeof(s->bitrate), "%d",
+          8 * STOB(q->sample_rate, q->bits_per_sample, q->channels) / 1000); // 44100/16/2 -> 1411
 
-	bytes = size_estimate(profile, q->bit_rate, q->sample_rate, q->bits_per_sample / 8, q->channels, len_ms);
-	snprintf(s->file_size, sizeof(s->file_size), "%d", (int)bytes);
-	break;
+      bytes = size_estimate(profile, q->bit_rate, q->sample_rate, q->bits_per_sample / 8, q->channels, len_ms);
+      snprintf(s->file_size, sizeof(s->file_size), "%d", (int)bytes);
+      break;
 
-      default:
-	DPRINTF(E_WARN, L_XCODE, "transcode_metadata_strings_set() called with unknown profile %d\n", profile);
+    default:
+      DPRINTF(E_WARN, L_XCODE, "transcode_metadata_strings_set() called with unknown profile %d\n", profile);
     }
 }
 
@@ -2624,11 +2638,11 @@ transcode_prepare_header(struct evbuffer **header, enum transcode_profile profil
 
   switch (profile)
     {
-      case XCODE_MP4_ALAC:
-	ret = make_mp4_header(header, path);
-	break;
-      default:
-	ret = -1;
+    case XCODE_MP4_ALAC:
+      ret = make_mp4_header(header, path);
+      break;
+    default:
+      ret = -1;
     }
 
   return ret;

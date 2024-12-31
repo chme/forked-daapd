@@ -17,19 +17,19 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdarg.h>
-#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/param.h>
+#include <unistd.h>
 
 #include <gcrypt.h>
 
@@ -37,13 +37,12 @@
 #include "misc.h"
 #include "rtp_common.h"
 
-#define RTP_HEADER_LEN        12
-#define RTCP_SYNC_PACKET_LEN  20 
+#define RTP_HEADER_LEN 12
+#define RTCP_SYNC_PACKET_LEN 20
 
 // NTP timestamp definitions
-#define FRAC             4294967296. // 2^32 as a double
-#define NTP_EPOCH_DELTA  0x83aa7e80  // 2208988800 - that's 1970 - 1900 in seconds
-
+#define FRAC 4294967296.           // 2^32 as a double
+#define NTP_EPOCH_DELTA 0x83aa7e80 // 2208988800 - that's 1970 - 1900 in seconds
 
 static inline void
 timespec_to_ntp(struct timespec *ts, struct ntp_timestamp *ns)
@@ -131,17 +130,16 @@ rtp_packet_next(struct rtp_session *session, size_t payload_len, int samples, ch
 	CHECK_NULL(L_PLAYER, pkt->data = malloc(pkt->data_size));
       else
 	CHECK_NULL(L_PLAYER, pkt->data = realloc(pkt->data, pkt->data_size));
-      pkt->header  = pkt->data;
+      pkt->header = pkt->data;
       pkt->payload = pkt->data + RTP_HEADER_LEN;
       pkt->payload_size = payload_len;
     }
 
-  pkt->samples     = samples;
-  pkt->header_len  = RTP_HEADER_LEN;
+  pkt->samples = samples;
+  pkt->header_len = RTP_HEADER_LEN;
   pkt->payload_len = payload_len;
-  pkt->data_len    = RTP_HEADER_LEN + payload_len;
-  pkt->seqnum      = session->seqnum;
-
+  pkt->data_len = RTP_HEADER_LEN + payload_len;
+  pkt->seqnum = session->seqnum;
 
   // The RTP header is made of these 12 bytes (RFC 3550):
   //    0                   1                   2                   3
@@ -153,7 +151,7 @@ rtp_packet_next(struct rtp_session *session, size_t payload_len, int samples, ch
   //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   //   |           synchronization source (SSRC) identifier            |
   //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  pkt->header[0] = 0x80; // Version = 2, P, X and CC are 0
+  pkt->header[0] = 0x80;                             // Version = 2, P, X and CC are 0
   pkt->header[1] = (marker_bit << 7) | payload_type; // M and payload type
 
   seq = htobe16(session->seqnum);
@@ -205,9 +203,10 @@ rtp_packet_get(struct rtp_session *session, uint16_t seqnum)
   //
   // The below should be the same as this (a check that works with int wrap-around):
   // (first <= last && (first <= seqnum && seqnum <= last)) || (first > last && (first <= seqnum || seqnum <= last))
-  if (! ((first <= last) ^ (first <= seqnum) ^ (seqnum <= last)))
+  if (!((first <= last) ^ (first <= seqnum) ^ (seqnum <= last)))
     {
-      DPRINTF(E_DBG, L_PLAYER, "Seqnum %" PRIu16 " not in buffer (have seqnum %" PRIu16 " to %" PRIu16 ")\n", seqnum, first, last);
+      DPRINTF(E_DBG, L_PLAYER, "Seqnum %" PRIu16 " not in buffer (have seqnum %" PRIu16 " to %" PRIu16 ")\n", seqnum,
+          first, last);
       return NULL;
     }
 
@@ -263,14 +262,14 @@ rtp_sync_packet_next(struct rtp_session *session, struct rtcp_timestamp cur_stam
   rtptime = htobe32(session->pos);
   memcpy(session->sync_packet_next.data + 16, &rtptime, 4);
 
-/*  DPRINTF(E_DBG, L_PLAYER, "SYNC PACKET cur_ts:%ld.%ld, cur_pos:%u, rtptime:%u, type:0x%x, sync_counter:%d\n",
-    cur_stamp.ts.tv_sec, cur_stamp.ts.tv_nsec,
-    cur_stamp.pos,
-    session->pos,
-    session->sync_packet_next.data[0],
-    session->sync_counter
-    );
-*/
+  /*  DPRINTF(E_DBG, L_PLAYER, "SYNC PACKET cur_ts:%ld.%ld, cur_pos:%u, rtptime:%u, type:0x%x, sync_counter:%d\n",
+      cur_stamp.ts.tv_sec, cur_stamp.ts.tv_nsec,
+      cur_stamp.pos,
+      session->pos,
+      session->sync_packet_next.data[0],
+      session->sync_counter
+      );
+  */
   return &session->sync_packet_next;
 }
 
@@ -335,17 +334,18 @@ rtcp_packet_parse(struct rtcp_packet *pkt, uint8_t *data, size_t size)
   else
     return -1; // Don't know how to parse
 
-/*
-  DPRINTF(E_DBG, L_PLAYER, "RTCP PACKET vers=%d, padding=%d, len=%" PRIu16 ", payload_len=%zu, ssrc=%" PRIu32 "\n", pkt->version, pkt->padding, pkt->len, pkt->payload_len, pkt->ssrc);
-  if (pkt->packet_type == RTCP_PACKET_APP)
-    DPRINTF(E_DBG, L_PLAYER, "RTCP APP PACKET subtype=%d, name=%s\n", pkt->app.subtype, pkt->app.name);
-  else if (pkt->packet_type == RTCP_PACKET_XR)
-    DPRINTF(E_DBG, L_PLAYER, "RTCP XR PACKET block_type=%d, block_len=%" PRIu16 "\n", pkt->xr.block_type, pkt->xr.block_len);
-*/
+  /*
+    DPRINTF(E_DBG, L_PLAYER, "RTCP PACKET vers=%d, padding=%d, len=%" PRIu16 ", payload_len=%zu, ssrc=%" PRIu32 "\n",
+    pkt->version, pkt->padding, pkt->len, pkt->payload_len, pkt->ssrc); if (pkt->packet_type == RTCP_PACKET_APP)
+      DPRINTF(E_DBG, L_PLAYER, "RTCP APP PACKET subtype=%d, name=%s\n", pkt->app.subtype, pkt->app.name);
+    else if (pkt->packet_type == RTCP_PACKET_XR)
+      DPRINTF(E_DBG, L_PLAYER, "RTCP XR PACKET block_type=%d, block_len=%" PRIu16 "\n", pkt->xr.block_type,
+    pkt->xr.block_len);
+  */
 
   return 0;
 
- packet_malformed:
+packet_malformed:
   DPRINTF(E_SPAM, L_PLAYER, "Ignoring incoming packet, packet is non-RTCP, malformed or partial (size=%zu)\n", size);
   return -1;
 }

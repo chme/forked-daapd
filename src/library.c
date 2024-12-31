@@ -16,49 +16,45 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #include <errno.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include <event2/event.h>
 
-#include "library.h"
 #include "cache.h"
 #include "commands.h"
 #include "conffile.h"
 #include "db.h"
+#include "library.h"
+#include "listener.h"
 #include "logger.h"
 #include "misc.h"
-#include "listener.h"
 #include "player.h"
 
 #define LIBRARY_MAX_CALLBACKS 16
 
-struct library_callback_register
-{
+struct library_callback_register {
   library_cb cb;
   void *arg;
   struct event *ev;
 };
 
-struct playlist_item_add_param
-{
+struct playlist_item_add_param {
   const char *vp_playlist;
   const char *vp_item;
 };
 
-struct queue_item_add_param
-{
+struct queue_item_add_param {
   const char *path;
   int position;
   char reshuffle;
@@ -67,8 +63,7 @@ struct queue_item_add_param
   int *new_item_id;
 };
 
-struct item_param
-{
+struct item_param {
   const char *path;
   uint32_t id;
   enum library_attrib attrib;
@@ -86,14 +81,11 @@ extern struct library_source spotifyscanner;
 #endif
 extern struct library_source rssscanner;
 
-static struct library_source *sources[] = {
-    &filescanner,
+static struct library_source *sources[] = { &filescanner,
 #ifdef SPOTIFY
-    &spotifyscanner,
+  &spotifyscanner,
 #endif
-    &rssscanner,
-    NULL
-};
+  &rssscanner, NULL };
 
 /* Flag for aborting scan on exit */
 static bool scan_exit;
@@ -121,7 +113,6 @@ static short deferred_update_events;
 // Stores callbacks that backends may have requested
 static struct library_callback_register library_cb_register[LIBRARY_MAX_CALLBACKS];
 
-
 /* ------------------- CALLED BY LIBRARY SOURCE MODULES -------------------- */
 
 int
@@ -131,8 +122,9 @@ library_media_save(struct media_file_info *mfi)
 
   if (!mfi->path || !mfi->fname || !mfi->scan_kind)
     {
-      DPRINTF(E_LOG, L_LIB, "Ignoring media file with missing values (path='%s', fname='%s', scan_kind='%d', data_kind='%d')\n",
-	      mfi->path, mfi->fname, mfi->scan_kind, mfi->data_kind);
+      DPRINTF(E_LOG, L_LIB,
+          "Ignoring media file with missing values (path='%s', fname='%s', scan_kind='%d', data_kind='%d')\n",
+          mfi->path, mfi->fname, mfi->scan_kind, mfi->data_kind);
       return -1;
     }
 
@@ -140,7 +132,7 @@ library_media_save(struct media_file_info *mfi)
     {
       // Missing informations for virtual_path and directory_id (may) lead to misplaced appearance in mpd clients
       DPRINTF(E_WARN, L_LIB, "Media file with missing values (path='%s', directory='%d', virtual_path='%s')\n",
-	      mfi->path, mfi->directory_id, mfi->virtual_path);
+          mfi->path, mfi->directory_id, mfi->virtual_path);
     }
 
   if (mfi->id == 0)
@@ -156,8 +148,8 @@ library_playlist_save(struct playlist_info *pli)
 {
   if (!pli->path || !pli->scan_kind)
     {
-      DPRINTF(E_LOG, L_LIB, "Ignoring playlist with missing values (path='%s', scan_kind='%d')\n",
-	      pli->path, pli->scan_kind);
+      DPRINTF(E_LOG, L_LIB, "Ignoring playlist with missing values (path='%s', scan_kind='%d')\n", pli->path,
+          pli->scan_kind);
       return -1;
     }
 
@@ -195,10 +187,10 @@ library_directory_save(char *virtual_path, char *path, int disabled, int parent_
   free_di(&di, 1);
 
   if (ret < 0 || id <= 0)
-  {
-    DPRINTF(E_LOG, L_DB, "Insert or update of directory failed '%s'\n", virtual_path);
-    return -1;
-  }
+    {
+      DPRINTF(E_LOG, L_DB, "Insert or update of directory failed '%s'\n", virtual_path);
+      return -1;
+    }
 
   return id;
 }
@@ -248,13 +240,15 @@ library_callback_schedule(library_cb cb, void *arg, struct timeval *wait, enum l
 	}
     }
 
-  if (action == LIBRARY_CB_REPLACE || action == LIBRARY_CB_DELETE || (action == LIBRARY_CB_ADD_OR_REPLACE && replace_done))
+  if (action == LIBRARY_CB_REPLACE || action == LIBRARY_CB_DELETE
+      || (action == LIBRARY_CB_ADD_OR_REPLACE && replace_done))
     {
       return 0; // All done
     }
   else if (idx_available == -1)
     {
-      DPRINTF(E_LOG, L_LIB, "Error scheduling callback, register full (size=%d, action=%d)\n", LIBRARY_MAX_CALLBACKS, action);
+      DPRINTF(E_LOG, L_LIB, "Error scheduling callback, register full (size=%d, action=%d)\n", LIBRARY_MAX_CALLBACKS,
+          action);
       return -1;
     }
 
@@ -269,11 +263,11 @@ library_callback_schedule(library_cb cb, void *arg, struct timeval *wait, enum l
 
   event_add(cbreg->ev, wait);
 
-  DPRINTF(E_DBG, L_LIB, "Added library callback to %p (id %d), wait %ld.%06ld\n", cbreg->cb, idx_available, (long) wait->tv_sec, (long) wait->tv_usec);
+  DPRINTF(E_DBG, L_LIB, "Added library callback to %p (id %d), wait %ld.%06ld\n", cbreg->cb, idx_available,
+      (long)wait->tv_sec, (long)wait->tv_usec);
 
   return idx_available;
 }
-
 
 /* ---------------------- LIBRARY ABSTRACTION --------------------- */
 /*                          thread: library                         */
@@ -290,8 +284,8 @@ handle_deferred_update_notifications(void)
 
       deferred_update_notifications = 0;
       update_time = time(NULL);
-      db_admin_setint64(DB_ADMIN_DB_UPDATE, (int64_t) update_time);
-      db_admin_setint64(DB_ADMIN_DB_MODIFIED, (int64_t) update_time);
+      db_admin_setint64(DB_ADMIN_DB_UPDATE, (int64_t)update_time);
+      db_admin_setint64(DB_ADMIN_DB_MODIFIED, (int64_t)update_time);
     }
 
   return ret;
@@ -355,7 +349,8 @@ rescan(void *arg, int *ret)
   db_hook_post_scan();
 
   endtime = time(NULL);
-  DPRINTF(E_LOG, L_LIB, "Library rescan completed in %.f sec (%d changes)\n", difftime(endtime, starttime), deferred_update_notifications);
+  DPRINTF(E_LOG, L_LIB, "Library rescan completed in %.f sec (%d changes)\n", difftime(endtime, starttime),
+      deferred_update_notifications);
   scanning = false;
 
   if (handle_deferred_update_notifications())
@@ -407,7 +402,8 @@ metarescan(void *arg, int *ret)
   db_hook_post_scan();
 
   endtime = time(NULL);
-  DPRINTF(E_LOG, L_LIB, "Library meta rescan completed in %.f sec (%d changes)\n", difftime(endtime, starttime), deferred_update_notifications);
+  DPRINTF(E_LOG, L_LIB, "Library meta rescan completed in %.f sec (%d changes)\n", difftime(endtime, starttime),
+      deferred_update_notifications);
   scanning = false;
 
   if (handle_deferred_update_notifications())
@@ -418,7 +414,6 @@ metarescan(void *arg, int *ret)
   *ret = 0;
   return COMMAND_END;
 }
-
 
 static enum command_state
 fullrescan(void *arg, int *ret)
@@ -449,7 +444,8 @@ fullrescan(void *arg, int *ret)
     }
 
   endtime = time(NULL);
-  DPRINTF(E_LOG, L_LIB, "Library full-rescan completed in %.f sec (%d changes)\n", difftime(endtime, starttime), deferred_update_notifications);
+  DPRINTF(E_LOG, L_LIB, "Library full-rescan completed in %.f sec (%d changes)\n", difftime(endtime, starttime),
+      deferred_update_notifications);
   scanning = false;
 
   if (handle_deferred_update_notifications())
@@ -474,7 +470,8 @@ playlist_item_add(void *arg, int *retval)
     {
       if (sources[i]->disabled || !sources[i]->playlist_item_add)
 	{
-	  DPRINTF(E_DBG, L_LIB, "Library source '%s' is disabled or does not support playlist_item_add\n", db_scan_kind_label(sources[i]->scan_kind));
+	  DPRINTF(E_DBG, L_LIB, "Library source '%s' is disabled or does not support playlist_item_add\n",
+	      db_scan_kind_label(sources[i]->scan_kind));
 	  continue;
 	}
 
@@ -482,7 +479,8 @@ playlist_item_add(void *arg, int *retval)
 
       if (ret == LIBRARY_OK)
 	{
-	  DPRINTF(E_DBG, L_LIB, "Adding item '%s' to playlist '%s' with library source '%s'\n", param->vp_item, param->vp_playlist, db_scan_kind_label(sources[i]->scan_kind));
+	  DPRINTF(E_DBG, L_LIB, "Adding item '%s' to playlist '%s' with library source '%s'\n", param->vp_item,
+	      param->vp_playlist, db_scan_kind_label(sources[i]->scan_kind));
 	  listener_notify(LISTENER_STORED_PLAYLIST);
 	  break;
 	}
@@ -505,7 +503,8 @@ playlist_remove(void *arg, int *retval)
     {
       if (sources[i]->disabled || !sources[i]->playlist_remove)
 	{
-	  DPRINTF(E_DBG, L_LIB, "Library source '%s' is disabled or does not support playlist_remove\n", db_scan_kind_label(sources[i]->scan_kind));
+	  DPRINTF(E_DBG, L_LIB, "Library source '%s' is disabled or does not support playlist_remove\n",
+	      db_scan_kind_label(sources[i]->scan_kind));
 	  continue;
 	}
 
@@ -513,7 +512,8 @@ playlist_remove(void *arg, int *retval)
 
       if (ret == LIBRARY_OK)
 	{
-	  DPRINTF(E_DBG, L_LIB, "Removing playlist '%s' with library source '%s'\n", virtual_path, db_scan_kind_label(sources[i]->scan_kind));
+	  DPRINTF(E_DBG, L_LIB, "Removing playlist '%s' with library source '%s'\n", virtual_path,
+	      db_scan_kind_label(sources[i]->scan_kind));
 	  listener_notify(LISTENER_STORED_PLAYLIST);
 	  break;
 	}
@@ -536,16 +536,19 @@ queue_item_add(void *arg, int *retval)
   for (i = 0; sources[i] && ret == LIBRARY_PATH_INVALID; i++)
     {
       if (sources[i]->disabled || !sources[i]->queue_item_add)
-        {
-	  DPRINTF(E_DBG, L_LIB, "Library source '%s' is disabled or does not support queue_add\n", db_scan_kind_label(sources[i]->scan_kind));
+	{
+	  DPRINTF(E_DBG, L_LIB, "Library source '%s' is disabled or does not support queue_add\n",
+	      db_scan_kind_label(sources[i]->scan_kind));
 	  continue;
 	}
 
-      ret = sources[i]->queue_item_add(param->path, param->position, param->reshuffle, param->item_id, param->count, param->new_item_id);
+      ret = sources[i]->queue_item_add(
+          param->path, param->position, param->reshuffle, param->item_id, param->count, param->new_item_id);
 
       if (ret == LIBRARY_OK)
 	{
-	  DPRINTF(E_DBG, L_LIB, "Items for path '%s' from library source '%s' added to the queue\n", param->path, db_scan_kind_label(sources[i]->scan_kind));
+	  DPRINTF(E_DBG, L_LIB, "Items for path '%s' from library source '%s' added to the queue\n", param->path,
+	      db_scan_kind_label(sources[i]->scan_kind));
 	  break;
 	}
     }
@@ -570,7 +573,8 @@ queue_save(void *arg, int *retval)
     {
       if (sources[i]->disabled || !sources[i]->queue_save)
 	{
-	  DPRINTF(E_DBG, L_LIB, "Library source '%s' is disabled or does not support queue_save\n", db_scan_kind_label(sources[i]->scan_kind));
+	  DPRINTF(E_DBG, L_LIB, "Library source '%s' is disabled or does not support queue_save\n",
+	      db_scan_kind_label(sources[i]->scan_kind));
 	  continue;
 	}
 
@@ -578,7 +582,8 @@ queue_save(void *arg, int *retval)
 
       if (ret == LIBRARY_OK)
 	{
-	  DPRINTF(E_DBG, L_LIB, "Saving queue to path '%s' with library source '%s'\n", virtual_path, db_scan_kind_label(sources[i]->scan_kind));
+	  DPRINTF(E_DBG, L_LIB, "Saving queue to path '%s' with library source '%s'\n", virtual_path,
+	      db_scan_kind_label(sources[i]->scan_kind));
 	  listener_notify(LISTENER_STORED_PLAYLIST);
 	  break;
 	}
@@ -601,7 +606,8 @@ item_add(void *arg, int *retval)
     {
       if (sources[i]->disabled || !sources[i]->item_add)
 	{
-	  DPRINTF(E_DBG, L_LIB, "Library source '%s' is disabled or does not support add_item\n", db_scan_kind_label(sources[i]->scan_kind));
+	  DPRINTF(E_DBG, L_LIB, "Library source '%s' is disabled or does not support add_item\n",
+	      db_scan_kind_label(sources[i]->scan_kind));
 	  continue;
 	}
 
@@ -609,7 +615,8 @@ item_add(void *arg, int *retval)
 
       if (ret == LIBRARY_OK)
 	{
-	  DPRINTF(E_DBG, L_LIB, "Add item to path '%s' with library source '%s'\n", param->path, db_scan_kind_label(sources[i]->scan_kind));
+	  DPRINTF(E_DBG, L_LIB, "Add item to path '%s' with library source '%s'\n", param->path,
+	      db_scan_kind_label(sources[i]->scan_kind));
 	  listener_notify(LISTENER_DATABASE);
 	  break;
 	}
@@ -666,40 +673,40 @@ item_attrib_save(void *arg, int *retval)
 
   switch (param->attrib)
     {
-      case LIBRARY_ATTRIB_RATING:
-	if (param->value > DB_FILES_RATING_MAX)
-	  goto error;
-
-	mfi->rating = param->value;
-
-	if (cfg_getbool(cfg_getsec(cfg, "library"), "write_rating"))
-	  *retval = write_metadata(mfi);
-
-        listener_notify(LISTENER_RATING);
-	break;
-
-      case LIBRARY_ATTRIB_USERMARK:
-	mfi->usermark = param->value;
-	break;
-
-      case LIBRARY_ATTRIB_PLAY_COUNT:
-	mfi->play_count = param->value;
-	break;
-
-      case LIBRARY_ATTRIB_SKIP_COUNT:
-	mfi->skip_count = param->value;
-	break;
-
-      case LIBRARY_ATTRIB_TIME_PLAYED:
-	mfi->time_played = param->value;
-	break;
-
-      case LIBRARY_ATTRIB_TIME_SKIPPED:
-	mfi->time_skipped = param->value;
-	break;
-
-       default:
+    case LIBRARY_ATTRIB_RATING:
+      if (param->value > DB_FILES_RATING_MAX)
 	goto error;
+
+      mfi->rating = param->value;
+
+      if (cfg_getbool(cfg_getsec(cfg, "library"), "write_rating"))
+	*retval = write_metadata(mfi);
+
+      listener_notify(LISTENER_RATING);
+      break;
+
+    case LIBRARY_ATTRIB_USERMARK:
+      mfi->usermark = param->value;
+      break;
+
+    case LIBRARY_ATTRIB_PLAY_COUNT:
+      mfi->play_count = param->value;
+      break;
+
+    case LIBRARY_ATTRIB_SKIP_COUNT:
+      mfi->skip_count = param->value;
+      break;
+
+    case LIBRARY_ATTRIB_TIME_PLAYED:
+      mfi->time_played = param->value;
+      break;
+
+    case LIBRARY_ATTRIB_TIME_SKIPPED:
+      mfi->time_skipped = param->value;
+      break;
+
+    default:
+      goto error;
     }
 
   ret = db_file_update(mfi);
@@ -709,8 +716,9 @@ item_attrib_save(void *arg, int *retval)
   free_mfi(mfi, 0);
   return COMMAND_END;
 
- error:
-  DPRINTF(E_LOG, L_LIB, "Error updating attribute %d to %d for file with id %d\n", param->attrib, param->value, param->id);
+error:
+  DPRINTF(
+      E_LOG, L_LIB, "Error updating attribute %d to %d for file with id %d\n", param->attrib, param->value, param->id);
   *retval = LIBRARY_ERROR;
   free_mfi(mfi, 0);
   return COMMAND_END;
@@ -744,7 +752,6 @@ update_trigger(void *arg, int *retval)
   *retval = 0;
   return COMMAND_END;
 }
-
 
 /* ----------------------- LIBRARY EXTERNAL INTERFACE ---------------------- */
 
@@ -815,7 +822,9 @@ initscan()
   /* Handle deprecated config options */
   if (0 < cfg_opt_size(cfg_getopt(cfg_getsec(cfg, "mpd"), "clear_queue_on_stop_disable")))
     {
-      DPRINTF(E_LOG, L_MPD, "Found deprecated option 'clear_queue_on_stop_disable' in section 'mpd', please update configuration file (move option to section 'library').\n");
+      DPRINTF(E_LOG, L_MPD,
+          "Found deprecated option 'clear_queue_on_stop_disable' in section 'mpd', please update configuration file "
+          "(move option to section 'library').\n");
       clear_queue_disabled = cfg_getbool(cfg_getsec(cfg, "mpd"), "clear_queue_on_stop_disable");
     }
 
@@ -830,7 +839,7 @@ initscan()
 	sources[i]->initscan();
     }
 
-  if (! (cfg_getbool(cfg_getsec(cfg, "library"), "filescan_disable")))
+  if (!(cfg_getbool(cfg_getsec(cfg, "library"), "filescan_disable")))
     {
       purge_cruft(starttime, 0);
 
@@ -839,7 +848,8 @@ initscan()
     }
 
   endtime = time(NULL);
-  DPRINTF(E_LOG, L_LIB, "Library init scan completed in %.f sec (%d changes)\n", difftime(endtime, starttime), deferred_update_notifications);
+  DPRINTF(E_LOG, L_LIB, "Library init scan completed in %.f sec (%d changes)\n", difftime(endtime, starttime),
+      deferred_update_notifications);
 
   scanning = false;
 
@@ -1058,7 +1068,8 @@ library_init(void)
     {
       if (!sources[i]->initscan || !sources[i]->rescan || !sources[i]->metarescan || !sources[i]->fullrescan)
 	{
-	  DPRINTF(E_FATAL, L_LIB, "BUG: library source '%s' is missing a scanning method\n", db_scan_kind_label(sources[i]->scan_kind));
+	  DPRINTF(E_FATAL, L_LIB, "BUG: library source '%s' is missing a scanning method\n",
+	      db_scan_kind_label(sources[i]->scan_kind));
 	  return -1;
 	}
 

@@ -16,36 +16,34 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-/* This file includes much of the boilerplate code required for making an 
+/* This file includes much of the boilerplate code required for making an
  * audio output.
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <errno.h>
+#include <inttypes.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
 #include <string.h>
-#include <errno.h>
-#include <stdint.h>
-#include <inttypes.h>
+#include <unistd.h>
 
-#include "misc.h"
 #include "conffile.h"
 #include "logger.h"
-#include "player.h"
+#include "misc.h"
 #include "outputs.h"
+#include "player.h"
 
 // If you set this to 1 you can mock device verification with the dummy output,
 // use 1234 as PIN
 #define DUMMY_DEVICE_VERIFICATION_TEST 0
 
-struct dummy_session
-{
+struct dummy_session {
   enum output_device_state state;
 
   uint64_t device_id;
@@ -94,7 +92,6 @@ dummy_session_make(struct output_device *device, int callback_id)
   return ds;
 }
 
-
 /* ---------------------------- STATUS HANDLERS ----------------------------- */
 
 static void
@@ -105,7 +102,6 @@ dummy_status(struct dummy_session *ds)
   if (ds->state <= OUTPUT_STATE_STOPPED)
     dummy_session_cleanup(ds);
 }
-
 
 /* ------------------ INTERFACE FUNCTIONS CALLED BY OUTPUTS.C --------------- */
 
@@ -259,8 +255,7 @@ dummy_deinit(void)
   return;
 }
 
-struct output_definition output_dummy =
-{
+struct output_definition output_dummy = {
   .name = "dummy",
   .type = OUTPUT_TYPE_DUMMY,
   .priority = 99,

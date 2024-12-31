@@ -23,21 +23,21 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <ctype.h>
 #include <errno.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdarg.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/param.h>
 #include <sys/types.h>
+#include <unistd.h>
 #ifndef CLOCK_REALTIME
 #include <sys/time.h>
 #endif
@@ -45,82 +45,79 @@
 #include <uuid/uuid.h>
 #endif
 #ifdef HAVE_PTHREAD_NP_H
-# include <pthread_np.h>
+#include <pthread_np.h>
 #endif
 
-#include <fcntl.h>
-#include <netdb.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <ifaddrs.h> // getifaddrs
+#include <netdb.h>
 
 #include <event2/http.h> // evhttp_bind
 
-#include <unistr.h>
 #include <uniconv.h>
+#include <unistr.h>
 
 #include <libavutil/base64.h>
 
-#include "logger.h"
 #include "conffile.h"
+#include "logger.h"
 #include "misc.h"
 
-
-static char *buildopts[] =
-  {
+static char *buildopts[] = {
 #ifdef HAVE_FFMPEG
-    "ffmpeg",
+  "ffmpeg",
 #else
-    "libav",
+  "libav",
 #endif
 #ifdef SPOTIFY
-    "Spotify",
+  "Spotify",
 #else
-    "Without Spotify",
+  "Without Spotify",
 #endif
 #ifdef SPOTIFY_LIBRESPOTC
-    "librespot-c",
+  "librespot-c",
 #endif
 #ifdef LASTFM
-    "LastFM",
+  "LastFM",
 #else
-    "Without LastFM",
+  "Without LastFM",
 #endif
 #ifdef CHROMECAST
-    "Chromecast",
+  "Chromecast",
 #else
-    "Without Chromecast",
+  "Without Chromecast",
 #endif
 #ifdef MPD
-    "MPD",
+  "MPD",
 #else
-    "Without MPD",
+  "Without MPD",
 #endif
 #ifdef HAVE_LIBWEBSOCKETS
-    "Websockets",
+  "Websockets",
 #else
-    "Without websockets",
+  "Without websockets",
 #endif
 #ifdef HAVE_ALSA
-    "ALSA",
+  "ALSA",
 #else
-    "Without ALSA",
+  "Without ALSA",
 #endif
 #ifdef HAVE_LIBPULSE
-    "Pulseaudio",
+  "Pulseaudio",
 #endif
 #ifdef WEBINTERFACE
-    "Webinterface",
+  "Webinterface",
 #else
-    "Without webinterface",
+  "Without webinterface",
 #endif
 #ifdef HAVE_REGEX_H
-    "Regex",
+  "Regex",
 #else
-    "Without regex",
+  "Without regex",
 #endif
-    NULL
-  };
-
+  NULL
+};
 
 /* ------------------------ Network utility functions ----------------------- */
 
@@ -266,9 +263,9 @@ net_address_get(char *addr, size_t addr_len, union net_sockaddr *naddr)
   memset(addr, 0, addr_len); // Just in case caller doesn't check for errors
 
   if (naddr->sa.sa_family == AF_INET6)
-     s = inet_ntop(AF_INET6, &naddr->sin6.sin6_addr, addr, addr_len);
+    s = inet_ntop(AF_INET6, &naddr->sin6.sin6_addr, addr, addr_len);
   else if (naddr->sa.sa_family == AF_INET)
-     s = inet_ntop(AF_INET, &naddr->sin.sin_addr, addr, addr_len);
+    s = inet_ntop(AF_INET, &naddr->sin.sin_addr, addr, addr_len);
 
   if (!s)
     return -1;
@@ -280,9 +277,9 @@ int
 net_port_get(short unsigned *port, union net_sockaddr *naddr)
 {
   if (naddr->sa.sa_family == AF_INET6)
-     *port = ntohs(naddr->sin6.sin6_port);
+    *port = ntohs(naddr->sin6.sin6_port);
   else if (naddr->sa.sa_family == AF_INET)
-     *port = ntohs(naddr->sin.sin_port);
+    *port = ntohs(naddr->sin.sin_port);
   else
     return -1;
 
@@ -340,7 +337,8 @@ net_connect_impl(const char *addr, unsigned short port, int type, const char *lo
   ret = getaddrinfo(addr, strport, &hints, &servinfo);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MISC, "Could not connect to '%s' at %s (port %u): %s\n", log_service_name, addr, port, gai_strerror(ret));
+      DPRINTF(E_LOG, L_MISC, "Could not connect to '%s' at %s (port %u): %s\n", log_service_name, addr, port,
+          gai_strerror(ret));
       return -1;
     }
 
@@ -378,7 +376,8 @@ net_connect_impl(const char *addr, unsigned short port, int type, const char *lo
 
   if (!ptr)
     {
-      DPRINTF(E_LOG, L_MISC, "Could not connect to '%s' at %s (port %u): %s\n", log_service_name, addr, port, strerror(errno));
+      DPRINTF(E_LOG, L_MISC, "Could not connect to '%s' at %s (port %u): %s\n", log_service_name, addr, port,
+          strerror(errno));
       return -1;
     }
 
@@ -423,7 +422,8 @@ net_bind_impl(short unsigned *port, int type, const char *log_service_name, bool
   ret = getaddrinfo(cfgaddr, strport, &hints, &servinfo);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MISC, "Failure creating '%s' service, could not resolve '%s' (port %s): %s\n", log_service_name, cfgaddr ? cfgaddr : "(ANY)", strport, gai_strerror(ret));
+      DPRINTF(E_LOG, L_MISC, "Failure creating '%s' service, could not resolve '%s' (port %s): %s\n", log_service_name,
+          cfgaddr ? cfgaddr : "(ANY)", strport, gai_strerror(ret));
       return -1;
     }
 
@@ -484,7 +484,8 @@ net_bind_impl(short unsigned *port, int type, const char *log_service_name, bool
 
   if (!ptr)
     {
-      DPRINTF(E_LOG, L_MISC, "Could not create service '%s' with address %s, port %hu: %s\n", log_service_name, cfgaddr ? cfgaddr : "(ANY)", *port, strerror(errno));
+      DPRINTF(E_LOG, L_MISC, "Could not create service '%s' with address %s, port %hu: %s\n", log_service_name,
+          cfgaddr ? cfgaddr : "(ANY)", *port, strerror(errno));
       goto error;
     }
 
@@ -509,7 +510,7 @@ net_bind_impl(short unsigned *port, int type, const char *log_service_name, bool
 
   return fd;
 
- error:
+error:
   if (fd >= 0)
     close(fd);
   return -1;
@@ -550,7 +551,8 @@ net_evhttp_bind(struct evhttp *evhttp, unsigned short port, const char *log_serv
       ret = evhttp_bind_socket(evhttp, "::", port);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_MISC, "Could not bind service '%s' to port %d with IPv6, falling back to IPv4\n", log_service_name, port);
+	  DPRINTF(E_LOG, L_MISC, "Could not bind service '%s' to port %d with IPv6, falling back to IPv4\n",
+	      log_service_name, port);
 	  v6_enabled = 0;
 	}
     }
@@ -562,7 +564,8 @@ net_evhttp_bind(struct evhttp *evhttp, unsigned short port, const char *log_serv
 	return -1;
 
 #ifndef __linux__
-      DPRINTF(E_LOG, L_MISC, "Could not bind service '%s' to port %d with IPv4, listening on IPv6 only\n", log_service_name, port);
+      DPRINTF(E_LOG, L_MISC, "Could not bind service '%s' to port %d with IPv4, listening on IPv6 only\n",
+          log_service_name, port);
 #endif
     }
 
@@ -592,8 +595,7 @@ safe_atoi32(const char *str, int32_t *val)
   errno = 0;
   intval = strtol(str, &end, 10);
 
-  if (((errno == ERANGE) && ((intval == LONG_MAX) || (intval == LONG_MIN)))
-      || ((errno != 0) && (intval == 0)))
+  if (((errno == ERANGE) && ((intval == LONG_MAX) || (intval == LONG_MIN))) || ((errno != 0) && (intval == 0)))
     {
       DPRINTF(E_DBG, L_MISC, "Invalid i32 in string (%s): %s\n", str, strerror(errno));
       return -1;
@@ -631,8 +633,7 @@ safe_atou32(const char *str, uint32_t *val)
   errno = 0;
   intval = strtoul(str, &end, 10);
 
-  if (((errno == ERANGE) && (intval == ULONG_MAX))
-      || ((errno != 0) && (intval == 0)))
+  if (((errno == ERANGE) && (intval == ULONG_MAX)) || ((errno != 0) && (intval == 0)))
     {
       DPRINTF(E_DBG, L_MISC, "Invalid u32 in string (%s): %s\n", str, strerror(errno));
       return -1;
@@ -670,8 +671,7 @@ safe_hextou32(const char *str, uint32_t *val)
   errno = 0;
   intval = strtoul(str, &end, 16);
 
-  if (((errno == ERANGE) && (intval == ULONG_MAX))
-      || ((errno != 0) && (intval == 0)))
+  if (((errno == ERANGE) && (intval == ULONG_MAX)) || ((errno != 0) && (intval == 0)))
     {
       DPRINTF(E_DBG, L_MISC, "Invalid u32 in string (%s): %s\n", str, strerror(errno));
       return -1;
@@ -709,8 +709,7 @@ safe_atoi64(const char *str, int64_t *val)
   errno = 0;
   intval = strtoll(str, &end, 10);
 
-  if (((errno == ERANGE) && ((intval == LLONG_MAX) || (intval == LLONG_MIN)))
-      || ((errno != 0) && (intval == 0)))
+  if (((errno == ERANGE) && ((intval == LLONG_MAX) || (intval == LLONG_MIN))) || ((errno != 0) && (intval == 0)))
     {
       DPRINTF(E_DBG, L_MISC, "Invalid i64 in string (%s): %s\n", str, strerror(errno));
       return -1;
@@ -748,8 +747,7 @@ safe_atou64(const char *str, uint64_t *val)
   errno = 0;
   intval = strtoull(str, &end, 10);
 
-  if (((errno == ERANGE) && (intval == ULLONG_MAX))
-      || ((errno != 0) && (intval == 0)))
+  if (((errno == ERANGE) && (intval == ULLONG_MAX)) || ((errno != 0) && (intval == 0)))
     {
       DPRINTF(E_DBG, L_MISC, "Invalid u64 in string (%s): %s\n", str, strerror(errno));
 
@@ -789,8 +787,7 @@ safe_hextou64(const char *str, uint64_t *val)
   errno = 0;
   intval = strtoull(str, &end, 16);
 
-  if (((errno == ERANGE) && (intval == ULLONG_MAX))
-      || ((errno != 0) && (intval == 0)))
+  if (((errno == ERANGE) && (intval == ULLONG_MAX)) || ((errno != 0) && (intval == 0)))
     {
       DPRINTF(E_DBG, L_MISC, "Invalid u64 in string (%s): %s\n", str, strerror(errno));
       return -1;
@@ -914,7 +911,6 @@ safe_snreplace(char *s, size_t sz, const char *pattern, const char *replacement)
   return 0;
 }
 
-
 char *
 unicode_fixup_string(char *str, const char *fromcode)
 {
@@ -960,7 +956,7 @@ trim(char *str)
     return NULL;
 
   start = 0;
-  term  = strlen(str);
+  term = strlen(str);
 
   while ((start < term) && isspace(str[start]))
     start++;
@@ -988,7 +984,7 @@ atrim(const char *str)
     return NULL;
 
   start = 0;
-  term  = strlen(str);
+  term = strlen(str);
 
   while ((start < term) && isspace(str[start]))
     start++;
@@ -1099,7 +1095,6 @@ b64_encode(const uint8_t *src, int srclen)
   return out;
 }
 
-
 /*
  * MurmurHash2, 64-bit versions, by Austin Appleby
  *
@@ -1142,21 +1137,21 @@ murmur_hash64(const void *key, int len, uint32_t seed)
 
   switch (len & 7)
     {
-      case 7:
-	h ^= (uint64_t)(data_tail[6]) << 48; /* FALLTHROUGH */
-      case 6:
-	h ^= (uint64_t)(data_tail[5]) << 40; /* FALLTHROUGH */
-      case 5:
-	h ^= (uint64_t)(data_tail[4]) << 32; /* FALLTHROUGH */
-      case 4:
-	h ^= (uint64_t)(data_tail[3]) << 24; /* FALLTHROUGH */
-      case 3:
-	h ^= (uint64_t)(data_tail[2]) << 16; /* FALLTHROUGH */
-      case 2:
-	h ^= (uint64_t)(data_tail[1]) << 8; /* FALLTHROUGH */
-      case 1:
-	h ^= (uint64_t)(data_tail[0]);
-	h *= m;
+    case 7:
+      h ^= (uint64_t)(data_tail[6]) << 48; /* FALLTHROUGH */
+    case 6:
+      h ^= (uint64_t)(data_tail[5]) << 40; /* FALLTHROUGH */
+    case 5:
+      h ^= (uint64_t)(data_tail[4]) << 32; /* FALLTHROUGH */
+    case 4:
+      h ^= (uint64_t)(data_tail[3]) << 24; /* FALLTHROUGH */
+    case 3:
+      h ^= (uint64_t)(data_tail[2]) << 16; /* FALLTHROUGH */
+    case 2:
+      h ^= (uint64_t)(data_tail[1]) << 8; /* FALLTHROUGH */
+    case 1:
+      h ^= (uint64_t)(data_tail[0]);
+      h *= m;
     }
 
   h ^= h >> r;
@@ -1191,12 +1186,18 @@ murmur_hash64(const void *key, int len, uint32_t seed)
   while (len >= 8)
     {
       k1 = *data++;
-      k1 *= m; k1 ^= k1 >> r; k1 *= m;
-      h1 *= m; h1 ^= k1;
+      k1 *= m;
+      k1 ^= k1 >> r;
+      k1 *= m;
+      h1 *= m;
+      h1 ^= k1;
 
       k2 = *data++;
-      k2 *= m; k2 ^= k2 >> r; k2 *= m;
-      h2 *= m; h2 ^= k2;
+      k2 *= m;
+      k2 ^= k2 >> r;
+      k2 *= m;
+      h2 *= m;
+      h2 ^= k2;
 
       len -= 8;
     }
@@ -1204,28 +1205,35 @@ murmur_hash64(const void *key, int len, uint32_t seed)
   if (len >= 4)
     {
       k1 = *data++;
-      k1 *= m; k1 ^= k1 >> r; k1 *= m;
-      h1 *= m; h1 ^= k1;
+      k1 *= m;
+      k1 ^= k1 >> r;
+      k1 *= m;
+      h1 *= m;
+      h1 ^= k1;
       len -= 4;
     }
 
   data_tail = (const unsigned char *)data;
 
-  switch(len)
+  switch (len)
     {
-      case 3:
-	h2 ^= (uint32_t)(data_tail[2]) << 16;
-      case 2:
-	h2 ^= (uint32_t)(data_tail[1]) << 8;
-      case 1:
-	h2 ^= (uint32_t)(data_tail[0]);
-	h2 *= m;
+    case 3:
+      h2 ^= (uint32_t)(data_tail[2]) << 16;
+    case 2:
+      h2 ^= (uint32_t)(data_tail[1]) << 8;
+    case 1:
+      h2 ^= (uint32_t)(data_tail[0]);
+      h2 *= m;
     };
 
-  h1 ^= h2 >> 18; h1 *= m;
-  h2 ^= h1 >> 22; h2 *= m;
-  h1 ^= h2 >> 17; h1 *= m;
-  h2 ^= h1 >> 19; h2 *= m;
+  h1 ^= h2 >> 18;
+  h1 *= m;
+  h2 ^= h1 >> 22;
+  h2 *= m;
+  h1 ^= h2 >> 17;
+  h1 *= m;
+  h2 ^= h1 >> 19;
+  h2 *= m;
 
   h = h1;
   h = (h << 32) | h2;
@@ -1233,9 +1241,8 @@ murmur_hash64(const void *key, int len, uint32_t seed)
   return h;
 }
 #else
-# error Platform not supported
+#error Platform not supported
 #endif
-
 
 /* --------------------------- Key/value functions -------------------------- */
 
@@ -1270,9 +1277,9 @@ keyval_add_size(struct keyval *kv, const char *name, const char *value, size_t s
     {
       /* Same value, fine */
       if (strcmp(val, value) == 0)
-        return 0;
+	return 0;
       else /* Different value, bad */
-        return -1;
+	return -1;
     }
 
   okv = (struct onekeyval *)malloc(sizeof(struct onekeyval));
@@ -1336,7 +1343,7 @@ keyval_remove(struct keyval *kv, const char *name)
   for (pokv = NULL, okv = kv->head; okv; pokv = okv, okv = okv->next)
     {
       if (strcasecmp(okv->name, name) == 0)
-        break;
+	break;
     }
 
   if (!okv)
@@ -1367,7 +1374,7 @@ keyval_get(struct keyval *kv, const char *name)
   for (okv = kv->head; okv; okv = okv->next)
     {
       if (strcasecmp(okv->name, name) == 0)
-        return okv->value;
+	return okv->value;
     }
 
   return NULL;
@@ -1415,8 +1422,7 @@ keyval_sort(struct keyval *kv)
 	{
 	  // We try to find a name which is greater than okv->name
 	  // but less than our current candidate (okv->sort->name)
-	  if ( (strcmp(sokv->name, okv->name) > 0) &&
-	       ((okv->sort == NULL) || (strcmp(sokv->name, okv->sort->name) < 0)) )
+	  if ((strcmp(sokv->name, okv->name) > 0) && ((okv->sort == NULL) || (strcmp(sokv->name, okv->sort->name) < 0)))
 	    okv->sort = sokv;
 	}
 
@@ -1427,7 +1433,7 @@ keyval_sort(struct keyval *kv)
 
   while ((okv = kv->head))
     {
-      kv->head  = okv->next;
+      kv->head = okv->next;
       okv->next = okv->sort;
     }
 
@@ -1437,7 +1443,6 @@ keyval_sort(struct keyval *kv)
 
   DPRINTF(E_DBG, L_MISC, "Keyval sorted. New head: %s. New tail: %s.\n", kv->head->name, kv->tail->name);
 }
-
 
 /* ------------------------------- Ringbuffer ------------------------------- */
 
@@ -1467,7 +1472,7 @@ ringbuffer_free(struct ringbuffer *buf, bool content_only)
 }
 
 size_t
-ringbuffer_write(struct ringbuffer *buf, const void* src, size_t srclen)
+ringbuffer_write(struct ringbuffer *buf, const void *src, size_t srclen)
 {
   int remaining;
 
@@ -1475,7 +1480,7 @@ ringbuffer_write(struct ringbuffer *buf, const void* src, size_t srclen)
     return 0;
 
   if (srclen > buf->write_avail)
-   srclen = buf->write_avail;
+    srclen = buf->write_avail;
 
   remaining = buf->size - buf->write_pos;
   if (srclen > remaining)
@@ -1522,7 +1527,6 @@ ringbuffer_read(uint8_t **dst, size_t dstlen, struct ringbuffer *buf)
   return dstlen;
 }
 
-
 /* ------------------------- Clock utility functions ------------------------ */
 
 int
@@ -1536,7 +1540,7 @@ clock_gettime_with_res(clockid_t clock_id, struct timespec *tp, struct timespec 
   ret = clock_gettime(clock_id, tp);
   /* this will only work for sub-second resolutions. */
   if (ret == 0 && res->tv_nsec > 1)
-    tp->tv_nsec = (tp->tv_nsec/res->tv_nsec)*res->tv_nsec;
+    tp->tv_nsec = (tp->tv_nsec / res->tv_nsec) * res->tv_nsec;
 
   return ret;
 }
@@ -1593,9 +1597,9 @@ timespec_reltoabs(struct timespec relative)
 
 #if defined(HAVE_MACH_CLOCK) || defined(HAVE_MACH_TIMER)
 
-#include <mach/mach_time.h> /* mach_absolute_time */
-#include <mach/mach.h>      /* host_get_clock_service */
 #include <mach/clock.h>     /* clock_get_time */
+#include <mach/mach.h>      /* host_get_clock_service */
+#include <mach/mach_time.h> /* mach_absolute_time */
 
 /* mach monotonic clock port */
 extern mach_port_t clock_port;
@@ -1611,41 +1615,45 @@ clock_gettime(clockid_t clock_id, struct timespec *tp)
   mach_timespec_t mts;
   int ret;
 
-  if (! clock_init) {
-    clock_init = 1;
-    if (host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &clock))
-      abort(); /* unlikely */
-  }
+  if (!clock_init)
+    {
+      clock_init = 1;
+      if (host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &clock))
+	abort(); /* unlikely */
+    }
 
-  if(! tp)
+  if (!tp)
     return -1;
 
-  switch (clock_id) {
+  switch (clock_id)
+    {
 
-  case CLOCK_REALTIME:
+    case CLOCK_REALTIME:
 
-    /* query mach for calendar time */
-    ret = clock_get_time(clock, &mts);
-    if (! ret) {
-      tp->tv_sec = mts.tv_sec;
-      tp->tv_nsec = mts.tv_nsec;
+      /* query mach for calendar time */
+      ret = clock_get_time(clock, &mts);
+      if (!ret)
+	{
+	  tp->tv_sec = mts.tv_sec;
+	  tp->tv_nsec = mts.tv_nsec;
+	}
+      break;
+
+    case CLOCK_MONOTONIC:
+
+      /* query mach for monotinic time */
+      ret = clock_get_time(clock_port, &mts);
+      if (!ret)
+	{
+	  tp->tv_sec = mts.tv_sec;
+	  tp->tv_nsec = mts.tv_nsec;
+	}
+      break;
+
+    default:
+      ret = -1;
+      break;
     }
-    break;
-
-  case CLOCK_MONOTONIC:
-
-    /* query mach for monotinic time */
-    ret = clock_get_time(clock_port, &mts);
-    if (! ret) {
-      tp->tv_sec = mts.tv_sec;
-      tp->tv_nsec = mts.tv_nsec;
-    }
-    break;
-
-  default:
-    ret = -1;
-    break;
-  }
 
   return ret;
 }
@@ -1653,7 +1661,7 @@ clock_gettime(clockid_t clock_id, struct timespec *tp)
 int
 clock_getres(clockid_t clock_id, struct timespec *res)
 {
-  if (! res)
+  if (!res)
     return -1;
 
   /* hardcode ms resolution */
@@ -1701,7 +1709,7 @@ timer_settime(timer_t timer_id, int flags, const struct itimerspec *tp, struct i
 {
   struct itimerval tv;
 
-  if (timer_id != 0 || ! tp || old)
+  if (timer_id != 0 || !tp || old)
     return -1;
 
   TIMESPEC_TO_TIMEVAL(&(tv.it_value), &(tp->it_value));
@@ -1722,13 +1730,13 @@ timer_getoverrun(timer_t timer_id)
 
 #endif /* HAVE_MACH_CLOCK */
 
-
 /* ------------------------------- Media quality ---------------------------- */
 
 bool
 quality_is_equal(struct media_quality *a, struct media_quality *b)
 {
-  return (a->sample_rate == b->sample_rate && a->bits_per_sample == b->bits_per_sample && a->channels == b->channels && a->bit_rate == b->bit_rate);
+  return (a->sample_rate == b->sample_rate && a->bits_per_sample == b->bits_per_sample && a->channels == b->channels
+          && a->bit_rate == b->bit_rate);
 }
 
 enum media_format
@@ -1764,7 +1772,6 @@ media_format_to_string(enum media_format format)
 
   return "unknown";
 }
-
 
 /* -------------------------- Misc utility functions ------------------------ */
 
@@ -1830,7 +1837,6 @@ uuid_make(char *str)
       if (i == 4)
 	uuid[i] = (uuid[i] & 0x3FFF) | 0x8000;
 
-
       if (i == 2 || i == 3 || i == 4 || i == 5)
 	str += sprintf(str, "-");
 
@@ -1843,9 +1849,9 @@ int
 linear_regression(double *m, double *b, double *r2, const double *x, const double *y, int n)
 {
   double x_val;
-  double sum_x  = 0;
+  double sum_x = 0;
   double sum_x2 = 0;
-  double sum_y  = 0;
+  double sum_y = 0;
   double sum_y2 = 0;
   double sum_xy = 0;
   double denom;
@@ -1853,10 +1859,10 @@ linear_regression(double *m, double *b, double *r2, const double *x, const doubl
 
   for (i = 0; i < n; i++)
     {
-      x_val   = x ? x[i] : (double)i;
-      sum_x  += x_val;
+      x_val = x ? x[i] : (double)i;
+      sum_x += x_val;
       sum_x2 += x_val * x_val;
-      sum_y  += y[i];
+      sum_y += y[i];
       sum_y2 += y[i] * y[i];
       sum_xy += x_val * y[i];
     }
@@ -1868,7 +1874,8 @@ linear_regression(double *m, double *b, double *r2, const double *x, const doubl
   *m = (n * sum_xy - sum_x * sum_y) / denom;
   *b = (sum_y * sum_x2 - sum_x * sum_xy) / denom;
   if (r2)
-    *r2 = (sum_xy - (sum_x * sum_y)/n) * (sum_xy - (sum_x * sum_y)/n) / ((sum_x2 - (sum_x * sum_x)/n) * (sum_y2 - (sum_y * sum_y)/n));
+    *r2 = (sum_xy - (sum_x * sum_y) / n) * (sum_xy - (sum_x * sum_y) / n)
+          / ((sum_x2 - (sum_x * sum_x) / n) * (sum_y2 - (sum_y * sum_y) / n));
 
   return 0;
 }
@@ -1900,14 +1907,15 @@ m_readfile(const char *path, int num_lines)
       line = fgets(buf, sizeof(buf), fp);
       if (!line)
 	{
-	  DPRINTF(E_LOG, L_MISC, "File '%s' has fewer lines than expected (found %d, expected %d)\n", path, i, num_lines);
+	  DPRINTF(
+	      E_LOG, L_MISC, "File '%s' has fewer lines than expected (found %d, expected %d)\n", path, i, num_lines);
 	  goto error;
 	}
 
       lines[i] = atrim(line);
       if (!lines[i] || (strlen(lines[i]) == 0))
 	{
-	  DPRINTF(E_LOG, L_MISC, "Line %d in '%s' is invalid\n", i+1, path);
+	  DPRINTF(E_LOG, L_MISC, "Line %d in '%s' is invalid\n", i + 1, path);
 	  goto error;
 	}
     }
@@ -1916,7 +1924,7 @@ m_readfile(const char *path, int num_lines)
 
   return lines;
 
- error:
+error:
   for (i = 0; i < num_lines; i++)
     free(lines[i]);
 
@@ -1924,7 +1932,6 @@ m_readfile(const char *path, int num_lines)
   fclose(fp);
   return NULL;
 }
-
 
 /* -------------------------------- Assertion ------------------------------- */
 
@@ -1948,5 +1955,3 @@ log_fatal_null(int domain, const char *func, int line)
   DPRINTF(E_FATAL, domain, "%s returned NULL at line %d\n", func, line);
   abort();
 }
-
-

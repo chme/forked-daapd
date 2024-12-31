@@ -18,14 +18,14 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdlib.h>
-#include <stdio.h> // fopen
+#include <ctype.h>  // isspace
 #include <stdarg.h> // va_*
+#include <stdio.h>  // fopen
+#include <stdlib.h>
 #include <string.h> // strlen
-#include <ctype.h> // isspace
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -53,7 +53,6 @@ trim(char *str)
 
   return str;
 }
-
 
 /* -------------------------- Wrapper implementation ------------------------ */
 
@@ -119,7 +118,7 @@ xml_get_child(xml_node *top, const char *name)
   for (cur = xmlFirstElementChild(top); cur; cur = xmlNextElementSibling(cur))
     {
       if (xmlStrEqual(BAD_CAST name, cur->name))
-        break;
+	break;
     }
 
   return cur;
@@ -234,7 +233,7 @@ xml_new_node(xml_node *parent, const char *name, const char *val)
 
   return node;
 
- error:
+error:
   if (!parent)
     xmlFreeDoc(doc);
   return NULL;

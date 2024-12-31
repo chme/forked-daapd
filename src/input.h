@@ -3,15 +3,14 @@
 #define __INPUT_H__
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
-#include <event2/buffer.h>
 #include "db.h"
 #include "misc.h"
+#include <event2/buffer.h>
 
 // Must be in sync with inputs[] in input.c
-enum input_types
-{
+enum input_types {
   INPUT_TYPE_FILE,
   INPUT_TYPE_HTTP,
   INPUT_TYPE_PIPE,
@@ -24,22 +23,20 @@ enum input_types
 #endif
 };
 
-enum input_flags
-{
+enum input_flags {
   // Flags that input is closing current source
   INPUT_FLAG_START_NEXT = (1 << 0),
   // Flags end of file
-  INPUT_FLAG_EOF        = (1 << 1),
+  INPUT_FLAG_EOF = (1 << 1),
   // Flags error reading file
-  INPUT_FLAG_ERROR      = (1 << 2),
+  INPUT_FLAG_ERROR = (1 << 2),
   // Flags possible new stream metadata
-  INPUT_FLAG_METADATA   = (1 << 3),
+  INPUT_FLAG_METADATA = (1 << 3),
   // Flags new stream quality
-  INPUT_FLAG_QUALITY    = (1 << 4),
+  INPUT_FLAG_QUALITY = (1 << 4),
 };
 
-struct input_source
-{
+struct input_source {
   // Type of input
   enum input_types type;
 
@@ -77,8 +74,7 @@ struct input_source
 
 typedef int (*input_cb)(void);
 
-struct input_metadata
-{
+struct input_metadata {
   // queue_item id
   uint32_t item_id;
 
@@ -100,8 +96,7 @@ struct input_metadata
   char *artwork_url;
 };
 
-struct input_definition
-{
+struct input_definition {
   // Name of the input
   const char *name;
 
@@ -132,7 +127,6 @@ struct input_definition
   // Deinitialization function called at shutdown
   void (*deinit)(void);
 };
-
 
 /* ---------------------- Interface towards input backends ------------------ */
 /*                                Thread: input                               */

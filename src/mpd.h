@@ -2,7 +2,6 @@
 #ifndef __MPD_H__
 #define __MPD_H__
 
-
 int
 mpd_init(void);
 

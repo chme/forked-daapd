@@ -8,7 +8,6 @@ struct rng_ctx {
   int32_t seed;
 };
 
-
 void
 rng_init(struct rng_ctx *ctx);
 
@@ -22,4 +21,3 @@ void
 rng_shuffle_int(struct rng_ctx *ctx, int *values, int len);
 
 #endif /* !__RNG_H__ */
-

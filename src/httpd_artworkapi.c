@@ -17,18 +17,18 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include "artwork.h"
 #include "httpd_internal.h"
 #include "logger.h"
 #include "misc.h"
 #include "player.h"
-#include "artwork.h"
 
 static int
 request_process(struct httpd_request *hreq, uint32_t *max_w, uint32_t *max_h)
@@ -134,14 +134,12 @@ artworkapi_reply_group(struct httpd_request *hreq)
   return response_process(hreq, ret);
 }
 
-static struct httpd_uri_map artworkapi_handlers[] =
-{
+static struct httpd_uri_map artworkapi_handlers[] = {
   { HTTPD_METHOD_GET, "^/artwork/nowplaying$",         artworkapi_reply_nowplaying },
-  { HTTPD_METHOD_GET, "^/artwork/item/[[:digit:]]+$",  artworkapi_reply_item },
-  { HTTPD_METHOD_GET, "^/artwork/group/[[:digit:]]+$", artworkapi_reply_group },
-  { 0, NULL, NULL }
+  { HTTPD_METHOD_GET, "^/artwork/item/[[:digit:]]+$",  artworkapi_reply_item       },
+  { HTTPD_METHOD_GET, "^/artwork/group/[[:digit:]]+$", artworkapi_reply_group      },
+  { 0,                NULL,                            NULL                        }
 };
-
 
 /* ------------------------------- API --------------------------------- */
 
@@ -165,29 +163,28 @@ artworkapi_request(struct httpd_request *hreq)
 
   switch (status_code)
     {
-      case HTTP_OK:                  /* 200 OK */
-	httpd_send_reply(hreq, status_code, "OK", HTTPD_SEND_NO_GZIP);
-	break;
-      case HTTP_NOCONTENT:           /* 204 No Content */
-	httpd_send_reply(hreq, status_code, "No Content", HTTPD_SEND_NO_GZIP);
-	break;
-      case HTTP_NOTMODIFIED:         /* 304 Not Modified */
-	httpd_send_reply(hreq, HTTP_NOTMODIFIED, NULL, HTTPD_SEND_NO_GZIP);
-	break;
-      case HTTP_BADREQUEST:          /* 400 Bad Request */
-	httpd_send_error(hreq, status_code, "Bad Request");
-	break;
-      case HTTP_NOTFOUND:            /* 404 Not Found */
-	httpd_send_error(hreq, status_code, "Not Found");
-	break;
-      case HTTP_INTERNAL:            /* 500 Internal Server Error */
-      default:
-	httpd_send_error(hreq, HTTP_INTERNAL, "Internal Server Error");
+    case HTTP_OK: /* 200 OK */
+      httpd_send_reply(hreq, status_code, "OK", HTTPD_SEND_NO_GZIP);
+      break;
+    case HTTP_NOCONTENT: /* 204 No Content */
+      httpd_send_reply(hreq, status_code, "No Content", HTTPD_SEND_NO_GZIP);
+      break;
+    case HTTP_NOTMODIFIED: /* 304 Not Modified */
+      httpd_send_reply(hreq, HTTP_NOTMODIFIED, NULL, HTTPD_SEND_NO_GZIP);
+      break;
+    case HTTP_BADREQUEST: /* 400 Bad Request */
+      httpd_send_error(hreq, status_code, "Bad Request");
+      break;
+    case HTTP_NOTFOUND: /* 404 Not Found */
+      httpd_send_error(hreq, status_code, "Not Found");
+      break;
+    case HTTP_INTERNAL: /* 500 Internal Server Error */
+    default:
+      httpd_send_error(hreq, HTTP_INTERNAL, "Internal Server Error");
     }
 }
 
-struct httpd_module httpd_artworkapi =
-{
+struct httpd_module httpd_artworkapi = {
   .name = "Artwork API",
   .type = MODULE_ARTWORKAPI,
   .logdomain = L_WEB,

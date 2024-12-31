@@ -17,33 +17,33 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <errno.h>
+#include <fcntl.h>
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <string.h>
-#include <errno.h>
 #include <sys/types.h>
-#include <stdint.h>
-#include <inttypes.h>
+#include <unistd.h>
 
-#include <pthread.h>
 #include <event2/event.h>
+#include <pthread.h>
 
-#include "httpd_internal.h"
+#include "artwork.h"
+#include "conffile.h"
+#include "db.h"
+#include "dmap_common.h"
 #include "httpd_daap.h"
+#include "httpd_internal.h"
+#include "library.h"
+#include "listener.h"
 #include "logger.h"
 #include "misc.h"
-#include "conffile.h"
-#include "artwork.h"
-#include "dmap_common.h"
-#include "library.h"
-#include "db.h"
 #include "player.h"
-#include "listener.h"
 
 #define DACP_VOLUME_STEP 5
 
@@ -63,7 +63,6 @@ struct dacp_prop_map {
   dacp_propset propset;
 };
 
-
 /* ---------------- FORWARD - PROPERTIES GETTERS AND SETTERS ---------------- */
 
 static void
@@ -75,11 +74,13 @@ dacp_propget_playerstate(struct evbuffer *evbuf, struct player_status *status, s
 static void
 dacp_propget_shufflestate(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item);
 static void
-dacp_propget_availableshufflestates(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item);
+dacp_propget_availableshufflestates(
+    struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item);
 static void
 dacp_propget_repeatstate(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item);
 static void
-dacp_propget_availablerepeatstates(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item);
+dacp_propget_availablerepeatstates(
+    struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item);
 static void
 dacp_propget_nowplaying(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item);
 static void
@@ -102,7 +103,6 @@ dacp_propget_mediakind(struct evbuffer *evbuf, struct player_status *status, str
 static void
 dacp_propget_extendedmediakind(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item);
 
-
 static void
 dacp_propset_volume(const char *value, struct httpd_request *hreq);
 static void
@@ -120,7 +120,6 @@ dacp_propset_repeatstate(const char *value, struct httpd_request *hreq);
 static void
 dacp_propset_userrating(const char *value, struct httpd_request *hreq);
 
-
 /* gperf static hash, dacp_prop.gperf */
 #include "dacp_prop_hash.h"
 
@@ -133,7 +132,6 @@ static int update_current_rev;
 // If an item is removed from the library while in the queue, we replace it with this
 static struct media_file_info dummy_mfi;
 static struct db_queue_item dummy_queue_item;
-
 
 /* -------------------------------- HELPERS --------------------------------- */
 
@@ -264,10 +262,10 @@ find_first_song_id(const char *query)
       goto no_result;
     }
 
- no_result:
+no_result:
   db_query_end(&qp);
 
- no_query_start:
+no_query_start:
   if (qp.filter)
     free(qp.filter);
 
@@ -295,7 +293,7 @@ dacp_queueitem_add(const char *query, const char *queuefilter, const char *sort,
     {
       id = find_first_song_id(query);
       if (id < 0)
-        return -1;
+	return -1;
     }
   else
     id = 0;
@@ -468,7 +466,8 @@ playqueuecontents_add_source(struct evbuffer *songlist, uint32_t source_id, int 
 }
 
 static int
-playqueuecontents_add_queue_item(struct evbuffer *songlist, struct db_queue_item *queue_item, int pos_in_queue, uint32_t plid)
+playqueuecontents_add_queue_item(
+    struct evbuffer *songlist, struct db_queue_item *queue_item, int pos_in_queue, uint32_t plid)
 {
   struct evbuffer *song;
   int ret;
@@ -519,17 +518,17 @@ speaker_enum_cb(struct player_speaker_info *spk, void *arg)
 
   CHECK_ERR(L_DACP, evbuffer_expand(evbuf, 71 + len));
 
-  dmap_add_container(evbuf, "mdcl", len);        /* 8 + len */
+  dmap_add_container(evbuf, "mdcl", len); /* 8 + len */
   if (spk->selected)
-    dmap_add_char(evbuf, "caia", 1);             /* 9 */
+    dmap_add_char(evbuf, "caia", 1); /* 9 */
   if (spk->has_password)
-    dmap_add_char(evbuf, "cahp", 1);             /* 9 */
+    dmap_add_char(evbuf, "cahp", 1); /* 9 */
   if (spk->has_video)
-    dmap_add_char(evbuf, "caiv", 1);             /* 9 */
-  dmap_add_string(evbuf, "minm", spk->name);   /* 8 + len */
-  dmap_add_long(evbuf, "msma", spk->id);       /* 16 */
+    dmap_add_char(evbuf, "caiv", 1);         /* 9 */
+  dmap_add_string(evbuf, "minm", spk->name); /* 8 + len */
+  dmap_add_long(evbuf, "msma", spk->id);     /* 16 */
 
-  dmap_add_int(evbuf, "cmvo", spk->relvol);    /* 12 */
+  dmap_add_int(evbuf, "cmvo", spk->relvol); /* 12 */
 }
 
 static int
@@ -543,14 +542,16 @@ speaker_get(struct player_speaker_info *speaker_info, struct httpd_request *hreq
 
   if (!remote || (safe_atou32(remote, &active_remote) < 0))
     {
-      DPRINTF(E_LOG, L_DACP, "'%s' request from '%s' has invalid Active-Remote: '%s'\n", req_name, hreq->peer_address, remote);
+      DPRINTF(E_LOG, L_DACP, "'%s' request from '%s' has invalid Active-Remote: '%s'\n", req_name, hreq->peer_address,
+          remote);
       return -1;
     }
 
   ret = player_speaker_get_byactiveremote(speaker_info, active_remote);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "'%s' request from '%s' has unknown Active-Remote: '%s'\n", req_name, hreq->peer_address, remote);
+      DPRINTF(E_LOG, L_DACP, "'%s' request from '%s' has unknown Active-Remote: '%s'\n", req_name, hreq->peer_address,
+          remote);
       return -1;
     }
 
@@ -625,13 +626,13 @@ dacp_request_authorize(struct httpd_request *hreq)
 
   return 0;
 
- invalid:
-  DPRINTF(E_LOG, L_DACP, "Unauthorized request '%s' from '%s' (is peer trusted in your config?)\n", hreq->uri, hreq->peer_address);
+invalid:
+  DPRINTF(E_LOG, L_DACP, "Unauthorized request '%s' from '%s' (is peer trusted in your config?)\n", hreq->uri,
+      hreq->peer_address);
 
   httpd_send_error(hreq, HTTP_FORBIDDEN, "Forbidden");
   return -1;
 }
-
 
 /* ---------------------- UPDATE REQUESTS HANDLERS -------------------------- */
 
@@ -657,29 +658,29 @@ make_playstatusupdate(struct evbuffer *evbuf, int current_rev)
 	}
     }
 
-  dmap_add_int(psu, "mstt", 200);             /* 12 */
+  dmap_add_int(psu, "mstt", 200); /* 12 */
 
-  dmap_add_int(psu, "cmsr", current_rev);     /* 12 */
+  dmap_add_int(psu, "cmsr", current_rev); /* 12 */
 
-  dmap_add_char(psu, "caps", status.status);  /*  9 */ /* play status, 2 = stopped, 3 = paused, 4 = playing */
+  dmap_add_char(psu, "caps", status.status); /*  9 */  /* play status, 2 = stopped, 3 = paused, 4 = playing */
   dmap_add_char(psu, "cash", status.shuffle); /*  9 */ /* shuffle, true/false */
-  dmap_add_char(psu, "carp", status.repeat);  /*  9 */ /* repeat, 0 = off, 1 = repeat song, 2 = repeat (playlist) */
-  dmap_add_char(psu, "cafs", 0);              /*  9 */ /* dacp.fullscreen */
-  dmap_add_char(psu, "cavs", 0);              /*  9 */ /* dacp.visualizer */
-  dmap_add_char(psu, "cavc", 1);              /*  9 */ /* volume controllable */
-  dmap_add_int(psu, "caas", 2);               /* 12 */ /* available shuffle states */
-  dmap_add_int(psu, "caar", 6);               /* 12 */ /* available repeat states */
-  dmap_add_char(psu, "cafe", 0);              /*  9 */ /* dacp.fullscreenenabled */
-  dmap_add_char(psu, "cave", 0);              /*  9 */ /* dacp.visualizerenabled */
+  dmap_add_char(psu, "carp", status.repeat); /*  9 */  /* repeat, 0 = off, 1 = repeat song, 2 = repeat (playlist) */
+  dmap_add_char(psu, "cafs", 0); /*  9 */              /* dacp.fullscreen */
+  dmap_add_char(psu, "cavs", 0); /*  9 */              /* dacp.visualizer */
+  dmap_add_char(psu, "cavc", 1); /*  9 */              /* volume controllable */
+  dmap_add_int(psu, "caas", 2); /* 12 */               /* available shuffle states */
+  dmap_add_int(psu, "caar", 6); /* 12 */               /* available repeat states */
+  dmap_add_char(psu, "cafe", 0); /*  9 */              /* dacp.fullscreenenabled */
+  dmap_add_char(psu, "cave", 0); /*  9 */              /* dacp.visualizerenabled */
 
   if (queue_item)
     {
       dacp_nowplaying(psu, &status, queue_item);
 
-      dmap_add_int(psu, "casa", 1);           /* 12 */ /* unknown */
+      dmap_add_int(psu, "casa", 1); /* 12 */ /* unknown */
       dmap_add_int(psu, "astm", queue_item->song_length);
-      dmap_add_char(psu, "casc", 1);          /* Maybe an indication of extra data? */
-      dmap_add_char(psu, "caks", 6);          /* Unknown */
+      dmap_add_char(psu, "casc", 1); /* Maybe an indication of extra data? */
+      dmap_add_char(psu, "caks", 6); /* Unknown */
 
       dacp_playingtime(psu, &status, queue_item);
 
@@ -687,16 +688,17 @@ make_playstatusupdate(struct evbuffer *evbuf, int current_rev)
 	free_queue_item(queue_item, 0);
     }
 
-  dmap_add_char(psu, "casu", 1);              /*  9 */ /* unknown */
-  dmap_add_char(psu, "ceQu", 0);              /*  9 */ /* unknown */
+  dmap_add_char(psu, "casu", 1); /*  9 */ /* unknown */
+  dmap_add_char(psu, "ceQu", 0); /*  9 */ /* unknown */
 
-  dmap_add_container(evbuf, "cmst", evbuffer_get_length(psu));    /* 8 + len */
+  dmap_add_container(evbuf, "cmst", evbuffer_get_length(psu)); /* 8 + len */
 
   CHECK_ERR(L_DACP, evbuffer_add_buffer(evbuf, psu));
 
   evbuffer_free(psu);
 
-  DPRINTF(E_DBG, L_DACP, "Replying to playstatusupdate with status %d and current_rev %d\n", status.status, current_rev);
+  DPRINTF(
+      E_DBG, L_DACP, "Replying to playstatusupdate with status %d and current_rev %d\n", status.status, current_rev);
 
   return 0;
 }
@@ -769,7 +771,7 @@ playstatusupdate_cb(int fd, short what, void *arg)
   update_request_remove(&update_requests, ur);
   pthread_mutex_unlock(&update_request_lck);
 
- error:
+error:
   return;
 }
 
@@ -800,7 +802,6 @@ dacp_playstatus_update_handler(short event_mask)
   pthread_mutex_unlock(&update_request_lck);
 }
 
-
 /* --------------------- PROPERTIES GETTERS AND SETTERS --------------------- */
 
 static void
@@ -828,7 +829,8 @@ dacp_propget_shufflestate(struct evbuffer *evbuf, struct player_status *status, 
 }
 
 static void
-dacp_propget_availableshufflestates(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item)
+dacp_propget_availableshufflestates(
+    struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item)
 {
   dmap_add_int(evbuf, "caas", 2);
 }
@@ -840,7 +842,8 @@ dacp_propget_repeatstate(struct evbuffer *evbuf, struct player_status *status, s
 }
 
 static void
-dacp_propget_availablerepeatstates(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item)
+dacp_propget_availablerepeatstates(
+    struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item)
 {
   dmap_add_int(evbuf, "caar", 6);
 }
@@ -860,49 +863,49 @@ dacp_propget_playingtime(struct evbuffer *evbuf, struct player_status *status, s
 static void
 dacp_propget_fullscreenenabled(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item)
 {
-	// TODO
+  // TODO
 }
 
 static void
 dacp_propget_fullscreen(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item)
 {
-	// TODO
+  // TODO
 }
 
 static void
 dacp_propget_visualizerenabled(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item)
 {
-	// TODO
+  // TODO
 }
 
 static void
 dacp_propget_visualizer(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item)
 {
-	// TODO
+  // TODO
 }
 
 static void
 dacp_propget_itms_songid(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item)
 {
-	// TODO
+  // TODO
 }
 
 static void
 dacp_propget_haschapterdata(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item)
 {
-	// TODO
+  // TODO
 }
 
 static void
 dacp_propget_mediakind(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item)
 {
-	// TODO
+  // TODO
 }
 
 static void
 dacp_propget_extendedmediakind(struct evbuffer *evbuf, struct player_status *status, struct db_queue_item *queue_item)
 {
-	// TODO
+  // TODO
 }
 
 /* Properties setters */
@@ -1110,7 +1113,6 @@ dacp_propset_userrating(const char *value, struct httpd_request *hreq)
   library_item_attrib_save(itemid, LIBRARY_ATTRIB_RATING, rating);
 }
 
-
 /* --------------------------- REPLY HANDLERS ------------------------------- */
 
 static int
@@ -1133,15 +1135,16 @@ dacp_reply_ctrlint(struct httpd_request *hreq)
   dmap_add_int(hreq->out_body, "cmpr", (2 << 16 | 2)); /* 12, dmcp.protocolversion */
   dmap_add_int(hreq->out_body, "capr", (2 << 16 | 5)); /* 12, dacp.protocolversion */
 
-  dmap_add_char(hreq->out_body, "cmsp", 1);        /*  9, unknown */
-  dmap_add_char(hreq->out_body, "aeFR", 0x64);     /*  9, unknown */
-  dmap_add_char(hreq->out_body, "cmsv", 1);        /*  9, unknown */
-  dmap_add_char(hreq->out_body, "cass", 1);        /*  9, unknown */
-  dmap_add_char(hreq->out_body, "caov", 1);        /*  9, unknown */
-  dmap_add_char(hreq->out_body, "casu", 1);        /*  9, unknown */
-  dmap_add_char(hreq->out_body, "ceSG", 1);        /*  9, unknown */
-  dmap_add_char(hreq->out_body, "cmrl", 1);        /*  9, unknown */
-  dmap_add_long(hreq->out_body, "ceSX", (1 << 1 | 1));  /* 16, unknown dacp - lowest bit announces support for playqueue-contents/-edit */
+  dmap_add_char(hreq->out_body, "cmsp", 1);    /*  9, unknown */
+  dmap_add_char(hreq->out_body, "aeFR", 0x64); /*  9, unknown */
+  dmap_add_char(hreq->out_body, "cmsv", 1);    /*  9, unknown */
+  dmap_add_char(hreq->out_body, "cass", 1);    /*  9, unknown */
+  dmap_add_char(hreq->out_body, "caov", 1);    /*  9, unknown */
+  dmap_add_char(hreq->out_body, "casu", 1);    /*  9, unknown */
+  dmap_add_char(hreq->out_body, "ceSG", 1);    /*  9, unknown */
+  dmap_add_char(hreq->out_body, "cmrl", 1);    /*  9, unknown */
+  dmap_add_long(hreq->out_body, "ceSX",
+      (1 << 1 | 1)); /* 16, unknown dacp - lowest bit announces support for playqueue-contents/-edit */
 
   httpd_send_reply(hreq, HTTP_OK, "OK", 0);
 
@@ -1245,9 +1248,9 @@ dacp_reply_cue_play(struct httpd_request *hreq)
 	{
 	  /* Play from Up Next queue */
 	  if (status.status == PLAY_STOPPED)
-            queue_item = db_queue_fetch_bypos(pos, status.shuffle);
-          else
-            queue_item = db_queue_fetch_byposrelativetoitem(pos, status.item_id, status.shuffle);
+	    queue_item = db_queue_fetch_bypos(pos, status.shuffle);
+	  else
+	    queue_item = db_queue_fetch_byposrelativetoitem(pos, status.item_id, status.shuffle);
 	  if (!queue_item)
 	    {
 	      DPRINTF(E_LOG, L_DACP, "Could not fetch item from queue: pos=%d, now playing=%d\n", pos, status.item_id);
@@ -1283,9 +1286,9 @@ dacp_reply_cue_play(struct httpd_request *hreq)
 
   CHECK_ERR(L_DACP, evbuffer_expand(hreq->out_body, 64));
 
-  dmap_add_container(hreq->out_body, "cacr", 24); /* 8 + len */
-  dmap_add_int(hreq->out_body, "mstt", 200);      /* 12 */
-  dmap_add_int(hreq->out_body, "miid", status.id);/* 12 */
+  dmap_add_container(hreq->out_body, "cacr", 24);  /* 8 + len */
+  dmap_add_int(hreq->out_body, "mstt", 200);       /* 12 */
+  dmap_add_int(hreq->out_body, "miid", status.id); /* 12 */
 
   httpd_send_reply(hreq, HTTP_OK, "OK", 0);
 
@@ -1444,14 +1447,16 @@ dacp_reply_playspec(struct httpd_request *hreq)
 
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DACP, "Couldn't convert container-item-spec/item-spec to an integer in playspec (%s)\n", param);
+	  DPRINTF(
+	      E_LOG, L_DACP, "Couldn't convert container-item-spec/item-spec to an integer in playspec (%s)\n", param);
 	  goto out_fail;
 	}
     }
   else
     id = 0;
 
-  DPRINTF(E_DBG, L_DACP, "Playspec request for playlist %d, start song id %d%s\n", plid, id, (shuffle) ? ", shuffle" : "");
+  DPRINTF(
+      E_DBG, L_DACP, "Playspec request for playlist %d, start song id %d%s\n", plid, id, (shuffle) ? ", shuffle" : "");
 
   player_get_status(&status);
 
@@ -1496,7 +1501,7 @@ dacp_reply_playspec(struct httpd_request *hreq)
   httpd_send_reply(hreq, HTTP_NOCONTENT, "No Content", HTTPD_SEND_NO_GZIP);
   return 0;
 
- out_fail:
+out_fail:
   httpd_send_error(hreq, HTTP_INTERNAL, "Internal Server Error");
 
   return -1;
@@ -1560,7 +1565,7 @@ dacp_reply_playpause(struct httpd_request *hreq)
 
 	  httpd_send_error(hreq, HTTP_INTERNAL, "Internal Server Error");
 	  return -1;
-        }
+	}
     }
 
   /* 204 No Content is the canonical reply */
@@ -1745,7 +1750,8 @@ dacp_reply_playqueuecontents(struct httpd_request *hreq)
 
       while ((count < history->count) && (count < abs(span)))
 	{
-	  ret = playqueuecontents_add_source(songlist, history->id[(start_index + count) % MAX_HISTORY_COUNT], (count + 1), status.plid);
+	  ret = playqueuecontents_add_source(
+	      songlist, history->id[(start_index + count) % MAX_HISTORY_COUNT], (count + 1), status.plid);
 	  if (ret < 0)
 	    goto error;
 
@@ -1797,17 +1803,17 @@ dacp_reply_playqueuecontents(struct httpd_request *hreq)
 
   if (count > 0)
     {
-      dmap_add_container(playlists, "mlit", 36);             /*  8 */
-      dmap_add_string(playlists, "ceQk", "curr");            /* 12 */
-      dmap_add_int(playlists, "ceQi", 0);                    /* 12 */
-      dmap_add_int(playlists, "ceQm", 1);                    /* 12 */
+      dmap_add_container(playlists, "mlit", 36);  /*  8 */
+      dmap_add_string(playlists, "ceQk", "curr"); /* 12 */
+      dmap_add_int(playlists, "ceQi", 0);         /* 12 */
+      dmap_add_int(playlists, "ceQm", 1);         /* 12 */
 
       dmap_add_container(playlists, "mlit", 69);
-      dmap_add_string(playlists, "ceQk", "main");            /* 12 */
-      dmap_add_int(playlists, "ceQi", 1);                    /* 12 */
-      dmap_add_int(playlists, "ceQm", count);                /* 12 */
-      dmap_add_string(playlists, "ceQl", "Up Next");         /* 15 = 8 + 7 */
-      dmap_add_string(playlists, "ceQh", "from Music");      /* 18 = 8 + 10 */
+      dmap_add_string(playlists, "ceQk", "main");       /* 12 */
+      dmap_add_int(playlists, "ceQi", 1);               /* 12 */
+      dmap_add_int(playlists, "ceQm", count);           /* 12 */
+      dmap_add_string(playlists, "ceQl", "Up Next");    /* 15 = 8 + 7 */
+      dmap_add_string(playlists, "ceQh", "from Music"); /* 18 = 8 + 10 */
 
       songlist_length = evbuffer_get_length(songlist);
     }
@@ -1837,7 +1843,7 @@ dacp_reply_playqueuecontents(struct httpd_request *hreq)
 
   return 0;
 
- error:
+error:
   DPRINTF(E_LOG, L_DACP, "Database error in dacp_reply_playqueuecontents\n");
 
   evbuffer_free(songlist);
@@ -1859,7 +1865,7 @@ dacp_reply_playqueueedit_clear(struct httpd_request *hreq)
    * If mode=0x68697374 (hex representation of the ascii string "hist") clear the history,
    * otherwise the current playlist.
    */
-  if (strcmp(param,"0x68697374") == 0)
+  if (strcmp(param, "0x68697374") == 0)
     player_queue_clear_history();
   else
     {
@@ -1948,7 +1954,8 @@ dacp_reply_playqueueedit_add(struct httpd_request *hreq)
   querymodifier = httpd_query_value_find(hreq->query, "query-modifier");
   if (!querymodifier || (strcmp(querymodifier, "containers") != 0))
     {
-      quirkyquery = (mode == 1) && strstr(editquery, "dmap.itemid:") && ((!queuefilter) || strstr(queuefilter, "(null)"));
+      quirkyquery
+          = (mode == 1) && strstr(editquery, "dmap.itemid:") && ((!queuefilter) || strstr(queuefilter, "(null)"));
       ret = dacp_queueitem_add(editquery, queuefilter, sort, quirkyquery, mode);
     }
   else
@@ -1956,7 +1963,7 @@ dacp_reply_playqueueedit_add(struct httpd_request *hreq)
       // Modify the query: Take the id from the editquery and use it as a queuefilter playlist id
       ret = safe_atoi32(strchr(editquery, ':') + 1, &plid);
       if (ret < 0)
-        {
+	{
 	  DPRINTF(E_LOG, L_DACP, "Invalid playlist id in request: %s\n", editquery);
 
 	  dacp_send_error(hreq, "cacr", "Invalid request");
@@ -2022,8 +2029,8 @@ dacp_reply_playqueueedit_move(struct httpd_request *hreq)
    * Exampe request:
    * playqueue-edit?command=move&edit-params='edit-param.move-pair:3,0'&session-id=100
    *
-   * The 'edit-param.move-pair' param contains the index of the song in the playqueue to be moved (index 3 in the example)
-   * and the index of the song after which it should be inserted (index 0 in the exampe, the now playing song).
+   * The 'edit-param.move-pair' param contains the index of the song in the playqueue to be moved (index 3 in the
+   * example) and the index of the song after which it should be inserted (index 0 in the exampe, the now playing song).
    */
   struct player_status status;
   int ret;
@@ -2033,28 +2040,28 @@ dacp_reply_playqueueedit_move(struct httpd_request *hreq)
 
   param = httpd_query_value_find(hreq->query, "edit-params");
   if (param)
-  {
-    ret = safe_atoi32(strchr(param, ':') + 1, &src);
-    if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Invalid edit-params move-from value in playqueue-edit request\n");
+      ret = safe_atoi32(strchr(param, ':') + 1, &src);
+      if (ret < 0)
+	{
+	  DPRINTF(E_LOG, L_DACP, "Invalid edit-params move-from value in playqueue-edit request\n");
 
-      dacp_send_error(hreq, "cacr", "Invalid request");
-      return -1;
+	  dacp_send_error(hreq, "cacr", "Invalid request");
+	  return -1;
+	}
+
+      ret = safe_atoi32(strchr(param, ',') + 1, &dst);
+      if (ret < 0)
+	{
+	  DPRINTF(E_LOG, L_DACP, "Invalid edit-params move-to value in playqueue-edit request\n");
+
+	  dacp_send_error(hreq, "cacr", "Invalid request");
+	  return -1;
+	}
+
+      player_get_status(&status);
+      db_queue_move_byposrelativetoitem(src, dst, status.item_id, status.shuffle);
     }
-
-    ret = safe_atoi32(strchr(param, ',') + 1, &dst);
-    if (ret < 0)
-    {
-      DPRINTF(E_LOG, L_DACP, "Invalid edit-params move-to value in playqueue-edit request\n");
-
-      dacp_send_error(hreq, "cacr", "Invalid request");
-      return -1;
-    }
-
-    player_get_status(&status);
-    db_queue_move_byposrelativetoitem(src, dst, status.item_id, status.shuffle);
-  }
 
   /* 204 No Content is the canonical reply */
   httpd_send_reply(hreq, HTTP_NOCONTENT, "No Content", HTTPD_SEND_NO_GZIP);
@@ -2077,20 +2084,20 @@ dacp_reply_playqueueedit_remove(struct httpd_request *hreq)
 
   param = httpd_query_value_find(hreq->query, "items");
   if (param)
-  {
-    ret = safe_atoi32(param, &item_index);
-    if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Invalid edit-params remove item value in playqueue-edit request\n");
+      ret = safe_atoi32(param, &item_index);
+      if (ret < 0)
+	{
+	  DPRINTF(E_LOG, L_DACP, "Invalid edit-params remove item value in playqueue-edit request\n");
 
-      dacp_send_error(hreq, "cacr", "Invalid request");
-      return -1;
+	  dacp_send_error(hreq, "cacr", "Invalid request");
+	  return -1;
+	}
+
+      player_get_status(&status);
+
+      db_queue_delete_byposrelativetoitem(item_index, status.item_id, status.shuffle);
     }
-
-    player_get_status(&status);
-
-    db_queue_delete_byposrelativetoitem(item_index, status.item_id, status.shuffle);
-  }
 
   /* 204 No Content is the canonical reply */
   httpd_send_reply(hreq, HTTP_NOCONTENT, "No Content", HTTPD_SEND_NO_GZIP);
@@ -2106,44 +2113,44 @@ dacp_reply_playqueueedit(struct httpd_request *hreq)
 
   /*  Variations of /ctrl-int/1/playqueue-edit and expected behaviour
       User selected play (album or artist tab):
-	?command=add&query='...'&sort=album&mode=1&session-id=...
-	-> clear queue, play query results
+        ?command=add&query='...'&sort=album&mode=1&session-id=...
+        -> clear queue, play query results
       User selected play (playlist):
-	?command=add&query='dmap.itemid:...'&query-modifier=containers&mode=1&session-id=...
-	-> clear queue, play playlist with the id specified by itemid
+        ?command=add&query='dmap.itemid:...'&query-modifier=containers&mode=1&session-id=...
+        -> clear queue, play playlist with the id specified by itemid
       User selected track (album tab):
-	?command=add&query='dmap.itemid:...'&queuefilter=album:...&sort=album&mode=1&session-id=...
-	-> clear queue, play itemid and the rest of album
+        ?command=add&query='dmap.itemid:...'&queuefilter=album:...&sort=album&mode=1&session-id=...
+        -> clear queue, play itemid and the rest of album
       User selected track (artist tab):
-	?command=add&query='dmap.itemid:...'&queuefilter=artist:...&sort=album&mode=1&session-id=...
-	-> clear queue, play itemid and the rest of artist tracks
+        ?command=add&query='dmap.itemid:...'&queuefilter=artist:...&sort=album&mode=1&session-id=...
+        -> clear queue, play itemid and the rest of artist tracks
       User selected track (song tab):
-	?command=add&query='dmap.itemid:...'&queuefilter=playlist:...&sort=name&mode=1&session-id=...
-	-> clear queue, play itemid and the rest of playlist
+        ?command=add&query='dmap.itemid:...'&queuefilter=playlist:...&sort=name&mode=1&session-id=...
+        -> clear queue, play itemid and the rest of playlist
       User selected track (playlist tab):
-	?command=add&query='dmap.containeritemid:...'&queuefilter=playlist:...&sort=physical&mode=1&session-id=...
-	-> clear queue, play containeritemid and the rest of playlist
+        ?command=add&query='dmap.containeritemid:...'&queuefilter=playlist:...&sort=physical&mode=1&session-id=...
+        -> clear queue, play containeritemid and the rest of playlist
       User selected shuffle (artist tab):
-	?command=add&query='...'&sort=album&mode=2&session-id=...
-	-> clear queue, play shuffled query results
+        ?command=add&query='...'&sort=album&mode=2&session-id=...
+        -> clear queue, play shuffled query results
       User selected add item to queue:
-	?command=add&query='...'&sort=album&mode=0&session-id=...
-	-> add query results to queue
+        ?command=add&query='...'&sort=album&mode=0&session-id=...
+        -> add query results to queue
       User selected play next song (album tab)
-	?command=add&query='daap.songalbumid:...'&sort=album&mode=3&session-id=...
-	-> replace queue from after current song with query results
+        ?command=add&query='daap.songalbumid:...'&sort=album&mode=3&session-id=...
+        -> replace queue from after current song with query results
       User selected track in queue:
-	?command=playnow&index=...&session-id=...
-	-> play index
+        ?command=playnow&index=...&session-id=...
+        -> play index
 
       And the quirky query from Remote - no sort and no queuefilter
       User selected track (Audiobooks):
-	?command=add&query='dmap.itemid:...'&mode=1&session-id=...
-	-> clear queue, play itemid and the rest of album tracks
+        ?command=add&query='dmap.itemid:...'&mode=1&session-id=...
+        -> clear queue, play itemid and the rest of album tracks
 
-	?command=move&edit-params='edit-param.move-pair:3,0'&session-id=100
-	-> move song from playqueue position 3 to be played after song at position 0
-	?command=remove&items=1&session-id=100
+        ?command=move&edit-params='edit-param.move-pair:3,0'&session-id=100
+        -> move song from playqueue position 3 to be played after song at position 0
+        ?command=remove&items=1&session-id=100
   -> remove song on position 1 from the playqueue
    */
 
@@ -2298,19 +2305,19 @@ dacp_reply_nowplayingartwork(struct httpd_request *hreq)
 
   switch (ret)
     {
-      case ART_FMT_PNG:
-	ctype = "image/png";
-	break;
+    case ART_FMT_PNG:
+      ctype = "image/png";
+      break;
 
-      case ART_FMT_JPEG:
-	ctype = "image/jpeg";
-	break;
+    case ART_FMT_JPEG:
+      ctype = "image/jpeg";
+      break;
 
-      default:
-	if (len > 0)
-	  evbuffer_drain(hreq->out_body, len);
+    default:
+      if (len > 0)
+	evbuffer_drain(hreq->out_body, len);
 
-	goto no_artwork;
+      goto no_artwork;
     }
 
   httpd_header_remove(hreq->out_headers, "Content-Type");
@@ -2321,11 +2328,11 @@ dacp_reply_nowplayingartwork(struct httpd_request *hreq)
   httpd_send_reply(hreq, HTTP_OK, "OK", HTTPD_SEND_NO_GZIP);
   return 0;
 
- no_artwork:
+no_artwork:
   httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
   return 0;
 
- error:
+error:
   httpd_send_error(hreq, HTTP_BADREQUEST, "Bad Request");
   return -1;
 }
@@ -2413,7 +2420,7 @@ dacp_reply_getproperty(struct httpd_request *hreq)
 
   len = evbuffer_get_length(proplist);
   dmap_add_container(hreq->out_body, "cmgt", 12 + len);
-  dmap_add_int(hreq->out_body, "mstt", 200);      /* 12 */
+  dmap_add_int(hreq->out_body, "mstt", 200); /* 12 */
 
   CHECK_ERR(L_DACP, evbuffer_add_buffer(hreq->out_body, proplist));
 
@@ -2423,10 +2430,10 @@ dacp_reply_getproperty(struct httpd_request *hreq)
 
   return 0;
 
- out_free_proplist:
+out_free_proplist:
   evbuffer_free(proplist);
 
- out_free_propstr:
+out_free_propstr:
   free(propstr);
 
   return -1;
@@ -2564,7 +2571,8 @@ dacp_reply_setspeakers(struct httpd_request *hreq)
 	}
       else
 	{
-	  DPRINTF(E_DBG, L_DACP, "Speaker id converted with ret %d, param %s, dec val %" PRIu64 ".\n", ret, param, ids[i]);
+	  DPRINTF(
+	      E_DBG, L_DACP, "Speaker id converted with ret %d, param %s, dec val %" PRIu64 ".\n", ret, param, ids[i]);
 	}
       i++;
     }
@@ -2572,7 +2580,7 @@ dacp_reply_setspeakers(struct httpd_request *hreq)
 
   ids[0] = nspk;
 
- fastpath:
+fastpath:
   ret = player_speaker_set(ids);
 
   if (ids)
@@ -2676,110 +2684,36 @@ dacp_reply_mutetoggle(struct httpd_request *hreq)
   return 0;
 }
 
-static struct httpd_uri_map dacp_handlers[] =
+static struct httpd_uri_map dacp_handlers[] = {
+  { .regexp = "^/ctrl-int$", .handler = dacp_reply_ctrlint },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/cue$", .handler = dacp_reply_cue },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/play$", .handler = dacp_reply_play },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/playspec$", .handler = dacp_reply_playspec },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/stop$", .handler = dacp_reply_stop },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/pause$", .handler = dacp_reply_pause },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/discrete-pause$", .handler = dacp_reply_playpause },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/playpause$", .handler = dacp_reply_playpause },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/nextitem$", .handler = dacp_reply_nextitem },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/previtem$", .handler = dacp_reply_previtem },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/beginff$", .handler = dacp_reply_beginff },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/beginrew$", .handler = dacp_reply_beginrew },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/playresume$", .handler = dacp_reply_playresume },
   {
-    {
-      .regexp = "^/ctrl-int$",
-      .handler = dacp_reply_ctrlint
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/cue$",
-      .handler = dacp_reply_cue
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/play$",
-      .handler = dacp_reply_play
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/playspec$",
-      .handler = dacp_reply_playspec
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/stop$",
-      .handler = dacp_reply_stop
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/pause$",
-      .handler = dacp_reply_pause
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/discrete-pause$",
-      .handler = dacp_reply_playpause
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/playpause$",
-      .handler = dacp_reply_playpause
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/nextitem$",
-      .handler = dacp_reply_nextitem
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/previtem$",
-      .handler = dacp_reply_previtem
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/beginff$",
-      .handler = dacp_reply_beginff
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/beginrew$",
-      .handler = dacp_reply_beginrew
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/playresume$",
-      .handler = dacp_reply_playresume
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/playstatusupdate$",
-      .handler = dacp_reply_playstatusupdate,
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/playqueue-contents$",
-      .handler = dacp_reply_playqueuecontents
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/playqueue-edit$",
-      .handler = dacp_reply_playqueueedit
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/nowplayingartwork$",
-      .handler = dacp_reply_nowplayingartwork
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/getproperty$",
-      .handler = dacp_reply_getproperty
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/setproperty$",
-      .handler = dacp_reply_setproperty
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/getspeakers$",
-      .handler = dacp_reply_getspeakers
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/setspeakers$",
-      .handler = dacp_reply_setspeakers
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/volumeup$",
-      .handler = dacp_reply_volumeup
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/volumedown$",
-      .handler = dacp_reply_volumedown
-    },
-    {
-      .regexp = "^/ctrl-int/[[:digit:]]+/mutetoggle$",
-      .handler = dacp_reply_mutetoggle
-    },
-    {
-      .regexp = NULL,
-      .handler = NULL
-    }
-  };
-
+   .regexp = "^/ctrl-int/[[:digit:]]+/playstatusupdate$",
+   .handler = dacp_reply_playstatusupdate,
+   },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/playqueue-contents$", .handler = dacp_reply_playqueuecontents },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/playqueue-edit$", .handler = dacp_reply_playqueueedit },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/nowplayingartwork$", .handler = dacp_reply_nowplayingartwork },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/getproperty$", .handler = dacp_reply_getproperty },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/setproperty$", .handler = dacp_reply_setproperty },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/getspeakers$", .handler = dacp_reply_getspeakers },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/setspeakers$", .handler = dacp_reply_setspeakers },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/volumeup$", .handler = dacp_reply_volumeup },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/volumedown$", .handler = dacp_reply_volumedown },
+  { .regexp = "^/ctrl-int/[[:digit:]]+/mutetoggle$", .handler = dacp_reply_mutetoggle },
+  { .regexp = NULL, .handler = NULL }
+};
 
 /* ------------------------------- DACP API --------------------------------- */
 
@@ -2839,13 +2773,12 @@ dacp_deinit(void)
     }
 }
 
-struct httpd_module httpd_dacp =
-{
+struct httpd_module httpd_dacp = {
   .name = "DACP",
   .type = MODULE_DACP,
   .logdomain = L_DACP,
   .subpaths = { "/ctrl-int/", NULL },
-  .fullpaths = { "/ctrl-int", NULL },
+  .fullpaths = { "/ctrl-int",  NULL },
   .handlers = dacp_handlers,
   .init = dacp_init,
   .deinit = dacp_deinit,

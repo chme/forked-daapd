@@ -17,7 +17,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #include <json.h>
@@ -33,7 +33,6 @@
 #include "logger.h"
 #include "misc.h"
 
-
 static struct lws_context *websocket_context;
 static bool websocket_is_initialized;
 static pthread_t tid_websocket;
@@ -46,7 +45,6 @@ static bool websocket_exit = false;
 static pthread_mutex_t websocket_write_event_lock;
 // Event mask of events processed by the writeable callback
 static short websocket_write_events;
-
 
 /* Thread: library (the thread the event occurred) */
 static void
@@ -195,12 +193,12 @@ process_notify_request(short *requested_events, void *in, size_t len)
  * }
  */
 static void
-send_notify_reply(short events, struct lws* wsi)
+send_notify_reply(short events, struct lws *wsi)
 {
-  unsigned char* buf;
-  const char* json_response;
-  json_object* reply;
-  json_object* notify;
+  unsigned char *buf;
+  const char *json_response;
+  json_object *reply;
+  json_object *notify;
 
   DPRINTF(E_DBG, L_WEB, "notify callback reply: %d\n", events);
 
@@ -271,65 +269,66 @@ callback_notify(struct lws *wsi, enum lws_callback_reasons reason, void *user, v
 #endif
   struct per_vhost_data *vhd = lws_protocol_vh_priv_get(
 #if LWS_LIBRARY_VERSION_MAJOR >= 3
-    lws_get_vhost(wsi),
+      lws_get_vhost(wsi),
 #else
-    lws_vhost_get(wsi),
+      lws_vhost_get(wsi),
 #endif
-    lws_get_protocol(wsi));
+      lws_get_protocol(wsi));
   short events = 0;
   int ret = 0;
 
   DPRINTF(E_DBG, L_WEB, "notify callback reason: %d\n", reason);
 
   switch (reason)
-  {
+    {
     case LWS_CALLBACK_PROTOCOL_INIT:
       vhd = lws_protocol_vh_priv_zalloc(
 #if LWS_LIBRARY_VERSION_MAJOR >= 3
-        lws_get_vhost(wsi),
+          lws_get_vhost(wsi),
 #else
-        lws_vhost_get(wsi),
+          lws_vhost_get(wsi),
 #endif
-        lws_get_protocol(wsi),
-        sizeof(struct per_vhost_data));
+          lws_get_protocol(wsi), sizeof(struct per_vhost_data));
       if (!vhd)
-      {
-        DPRINTF(E_LOG, L_WEB, "Failed to allocate websocket per-vhoststorage\n");
-        return 1;
-      }
+	{
+	  DPRINTF(E_LOG, L_WEB, "Failed to allocate websocket per-vhoststorage\n");
+	  return 1;
+	}
       break;
 
     case LWS_CALLBACK_ESTABLISHED:
       /* add ourselves to the list of live pss held in the vhd */
       if (vhd)
-      {
+	{
 #if LWS_LIBRARY_VERSION_MAJOR >= 3
-        lws_ll_fwd_insert(pss, pss_list, vhd->pss_list);
+	  lws_ll_fwd_insert(pss, pss_list, vhd->pss_list);
 #else
-        pss->pss_list = vhd->pss_list;
-        vhd->pss_list = pss;
+	  pss->pss_list = vhd->pss_list;
+	  vhd->pss_list = pss;
 #endif
-        pss->wsi = wsi;
-      }
+	  pss->wsi = wsi;
+	}
       break;
 
     case LWS_CALLBACK_CLOSED:
       /* remove our closing pss from the list of live pss */
       if (vhd)
-      {
+	{
 #if LWS_LIBRARY_VERSION_MAJOR >= 3
-        lws_ll_fwd_remove(struct per_session_data, pss_list, pss, vhd->pss_list);
+	  lws_ll_fwd_remove(struct per_session_data, pss_list, pss, vhd->pss_list);
 #else
-        ppss = &(vhd->pss_list);
-        while (*ppss) {
-          if (*ppss == pss) {
-            *ppss = pss->pss_list;
-            break;
-          }
-          ppss = &(*ppss)->pss_list;
-        }
+	  ppss = &(vhd->pss_list);
+	  while (*ppss)
+	    {
+	      if (*ppss == pss)
+		{
+		  *ppss = pss->pss_list;
+		  break;
+		}
+	      ppss = &(*ppss)->pss_list;
+	    }
 #endif
-      }
+	}
       break;
 
     case LWS_CALLBACK_SERVER_WRITEABLE:
@@ -339,20 +338,21 @@ callback_notify(struct lws *wsi, enum lws_callback_reasons reason, void *user, v
       websocket_write_events = 0;
       pthread_mutex_unlock(&websocket_write_event_lock);
       if (vhd && events)
-      {
-        ppss = &(vhd->pss_list);
-        while (*ppss) {
-          (*ppss)->write_events |= events;
-          ppss = &(*ppss)->pss_list;
-        }
-      }
+	{
+	  ppss = &(vhd->pss_list);
+	  while (*ppss)
+	    {
+	      (*ppss)->write_events |= events;
+	      ppss = &(*ppss)->pss_list;
+	    }
+	}
 #endif
       if (pss->requested_events & pss->write_events)
-      {
-        events = pss->requested_events & pss->write_events;
-        send_notify_reply(events, wsi);
-        pss->write_events = 0;
-      }
+	{
+	  events = pss->requested_events & pss->write_events;
+	  send_notify_reply(events, wsi);
+	  pss->write_events = 0;
+	}
       break;
 
     case LWS_CALLBACK_RECEIVE:
@@ -362,23 +362,24 @@ callback_notify(struct lws *wsi, enum lws_callback_reasons reason, void *user, v
 #if LWS_LIBRARY_VERSION_MAJOR >= 3
     case LWS_CALLBACK_EVENT_WAIT_CANCELLED:
       if (vhd)
-      {
-        pthread_mutex_lock(&websocket_write_event_lock);
-        events = websocket_write_events;
-        websocket_write_events = 0;
-        pthread_mutex_unlock(&websocket_write_event_lock);
-        lws_start_foreach_llp(struct per_session_data **, ppss, vhd->pss_list)
-        {
-          (*ppss)->write_events |= events;
-          lws_callback_on_writable((*ppss)->wsi);
-        } lws_end_foreach_llp(ppss, pss_list);
-      }
+	{
+	  pthread_mutex_lock(&websocket_write_event_lock);
+	  events = websocket_write_events;
+	  websocket_write_events = 0;
+	  pthread_mutex_unlock(&websocket_write_event_lock);
+	  lws_start_foreach_llp(struct per_session_data **, ppss, vhd->pss_list)
+	  {
+	    (*ppss)->write_events |= events;
+	    lws_callback_on_writable((*ppss)->wsi);
+	  }
+	  lws_end_foreach_llp(ppss, pss_list);
+	}
       break;
 #endif
 
     default:
       break;
-  }
+    }
 
   return ret;
 }
@@ -386,49 +387,45 @@ callback_notify(struct lws *wsi, enum lws_callback_reasons reason, void *user, v
 /*
  * Supported protocols of the websocket, needs to be in line with the protocols array
  */
-enum ws_protocols
-{
+enum ws_protocols {
   WS_PROTOCOL_HTTP = 0,
   WS_PROTOCOL_NOTIFY,
 };
 
-static struct lws_protocols protocols[] =
-{
+static struct lws_protocols protocols[] = {
   // The first protocol must always be the HTTP handler
   {
-    "http-only",	// Protocol name
-    callback_http,	// Callback function
-    0,			// Size of per session data
-    0,			// Frame size / rx buffer (0 = max frame size)
+   "http-only",   // Protocol name
+      callback_http, // Callback function
+      0,             // Size of per session data
+      0,             // Frame size / rx buffer (0 = max frame size)
   },
   {
-    "notify",
-    callback_notify,
-    sizeof(struct per_session_data),
-    0,
-  },
-  { NULL, NULL, 0, 0 } // terminator
+   "notify", callback_notify,
+   sizeof(struct per_session_data),
+   0, },
+  { NULL, NULL, 0, 0 }  // terminator
 };
-
 
 /* Thread: websocket */
 static void *
 websocket(void *arg)
 {
-  listener_add(listener_cb, LISTENER_UPDATE | LISTENER_DATABASE | LISTENER_PAIRING | LISTENER_SPOTIFY | LISTENER_LASTFM | LISTENER_SPEAKER
-               | LISTENER_PLAYER | LISTENER_OPTIONS | LISTENER_VOLUME | LISTENER_QUEUE);
+  listener_add(listener_cb, LISTENER_UPDATE | LISTENER_DATABASE | LISTENER_PAIRING | LISTENER_SPOTIFY | LISTENER_LASTFM
+                                | LISTENER_SPEAKER | LISTENER_PLAYER | LISTENER_OPTIONS | LISTENER_VOLUME
+                                | LISTENER_QUEUE);
 
-  while(!websocket_exit)
-  {
+  while (!websocket_exit)
+    {
 #if LWS_LIBRARY_VERSION_MAJOR >= 3
-    if (lws_service(websocket_context, 0))
-      websocket_exit = true;
+      if (lws_service(websocket_context, 0))
+	websocket_exit = true;
 #else
-    lws_service(websocket_context, 10000);
-    if (websocket_write_events)
-      lws_callback_on_writable_all_protocol(websocket_context, &protocols[WS_PROTOCOL_NOTIFY]);
+      lws_service(websocket_context, 10000);
+      if (websocket_write_events)
+	lws_callback_on_writable_all_protocol(websocket_context, &protocols[WS_PROTOCOL_NOTIFY]);
 #endif
-  }
+    }
 
   listener_remove(listener_cb);
 
@@ -442,26 +439,26 @@ logger_libwebsockets(int level, const char *line)
 
   switch (level)
     {
-      case LLL_ERR:
-        severity = E_LOG;
-        break;
+    case LLL_ERR:
+      severity = E_LOG;
+      break;
 
-      case LLL_WARN:
-        severity = E_WARN;
-        break;
+    case LLL_WARN:
+      severity = E_WARN;
+      break;
 
-      case LLL_NOTICE:
-        severity = E_DBG;
-        break;
+    case LLL_NOTICE:
+      severity = E_DBG;
+      break;
 
-      case LLL_INFO:
-      case LLL_DEBUG:
-        severity = E_SPAM;
-        break;
+    case LLL_INFO:
+    case LLL_DEBUG:
+      severity = E_SPAM;
+      break;
 
-      default:
-        severity = E_LOG;
-        break;
+    default:
+      severity = E_LOG;
+      break;
     }
 
   DPRINTF(severity, L_WEB, "LWS %s", line);
@@ -502,8 +499,7 @@ websocket_init(void)
   info.max_http_header_data = 4096;
 
   // Log levels below NOTICE are only emmited if libwebsockets was built with DEBUG defined
-  lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG,
-                    logger_libwebsockets);
+  lws_set_log_level(LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG, logger_libwebsockets);
 
   websocket_context = lws_create_context(&info);
   if (websocket_context == NULL)

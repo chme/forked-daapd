@@ -17,27 +17,27 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <errno.h>
+#include <inttypes.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
 #include <string.h>
-#include <errno.h>
-#include <stdint.h>
-#include <inttypes.h>
+#include <unistd.h>
 
 #include <event2/event.h>
 
+#include "db.h"
 #include "logger.h"
 #include "misc.h"
-#include "transcode.h"
-#include "db.h"
-#include "player.h" //TODO remove me when player_pmap is removed again
-#include "worker.h"
 #include "outputs.h"
+#include "player.h" //TODO remove me when player_pmap is removed again
+#include "transcode.h"
+#include "worker.h"
 
 extern struct output_definition output_raop;
 extern struct output_definition output_airplay;
@@ -59,24 +59,18 @@ extern struct output_definition output_cast;
 extern struct event_base *evbase_player;
 
 // Must be in sync with enum output_types
-static struct output_definition *outputs[] = {
-    &output_raop,
-    &output_airplay,
-    &output_streaming,
-    &output_dummy,
-    &output_fifo,
-    &output_rcp,
+static struct output_definition *outputs[]
+    = { &output_raop, &output_airplay, &output_streaming, &output_dummy, &output_fifo, &output_rcp,
 #ifdef HAVE_ALSA
-    &output_alsa,
+        &output_alsa,
 #endif
 #ifdef HAVE_LIBPULSE
-    &output_pulse,
+        &output_pulse,
 #endif
 #ifdef CHROMECAST
-    &output_cast,
+        &output_cast,
 #endif
-    NULL
-};
+        NULL };
 
 // Default volume (must be from 0 - 100)
 #define OUTPUTS_DEFAULT_VOLUME 50
@@ -89,8 +83,7 @@ static struct output_definition *outputs[] = {
 
 #define OUTPUTS_MAX_CALLBACKS 64
 
-struct outputs_callback_register
-{
+struct outputs_callback_register {
   output_status_cb cb;
   struct output_device *device;
 
@@ -102,8 +95,7 @@ struct outputs_callback_register
   enum output_device_state state;
 };
 
-struct output_quality_subscription
-{
+struct output_quality_subscription {
   int count;
   struct media_quality quality;
   struct encode_ctx *encode_ctx;
@@ -122,7 +114,6 @@ static struct timeval outputs_stop_timeout = { OUTPUTS_STOP_TIMEOUT, 0 };
 // Last element is a zero terminator
 static struct output_quality_subscription output_quality_subscriptions[OUTPUTS_MAX_QUALITY_SUBSCRIPTIONS + 1];
 static bool outputs_got_new_subscription;
-
 
 /* ------------------------------- MISC HELPERS ----------------------------- */
 
@@ -152,7 +143,8 @@ callback_remove(struct output_device *device)
     {
       if (outputs_cb_register[callback_id].device == device)
 	{
-	  DPRINTF(E_DBG, L_PLAYER, "Removing callback to %s, id %d\n", player_pmap(outputs_cb_register[callback_id].cb), callback_id);
+	  DPRINTF(E_DBG, L_PLAYER, "Removing callback to %s, id %d\n", player_pmap(outputs_cb_register[callback_id].cb),
+	      callback_id);
 	  memset(&outputs_cb_register[callback_id], 0, sizeof(struct outputs_callback_register));
 	}
     }
@@ -186,7 +178,8 @@ callback_add(struct output_device *device, output_status_cb cb)
   outputs_cb_register[callback_id].cb = cb;
   outputs_cb_register[callback_id].device = device; // Don't dereference this later, it might become invalid!
 
-  DPRINTF(E_DBG, L_PLAYER, "Registered callback to %s with id %d (device %p, %s)\n", player_pmap(cb), callback_id, device, device->name);
+  DPRINTF(E_DBG, L_PLAYER, "Registered callback to %s with id %d (device %p, %s)\n", player_pmap(cb), callback_id,
+      device, device->name);
 
   int active = 0;
   for (int i = 0; i < ARRAY_SIZE(outputs_cb_register); i++)
@@ -286,10 +279,10 @@ encoding_reset(struct media_quality *quality)
   int i;
 
   profile = quality_to_xcode(quality);
-  if  (profile == XCODE_UNKNOWN)
+  if (profile == XCODE_UNKNOWN)
     {
       DPRINTF(E_LOG, L_PLAYER, "Could not create subscription decoding context, invalid quality (%d/%d/%d)\n",
-	quality->sample_rate, quality->bits_per_sample, quality->channels);
+          quality->sample_rate, quality->bits_per_sample, quality->channels);
       return -1;
     }
 
@@ -315,7 +308,7 @@ encoding_reset(struct media_quality *quality)
 	subscription->encode_ctx = transcode_encode_setup(encode_args);
       else
 	DPRINTF(E_LOG, L_PLAYER, "Could not setup resampling to %d/%d/%d for output\n",
-	  subscription->quality.sample_rate, subscription->quality.bits_per_sample, subscription->quality.channels);
+	    subscription->quality.sample_rate, subscription->quality.bits_per_sample, subscription->quality.channels);
     }
 
   transcode_decode_cleanup(&encode_args.src_ctx);
@@ -324,7 +317,8 @@ encoding_reset(struct media_quality *quality)
 }
 
 static void
-buffer_fill(struct output_buffer *obuf, void *buf, size_t bufsize, struct media_quality *quality, int nsamples, struct timespec *pts)
+buffer_fill(struct output_buffer *obuf, void *buf, size_t bufsize, struct media_quality *quality, int nsamples,
+    struct timespec *pts)
 {
   transcode_frame *frame;
   int ret;
@@ -368,10 +362,11 @@ buffer_fill(struct output_buffer *obuf, void *buf, size_t bufsize, struct media_
       if (ret < 0)
 	continue;
 
-      obuf->data[n].buffer  = evbuffer_pullup(obuf->data[n].evbuf, -1);
+      obuf->data[n].buffer = evbuffer_pullup(obuf->data[n].evbuf, -1);
       obuf->data[n].bufsize = evbuffer_get_length(obuf->data[n].evbuf);
       obuf->data[n].quality = output_quality_subscriptions[i].quality;
-      obuf->data[n].samples = BTOS(obuf->data[n].bufsize, obuf->data[n].quality.bits_per_sample, obuf->data[n].quality.channels);
+      obuf->data[n].samples
+          = BTOS(obuf->data[n].bufsize, obuf->data[n].quality.bits_per_sample, obuf->data[n].quality.channels);
       n++;
     }
 }
@@ -384,7 +379,7 @@ buffer_drain(struct output_buffer *obuf)
   for (i = 0; obuf->data[i].buffer; i++)
     {
       evbuffer_drain(obuf->data[i].evbuf, obuf->data[i].bufsize);
-      obuf->data[i].buffer  = NULL;
+      obuf->data[i].buffer = NULL;
       obuf->data[i].bufsize = 0;
       // We don't reset quality and samples, would be a waste of time
     }
@@ -443,8 +438,8 @@ device_list_sort(void)
       for (device = outputs_device_list; device && device->next; device = device->next)
 	{
 	  next = device->next;
-	  if ( (outputs_priority(device) > outputs_priority(next)) ||
-	       (outputs_priority(device) == outputs_priority(next) && strcasecmp(device->name, next->name) > 0) )
+	  if ((outputs_priority(device) > outputs_priority(next))
+	      || (outputs_priority(device) == outputs_priority(next) && strcasecmp(device->name, next->name) > 0))
 	    {
 	      if (device == outputs_device_list)
 		outputs_device_list = next;
@@ -522,9 +517,9 @@ metadata_send(enum output_types type, uint32_t item_id, bool startup, output_met
 
   CHECK_NULL(L_PLAYER, metadata = calloc(1, sizeof(struct output_metadata)));
 
-  metadata->type        = type;
-  metadata->item_id     = item_id;
-  metadata->startup     = startup;
+  metadata->type = type;
+  metadata->item_id = item_id;
+  metadata->startup = startup;
   metadata->finalize_cb = cb;
 
   metadata->ev = event_new(evbase_player, -1, 0, metadata_cb_send, metadata);
@@ -534,7 +529,6 @@ metadata_send(enum output_types type, uint32_t item_id, bool startup, output_met
   else
     outputs[type]->metadata_send(metadata);
 }
-
 
 /* ----------------------------- Volume helpers ----------------------------- */
 
@@ -592,7 +586,8 @@ vol_adjust(void)
 
   for (device = outputs_device_list; device; device = device->next)
     {
-      DPRINTF(E_DBG, L_PLAYER, "*** %s: abs %d rel %d selected %d\n", device->name, device->volume, device->relvol, OUTPUTS_DEVICE_DISPLAY_SELECTED(device));
+      DPRINTF(E_DBG, L_PLAYER, "*** %s: abs %d rel %d selected %d\n", device->name, device->volume, device->relvol,
+          OUTPUTS_DEVICE_DISPLAY_SELECTED(device));
     }
 #endif
 }
@@ -657,8 +652,8 @@ outputs_quality_subscribe(struct media_quality *quality)
 
       output_quality_subscriptions[i].count++;
 
-      DPRINTF(E_DBG, L_PLAYER, "Subscription request for quality %d/%d/%d (now %d subscribers)\n",
-	quality->sample_rate, quality->bits_per_sample, quality->channels, output_quality_subscriptions[i].count);
+      DPRINTF(E_DBG, L_PLAYER, "Subscription request for quality %d/%d/%d (now %d subscribers)\n", quality->sample_rate,
+          quality->bits_per_sample, quality->channels, output_quality_subscriptions[i].count);
 
       return 0;
     }
@@ -672,8 +667,8 @@ outputs_quality_subscribe(struct media_quality *quality)
   output_quality_subscriptions[i].quality = *quality;
   output_quality_subscriptions[i].count++;
 
-  DPRINTF(E_DBG, L_PLAYER, "Subscription request for quality %d/%d/%d (now %d subscribers)\n",
-    quality->sample_rate, quality->bits_per_sample, quality->channels, output_quality_subscriptions[i].count);
+  DPRINTF(E_DBG, L_PLAYER, "Subscription request for quality %d/%d/%d (now %d subscribers)\n", quality->sample_rate,
+      quality->bits_per_sample, quality->channels, output_quality_subscriptions[i].count);
 
   // Better way of signaling this?
   outputs_got_new_subscription = true;
@@ -701,8 +696,8 @@ outputs_quality_unsubscribe(struct media_quality *quality)
 
   output_quality_subscriptions[i].count--;
 
-  DPRINTF(E_DBG, L_PLAYER, "Unsubscription request for quality %d/%d/%d (now %d subscribers)\n",
-    quality->sample_rate, quality->bits_per_sample, quality->channels, output_quality_subscriptions[i].count);
+  DPRINTF(E_DBG, L_PLAYER, "Unsubscription request for quality %d/%d/%d (now %d subscribers)\n", quality->sample_rate,
+      quality->bits_per_sample, quality->channels, output_quality_subscriptions[i].count);
 
   if (output_quality_subscriptions[i].count > 0)
     return;
@@ -775,7 +770,8 @@ outputs_device_add(struct output_device *add, bool new_deselect)
     {
       if (outputs_priority(device) < outputs_priority(add))
 	{
-	  DPRINTF(E_DBG, L_PLAYER, "Ignoring type %s for device '%s', will use type %s\n", add->type_name, add->name, device->type_name);
+	  DPRINTF(E_DBG, L_PLAYER, "Ignoring type %s for device '%s', will use type %s\n", add->type_name, add->name,
+	      device->type_name);
 	  outputs_device_free(add);
 	  return NULL;
 	}
@@ -797,7 +793,8 @@ outputs_device_add(struct output_device *add, bool new_deselect)
       if (ret < 0)
 	{
 	  device->selected = 0;
-	  device->volume = (outputs_master_volume >= 0) ? outputs_master_volume : OUTPUTS_DEFAULT_VOLUME;;
+	  device->volume = (outputs_master_volume >= 0) ? outputs_master_volume : OUTPUTS_DEFAULT_VOLUME;
+	  ;
 	}
 
       free(device->name);
@@ -940,7 +937,8 @@ outputs_device_start(struct output_device *device, output_status_cb cb, bool onl
   else
     ret = outputs[device->type]->device_start(device, callback_add(device, cb));
 
-  return device_state_update(device, ret);;
+  return device_state_update(device, ret);
+  ;
 }
 
 int
@@ -1350,7 +1348,7 @@ outputs_deinit(void)
 	continue;
 
       if (outputs[i]->deinit)
-        outputs[i]->deinit();
+	outputs[i]->deinit();
     }
 
   // In case some outputs forgot to unsubscribe
@@ -1364,4 +1362,3 @@ outputs_deinit(void)
   for (i = 0; i < ARRAY_SIZE(output_buffer.data); i++)
     evbuffer_free(output_buffer.data[i].evbuf);
 }
-

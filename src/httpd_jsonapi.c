@@ -27,24 +27,24 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
-#include "httpd_internal.h"
 #include "conffile.h"
 #include "db.h"
+#include "httpd_internal.h"
 #ifdef LASTFM
-# include "lastfm.h"
+#include "lastfm.h"
 #endif
 #include "library.h"
 #include "logger.h"
@@ -55,30 +55,39 @@
 #include "settings.h"
 #include "smartpl_query.h"
 #ifdef SPOTIFY
-# include "library/spotify_webapi.h"
-# include "inputs/spotify.h"
+#include "inputs/spotify.h"
+#include "library/spotify_webapi.h"
 #endif
 
-struct track_attribs
-{
+struct track_attribs {
   enum library_attrib type;
   const char *name;
 };
 
 // Currently these must all be uint32
-static const struct track_attribs track_attribs[] =
-{
-  { LIBRARY_ATTRIB_PLAY_COUNT, "play_count", },
-  { LIBRARY_ATTRIB_SKIP_COUNT, "skip_count", },
-  { LIBRARY_ATTRIB_TIME_PLAYED, "time_played", },
-  { LIBRARY_ATTRIB_TIME_SKIPPED, "time_skipped", },
-  { LIBRARY_ATTRIB_RATING, "rating", },
-  { LIBRARY_ATTRIB_USERMARK, "usermark", },
+static const struct track_attribs track_attribs[] = {
+  {
+   LIBRARY_ATTRIB_PLAY_COUNT,  "play_count",
+   },
+  {
+   LIBRARY_ATTRIB_SKIP_COUNT,                          "skip_count",
+   },
+  {
+   LIBRARY_ATTRIB_TIME_PLAYED,  "time_played",
+   },
+  {
+   LIBRARY_ATTRIB_TIME_SKIPPED,                          "time_skipped",
+   },
+  {
+   LIBRARY_ATTRIB_RATING, "rating",
+   },
+  {
+   LIBRARY_ATTRIB_USERMARK,                          "usermark",
+   },
 };
 
 static bool allow_modifying_stored_playlists;
 static char *default_playlist_directory;
-
 
 /* -------------------------------- HELPERS --------------------------------- */
 
@@ -443,12 +452,11 @@ directory_to_json(struct directory_info *directory_info)
 
   item = json_object_new_object();
   safe_json_add_string(item, "path", directory_info->path);
-//  json_object_object_add(item, "id", json_object_new_int(directory_info->id));
-//  json_object_object_add(item, "parent_id", json_object_new_int(directory_info->parent_id));
+  //  json_object_object_add(item, "id", json_object_new_int(directory_info->id));
+  //  json_object_object_add(item, "parent_id", json_object_new_int(directory_info->parent_id));
 
   return item;
 }
-
 
 static int
 fetch_tracks(struct query_params *query_params, json_object *items, int *total)
@@ -476,7 +484,7 @@ fetch_tracks(struct query_params *query_params, json_object *items, int *total)
   if (total)
     *total = query_params->results;
 
- error:
+error:
   db_query_end(query_params);
 
   return ret;
@@ -512,7 +520,7 @@ fetch_artists(struct query_params *query_params, json_object *items, int *total)
   if (total)
     *total = query_params->results;
 
- error:
+error:
   db_query_end(query_params);
 
   return ret;
@@ -544,7 +552,7 @@ fetch_artist(bool *notfound, const char *artist_id)
       *notfound = false;
     }
 
- error:
+error:
   db_query_end(&query_params);
   free(query_params.filter);
 
@@ -581,7 +589,7 @@ fetch_albums(struct query_params *query_params, json_object *items, int *total)
   if (total)
     *total = query_params->results;
 
- error:
+error:
   db_query_end(query_params);
 
   return ret;
@@ -614,7 +622,7 @@ fetch_album(bool *notfound, const char *album_id)
       *notfound = false;
     }
 
- error:
+error:
   db_query_end(&query_params);
   free(query_params.filter);
 
@@ -647,7 +655,7 @@ fetch_playlists(struct query_params *query_params, json_object *items, int *tota
   if (total)
     *total = query_params->results;
 
- error:
+error:
   db_query_end(query_params);
 
   return ret;
@@ -680,7 +688,7 @@ fetch_playlist(bool *notfound, uint32_t playlist_id)
       *notfound = false;
     }
 
- error:
+error:
   db_query_end(&query_params);
   free(query_params.filter);
 
@@ -713,7 +721,7 @@ fetch_browse_info(struct query_params *query_params, json_object *items, int *to
   if (total)
     *total = query_params->results;
 
- error:
+error:
   db_query_end(query_params);
 
   return ret;
@@ -737,20 +745,19 @@ fetch_directories(int parent_id, json_object *items)
     {
       item = directory_to_json(&subdir);
       if (!item)
-      {
-	ret = -1;
-	goto error;
-      }
+	{
+	  ret = -1;
+	  goto error;
+	}
 
       json_object_array_add(items, item);
     }
 
- error:
+error:
   db_directory_enum_end(&dir_enum);
 
   return ret;
 }
-
 
 static int
 query_params_limit_set(struct query_params *query_params, struct httpd_request *hreq)
@@ -767,14 +774,14 @@ query_params_limit_set(struct query_params *query_params, struct httpd_request *
       query_params->idx_type = I_SUB;
 
       if (safe_atoi32(param, &query_params->limit) < 0)
-        {
+	{
 	  DPRINTF(E_LOG, L_WEB, "Invalid value for query parameter 'limit' (%s)\n", param);
 	  return -1;
 	}
 
       param = httpd_query_value_find(hreq->query, "offset");
       if (param && safe_atoi32(param, &query_params->offset) < 0)
-        {
+	{
 	  DPRINTF(E_LOG, L_WEB, "Invalid value for query parameter 'offset' (%s)\n", param);
 	  return -1;
 	}
@@ -812,10 +819,12 @@ jsonapi_reply_config(struct httpd_request *hreq)
   CHECK_NULL(L_WEB, jreply = json_object_new_object());
 
   // library name
-  json_object_object_add(jreply, "library_name", json_object_new_string(cfg_getstr(cfg_getsec(cfg, "library"), "name")));
+  json_object_object_add(
+      jreply, "library_name", json_object_new_string(cfg_getstr(cfg_getsec(cfg, "library"), "name")));
 
   // hide singles
-  json_object_object_add(jreply, "hide_singles", json_object_new_boolean(cfg_getbool(cfg_getsec(cfg, "library"), "hide_singles")));
+  json_object_object_add(
+      jreply, "hide_singles", json_object_new_boolean(cfg_getbool(cfg_getsec(cfg, "library"), "hide_singles")));
 
   // Websocket port
 #ifdef HAVE_LIBWEBSOCKETS
@@ -845,10 +854,11 @@ jsonapi_reply_config(struct httpd_request *hreq)
     {
       path = cfg_getnstr(lib, "directories", i);
 
-      // The path in the conf file may have a trailing slash character. Return the realpath like it is done in the bulk_scan function in filescanner.c
+      // The path in the conf file may have a trailing slash character. Return the realpath like it is done in the
+      // bulk_scan function in filescanner.c
       deref = realpath(path, NULL);
       if (deref)
-        {
+	{
 	  json_object_array_add(directories, json_object_new_string(deref));
 	  free(deref);
 	}
@@ -861,7 +871,8 @@ jsonapi_reply_config(struct httpd_request *hreq)
   json_object_object_add(jreply, "radio_playlists", json_object_new_boolean(cfg_getbool(lib, "radio_playlists")));
 
   // Config for creating/modifying stored playlists
-  json_object_object_add(jreply, "allow_modifying_stored_playlists", json_object_new_boolean(allow_modifying_stored_playlists));
+  json_object_object_add(
+      jreply, "allow_modifying_stored_playlists", json_object_new_boolean(allow_modifying_stored_playlists));
   safe_json_add_string(jreply, "default_playlist_directory", default_playlist_directory);
 
   CHECK_ERRNO(L_WEB, evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(jreply)));
@@ -879,7 +890,6 @@ option_get_json(struct settings_option *option)
   int intval;
   bool boolval;
   char *strval;
-
 
   optionname = option->name;
 
@@ -985,7 +995,6 @@ jsonapi_reply_settings_category_get(struct httpd_request *hreq)
   struct settings_category *category;
   json_object *jreply;
 
-
   categoryname = hreq->path_parts[2];
 
   category = settings_category_get(categoryname);
@@ -1018,7 +1027,6 @@ jsonapi_reply_settings_option_get(struct httpd_request *hreq)
   struct settings_category *category;
   struct settings_option *option;
   json_object *jreply;
-
 
   categoryname = hreq->path_parts[2];
   optionname = hreq->path_parts[3];
@@ -1059,12 +1067,11 @@ jsonapi_reply_settings_option_put(struct httpd_request *hreq)
   const char *optionname;
   struct settings_category *category;
   struct settings_option *option;
-  json_object* request;
+  json_object *request;
   int intval;
   bool boolval;
   const char *strval;
   int ret;
-
 
   categoryname = hreq->path_parts[2];
   optionname = hreq->path_parts[3];
@@ -1108,17 +1115,20 @@ jsonapi_reply_settings_option_put(struct httpd_request *hreq)
     }
   else
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid value given for option '%s' (type %d): '%s'\n", optionname, option->type, json_object_to_json_string(request));
+      DPRINTF(E_LOG, L_WEB, "Invalid value given for option '%s' (type %d): '%s'\n", optionname, option->type,
+          json_object_to_json_string(request));
       return HTTP_BADREQUEST;
     }
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error changing setting '%s' (type %d) to '%s'\n", optionname, option->type, json_object_to_json_string(request));
+      DPRINTF(E_LOG, L_WEB, "Error changing setting '%s' (type %d) to '%s'\n", optionname, option->type,
+          json_object_to_json_string(request));
       return HTTP_INTERNAL;
     }
 
-  DPRINTF(E_INFO, L_WEB, "Setting option '%s.%s' changed to '%s'\n", categoryname, optionname, json_object_to_json_string(request));
+  DPRINTF(E_INFO, L_WEB, "Setting option '%s.%s' changed to '%s'\n", categoryname, optionname,
+      json_object_to_json_string(request));
   return HTTP_NOCONTENT;
 }
 
@@ -1130,7 +1140,6 @@ jsonapi_reply_settings_option_delete(struct httpd_request *hreq)
   struct settings_category *category;
   struct settings_option *option;
   int ret;
-
 
   categoryname = hreq->path_parts[2];
   optionname = hreq->path_parts[3];
@@ -1184,7 +1193,6 @@ jsonapi_reply_library(struct httpd_request *hreq)
   struct library_source **sources;
   json_object *jscanners;
   json_object *jsource;
-
 
   CHECK_NULL(L_WEB, jreply = json_object_new_object());
 
@@ -1263,7 +1271,6 @@ jsonapi_reply_meta_rescan(struct httpd_request *hreq)
   library_metarescan(db_scan_kind_enum(param));
   return HTTP_NOCONTENT;
 }
-
 
 /*
  * Endpoint to retrieve information about the spotify integration
@@ -1399,7 +1406,7 @@ jsonapi_reply_lastfm_login(struct httpd_request *hreq)
     {
       ret = lastfm_login_user(user, password, &errmsg);
       if (ret < 0)
-        {
+	{
 	  json_object_object_add(jreply, "success", json_object_new_boolean(false));
 	  errors = json_object_new_object();
 	  if (errmsg)
@@ -1409,7 +1416,7 @@ jsonapi_reply_lastfm_login(struct httpd_request *hreq)
 	  json_object_object_add(jreply, "errors", errors);
 	}
       else
-        {
+	{
 	  json_object_object_add(jreply, "success", json_object_new_boolean(true));
 	}
       free(errmsg);
@@ -1459,8 +1466,8 @@ jsonapi_reply_lastfm_logout(struct httpd_request *hreq)
 static int
 jsonapi_reply_pairing_pair(struct httpd_request *hreq)
 {
-  json_object* request;
-  const char* pin;
+  json_object *request;
+  const char *pin;
   int ret;
 
   request = jparse_obj_from_evbuffer(hreq->in_body);
@@ -1531,8 +1538,7 @@ jsonapi_reply_pairing_get(struct httpd_request *hreq)
   return HTTP_OK;
 }
 
-struct outputs_param
-{
+struct outputs_param {
   json_object *output;
   uint64_t output_id;
   int output_volume;
@@ -1625,7 +1631,7 @@ static int
 jsonapi_reply_outputs_put_byid(struct httpd_request *hreq)
 {
   uint64_t output_id;
-  json_object* request;
+  json_object *request;
   bool selected;
   int volume;
   const char *pin;
@@ -1749,8 +1755,8 @@ jsonapi_reply_outputs(struct httpd_request *hreq)
 static int
 jsonapi_reply_verification(struct httpd_request *hreq)
 {
-  json_object* request;
-  const char* message;
+  json_object *request;
+  const char *message;
 
   request = jparse_obj_from_evbuffer(hreq->in_body);
   if (!request)
@@ -2061,8 +2067,8 @@ jsonapi_reply_player_seek(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error seeking (position_ms=%s, seek_ms=%s).\n",
-	      (param_pos ? param_pos : ""), (param_seek ? param_seek : ""));
+      DPRINTF(E_LOG, L_WEB, "Error seeking (position_ms=%s, seek_ms=%s).\n", (param_pos ? param_pos : ""),
+          (param_seek ? param_seek : ""));
       return HTTP_INTERNAL;
     }
 
@@ -2070,7 +2076,7 @@ jsonapi_reply_player_seek(struct httpd_request *hreq)
   if (ret < 0)
     {
       DPRINTF(E_LOG, L_WEB, "Error starting playback after seeking (position_ms=%s, seek_ms=%s).\n",
-	      (param_pos ? param_pos : ""), (param_seek ? param_seek : ""));
+          (param_pos ? param_pos : ""), (param_seek ? param_seek : ""));
       return HTTP_INTERNAL;
     }
 
@@ -2090,32 +2096,32 @@ jsonapi_reply_player(struct httpd_request *hreq)
 
   switch (status.status)
     {
-      case PLAY_PAUSED:
-	json_object_object_add(reply, "state", json_object_new_string("pause"));
-	break;
+    case PLAY_PAUSED:
+      json_object_object_add(reply, "state", json_object_new_string("pause"));
+      break;
 
-      case PLAY_PLAYING:
-	json_object_object_add(reply, "state", json_object_new_string("play"));
-	break;
+    case PLAY_PLAYING:
+      json_object_object_add(reply, "state", json_object_new_string("play"));
+      break;
 
-      default:
-	json_object_object_add(reply, "state", json_object_new_string("stop"));
-	break;
+    default:
+      json_object_object_add(reply, "state", json_object_new_string("stop"));
+      break;
     }
 
   switch (status.repeat)
     {
-      case REPEAT_SONG:
-	json_object_object_add(reply, "repeat", json_object_new_string("single"));
-	break;
+    case REPEAT_SONG:
+      json_object_object_add(reply, "repeat", json_object_new_string("single"));
+      break;
 
-      case REPEAT_ALL:
-	json_object_object_add(reply, "repeat", json_object_new_string("all"));
-	break;
+    case REPEAT_ALL:
+      json_object_object_add(reply, "repeat", json_object_new_string("all"));
+      break;
 
-      default:
-	json_object_object_add(reply, "repeat", json_object_new_string("off"));
-	break;
+    default:
+      json_object_object_add(reply, "repeat", json_object_new_string("off"));
+      break;
     }
 
   json_object_object_add(reply, "consume", json_object_new_boolean(status.consume));
@@ -2229,7 +2235,8 @@ queue_item_to_json(struct db_queue_item *queue_item, char shuffle)
 	  // Pipe and stream metadata can change if the queue version changes. Construct artwork url
 	  // similar to non-pipe items, but append the queue version to the url to force
 	  // clients to reload image if the queue version changes (additional metadata was found).
-	  ret = snprintf(artwork_url, sizeof(artwork_url), "./artwork/item/%d?v=%d", queue_item->file_id, queue_item->queue_version);
+	  ret = snprintf(artwork_url, sizeof(artwork_url), "./artwork/item/%d?v=%d", queue_item->file_id,
+	      queue_item->queue_version);
 	  if (ret < sizeof(artwork_url))
 	    json_object_object_add(item, "artwork_url", json_object_new_string(artwork_url));
 	}
@@ -2278,19 +2285,20 @@ queue_tracks_add_byuris(const char *param, char shuffle, uint32_t item_id, int p
       if (pos >= 0)
 	pos += count;
       if (*new_item_id == -1)
-        *new_item_id = new;
+	*new_item_id = new;
     }
 
   free(uris);
   return 0;
 
- error:
+error:
   free(uris);
   return -1;
 }
 
 static int
-queue_tracks_add_byexpression(const char *param, char shuffle, uint32_t item_id, int pos, int limit, int *total_count, int *new_item_id)
+queue_tracks_add_byexpression(
+    const char *param, char shuffle, uint32_t item_id, int pos, int limit, int *total_count, int *new_item_id)
 {
   struct query_params query_params = { .type = Q_ITEMS, .sort = S_NAME };
   struct smartpl smartpl_expression = { 0 };
@@ -2357,7 +2365,7 @@ create_reply_queue_tracks_add(struct evbuffer *evbuf, int count, int new_item_id
   jparse_free(reply);
   return 0;
 
- error:
+error:
   db_queue_enum_end(&query_params);
   jparse_free(reply);
   return -1;
@@ -2378,12 +2386,11 @@ jsonapi_reply_queue_tracks_add(struct httpd_request *hreq)
   int new_item_id = 0;
   int ret = 0;
 
-
   param_pos = httpd_query_value_find(hreq->query, "position");
   if (param_pos)
     {
       if (safe_atoi32(param_pos, &pos) < 0)
-        {
+	{
 	  DPRINTF(E_LOG, L_WEB, "Invalid position parameter '%s'\n", param_pos);
 
 	  return HTTP_BADREQUEST;
@@ -2431,9 +2438,11 @@ jsonapi_reply_queue_tracks_add(struct httpd_request *hreq)
       // This overrides the value specified in query
       param = httpd_query_value_find(hreq->query, "limit");
       if (param && safe_atoi32(param, &limit) == 0)
-	ret = queue_tracks_add_byexpression(param_expression, status.shuffle, status.item_id, pos, limit, &total_count, &new_item_id);
+	ret = queue_tracks_add_byexpression(
+	    param_expression, status.shuffle, status.item_id, pos, limit, &total_count, &new_item_id);
       else
-	ret = queue_tracks_add_byexpression(param_expression, status.shuffle, status.item_id, pos, -1, &total_count, &new_item_id);
+	ret = queue_tracks_add_byexpression(
+	    param_expression, status.shuffle, status.item_id, pos, -1, &total_count, &new_item_id);
     }
   if (ret < 0)
     return HTTP_INTERNAL;
@@ -2660,9 +2669,9 @@ jsonapi_reply_queue(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "outputs: Couldn't add outputs to response buffer.\n");
 
- error:
+error:
   db_queue_enum_end(&query_params);
- db_start_error:
+db_start_error:
   jparse_free(reply);
   free(query_params.filter);
 
@@ -2814,10 +2823,10 @@ jsonapi_reply_player_volume(struct httpd_request *hreq)
 	return HTTP_BADREQUEST;
     }
 
-  if ((!param_volume && !param_step)
-      || (param_volume && param_step))
+  if ((!param_volume && !param_step) || (param_volume && param_step))
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid parameters for player/volume request. Either 'volume' or 'step' parameter required.\n");
+      DPRINTF(E_LOG, L_WEB,
+          "Invalid parameters for player/volume request. Either 'volume' or 'step' parameter required.\n");
       return HTTP_BADREQUEST;
     }
 
@@ -2828,7 +2837,8 @@ jsonapi_reply_player_volume(struct httpd_request *hreq)
       ret = safe_atou64(param, &output_id);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_WEB, "Invalid value for parameter 'output_id'. Output id must be an integer (output_id='%s').\n", param);
+	  DPRINTF(E_LOG, L_WEB,
+	      "Invalid value for parameter 'output_id'. Output id must be an integer (output_id='%s').\n", param);
 	  return HTTP_BADREQUEST;
 	}
       ret = output_volume_set(volume, step, output_id);
@@ -2899,7 +2909,7 @@ jsonapi_reply_library_artists(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "browse: Couldn't add artists to response buffer.\n");
 
- error:
+error:
   free_query_params(&query_params, 1);
   jparse_free(reply);
 
@@ -2933,7 +2943,7 @@ jsonapi_reply_library_artist(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "browse: Couldn't add artists to response buffer.\n");
 
- error:
+error:
   jparse_free(reply);
 
   if (ret < 0)
@@ -2985,7 +2995,7 @@ jsonapi_reply_library_artist_albums(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "browse: Couldn't add albums to response buffer.\n");
 
- error:
+error:
   jparse_free(reply);
 
   if (ret < 0)
@@ -3048,7 +3058,7 @@ jsonapi_reply_library_albums(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "browse: Couldn't add albums to response buffer.\n");
 
- error:
+error:
   free_query_params(&query_params, 1);
   jparse_free(reply);
 
@@ -3082,7 +3092,7 @@ jsonapi_reply_library_album(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "browse: Couldn't add artists to response buffer.\n");
 
- error:
+error:
   jparse_free(reply);
 
   if (ret < 0)
@@ -3134,7 +3144,7 @@ jsonapi_reply_library_album_tracks(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "browse: Couldn't add tracks to response buffer.\n");
 
- error:
+error:
   jparse_free(reply);
 
   if (ret < 0)
@@ -3147,7 +3157,8 @@ static int
 jsonapi_reply_library_album_tracks_put_byid(struct httpd_request *hreq)
 {
   const char *param;
-  int64_t album_id;;
+  int64_t album_id;
+  ;
   int ret;
 
   ret = safe_atoi64(hreq->path_parts[3], &album_id);
@@ -3216,7 +3227,7 @@ jsonapi_reply_library_tracks_get_byid(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "browse: Couldn't add track to response buffer.\n");
 
- error:
+error:
   db_query_end(&query_params);
   free(query_params.filter);
   jparse_free(reply);
@@ -3294,7 +3305,7 @@ jsonapi_reply_library_tracks_put(struct httpd_request *hreq)
   db_transaction_end();
   return HTTP_OK;
 
- error:
+error:
   jparse_free(request);
   if (track)
     db_transaction_rollback();
@@ -3402,7 +3413,7 @@ jsonapi_reply_library_track_playlists(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "track playlists: Couldn't add playlists to response buffer.\n");
 
- error:
+error:
   free_query_params(&query_params, 1);
   jparse_free(reply);
   free(path);
@@ -3453,7 +3464,7 @@ jsonapi_reply_library_playlists(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "browse: Couldn't add playlists to response buffer.\n");
 
- error:
+error:
   jparse_free(reply);
 
   if (ret < 0)
@@ -3504,7 +3515,7 @@ jsonapi_reply_library_playlist_get(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "browse: Couldn't add playlist to response buffer.\n");
 
- error:
+error:
   jparse_free(reply);
 
   if (ret < 0)
@@ -3608,7 +3619,7 @@ jsonapi_reply_library_playlist_tracks(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "playlist tracks: Couldn't add tracks to response buffer.\n");
 
- error:
+error:
   free_query_params(&query_params, 1);
   jparse_free(reply);
 
@@ -3650,7 +3661,6 @@ jsonapi_reply_library_playlist_playlists(struct httpd_request *hreq)
   if (!is_modified(hreq, DB_ADMIN_DB_MODIFIED))
     return HTTP_NOTMODIFIED;
 
-
   ret = safe_atoi32(hreq->path_parts[3], &playlist_id);
   if (ret < 0)
     {
@@ -3672,7 +3682,7 @@ jsonapi_reply_library_playlist_playlists(struct httpd_request *hreq)
   query_params.type = Q_PL;
   query_params.sort = S_PLAYLIST;
   query_params.filter = db_mprintf("f.parent_id = %d AND (f.type = %d OR f.type = %d OR f.type = %d OR f.type = %d)",
-				   playlist_id, PL_PLAIN, PL_SMART, PL_RSS, PL_FOLDER);
+      playlist_id, PL_PLAIN, PL_SMART, PL_RSS, PL_FOLDER);
 
   ret = fetch_playlists(&query_params, items, &total);
   if (ret < 0)
@@ -3686,7 +3696,7 @@ jsonapi_reply_library_playlist_playlists(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "playlist tracks: Couldn't add tracks to response buffer.\n");
 
- error:
+error:
   free_query_params(&query_params, 1);
   jparse_free(reply);
 
@@ -3732,7 +3742,7 @@ static int
 jsonapi_reply_queue_save(struct httpd_request *hreq)
 {
   const char *param;
-  char buf[PATH_MAX+7];
+  char buf[PATH_MAX + 7];
   char *playlist_name = NULL;
   int ret = 0;
 
@@ -3752,16 +3762,17 @@ jsonapi_reply_queue_save(struct httpd_request *hreq)
     {
       DPRINTF(E_LOG, L_WEB, "Invalid playlist save directory '%s'\n", default_playlist_directory);
       return 403;
-   }
+    }
 
   playlist_name = atrim(param);
 
-  if (strlen(playlist_name) < 1) {
+  if (strlen(playlist_name) < 1)
+    {
       free(playlist_name);
 
       DPRINTF(E_LOG, L_WEB, "Empty playlist name parameter is not allowed\n");
       return HTTP_BADREQUEST;
-  }
+    }
 
   snprintf(buf, sizeof(buf), "/file:%s/%s", default_playlist_directory, playlist_name);
   free(playlist_name);
@@ -3847,7 +3858,7 @@ jsonapi_reply_library_browse(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "browse: Couldn't add browse items to response buffer.\n");
 
- error:
+error:
   jparse_free(reply);
   free_query_params(&query_params, 1);
 
@@ -3920,7 +3931,7 @@ jsonapi_reply_library_browseitem(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "browse: Couldn't add browse item to response buffer.\n");
 
- error:
+error:
   db_query_end(&query_params);
   jparse_free(reply);
   free_query_params(&query_params, 1);
@@ -4079,7 +4090,7 @@ jsonapi_reply_library_files(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "browse: Couldn't add directories to response buffer.\n");
 
- error:
+error:
   jparse_free(reply);
 
   if (ret < 0)
@@ -4109,7 +4120,8 @@ jsonapi_reply_library_add(struct httpd_request *hreq)
 }
 
 static int
-search_tracks(json_object *reply, struct httpd_request *hreq, const char *param_query, struct smartpl *smartpl_expression, enum media_kind media_kind)
+search_tracks(json_object *reply, struct httpd_request *hreq, const char *param_query,
+    struct smartpl *smartpl_expression, enum media_kind media_kind)
 {
   json_object *type;
   json_object *items;
@@ -4159,14 +4171,15 @@ search_tracks(json_object *reply, struct httpd_request *hreq, const char *param_
   json_object_object_add(type, "offset", json_object_new_int(query_params.offset));
   json_object_object_add(type, "limit", json_object_new_int(query_params.limit));
 
- out:
+out:
   free_query_params(&query_params, 1);
 
   return ret;
 }
 
 static int
-search_artists(json_object *reply, struct httpd_request *hreq, const char *param_query, struct smartpl *smartpl_expression, enum media_kind media_kind)
+search_artists(json_object *reply, struct httpd_request *hreq, const char *param_query,
+    struct smartpl *smartpl_expression, enum media_kind media_kind)
 {
   json_object *type;
   json_object *items;
@@ -4195,7 +4208,8 @@ search_artists(json_object *reply, struct httpd_request *hreq, const char *param
   if (param_query)
     {
       if (media_kind)
-	query_params.filter = db_mprintf("(f.album_artist LIKE '%%%q%%' AND f.media_kind = %d)", param_query, media_kind);
+	query_params.filter
+	    = db_mprintf("(f.album_artist LIKE '%%%q%%' AND f.media_kind = %d)", param_query, media_kind);
       else
 	query_params.filter = db_mprintf("(f.album_artist LIKE '%%%q%%')", param_query);
     }
@@ -4221,14 +4235,15 @@ search_artists(json_object *reply, struct httpd_request *hreq, const char *param
   json_object_object_add(type, "offset", json_object_new_int(query_params.offset));
   json_object_object_add(type, "limit", json_object_new_int(query_params.limit));
 
- out:
+out:
   free_query_params(&query_params, 1);
 
   return ret;
 }
 
 static int
-search_albums(json_object *reply, struct httpd_request *hreq, const char *param_query, struct smartpl *smartpl_expression, enum media_kind media_kind)
+search_albums(json_object *reply, struct httpd_request *hreq, const char *param_query,
+    struct smartpl *smartpl_expression, enum media_kind media_kind)
 {
   json_object *type;
   json_object *items;
@@ -4283,14 +4298,15 @@ search_albums(json_object *reply, struct httpd_request *hreq, const char *param_
   json_object_object_add(type, "offset", json_object_new_int(query_params.offset));
   json_object_object_add(type, "limit", json_object_new_int(query_params.limit));
 
- out:
+out:
   free_query_params(&query_params, 1);
 
   return ret;
 }
 
 static int
-search_composers(json_object *reply, struct httpd_request *hreq, const char *param_query, struct smartpl *smartpl_expression, enum media_kind media_kind)
+search_composers(json_object *reply, struct httpd_request *hreq, const char *param_query,
+    struct smartpl *smartpl_expression, enum media_kind media_kind)
 {
   json_object *type;
   json_object *items;
@@ -4345,14 +4361,15 @@ search_composers(json_object *reply, struct httpd_request *hreq, const char *par
   json_object_object_add(type, "offset", json_object_new_int(query_params.offset));
   json_object_object_add(type, "limit", json_object_new_int(query_params.limit));
 
- out:
+out:
   free_query_params(&query_params, 1);
 
   return ret;
 }
 
 static int
-search_genres(json_object *reply, struct httpd_request *hreq, const char *param_query, struct smartpl *smartpl_expression, enum media_kind media_kind)
+search_genres(json_object *reply, struct httpd_request *hreq, const char *param_query,
+    struct smartpl *smartpl_expression, enum media_kind media_kind)
 {
   json_object *type;
   json_object *items;
@@ -4407,7 +4424,7 @@ search_genres(json_object *reply, struct httpd_request *hreq, const char *param_
   json_object_object_add(type, "offset", json_object_new_int(query_params.offset));
   json_object_object_add(type, "limit", json_object_new_int(query_params.limit));
 
- out:
+out:
   free_query_params(&query_params, 1);
 
   return ret;
@@ -4438,7 +4455,8 @@ search_playlists(json_object *reply, struct httpd_request *hreq, const char *par
 
   query_params.type = Q_PL;
   query_params.sort = S_PLAYLIST;
-  query_params.filter = db_mprintf("((f.type = %d OR f.type = %d OR f.type = %d) AND f.title LIKE '%%%q%%')", PL_PLAIN, PL_SMART, PL_RSS, param_query);
+  query_params.filter = db_mprintf("((f.type = %d OR f.type = %d OR f.type = %d) AND f.title LIKE '%%%q%%')", PL_PLAIN,
+      PL_SMART, PL_RSS, param_query);
 
   ret = fetch_playlists(&query_params, items, &total);
   if (ret < 0)
@@ -4448,7 +4466,7 @@ search_playlists(json_object *reply, struct httpd_request *hreq, const char *par
   json_object_object_add(type, "offset", json_object_new_int(query_params.offset));
   json_object_object_add(type, "limit", json_object_new_int(query_params.limit));
 
- out:
+out:
   free_query_params(&query_params, 1);
 
   return ret;
@@ -4486,10 +4504,10 @@ jsonapi_reply_search(struct httpd_request *hreq)
     {
       media_kind = db_media_kind_enum(param_media_kind);
       if (!media_kind)
-      {
-	DPRINTF(E_LOG, L_WEB, "Invalid media kind '%s'\n", param_media_kind);
-	return HTTP_BADREQUEST;
-      }
+	{
+	  DPRINTF(E_LOG, L_WEB, "Invalid media kind '%s'\n", param_media_kind);
+	  return HTTP_BADREQUEST;
+	}
     }
 
   memset(&smartpl_expression, 0, sizeof(struct smartpl));
@@ -4532,14 +4550,14 @@ jsonapi_reply_search(struct httpd_request *hreq)
     {
       ret = search_composers(reply, hreq, param_query, &smartpl_expression, media_kind);
       if (ret < 0)
-        goto error;
+	goto error;
     }
 
   if (strstr(param_type, "genre"))
     {
       ret = search_genres(reply, hreq, param_query, &smartpl_expression, media_kind);
       if (ret < 0)
-        goto error;
+	goto error;
     }
 
   if (strstr(param_type, "playlist") && param_query)
@@ -4553,7 +4571,7 @@ jsonapi_reply_search(struct httpd_request *hreq)
   if (ret < 0)
     DPRINTF(E_LOG, L_WEB, "playlist tracks: Couldn't add tracks to response buffer.\n");
 
- error:
+error:
   jparse_free(reply);
   free_smartpl(&smartpl_expression, 1);
 
@@ -4570,97 +4588,93 @@ jsonapi_reply_library_backup(struct httpd_request *hreq)
   ret = db_backup();
 
   if (ret < 0)
-  {
-    if (ret == -2)
-      return HTTP_SERVUNAVAIL;  // not enabled by config
+    {
+      if (ret == -2)
+	return HTTP_SERVUNAVAIL; // not enabled by config
 
-    return HTTP_INTERNAL;
-  }
+      return HTTP_INTERNAL;
+    }
 
   return HTTP_OK;
 }
 
+static struct httpd_uri_map adm_handlers[] = {
+  { HTTPD_METHOD_GET,                    "^/api/config$",                                  jsonapi_reply_config                           },
+  { HTTPD_METHOD_GET,                    "^/api/settings$",                                jsonapi_reply_settings_get                     },
+  { HTTPD_METHOD_GET,                    "^/api/settings/[A-Za-z0-9_]+$",                  jsonapi_reply_settings_category_get            },
+  { HTTPD_METHOD_GET,                    "^/api/settings/[A-Za-z0-9_]+/[A-Za-z0-9_]+$",    jsonapi_reply_settings_option_get              },
+  { HTTPD_METHOD_PUT,                    "^/api/settings/[A-Za-z0-9_]+/[A-Za-z0-9_]+$",    jsonapi_reply_settings_option_put              },
+  { HTTPD_METHOD_DELETE,                 "^/api/settings/[A-Za-z0-9_]+/[A-Za-z0-9_]+$",    jsonapi_reply_settings_option_delete           },
+  { HTTPD_METHOD_GET,                    "^/api/library$",                                 jsonapi_reply_library                          },
+  { HTTPD_METHOD_GET | HTTPD_METHOD_PUT, "^/api/update$",                                  jsonapi_reply_update                           },
+  { HTTPD_METHOD_PUT,                    "^/api/rescan$",                                  jsonapi_reply_meta_rescan                      },
+  { HTTPD_METHOD_GET,                    "^/api/spotify-logout$",                          jsonapi_reply_spotify_logout                   },
+  { HTTPD_METHOD_GET,                    "^/api/spotify$",                                 jsonapi_reply_spotify                          },
+  { HTTPD_METHOD_GET,                    "^/api/pairing$",                                 jsonapi_reply_pairing_get                      },
+  { HTTPD_METHOD_POST,                   "^/api/pairing$",                                 jsonapi_reply_pairing_pair                     },
+  { HTTPD_METHOD_POST,                   "^/api/lastfm-login$",                            jsonapi_reply_lastfm_login                     },
+  { HTTPD_METHOD_GET,                    "^/api/lastfm-logout$",                           jsonapi_reply_lastfm_logout                    },
+  { HTTPD_METHOD_GET,                    "^/api/lastfm$",                                  jsonapi_reply_lastfm                           },
+  { HTTPD_METHOD_POST,                   "^/api/verification$",                            jsonapi_reply_verification                     },
 
-static struct httpd_uri_map adm_handlers[] =
-  {
-    { HTTPD_METHOD_GET,    "^/api/config$",                                jsonapi_reply_config },
-    { HTTPD_METHOD_GET,    "^/api/settings$",                              jsonapi_reply_settings_get },
-    { HTTPD_METHOD_GET,    "^/api/settings/[A-Za-z0-9_]+$",                jsonapi_reply_settings_category_get },
-    { HTTPD_METHOD_GET,    "^/api/settings/[A-Za-z0-9_]+/[A-Za-z0-9_]+$",  jsonapi_reply_settings_option_get },
-    { HTTPD_METHOD_PUT,    "^/api/settings/[A-Za-z0-9_]+/[A-Za-z0-9_]+$",  jsonapi_reply_settings_option_put },
-    { HTTPD_METHOD_DELETE, "^/api/settings/[A-Za-z0-9_]+/[A-Za-z0-9_]+$",  jsonapi_reply_settings_option_delete },
-    { HTTPD_METHOD_GET,    "^/api/library$",                               jsonapi_reply_library },
-    { HTTPD_METHOD_GET |
-      HTTPD_METHOD_PUT,    "^/api/update$",                                jsonapi_reply_update },
-    { HTTPD_METHOD_PUT,    "^/api/rescan$",                                jsonapi_reply_meta_rescan },
-    { HTTPD_METHOD_GET,    "^/api/spotify-logout$",                        jsonapi_reply_spotify_logout },
-    { HTTPD_METHOD_GET,    "^/api/spotify$",                               jsonapi_reply_spotify },
-    { HTTPD_METHOD_GET,    "^/api/pairing$",                               jsonapi_reply_pairing_get },
-    { HTTPD_METHOD_POST,   "^/api/pairing$",                               jsonapi_reply_pairing_pair },
-    { HTTPD_METHOD_POST,   "^/api/lastfm-login$",                          jsonapi_reply_lastfm_login },
-    { HTTPD_METHOD_GET,    "^/api/lastfm-logout$",                         jsonapi_reply_lastfm_logout },
-    { HTTPD_METHOD_GET,    "^/api/lastfm$",                                jsonapi_reply_lastfm },
-    { HTTPD_METHOD_POST,   "^/api/verification$",                          jsonapi_reply_verification },
+  { HTTPD_METHOD_GET,                    "^/api/outputs$",                                 jsonapi_reply_outputs                          },
+  { HTTPD_METHOD_PUT,                    "^/api/outputs/set$",                             jsonapi_reply_outputs_set                      },
+  { HTTPD_METHOD_POST,                   "^/api/select-outputs$",                          jsonapi_reply_outputs_set                      }, // deprecated: use "/api/outputs/set"
+  { HTTPD_METHOD_GET,                    "^/api/outputs/[[:digit:]]+$",                    jsonapi_reply_outputs_get_byid                 },
+  { HTTPD_METHOD_PUT,                    "^/api/outputs/[[:digit:]]+$",                    jsonapi_reply_outputs_put_byid                 },
+  { HTTPD_METHOD_PUT,                    "^/api/outputs/[[:digit:]]+/toggle$",             jsonapi_reply_outputs_toggle_byid              },
 
-    { HTTPD_METHOD_GET,    "^/api/outputs$",                               jsonapi_reply_outputs },
-    { HTTPD_METHOD_PUT,    "^/api/outputs/set$",                           jsonapi_reply_outputs_set },
-    { HTTPD_METHOD_POST,   "^/api/select-outputs$",                        jsonapi_reply_outputs_set }, // deprecated: use "/api/outputs/set"
-    { HTTPD_METHOD_GET,    "^/api/outputs/[[:digit:]]+$",                  jsonapi_reply_outputs_get_byid },
-    { HTTPD_METHOD_PUT,    "^/api/outputs/[[:digit:]]+$",                  jsonapi_reply_outputs_put_byid },
-    { HTTPD_METHOD_PUT,    "^/api/outputs/[[:digit:]]+/toggle$",           jsonapi_reply_outputs_toggle_byid },
+  { HTTPD_METHOD_GET,                    "^/api/player$",                                  jsonapi_reply_player                           },
+  { HTTPD_METHOD_PUT,                    "^/api/player/play$",                             jsonapi_reply_player_play                      },
+  { HTTPD_METHOD_PUT,                    "^/api/player/pause$",                            jsonapi_reply_player_pause                     },
+  { HTTPD_METHOD_PUT,                    "^/api/player/stop$",                             jsonapi_reply_player_stop                      },
+  { HTTPD_METHOD_PUT,                    "^/api/player/toggle$",                           jsonapi_reply_player_toggle                    },
+  { HTTPD_METHOD_PUT,                    "^/api/player/next$",                             jsonapi_reply_player_next                      },
+  { HTTPD_METHOD_PUT,                    "^/api/player/previous$",                         jsonapi_reply_player_previous                  },
+  { HTTPD_METHOD_PUT,                    "^/api/player/shuffle$",                          jsonapi_reply_player_shuffle                   },
+  { HTTPD_METHOD_PUT,                    "^/api/player/repeat$",                           jsonapi_reply_player_repeat                    },
+  { HTTPD_METHOD_PUT,                    "^/api/player/consume$",                          jsonapi_reply_player_consume                   },
+  { HTTPD_METHOD_PUT,                    "^/api/player/volume$",                           jsonapi_reply_player_volume                    },
+  { HTTPD_METHOD_PUT,                    "^/api/player/seek$",                             jsonapi_reply_player_seek                      },
 
-    { HTTPD_METHOD_GET,    "^/api/player$",                                jsonapi_reply_player },
-    { HTTPD_METHOD_PUT,    "^/api/player/play$",                           jsonapi_reply_player_play },
-    { HTTPD_METHOD_PUT,    "^/api/player/pause$",                          jsonapi_reply_player_pause },
-    { HTTPD_METHOD_PUT,    "^/api/player/stop$",                           jsonapi_reply_player_stop },
-    { HTTPD_METHOD_PUT,    "^/api/player/toggle$",                         jsonapi_reply_player_toggle },
-    { HTTPD_METHOD_PUT,    "^/api/player/next$",                           jsonapi_reply_player_next },
-    { HTTPD_METHOD_PUT,    "^/api/player/previous$",                       jsonapi_reply_player_previous },
-    { HTTPD_METHOD_PUT,    "^/api/player/shuffle$",                        jsonapi_reply_player_shuffle },
-    { HTTPD_METHOD_PUT,    "^/api/player/repeat$",                         jsonapi_reply_player_repeat },
-    { HTTPD_METHOD_PUT,    "^/api/player/consume$",                        jsonapi_reply_player_consume },
-    { HTTPD_METHOD_PUT,    "^/api/player/volume$",                         jsonapi_reply_player_volume },
-    { HTTPD_METHOD_PUT,    "^/api/player/seek$",                           jsonapi_reply_player_seek },
+  { HTTPD_METHOD_GET,                    "^/api/queue$",                                   jsonapi_reply_queue                            },
+  { HTTPD_METHOD_PUT,                    "^/api/queue/clear$",                             jsonapi_reply_queue_clear                      },
+  { HTTPD_METHOD_POST,                   "^/api/queue/items/add$",                         jsonapi_reply_queue_tracks_add                 },
+  { HTTPD_METHOD_PUT,                    "^/api/queue/items/[[:digit:]]+$",                jsonapi_reply_queue_tracks_update              },
+  { HTTPD_METHOD_PUT,                    "^/api/queue/items/now_playing$",                 jsonapi_reply_queue_tracks_update              },
+  { HTTPD_METHOD_DELETE,                 "^/api/queue/items/[[:digit:]]+$",                jsonapi_reply_queue_tracks_delete              },
+  { HTTPD_METHOD_POST,                   "^/api/queue/save$",                              jsonapi_reply_queue_save                       },
 
-    { HTTPD_METHOD_GET,    "^/api/queue$",                                 jsonapi_reply_queue },
-    { HTTPD_METHOD_PUT,    "^/api/queue/clear$",                           jsonapi_reply_queue_clear },
-    { HTTPD_METHOD_POST,   "^/api/queue/items/add$",                       jsonapi_reply_queue_tracks_add },
-    { HTTPD_METHOD_PUT,    "^/api/queue/items/[[:digit:]]+$",              jsonapi_reply_queue_tracks_update },
-    { HTTPD_METHOD_PUT,    "^/api/queue/items/now_playing$",               jsonapi_reply_queue_tracks_update },
-    { HTTPD_METHOD_DELETE, "^/api/queue/items/[[:digit:]]+$",              jsonapi_reply_queue_tracks_delete },
-    { HTTPD_METHOD_POST,   "^/api/queue/save$",                            jsonapi_reply_queue_save},
+  { HTTPD_METHOD_GET,                    "^/api/library/playlists$",                       jsonapi_reply_library_playlists                },
+  { HTTPD_METHOD_GET,                    "^/api/library/playlists/[[:digit:]]+$",          jsonapi_reply_library_playlist_get             },
+  { HTTPD_METHOD_PUT,                    "^/api/library/playlists/[[:digit:]]+$",          jsonapi_reply_library_playlist_put             },
+  { HTTPD_METHOD_GET,                    "^/api/library/playlists/[[:digit:]]+/tracks$",   jsonapi_reply_library_playlist_tracks          },
+  { HTTPD_METHOD_PUT,                    "^/api/library/playlists/[[:digit:]]+/tracks",    jsonapi_reply_library_playlist_tracks_put_byid },
+  //    { HTTPD_METHOD_POST,   "^/api/library/playlists/[[:digit:]]+/tracks$", jsonapi_reply_library_playlists_tracks },
+  { HTTPD_METHOD_DELETE,                 "^/api/library/playlists/[[:digit:]]+$",          jsonapi_reply_library_playlist_delete          },
+  { HTTPD_METHOD_GET,                    "^/api/library/playlists/[[:digit:]]+/playlists", jsonapi_reply_library_playlist_playlists       },
+  { HTTPD_METHOD_GET,                    "^/api/library/artists$",                         jsonapi_reply_library_artists                  },
+  { HTTPD_METHOD_GET,                    "^/api/library/artists/[[:digit:]]+$",            jsonapi_reply_library_artist                   },
+  { HTTPD_METHOD_GET,                    "^/api/library/artists/[[:digit:]]+/albums$",     jsonapi_reply_library_artist_albums            },
+  { HTTPD_METHOD_GET,                    "^/api/library/albums$",                          jsonapi_reply_library_albums                   },
+  { HTTPD_METHOD_GET,                    "^/api/library/albums/[[:digit:]]+$",             jsonapi_reply_library_album                    },
+  { HTTPD_METHOD_GET,                    "^/api/library/albums/[[:digit:]]+/tracks$",      jsonapi_reply_library_album_tracks             },
+  { HTTPD_METHOD_PUT,                    "^/api/library/albums/[[:digit:]]+/tracks$",      jsonapi_reply_library_album_tracks_put_byid    },
+  { HTTPD_METHOD_PUT,                    "^/api/library/tracks$",                          jsonapi_reply_library_tracks_put               },
+  { HTTPD_METHOD_GET,                    "^/api/library/tracks/[[:digit:]]+$",             jsonapi_reply_library_tracks_get_byid          },
+  { HTTPD_METHOD_PUT,                    "^/api/library/tracks/[[:digit:]]+$",             jsonapi_reply_library_tracks_put_byid          },
+  { HTTPD_METHOD_GET,                    "^/api/library/tracks/[[:digit:]]+/playlists$",   jsonapi_reply_library_track_playlists          },
+  { HTTPD_METHOD_GET,                    "^/api/library/(genres|composers)$",              jsonapi_reply_library_browse                   },
+  { HTTPD_METHOD_GET,                    "^/api/library/(genres|composers)/.*$",           jsonapi_reply_library_browseitem               },
+  { HTTPD_METHOD_GET,                    "^/api/library/count$",                           jsonapi_reply_library_count                    },
+  { HTTPD_METHOD_GET,                    "^/api/library/files$",                           jsonapi_reply_library_files                    },
+  { HTTPD_METHOD_POST,                   "^/api/library/add$",                             jsonapi_reply_library_add                      },
+  { HTTPD_METHOD_PUT,                    "^/api/library/backup$",                          jsonapi_reply_library_backup                   },
 
-    { HTTPD_METHOD_GET,    "^/api/library/playlists$",                     jsonapi_reply_library_playlists },
-    { HTTPD_METHOD_GET,    "^/api/library/playlists/[[:digit:]]+$",        jsonapi_reply_library_playlist_get },
-    { HTTPD_METHOD_PUT,    "^/api/library/playlists/[[:digit:]]+$",        jsonapi_reply_library_playlist_put },
-    { HTTPD_METHOD_GET,    "^/api/library/playlists/[[:digit:]]+/tracks$", jsonapi_reply_library_playlist_tracks },
-    { HTTPD_METHOD_PUT,    "^/api/library/playlists/[[:digit:]]+/tracks",  jsonapi_reply_library_playlist_tracks_put_byid},
-//    { HTTPD_METHOD_POST,   "^/api/library/playlists/[[:digit:]]+/tracks$", jsonapi_reply_library_playlists_tracks },
-    { HTTPD_METHOD_DELETE, "^/api/library/playlists/[[:digit:]]+$",        jsonapi_reply_library_playlist_delete },
-    { HTTPD_METHOD_GET,    "^/api/library/playlists/[[:digit:]]+/playlists", jsonapi_reply_library_playlist_playlists },
-    { HTTPD_METHOD_GET,    "^/api/library/artists$",                       jsonapi_reply_library_artists },
-    { HTTPD_METHOD_GET,    "^/api/library/artists/[[:digit:]]+$",          jsonapi_reply_library_artist },
-    { HTTPD_METHOD_GET,    "^/api/library/artists/[[:digit:]]+/albums$",   jsonapi_reply_library_artist_albums },
-    { HTTPD_METHOD_GET,    "^/api/library/albums$",                        jsonapi_reply_library_albums },
-    { HTTPD_METHOD_GET,    "^/api/library/albums/[[:digit:]]+$",           jsonapi_reply_library_album },
-    { HTTPD_METHOD_GET,    "^/api/library/albums/[[:digit:]]+/tracks$",    jsonapi_reply_library_album_tracks },
-    { HTTPD_METHOD_PUT,    "^/api/library/albums/[[:digit:]]+/tracks$",    jsonapi_reply_library_album_tracks_put_byid },
-    { HTTPD_METHOD_PUT,    "^/api/library/tracks$",                        jsonapi_reply_library_tracks_put },
-    { HTTPD_METHOD_GET,    "^/api/library/tracks/[[:digit:]]+$",           jsonapi_reply_library_tracks_get_byid },
-    { HTTPD_METHOD_PUT,    "^/api/library/tracks/[[:digit:]]+$",           jsonapi_reply_library_tracks_put_byid },
-    { HTTPD_METHOD_GET,    "^/api/library/tracks/[[:digit:]]+/playlists$", jsonapi_reply_library_track_playlists },
-    { HTTPD_METHOD_GET,    "^/api/library/(genres|composers)$",            jsonapi_reply_library_browse },
-    { HTTPD_METHOD_GET,    "^/api/library/(genres|composers)/.*$",         jsonapi_reply_library_browseitem },
-    { HTTPD_METHOD_GET,    "^/api/library/count$",                         jsonapi_reply_library_count },
-    { HTTPD_METHOD_GET,    "^/api/library/files$",                         jsonapi_reply_library_files },
-    { HTTPD_METHOD_POST,   "^/api/library/add$",                           jsonapi_reply_library_add },
-    { HTTPD_METHOD_PUT,    "^/api/library/backup$",                        jsonapi_reply_library_backup },
+  { HTTPD_METHOD_GET,                    "^/api/search$",                                  jsonapi_reply_search                           },
 
-    { HTTPD_METHOD_GET,    "^/api/search$",                                jsonapi_reply_search },
-
-    { 0, NULL, NULL }
-  };
-
+  { 0,                                   NULL,                                             NULL                                           }
+};
 
 /* ------------------------------- JSON API --------------------------------- */
 
@@ -4688,32 +4702,32 @@ jsonapi_request(struct httpd_request *hreq)
 
   switch (status_code)
     {
-      case HTTP_OK:                  /* 200 OK */
-	httpd_header_add(hreq->out_headers, "Content-Type", "application/json");
-	httpd_send_reply(hreq, status_code, "OK", HTTPD_SEND_NO_GZIP);
-	break;
-      case HTTP_NOCONTENT:           /* 204 No Content */
-	httpd_send_reply(hreq, status_code, "No Content", HTTPD_SEND_NO_GZIP);
-	break;
-      case HTTP_NOTMODIFIED:         /* 304 Not Modified */
-	httpd_send_reply(hreq, HTTP_NOTMODIFIED, NULL, HTTPD_SEND_NO_GZIP);
-	break;
-      case HTTP_BADREQUEST:          /* 400 Bad Request */
-	httpd_send_error(hreq, status_code, "Bad Request");
-	break;
-      case 403:
-	httpd_send_error(hreq, status_code, "Forbidden");
-	break;
-      case HTTP_NOTFOUND:            /* 404 Not Found */
-	httpd_send_error(hreq, status_code, "Not Found");
-	break;
-      case HTTP_SERVUNAVAIL:            /* 503 */
-        httpd_send_error(hreq, status_code, "Service Unavailable");
-        break;
-      case HTTP_INTERNAL:            /* 500 Internal Server Error */
-      default:
-	httpd_send_error(hreq, HTTP_INTERNAL, "Internal Server Error");
-	break;
+    case HTTP_OK: /* 200 OK */
+      httpd_header_add(hreq->out_headers, "Content-Type", "application/json");
+      httpd_send_reply(hreq, status_code, "OK", HTTPD_SEND_NO_GZIP);
+      break;
+    case HTTP_NOCONTENT: /* 204 No Content */
+      httpd_send_reply(hreq, status_code, "No Content", HTTPD_SEND_NO_GZIP);
+      break;
+    case HTTP_NOTMODIFIED: /* 304 Not Modified */
+      httpd_send_reply(hreq, HTTP_NOTMODIFIED, NULL, HTTPD_SEND_NO_GZIP);
+      break;
+    case HTTP_BADREQUEST: /* 400 Bad Request */
+      httpd_send_error(hreq, status_code, "Bad Request");
+      break;
+    case 403:
+      httpd_send_error(hreq, status_code, "Forbidden");
+      break;
+    case HTTP_NOTFOUND: /* 404 Not Found */
+      httpd_send_error(hreq, status_code, "Not Found");
+      break;
+    case HTTP_SERVUNAVAIL: /* 503 */
+      httpd_send_error(hreq, status_code, "Service Unavailable");
+      break;
+    case HTTP_INTERNAL: /* 500 Internal Server Error */
+    default:
+      httpd_send_error(hreq, HTTP_INTERNAL, "Internal Server Error");
+      break;
     }
 }
 
@@ -4729,12 +4743,13 @@ jsonapi_init(void)
       temp_path = cfg_getstr(cfg_getsec(cfg, "library"), "default_playlist_directory");
       if (temp_path)
 	{
-	  // The path in the conf file may have a trailing slash character. Return the realpath like it is done for the library directories.
+	  // The path in the conf file may have a trailing slash character. Return the realpath like it is done for the
+	  // library directories.
 	  default_playlist_directory = realpath(temp_path, NULL);
 	  if (default_playlist_directory)
 	    {
 	      if (access(default_playlist_directory, W_OK) < 0)
-	        DPRINTF(E_WARN, L_WEB, "Non-writable playlist save directory '%s'\n", default_playlist_directory);
+		DPRINTF(E_WARN, L_WEB, "Non-writable playlist save directory '%s'\n", default_playlist_directory);
 	    }
 	}
 
@@ -4743,7 +4758,7 @@ jsonapi_init(void)
 	  DPRINTF(E_LOG, L_WEB, "Invalid playlist save directory, disabling modifying stored playlists\n");
 	  allow_modifying_stored_playlists = false;
 	}
-     }
+    }
 
   return 0;
 }
@@ -4754,8 +4769,7 @@ jsonapi_deinit(void)
   free(default_playlist_directory);
 }
 
-struct httpd_module httpd_jsonapi =
-{
+struct httpd_module httpd_jsonapi = {
   .name = "JSON API",
   .type = MODULE_JSONAPI,
   .logdomain = L_WEB,

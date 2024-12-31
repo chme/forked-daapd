@@ -2,7 +2,6 @@
 #ifndef __SMARTPL_QUERY_H__
 #define __SMARTPL_QUERY_H__
 
-
 struct smartpl {
   char *title;
   char *query_where;

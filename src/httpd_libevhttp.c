@@ -17,27 +17,27 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <arpa/inet.h> // inet_pton()
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/socket.h> // listen()
-#include <arpa/inet.h> // inet_pton()
+#include <unistd.h>
 
+#include <event2/buffer.h>
+#include <event2/bufferevent.h>
 #include <event2/http.h>
 #include <event2/http_struct.h> // flags in struct evhttp
 #include <event2/keyvalq_struct.h>
-#include <event2/buffer.h>
-#include <event2/bufferevent.h>
 
 #include <pthread.h>
 
-#include "misc.h"
-#include "logger.h"
 #include "commands.h"
 #include "httpd_internal.h"
+#include "logger.h"
+#include "misc.h"
 
 // #define DEBUG_ALLOC 1
 
@@ -46,16 +46,14 @@ static pthread_mutex_t debug_alloc_lck = PTHREAD_MUTEX_INITIALIZER;
 static int debug_alloc_count;
 #endif
 
-struct httpd_uri_parsed
-{
+struct httpd_uri_parsed {
   struct evhttp_uri *ev_uri;
   struct evkeyvalq query;
   char *path;
   httpd_uri_path_parts path_parts;
 };
 
-struct httpd_server
-{
+struct httpd_server {
   int fd;
   struct evhttp *evhttp;
   struct commands_base *cmdbase;
@@ -63,8 +61,7 @@ struct httpd_server
   void *request_cb_arg;
 };
 
-struct httpd_reply
-{
+struct httpd_reply {
   struct httpd_request *hreq;
   enum httpd_reply_type type;
   int code;
@@ -73,16 +70,14 @@ struct httpd_reply
   void *cbarg;
 };
 
-struct httpd_disconnect
-{
+struct httpd_disconnect {
   pthread_mutex_t lock;
   struct event *ev;
   httpd_close_cb cb;
   void *cbarg;
 };
 
-struct httpd_backend_data
-{
+struct httpd_backend_data {
   // Pointer to server instance processing the request
   struct httpd_server *server;
   // If caller wants a callback on disconnect
@@ -92,7 +87,6 @@ struct httpd_backend_data
 // Forward
 static void
 closecb_worker(evutil_socket_t fd, short event, void *arg);
-
 
 const char *
 httpd_query_value_find(httpd_query *query, const char *key)
@@ -244,7 +238,7 @@ httpd_request_new(httpd_backend *backend, httpd_server *server, const char *uri,
 
   return hreq;
 
- error:
+error:
   httpd_request_free(hreq);
   return NULL;
 }
@@ -377,7 +371,7 @@ httpd_server_new(struct event_base *evbase, unsigned short port, httpd_request_c
 
   return server;
 
- error:
+error:
   httpd_server_free(server);
   return NULL;
 }
@@ -385,7 +379,8 @@ httpd_server_new(struct event_base *evbase, unsigned short port, httpd_request_c
 void
 httpd_server_allow_origin_set(httpd_server *server, bool allow)
 {
-  evhttp_set_allowed_methods(server->evhttp, EVHTTP_REQ_GET | EVHTTP_REQ_POST | EVHTTP_REQ_PUT | EVHTTP_REQ_DELETE | EVHTTP_REQ_HEAD | EVHTTP_REQ_OPTIONS);
+  evhttp_set_allowed_methods(server->evhttp,
+      EVHTTP_REQ_GET | EVHTTP_REQ_POST | EVHTTP_REQ_PUT | EVHTTP_REQ_DELETE | EVHTTP_REQ_HEAD | EVHTTP_REQ_OPTIONS);
 }
 
 // No locking of hreq required here, we're in the httpd thread, and the worker
@@ -396,7 +391,7 @@ send_reply_and_free(struct httpd_reply *reply)
   struct httpd_request *hreq = reply->hreq;
   httpd_connection *conn;
 
-//  DPRINTF(E_DBG, L_HTTPD, "Send from httpd thread, type %d, backend %p\n", reply->type, hreq->backend);
+  //  DPRINTF(E_DBG, L_HTTPD, "Send from httpd thread, type %d, backend %p\n", reply->type, hreq->backend);
 
   if (reply->type & HTTPD_F_REPLY_LAST)
     {
@@ -407,18 +402,18 @@ send_reply_and_free(struct httpd_reply *reply)
 
   switch (reply->type)
     {
-      case HTTPD_REPLY_COMPLETE:
-	evhttp_send_reply(hreq->backend, reply->code, reply->reason, hreq->out_body);
-	break;
-      case HTTPD_REPLY_START:
-	evhttp_send_reply_start(hreq->backend, reply->code, reply->reason);
-	break;
-      case HTTPD_REPLY_CHUNK:
-        evhttp_send_reply_chunk_with_cb(hreq->backend, hreq->out_body, reply->chunkcb, reply->cbarg);
-	break;
-      case HTTPD_REPLY_END:
-	evhttp_send_reply_end(hreq->backend);
-	break;
+    case HTTPD_REPLY_COMPLETE:
+      evhttp_send_reply(hreq->backend, reply->code, reply->reason, hreq->out_body);
+      break;
+    case HTTPD_REPLY_START:
+      evhttp_send_reply_start(hreq->backend, reply->code, reply->reason);
+      break;
+    case HTTPD_REPLY_CHUNK:
+      evhttp_send_reply_chunk_with_cb(hreq->backend, hreq->out_body, reply->chunkcb, reply->cbarg);
+      break;
+    case HTTPD_REPLY_END:
+      evhttp_send_reply_end(hreq->backend);
+      break;
     }
 }
 
@@ -433,7 +428,8 @@ send_reply_and_free_cb(void *arg, int *retval)
 }
 
 void
-httpd_send(struct httpd_request *hreq, enum httpd_reply_type type, int code, const char *reason, httpd_connection_chunkcb cb, void *cbarg)
+httpd_send(struct httpd_request *hreq, enum httpd_reply_type type, int code, const char *reason,
+    httpd_connection_chunkcb cb, void *cbarg)
 {
   struct httpd_server *server = hreq->backend_data->server;
   struct httpd_reply reply = {
@@ -594,16 +590,36 @@ httpd_backend_method_get(enum httpd_methods *method, httpd_backend *backend)
 
   switch (cmd)
     {
-      case EVHTTP_REQ_GET:     *method = HTTPD_METHOD_GET; break;
-      case EVHTTP_REQ_POST:    *method = HTTPD_METHOD_POST; break;
-      case EVHTTP_REQ_HEAD:    *method = HTTPD_METHOD_HEAD; break;
-      case EVHTTP_REQ_PUT:     *method = HTTPD_METHOD_PUT; break;
-      case EVHTTP_REQ_DELETE:  *method = HTTPD_METHOD_DELETE; break;
-      case EVHTTP_REQ_OPTIONS: *method = HTTPD_METHOD_OPTIONS; break;
-      case EVHTTP_REQ_TRACE:   *method = HTTPD_METHOD_TRACE; break;
-      case EVHTTP_REQ_CONNECT: *method = HTTPD_METHOD_CONNECT; break;
-      case EVHTTP_REQ_PATCH:   *method = HTTPD_METHOD_PATCH; break;
-      default:                 *method = HTTPD_METHOD_GET; return -1;
+    case EVHTTP_REQ_GET:
+      *method = HTTPD_METHOD_GET;
+      break;
+    case EVHTTP_REQ_POST:
+      *method = HTTPD_METHOD_POST;
+      break;
+    case EVHTTP_REQ_HEAD:
+      *method = HTTPD_METHOD_HEAD;
+      break;
+    case EVHTTP_REQ_PUT:
+      *method = HTTPD_METHOD_PUT;
+      break;
+    case EVHTTP_REQ_DELETE:
+      *method = HTTPD_METHOD_DELETE;
+      break;
+    case EVHTTP_REQ_OPTIONS:
+      *method = HTTPD_METHOD_OPTIONS;
+      break;
+    case EVHTTP_REQ_TRACE:
+      *method = HTTPD_METHOD_TRACE;
+      break;
+    case EVHTTP_REQ_CONNECT:
+      *method = HTTPD_METHOD_CONNECT;
+      break;
+    case EVHTTP_REQ_PATCH:
+      *method = HTTPD_METHOD_PATCH;
+      break;
+    default:
+      *method = HTTPD_METHOD_GET;
+      return -1;
     }
 
   return 0;
@@ -657,7 +673,7 @@ httpd_uri_parsed_create_fromuri(const char *uri)
   free(path);
   return parsed;
 
- error:
+error:
   free(path);
   httpd_uri_parsed_free(parsed);
   return NULL;

@@ -2,18 +2,17 @@
 #define __MISC_H__
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
-
+#include <stddef.h>
+#include <stdint.h>
 
 /* ------------------------ Network utility functions ----------------------- */
 
-#include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
 
 union net_sockaddr
 {
@@ -60,9 +59,9 @@ net_is_http_or_https(const char *url);
 /* ----------------------- Conversion/hashing/sanitizers -------------------- */
 
 #ifdef HAVE_ENDIAN_H
-# include <endian.h>
+#include <endian.h>
 #elif defined(HAVE_SYS_ENDIAN_H)
-# include <sys/endian.h>
+#include <sys/endian.h>
 #elif defined(HAVE_LIBKERN_OSBYTEORDER_H)
 #include <libkern/OSByteOrder.h>
 #define htobe16(x) OSSwapHostToBigInt16(x)
@@ -78,11 +77,11 @@ net_is_http_or_https(const char *url);
 #define ARRAY_SIZE(x) ((unsigned int)(sizeof(x) / sizeof((x)[0])))
 
 #ifndef MIN
-# define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
 #ifndef MAX
-# define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
 // If you have something like "#define MYNUMBER 3" then NTOSTR(MYNUMBER) will be
@@ -112,10 +111,10 @@ char *
 safe_strdup(const char *str);
 
 char *
-safe_asprintf(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+safe_asprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 int
-safe_snprintf_cat(char *dst, size_t n, const char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
+safe_snprintf_cat(char *dst, size_t n, const char *fmt, ...) __attribute__((format(printf, 3, 4)));
 
 int
 safe_snreplace(char *s, size_t sz, const char *pattern, const char *replacement);
@@ -148,7 +147,6 @@ b64_encode(const uint8_t *src, int srclen);
 
 uint64_t
 murmur_hash64(const void *key, int len, uint32_t seed);
-
 
 /* --------------------------- Key/value functions -------------------------- */
 
@@ -186,7 +184,6 @@ keyval_clear(struct keyval *kv);
 void
 keyval_sort(struct keyval *kv);
 
-
 /* ------------------------------- Ringbuffer ------------------------------- */
 
 struct ringbuffer {
@@ -205,11 +202,10 @@ void
 ringbuffer_free(struct ringbuffer *buf, bool content_only);
 
 size_t
-ringbuffer_write(struct ringbuffer *buf, const void* src, size_t srclen);
+ringbuffer_write(struct ringbuffer *buf, const void *src, size_t srclen);
 
 size_t
 ringbuffer_read(uint8_t **dst, size_t dstlen, struct ringbuffer *buf);
-
 
 /* ------------------------- Clock utility functions ------------------------ */
 
@@ -218,10 +214,10 @@ ringbuffer_read(uint8_t **dst, size_t dstlen, struct ringbuffer *buf);
 #ifndef HAVE_CLOCK_GETTIME
 
 #ifndef CLOCK_REALTIME
-#  define CLOCK_REALTIME 0
+#define CLOCK_REALTIME 0
 #endif
 #ifndef CLOCK_MONOTONIC
-#  define CLOCK_MONOTONIC 1
+#define CLOCK_MONOTONIC 1
 #endif
 
 typedef int clockid_t;
@@ -248,8 +244,7 @@ int
 timer_delete(timer_t timer_id);
 
 int
-timer_settime(timer_t timer_id, int flags, const struct itimerspec *tp,
-              struct itimerspec *old);
+timer_settime(timer_t timer_id, int flags, const struct itimerspec *tp, struct itimerspec *old);
 
 int
 timer_getoverrun(timer_t timer_id);
@@ -269,17 +264,16 @@ timespec_cmp(struct timespec time1, struct timespec time2);
 struct timespec
 timespec_reltoabs(struct timespec relative);
 
-
 /* ------------------------------- Media quality ---------------------------- */
 
 // Bit flags for the sake of outputs announcing what they support
 enum media_format {
   MEDIA_FORMAT_UNKNOWN = 0,
-  MEDIA_FORMAT_PCM     = (1 << 0),
-  MEDIA_FORMAT_WAV     = (1 << 1),
-  MEDIA_FORMAT_MP3     = (1 << 2),
-  MEDIA_FORMAT_ALAC    = (1 << 3),
-  MEDIA_FORMAT_OPUS    = (1 << 4),
+  MEDIA_FORMAT_PCM = (1 << 0),
+  MEDIA_FORMAT_WAV = (1 << 1),
+  MEDIA_FORMAT_MP3 = (1 << 2),
+  MEDIA_FORMAT_ALAC = (1 << 3),
+  MEDIA_FORMAT_OPUS = (1 << 4),
 };
 
 // For iteration
@@ -303,7 +297,6 @@ media_format_from_string(const char *s);
 
 const char *
 media_format_to_string(enum media_format format);
-
 
 /* -------------------------- Misc utility functions ------------------------ */
 
@@ -329,53 +322,62 @@ linear_regression(double *m, double *b, double *r, const double *x, const double
 char **
 m_readfile(const char *path, int num_lines);
 
-
 /* -------------------------------- Assertion ------------------------------- */
 
 /* Check that the function returns 0, logging a fatal error referencing
    returned error (type errno) if it fails, and aborts the process.
    Example: CHECK_ERR(L_MAIN, my_function()); */
-#define CHECK_ERR(d, f) \
-  do { int chk_err; \
-    if ( (chk_err = (f)) != 0) \
-      log_fatal_err(d, #f, __LINE__, chk_err); \
-  } while(0)
+#define CHECK_ERR(d, f)                                                                                                \
+  do                                                                                                                   \
+    {                                                                                                                  \
+      int chk_err;                                                                                                     \
+      if ((chk_err = (f)) != 0)                                                                                        \
+	log_fatal_err(d, #f, __LINE__, chk_err);                                                                       \
+    }                                                                                                                  \
+  while (0)
 
 /* Check that the function returns 0 or okval, logging a fatal
    error referencing returned erro (type errno) if not, and aborts the process.
    Example: int err; CHECK_ERR_EXCEPT(L_MAIN, my_wait(), err, ETIMEDOUT); */
-#define CHECK_ERR_EXCEPT(d, f, var, okval) \
-  do { (var) = (f);                             \
-    if (! (((var) == (okval)) || ((var) == 0))) \
-      log_fatal_err(d, #f, __LINE__, (var)); \
-  } while(0)
+#define CHECK_ERR_EXCEPT(d, f, var, okval)                                                                             \
+  do                                                                                                                   \
+    {                                                                                                                  \
+      (var) = (f);                                                                                                     \
+      if (!(((var) == (okval)) || ((var) == 0)))                                                                       \
+	log_fatal_err(d, #f, __LINE__, (var));                                                                         \
+    }                                                                                                                  \
+  while (0)
 
 /* Check that the function returns value >= 0, logging a fatal error
    referencing errno if it not, and aborts the process.
    Example: int ret; CHECK_ERRNO(L_MAIN, ret = my_function()); */
-#define CHECK_ERRNO(d, f) \
-  do { \
-    if ( (f) < 0 ) \
-      log_fatal_errno(d, #f, __LINE__); \
-  } while(0)
+#define CHECK_ERRNO(d, f)                                                                                              \
+  do                                                                                                                   \
+    {                                                                                                                  \
+      if ((f) < 0)                                                                                                     \
+	log_fatal_errno(d, #f, __LINE__);                                                                              \
+    }                                                                                                                  \
+  while (0)
 
 /* Check that the function returns non-NULL, logging a fatal error if not,
    and aborts the process.
    Example: void *ptr; CHECK_NULL(L_MAIN, ptr = my_create()); */
-#define CHECK_NULL(d, f) \
-  do { \
-    if ( (f) == NULL ) \
-      log_fatal_null(d, #f, __LINE__); \
-  } while(0)
+#define CHECK_NULL(d, f)                                                                                               \
+  do                                                                                                                   \
+    {                                                                                                                  \
+      if ((f) == NULL)                                                                                                 \
+	log_fatal_null(d, #f, __LINE__);                                                                               \
+    }                                                                                                                  \
+  while (0)
 
 /* Used by CHECK_*() macros */
 void
 log_fatal_err(int domain, const char *func, int line, int err) __attribute__((__noreturn__));
 
 void
-log_fatal_errno(int domain, const char *func, int line)        __attribute__((__noreturn__));
+log_fatal_errno(int domain, const char *func, int line) __attribute__((__noreturn__));
 
 void
-log_fatal_null(int domain, const char *func, int line)         __attribute__((__noreturn__));
+log_fatal_null(int domain, const char *func, int line) __attribute__((__noreturn__));
 
 #endif /* !__MISC_H__ */

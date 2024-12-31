@@ -4,7 +4,6 @@
 
 #include "db.h"
 
-
 /* --------------------------- Actual scanners ---------------------------- */
 
 int
@@ -21,7 +20,6 @@ scan_smartpl(const char *file, time_t mtime, int dir_id);
 
 void
 scan_itunes_itml(const char *file, time_t mtime, int dir_id);
-
 
 /* ------------  Common utility functions used by the scanners ------------ */
 
@@ -77,7 +75,6 @@ playlist_fill(struct playlist_info *pli, const char *path);
  */
 int
 playlist_add(const char *path);
-
 
 /* --------------------------------- Other -------------------------------- */
 

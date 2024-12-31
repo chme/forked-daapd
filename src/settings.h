@@ -4,7 +4,6 @@
 
 #include <stdbool.h>
 
-
 enum settings_type {
   SETTINGS_TYPE_INT,
   SETTINGS_TYPE_BOOL,
@@ -12,7 +11,8 @@ enum settings_type {
   SETTINGS_TYPE_CATEGORY,
 };
 
-union settings_default_value {
+union settings_default_value
+{
   int intval;
   bool boolval;
   char *strval;
@@ -29,7 +29,6 @@ struct settings_category {
   struct settings_option *options;
   int count_options;
 };
-
 
 int
 settings_categories_count(void);
@@ -48,7 +47,6 @@ settings_option_get(struct settings_category *category, const char *name);
 
 struct settings_option *
 settings_option_get_byindex(struct settings_category *category, int index);
-
 
 int
 settings_option_getint(struct settings_option *option);
@@ -73,9 +71,9 @@ int
 settings_option_setstr(struct settings_option *option, const char *value);
 
 #define SETTINGS_SETINT(category, name, value) settings_option_setint(settings_option_get((category), (name)), (value))
-#define SETTINGS_SETBOOL(category, name, value) settings_option_setbool(settings_option_get((category), (name)), (value))
+#define SETTINGS_SETBOOL(category, name, value)                                                                        \
+  settings_option_setbool(settings_option_get((category), (name)), (value))
 #define SETTINGS_SETSTR(category, name, value) settings_option_setstr(settings_option_get((category), (name)), (value))
-
 
 int
 settings_option_delete(struct settings_option *option);

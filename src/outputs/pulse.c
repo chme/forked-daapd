@@ -17,26 +17,26 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <errno.h>
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <errno.h>
-#include <stdint.h>
-#include <inttypes.h>
+#include <unistd.h>
 
 #include <event2/event.h>
 #include <pulse/pulseaudio.h>
 
-#include "misc.h"
+#include "commands.h"
 #include "conffile.h"
 #include "logger.h"
-#include "player.h"
+#include "misc.h"
 #include "outputs.h"
-#include "commands.h"
+#include "player.h"
 
 #define PULSE_MAX_DEVICES 64
 #define PULSE_LOG_MAX 10
@@ -46,8 +46,7 @@
    - Allow per-sink latency config
 */
 
-struct pulse
-{
+struct pulse {
   pa_threaded_mainloop *mainloop;
   pa_context *context;
 
@@ -56,8 +55,7 @@ struct pulse
   int operation_success;
 } pulse;
 
-struct pulse_session
-{
+struct pulse_session {
   uint64_t device_id;
   int callback_id;
 
@@ -187,22 +185,22 @@ send_status(void *arg, int *ptr)
 
   switch (ps->state)
     {
-      case PA_STREAM_FAILED:
-	state = OUTPUT_STATE_FAILED;
-	break;
-      case PA_STREAM_UNCONNECTED:
-      case PA_STREAM_TERMINATED:
-	state = OUTPUT_STATE_STOPPED;
-	break;
-      case PA_STREAM_READY:
-	state = OUTPUT_STATE_CONNECTED;
-	break;
-      case PA_STREAM_CREATING:
-	state = OUTPUT_STATE_STARTUP;
-	break;
-      default:
-	DPRINTF(E_LOG, L_LAUDIO, "Bug! Unhandled state in send_status()\n");
-	state = OUTPUT_STATE_FAILED;
+    case PA_STREAM_FAILED:
+      state = OUTPUT_STATE_FAILED;
+      break;
+    case PA_STREAM_UNCONNECTED:
+    case PA_STREAM_TERMINATED:
+      state = OUTPUT_STATE_STOPPED;
+      break;
+    case PA_STREAM_READY:
+      state = OUTPUT_STATE_CONNECTED;
+      break;
+    case PA_STREAM_CREATING:
+      state = OUTPUT_STATE_STARTUP;
+      break;
+    default:
+      DPRINTF(E_LOG, L_LAUDIO, "Bug! Unhandled state in send_status()\n");
+      state = OUTPUT_STATE_FAILED;
     }
 
   outputs_cb(ps->callback_id, ps->device_id, state);
@@ -254,7 +252,6 @@ pulse_session_shutdown_all(pa_stream_state_t state)
 
 /* --------------------- CALLBACKS FROM PULSEAUDIO THREAD ------------------- */
 
-
 // This will be called if something happens to the stream after it was opened
 static void
 stream_state_cb(pa_stream *s, void *userdata)
@@ -269,10 +266,11 @@ stream_state_cb(pa_stream *s, void *userdata)
       if (ps->state == PA_STREAM_FAILED)
 	{
 	  errno = pa_context_errno(pulse.context);
-          DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio stream to '%s' failed with error: %s\n", ps->devname, pa_strerror(errno));
+	  DPRINTF(
+	      E_LOG, L_LAUDIO, "Pulseaudio stream to '%s' failed with error: %s\n", ps->devname, pa_strerror(errno));
 	}
       else
-        DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio stream to '%s' aborted (%d)\n", ps->devname, ps->state);
+	DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio stream to '%s' aborted (%d)\n", ps->devname, ps->state);
 
       pulse_session_shutdown(ps);
       return;
@@ -405,7 +403,8 @@ sinklist_cb(pa_context *ctx, const pa_sink_info *info, int eol, void *userdata)
 
   if (pos == -1)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Maximum number of Pulseaudio devices reached (%d), cannot add '%s'\n", PULSE_MAX_DEVICES, info->name);
+      DPRINTF(E_LOG, L_LAUDIO, "Maximum number of Pulseaudio devices reached (%d), cannot add '%s'\n",
+          PULSE_MAX_DEVICES, info->name);
       return;
     }
 
@@ -420,7 +419,8 @@ sinklist_cb(pa_context *ctx, const pa_sink_info *info, int eol, void *userdata)
     {
       name = cfg_getstr(cfg_getsec(cfg, "audio"), "nickname");
 
-      DPRINTF(E_LOG, L_LAUDIO, "Adding Pulseaudio sink '%s' (%s) with name '%s'\n", info->description, info->name, name);
+      DPRINTF(
+          E_LOG, L_LAUDIO, "Adding Pulseaudio sink '%s' (%s) with name '%s'\n", info->description, info->name, name);
     }
   else
     {
@@ -429,7 +429,8 @@ sinklist_cb(pa_context *ctx, const pa_sink_info *info, int eol, void *userdata)
       DPRINTF(E_LOG, L_LAUDIO, "Adding Pulseaudio sink '%s' (%s)\n", info->description, info->name);
     }
 
-  pulse_known_devices[pos] = info->index + 1; // Array values of 0 mean no device, so we add 1 to make sure the value is > 0
+  pulse_known_devices[pos]
+      = info->index + 1; // Array values of 0 mean no device, so we add 1 to make sure the value is > 0
 
   device->id = info->index;
   device->name = strdup(name);
@@ -498,49 +499,48 @@ context_state_cb(pa_context *c, void *userdata)
 
   switch (state)
     {
-      case PA_CONTEXT_READY:
-	DPRINTF(E_DBG, L_LAUDIO, "Pulseaudio context state changed to ready\n");
+    case PA_CONTEXT_READY:
+      DPRINTF(E_DBG, L_LAUDIO, "Pulseaudio context state changed to ready\n");
 
-	o = pa_context_get_sink_info_list(c, sinklist_cb, NULL);
-	if (!o)
-	  {
-	    DPRINTF(E_LOG, L_LAUDIO, "Could not list Pulseaudio sink info\n");
-	    return;
-	  }
-	pa_operation_unref(o);
+      o = pa_context_get_sink_info_list(c, sinklist_cb, NULL);
+      if (!o)
+	{
+	  DPRINTF(E_LOG, L_LAUDIO, "Could not list Pulseaudio sink info\n");
+	  return;
+	}
+      pa_operation_unref(o);
 
-	pa_context_set_subscribe_callback(c, subscribe_cb, NULL);
-	o = pa_context_subscribe(c, PA_SUBSCRIPTION_MASK_SINK, NULL, NULL);
-	if (!o)
-	  {
-	    DPRINTF(E_LOG, L_LAUDIO, "Could not subscribe to Pulseaudio sink info\n");
-	    return;
-	  }
-	pa_operation_unref(o);
+      pa_context_set_subscribe_callback(c, subscribe_cb, NULL);
+      o = pa_context_subscribe(c, PA_SUBSCRIPTION_MASK_SINK, NULL, NULL);
+      if (!o)
+	{
+	  DPRINTF(E_LOG, L_LAUDIO, "Could not subscribe to Pulseaudio sink info\n");
+	  return;
+	}
+      pa_operation_unref(o);
 
-	pa_threaded_mainloop_signal(pulse.mainloop, 0);
-	break;
+      pa_threaded_mainloop_signal(pulse.mainloop, 0);
+      break;
 
-      case PA_CONTEXT_FAILED:
-	DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio failed with error: %s\n", pa_strerror(pa_context_errno(c)));
-	pulse_session_shutdown_all(PA_STREAM_FAILED);
-	pa_threaded_mainloop_signal(pulse.mainloop, 0);
-	break;
+    case PA_CONTEXT_FAILED:
+      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio failed with error: %s\n", pa_strerror(pa_context_errno(c)));
+      pulse_session_shutdown_all(PA_STREAM_FAILED);
+      pa_threaded_mainloop_signal(pulse.mainloop, 0);
+      break;
 
-      case PA_CONTEXT_TERMINATED:
-	DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio terminated\n");
-	pulse_session_shutdown_all(PA_STREAM_UNCONNECTED);
-	pa_threaded_mainloop_signal(pulse.mainloop, 0);
-	break;
+    case PA_CONTEXT_TERMINATED:
+      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio terminated\n");
+      pulse_session_shutdown_all(PA_STREAM_UNCONNECTED);
+      pa_threaded_mainloop_signal(pulse.mainloop, 0);
+      break;
 
-      case PA_CONTEXT_UNCONNECTED:
-      case PA_CONTEXT_CONNECTING:
-      case PA_CONTEXT_AUTHORIZING:
-      case PA_CONTEXT_SETTING_NAME:
-	break;
+    case PA_CONTEXT_UNCONNECTED:
+    case PA_CONTEXT_CONNECTING:
+    case PA_CONTEXT_AUTHORIZING:
+    case PA_CONTEXT_SETTING_NAME:
+      break;
     }
 }
-
 
 /* ------------------------------- MISC HELPERS ----------------------------- */
 
@@ -591,7 +591,7 @@ stream_open(struct pulse_session *ps, struct media_quality *quality, pa_stream_n
   if (abs(offset_ms) > 1000)
     {
       DPRINTF(E_LOG, L_LAUDIO, "The audio offset (%d) set in the configuration is out of bounds\n", offset_ms);
-      offset_ms = 1000 * (offset_ms/abs(offset_ms));
+      offset_ms = 1000 * (offset_ms / abs(offset_ms));
     }
 
   pa_threaded_mainloop_lock(pulse.mainloop);
@@ -603,11 +603,12 @@ stream_open(struct pulse_session *ps, struct media_quality *quality, pa_stream_n
 
   flags = PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE;
 
-  ps->attr.tlength   = STOB((OUTPUTS_BUFFER_DURATION * 1000 + offset_ms) * ss.rate / 1000, quality->bits_per_sample, quality->channels);
+  ps->attr.tlength = STOB(
+      (OUTPUTS_BUFFER_DURATION * 1000 + offset_ms) * ss.rate / 1000, quality->bits_per_sample, quality->channels);
   ps->attr.maxlength = 2 * ps->attr.tlength;
-  ps->attr.prebuf    = (uint32_t)-1;
-  ps->attr.minreq    = (uint32_t)-1;
-  ps->attr.fragsize  = (uint32_t)-1;
+  ps->attr.prebuf = (uint32_t)-1;
+  ps->attr.minreq = (uint32_t)-1;
+  ps->attr.fragsize = (uint32_t)-1;
 
   pa_cvolume_set(&cvol, 2, ps->volume);
 
@@ -623,11 +624,11 @@ stream_open(struct pulse_session *ps, struct media_quality *quality, pa_stream_n
 
   return 0;
 
- unlock_and_fail:
+unlock_and_fail:
   ret = pa_context_errno(pulse.context);
 
-  DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio could not start '%s' using quality %d/%d/%d: %s\n",
-    ps->devname, quality->sample_rate, quality->bits_per_sample, quality->channels, pa_strerror(ret));
+  DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio could not start '%s' using quality %d/%d/%d: %s\n", ps->devname,
+      quality->sample_rate, quality->bits_per_sample, quality->channels, pa_strerror(ret));
 
   pa_threaded_mainloop_unlock(pulse.mainloop);
 
@@ -668,7 +669,7 @@ playback_restart(struct pulse_session *ps, struct output_buffer *obuf)
   if (ret < 0)
     {
       DPRINTF(E_INFO, L_LAUDIO, "Input quality (%d/%d/%d) not supported, falling back to default\n",
-        ps->quality.sample_rate, ps->quality.bits_per_sample, ps->quality.channels);
+          ps->quality.sample_rate, ps->quality.bits_per_sample, ps->quality.channels);
 
       ps->quality = pulse_fallback_quality;
       ret = stream_open(ps, &ps->quality, start_cb);
@@ -715,30 +716,30 @@ playback_write(struct pulse_session *ps, struct output_buffer *obuf)
       goto unlock;
     }
 
- unlock:
+unlock:
   pa_threaded_mainloop_unlock(pulse.mainloop);
 }
 
 static void
 playback_resume(struct pulse_session *ps)
 {
-  pa_operation* o;
+  pa_operation *o;
 
   pa_threaded_mainloop_lock(pulse.mainloop);
 
   o = pa_stream_cork(ps->stream, 0, NULL, NULL);
   if (!o)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio could not resume '%s': %s\n", ps->devname, pa_strerror(pa_context_errno(pulse.context)));
+      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio could not resume '%s': %s\n", ps->devname,
+          pa_strerror(pa_context_errno(pulse.context)));
       goto unlock;
     }
 
   pa_operation_unref(o);
 
- unlock:
+unlock:
   pa_threaded_mainloop_unlock(pulse.mainloop);
 }
-
 
 /* ------------------ INTERFACE FUNCTIONS CALLED BY OUTPUTS.C --------------- */
 
@@ -776,7 +777,7 @@ static int
 pulse_device_flush(struct output_device *device, int callback_id)
 {
   struct pulse_session *ps = device->session;
-  pa_operation* o;
+  pa_operation *o;
 
   DPRINTF(E_DBG, L_LAUDIO, "Pulseaudio flush\n");
 
@@ -787,7 +788,8 @@ pulse_device_flush(struct output_device *device, int callback_id)
   o = pa_stream_cork(ps->stream, 1, NULL, NULL);
   if (!o)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio could not pause '%s': %s\n", ps->devname, pa_strerror(pa_context_errno(pulse.context)));
+      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio could not pause '%s': %s\n", ps->devname,
+          pa_strerror(pa_context_errno(pulse.context)));
       return -1;
     }
   pa_operation_unref(o);
@@ -795,7 +797,8 @@ pulse_device_flush(struct output_device *device, int callback_id)
   o = pa_stream_flush(ps->stream, flush_cb, ps);
   if (!o)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio could not flush '%s': %s\n", ps->devname, pa_strerror(pa_context_errno(pulse.context)));
+      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio could not flush '%s': %s\n", ps->devname,
+          pa_strerror(pa_context_errno(pulse.context)));
       return -1;
     }
   pa_operation_unref(o);
@@ -846,7 +849,7 @@ pulse_device_volume_set(struct output_device *device, int callback_id)
 {
   struct pulse_session *ps = device->session;
   uint32_t idx;
-  pa_operation* o;
+  pa_operation *o;
   pa_cvolume cvol;
 
   if (!ps)
@@ -857,7 +860,8 @@ pulse_device_volume_set(struct output_device *device, int callback_id)
   ps->volume = pulse_from_device_volume(device->volume);
   pa_cvolume_set(&cvol, 2, ps->volume);
 
-  DPRINTF(E_DBG, L_LAUDIO, "Setting Pulseaudio volume for stream %" PRIu32 " to %d (%d)\n", idx, (int)ps->volume, device->volume);
+  DPRINTF(E_DBG, L_LAUDIO, "Setting Pulseaudio volume for stream %" PRIu32 " to %d (%d)\n", idx, (int)ps->volume,
+      device->volume);
 
   pa_threaded_mainloop_lock(pulse.mainloop);
 
@@ -937,7 +941,7 @@ pulse_init(void)
     goto fail;
 
   pa_context_set_state_callback(pulse.context, context_state_cb, NULL);
-  
+
   if (pa_context_connect(pulse.context, server, 0, NULL) < 0)
     {
       ret = pa_context_errno(pulse.context);
@@ -970,10 +974,10 @@ pulse_init(void)
 
   return 0;
 
- unlock_and_fail:
+unlock_and_fail:
   pa_threaded_mainloop_unlock(pulse.mainloop);
 
- fail:
+fail:
   if (ret)
     DPRINTF(E_LOG, L_LAUDIO, "Error initializing Pulseaudio: %s\n", pa_strerror(ret));
 
@@ -987,8 +991,7 @@ pulse_deinit(void)
   pulse_free();
 }
 
-struct output_definition output_pulse =
-{
+struct output_definition output_pulse = {
   .name = "Pulseaudio",
   .type = OUTPUT_TYPE_PULSE,
   .priority = 3,
@@ -1004,4 +1007,3 @@ struct output_definition output_pulse =
   .device_volume_set = pulse_device_volume_set,
   .write = pulse_write,
 };
-

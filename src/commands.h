@@ -12,7 +12,7 @@ enum command_state {
 /*
  * Function that will be executed in the event loop thread.
  *
- * If the function has pending events to complete, it needs to return 
+ * If the function has pending events to complete, it needs to return
  * COMMAND_PENDING with 'ret' set to the number of pending events to wait for.
  *
  * If the function returns with  COMMAND_END, command execution will proceed
@@ -21,16 +21,14 @@ enum command_state {
  *
  * @param arg Opaque pointer passed by command_exec_sync or command_exec_async
  * @param ret Pointer to the return value for the caller of the command
- * @return    COMMAND_END if there are no pending events (function execution is 
+ * @return    COMMAND_END if there are no pending events (function execution is
  *            complete) or COMMAND_PENDING if there are pending events
  */
 typedef enum command_state (*command_function)(void *arg, int *ret);
 
 typedef void (*command_exit_cb)(void);
 
-
 struct commands_base;
-
 
 struct commands_base *
 commands_base_new(struct event_base *evbase, command_exit_cb exit_cb);

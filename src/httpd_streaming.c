@@ -17,26 +17,26 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <uninorm.h>
 #include <unistd.h>
-#include <errno.h>
 
-#include <event2/event.h>
 #include <event2/buffer.h>
+#include <event2/event.h>
 
-#include "httpd_internal.h"
-#include "player.h"
-#include "logger.h"
 #include "conffile.h"
+#include "httpd_internal.h"
+#include "logger.h"
+#include "player.h"
 
-#define STREAMING_ICY_METALEN_MAX      4080  // 255*16 incl header/footer (16bytes)
-#define STREAMING_ICY_METATITLELEN_MAX 4064  // STREAMING_ICY_METALEN_MAX -16 (not incl header/footer)
+#define STREAMING_ICY_METALEN_MAX 4080      // 255*16 incl header/footer (16bytes)
+#define STREAMING_ICY_METATITLELEN_MAX 4064 // STREAMING_ICY_METALEN_MAX -16 (not incl header/footer)
 
 struct streaming_session {
   struct httpd_request *hreq;
@@ -82,7 +82,7 @@ static unsigned short streaming_icy_metaint = 16384;
 // https://stackoverflow.com/questions/4911062/pulling-track-info-from-an-audio-stream-using-php/4914538#4914538
 // http://www.smackfu.com/stuff/programming/shoutcast.html
 static uint8_t *
-icy_meta_create(uint8_t buf[STREAMING_ICY_METALEN_MAX+1], unsigned *buflen, const char *title)
+icy_meta_create(uint8_t buf[STREAMING_ICY_METALEN_MAX + 1], unsigned *buflen, const char *title)
 {
   unsigned titlelen;
   unsigned metalen;
@@ -101,21 +101,21 @@ icy_meta_create(uint8_t buf[STREAMING_ICY_METALEN_MAX+1], unsigned *buflen, cons
     {
       titlelen = strlen(title);
       if (titlelen > STREAMING_ICY_METATITLELEN_MAX)
-	titlelen = STREAMING_ICY_METATITLELEN_MAX;  // dont worry about the null byte
+	titlelen = STREAMING_ICY_METATITLELEN_MAX; // dont worry about the null byte
 
       // [0]    1x byte N, indicate the total number of 16 bytes words required
       //        to represent the meta data
       // [1..N] meta data book ended by "StreamTitle='" and "';"
       //
       // The '15' is strlen of StreamTitle=' + ';
-      no16s = (15 + titlelen)/16 +1;
-      metalen = 1 + no16s*16;
+      no16s = (15 + titlelen) / 16 + 1;
+      metalen = 1 + no16s * 16;
       memset(buf, 0, metalen);
 
-      memcpy(buf,             &no16s, 1);
-      memcpy(buf+1,           (const uint8_t*)"StreamTitle='", 13);
-      memcpy(buf+14,          title, titlelen);
-      memcpy(buf+14+titlelen, (const uint8_t*)"';", 2);
+      memcpy(buf, &no16s, 1);
+      memcpy(buf + 1, (const uint8_t *)"StreamTitle='", 13);
+      memcpy(buf + 14, title, titlelen);
+      memcpy(buf + 14 + titlelen, (const uint8_t *)"';", 2);
 
       *buflen = metalen;
     }
@@ -146,7 +146,6 @@ icy_meta_splice(struct evbuffer *out, struct evbuffer *in, size_t *icy_remaining
     }
 }
 
-
 /* ----------------------------- Event callbacks ---------------------------- */
 
 static void
@@ -169,7 +168,8 @@ audio_cb(evutil_socket_t fd, short event, void *arg)
   len = evbuffer_read(session->audiobuf, fd, -1);
   if (len < 0 && errno != EAGAIN)
     {
-      DPRINTF(E_INFO, L_STREAMING, "Stopping mp3 streaming to %s:%d\n", session->hreq->peer_address, (int)session->hreq->peer_port);
+      DPRINTF(E_INFO, L_STREAMING, "Stopping mp3 streaming to %s:%d\n", session->hreq->peer_address,
+          (int)session->hreq->peer_port);
 
       httpd_send_reply_end(session->hreq);
       session_free(session);
@@ -203,10 +203,9 @@ metadata_cb(evutil_socket_t fd, short event, void *arg)
   evbuffer_remove(evbuf, session->icy_title, len);
   session->icy_title[len - 1] = '\0';
 
- out:
+out:
   evbuffer_free(evbuf);
 }
-
 
 /* ----------------------------- Session helpers ---------------------------- */
 
@@ -246,18 +245,19 @@ session_new(struct httpd_request *hreq, bool icy_is_requested, enum media_format
   if (session->id < 0)
     goto error;
 
-  CHECK_NULL(L_STREAMING, session->audioev = event_new(hreq->evbase, audio_fd, EV_READ | EV_PERSIST, audio_cb, session));
+  CHECK_NULL(
+      L_STREAMING, session->audioev = event_new(hreq->evbase, audio_fd, EV_READ | EV_PERSIST, audio_cb, session));
   event_add(session->audioev, NULL);
-  CHECK_NULL(L_STREAMING, session->metadataev = event_new(hreq->evbase, metadata_fd, EV_READ | EV_PERSIST, metadata_cb, session));
+  CHECK_NULL(L_STREAMING,
+      session->metadataev = event_new(hreq->evbase, metadata_fd, EV_READ | EV_PERSIST, metadata_cb, session));
   event_add(session->metadataev, NULL);
 
   return session;
 
- error:
+error:
   session_free(session);
   return NULL;
 }
-
 
 /* -------------------------- Module implementation ------------------------- */
 
@@ -296,18 +296,14 @@ streaming_mp3_handler(struct httpd_request *hreq)
   return 0;
 }
 
-static struct httpd_uri_map streaming_handlers[] =
+static struct httpd_uri_map streaming_handlers[] = {
   {
-    {
-      .regexp = "^/stream.mp3$",
-      .handler = streaming_mp3_handler,
-      .flags = HTTPD_HANDLER_REALTIME,
-    },
-    {
-      .regexp = NULL,
-      .handler = NULL
-    }
-  };
+   .regexp = "^/stream.mp3$",
+   .handler = streaming_mp3_handler,
+   .flags = HTTPD_HANDLER_REALTIME,
+   },
+  { .regexp = NULL,                         .handler = NULL                                    }
+};
 
 static void
 streaming_request(struct httpd_request *hreq)
@@ -341,35 +337,35 @@ streaming_init(void)
 
   val = cfg_getint(cfg_getsec(cfg, "streaming"), "bit_rate");
   switch (val)
-  {
-    case  64:
-    case  96:
+    {
+    case 64:
+    case 96:
     case 128:
     case 192:
     case 320:
-      streaming_default_quality.bit_rate = val*1000;
+      streaming_default_quality.bit_rate = val * 1000;
       break;
 
     default:
       DPRINTF(E_LOG, L_STREAMING, "Unsuppported streaming bit_rate=%d, supports: 64/96/128/192/320, defaulting\n", val);
-  }
+    }
 
-  DPRINTF(E_INFO, L_STREAMING, "Streaming quality: %d/%d/%d @ %dkbps\n",
-    streaming_default_quality.sample_rate, streaming_default_quality.bits_per_sample,
-    streaming_default_quality.channels, streaming_default_quality.bit_rate/1000);
+  DPRINTF(E_INFO, L_STREAMING, "Streaming quality: %d/%d/%d @ %dkbps\n", streaming_default_quality.sample_rate,
+      streaming_default_quality.bits_per_sample, streaming_default_quality.channels,
+      streaming_default_quality.bit_rate / 1000);
 
   val = cfg_getint(cfg_getsec(cfg, "streaming"), "icy_metaint");
   // Too low a value forces server to send more meta than data
   if (val >= 4096 && val <= 131072)
     streaming_icy_metaint = val;
   else
-    DPRINTF(E_INFO, L_STREAMING, "Unsupported icy_metaint=%d, supported range: 4096..131072, defaulting to %d\n", val, streaming_icy_metaint);
+    DPRINTF(E_INFO, L_STREAMING, "Unsupported icy_metaint=%d, supported range: 4096..131072, defaulting to %d\n", val,
+        streaming_icy_metaint);
 
   return 0;
 }
 
-struct httpd_module httpd_streaming =
-{
+struct httpd_module httpd_streaming = {
   .name = "Streaming",
   .type = MODULE_STREAMING,
   .logdomain = L_STREAMING,

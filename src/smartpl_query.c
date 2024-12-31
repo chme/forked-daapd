@@ -17,24 +17,24 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <limits.h>
 #include <sys/param.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <errno.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "smartpl_query.h"
-#include "parsers/smartpl_parser.h"
 #include "logger.h"
 #include "misc.h"
+#include "parsers/smartpl_parser.h"
+#include "smartpl_query.h"
 
 #define SMARTPL_SIZE_MAX 8192
 
@@ -58,7 +58,8 @@ smartpl_query_parse_file(struct smartpl *smartpl, const char *file)
   size = ftell(f);
   if (size <= 0 || size > SMARTPL_SIZE_MAX)
     {
-      DPRINTF(E_LOG, L_SCAN, "Smart playlist '%s' is zero bytes or too large (max size is %d)\n", file, SMARTPL_SIZE_MAX);
+      DPRINTF(
+          E_LOG, L_SCAN, "Smart playlist '%s' is zero bytes or too large (max size is %d)\n", file, SMARTPL_SIZE_MAX);
       goto error;
     }
 
@@ -79,7 +80,7 @@ smartpl_query_parse_file(struct smartpl *smartpl, const char *file)
   free(expression);
   return ret;
 
- error:
+error:
   free(expression);
   if (f)
     fclose(f);
@@ -125,12 +126,11 @@ smartpl_query_parse_string(struct smartpl *smartpl, const char *expression)
   smartpl->order = safe_strdup(result.order);
   smartpl->limit = result.limit;
 
-  DPRINTF(E_SPAM, L_SCAN, "Parse smartpl query output '%s': WHERE %s HAVING %s ORDER BY %s LIMIT %d\n",
-    smartpl->title, smartpl->query_where, smartpl->having, smartpl->order, smartpl->limit);
+  DPRINTF(E_SPAM, L_SCAN, "Parse smartpl query output '%s': WHERE %s HAVING %s ORDER BY %s LIMIT %d\n", smartpl->title,
+      smartpl->query_where, smartpl->having, smartpl->order, smartpl->limit);
 
   return 0;
 }
-
 
 void
 free_smartpl(struct smartpl *smartpl, int content_only)
@@ -148,4 +148,3 @@ free_smartpl(struct smartpl *smartpl, int content_only)
   else
     memset(smartpl, 0, sizeof(struct smartpl));
 }
-

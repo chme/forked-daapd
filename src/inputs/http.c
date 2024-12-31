@@ -16,39 +16,36 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <pthread.h> // mutex
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <stdint.h>
-#include <string.h> // strcasestr
+#include <string.h>  // strcasestr
 #include <strings.h> // strcasecmp
-#include <pthread.h> // mutex
+#include <unistd.h>
 
 #include <event2/buffer.h>
 
-#include "transcode.h"
+#include "artwork.h"
 #include "http.h"
+#include "input.h"
+#include "logger.h"
 #include "misc.h"
 #include "misc_json.h"
 #include "settings.h"
-#include "logger.h"
-#include "artwork.h"
+#include "transcode.h"
 #include "worker.h"
-#include "input.h"
 
-struct prepared_metadata
-{
+struct prepared_metadata {
   // Parsed metadata goes here
   struct input_metadata parsed;
   // Mutex to share the parsed metadata
   pthread_mutex_t lock;
 } prepared_metadata;
 
-
 /* ------- Handling/parsing of StreamUrl tags from some http streams ---------*/
 
-struct streamurl_map
-{
+struct streamurl_map {
   const char *setting;
   enum json_type jtype;
   int (*parser)(struct input_metadata *, const char *, json_object *);
@@ -85,11 +82,10 @@ streamurl_parse_length(struct input_metadata *metadata, const char *key, json_ob
 }
 
 // Lookup is case-insensitive and partial, first occurrence takes precedence
-static struct streamurl_map streamurl_map[] =
-  {
-    { "streamurl_keywords_artwork_url", json_type_string, streamurl_parse_artwork_url },
-    { "streamurl_keywords_length",      json_type_int,    streamurl_parse_length },
-  };
+static struct streamurl_map streamurl_map[] = {
+  { "streamurl_keywords_artwork_url", json_type_string, streamurl_parse_artwork_url },
+  { "streamurl_keywords_length",      json_type_int,    streamurl_parse_length      },
+};
 
 static void
 streamurl_field_parse(struct input_metadata *metadata, struct streamurl_map *map, const char *jkey, json_object *jval)
@@ -123,12 +119,12 @@ streamurl_json_parse(struct input_metadata *metadata, const char *body)
     return -1;
 
   json_object_object_foreach(jresponse, jkey, jval)
-    {
-      for (i = 0; i < ARRAY_SIZE(streamurl_map); i++)
-	{
-	  streamurl_field_parse(metadata, &streamurl_map[i], jkey, jval);
-	}
-    }
+  {
+    for (i = 0; i < ARRAY_SIZE(streamurl_map); i++)
+      {
+	streamurl_field_parse(metadata, &streamurl_map[i], jkey, jval);
+      }
+  }
 
   jparse_free(jresponse);
 
@@ -197,7 +193,8 @@ streamurl_process(struct input_metadata *metadata, const char *url)
   ret = http_client_request(&client, NULL);
   if (ret < 0 || client.response_code != HTTP_OK)
     {
-      DPRINTF(E_WARN, L_PLAYER, "Request for StreamUrl resource '%s' failed, response code %d\n", url, client.response_code);
+      DPRINTF(E_WARN, L_PLAYER, "Request for StreamUrl resource '%s' failed, response code %d\n", url,
+          client.response_code);
       ret = -1;
       goto out;
     }
@@ -217,7 +214,7 @@ streamurl_process(struct input_metadata *metadata, const char *url)
       ret = -1;
     }
 
- out:
+out:
   keyval_clear(&kv);
   evbuffer_free(evbuf);
   streamurl_settings_unload();
@@ -249,7 +246,6 @@ streamurl_cb(void *arg)
 
   input_write(NULL, NULL, INPUT_FLAG_METADATA);
 }
-
 
 /*-------------------------------- http metadata -----------------------------*/
 
@@ -286,7 +282,6 @@ metadata_prepare(struct input_source *source)
   return 0;
 }
 
-
 /*---------------------------- Input implementation --------------------------*/
 
 // Important! If you change any of the below then consider if the change also
@@ -295,8 +290,11 @@ metadata_prepare(struct input_source *source)
 static int
 setup(struct input_source *source)
 {
-  struct transcode_decode_setup_args decode_args = { .profile = XCODE_PCM_NATIVE, .is_http = true, .len_ms = source->len_ms };
-  struct transcode_encode_setup_args encode_args = { .profile = XCODE_PCM_NATIVE, };
+  struct transcode_decode_setup_args decode_args
+      = { .profile = XCODE_PCM_NATIVE, .is_http = true, .len_ms = source->len_ms };
+  struct transcode_encode_setup_args encode_args = {
+    .profile = XCODE_PCM_NATIVE,
+  };
   struct transcode_ctx *ctx;
   char *url;
 
@@ -409,8 +407,7 @@ deinit(void)
   CHECK_ERR(L_PLAYER, pthread_mutex_destroy(&prepared_metadata.lock));
 }
 
-struct input_definition input_http =
-{
+struct input_definition input_http = {
   .name = "http",
   .type = INPUT_TYPE_HTTP,
   .disabled = 0,

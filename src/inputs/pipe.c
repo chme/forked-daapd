@@ -31,37 +31,37 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <fcntl.h>
-#include <string.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <inttypes.h>
 #include <limits.h>
 #include <pthread.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include <event2/event.h>
 #include <event2/buffer.h>
+#include <event2/event.h>
 
+#include "commands.h"
+#include "conffile.h"
+#include "db.h"
 #include "input.h"
+#include "listener.h"
+#include "logger.h"
 #include "misc.h"
 #include "misc_xml.h"
-#include "logger.h"
-#include "db.h"
-#include "conffile.h"
-#include "listener.h"
 #include "player.h"
 #include "worker.h"
-#include "commands.h"
 
 // Maximum number of pipes to watch for data
 #define PIPE_MAX_WATCH 4
@@ -75,23 +75,20 @@
 #define PIPE_TMPFILE_TEMPLATE "/tmp/" PACKAGE_NAME ".XXXXXX.ext"
 #define PIPE_TMPFILE_TEMPLATE_EXTLEN 4
 
-enum pipetype
-{
+enum pipetype {
   PIPE_PCM,
   PIPE_METADATA,
 };
 
-enum pipe_metadata_msg
-{
+enum pipe_metadata_msg {
   PIPE_METADATA_MSG_METADATA = (1 << 0),
   PIPE_METADATA_MSG_PROGRESS = (1 << 1),
-  PIPE_METADATA_MSG_VOLUME   = (1 << 2),
-  PIPE_METADATA_MSG_PICTURE  = (1 << 3),
-  PIPE_METADATA_MSG_FLUSH    = (1 << 4),
+  PIPE_METADATA_MSG_VOLUME = (1 << 2),
+  PIPE_METADATA_MSG_PICTURE = (1 << 3),
+  PIPE_METADATA_MSG_FLUSH = (1 << 4),
 };
 
-struct pipe
-{
+struct pipe {
   int id;               // The mfi id of the pipe
   int fd;               // File descriptor
   bool is_autostarted;  // We autostarted the pipe (and we will autostop)
@@ -104,8 +101,7 @@ struct pipe
 };
 
 // struct for storing the data received via a metadata pipe
-struct pipe_metadata_prepared
-{
+struct pipe_metadata_prepared {
   // Progress, artist etc goes here
   struct input_metadata input_metadata;
   // Picture (artwork) data
@@ -118,8 +114,7 @@ struct pipe_metadata_prepared
 };
 
 // Extension of struct pipe with extra fields for metadata handling
-struct pipe_metadata
-{
+struct pipe_metadata {
   // Pipe that we start watching for metadata after playback starts
   struct pipe *pipe;
   // We read metadata into this evbuffer
@@ -180,11 +175,11 @@ pipe_create(const char *path, int id, enum pipetype type, event_callback_fn cb)
   struct pipe *pipe;
 
   CHECK_NULL(L_PLAYER, pipe = calloc(1, sizeof(struct pipe)));
-  pipe->path  = strdup(path);
-  pipe->id    = id;
-  pipe->fd    = -1;
-  pipe->type  = type;
-  pipe->cb    = cb;
+  pipe->path = strdup(path);
+  pipe->id = id;
+  pipe->fd = -1;
+  pipe->type = type;
+  pipe->cb = cb;
 
   return pipe;
 }
@@ -226,7 +221,7 @@ pipe_open(const char *path, bool silent)
 
   return fd;
 
- error:
+error:
   if (fd >= 0)
     close(fd);
 
@@ -407,11 +402,12 @@ parse_progress(struct pipe_metadata_prepared *prepared, char *progress)
   m->pos_ms = (pos - start) * 1000 / pipe_sample_rate;
   m->len_ms = (end > start) ? (end - start) * 1000 / pipe_sample_rate : 0;
 
-  DPRINTF(E_DBG, L_PLAYER, "Received Shairport metadata progress: %" PRIi64 "/%" PRIi64 "/%" PRIi64 " => %d/%u ms\n", start, pos, end, m->pos_ms, m->len_ms);
+  DPRINTF(E_DBG, L_PLAYER, "Received Shairport metadata progress: %" PRIi64 "/%" PRIi64 "/%" PRIi64 " => %d/%u ms\n",
+      start, pos, end, m->pos_ms, m->len_ms);
 
   return 0;
 
- error:
+error:
   DPRINTF(E_LOG, L_PLAYER, "Received unexpected Shairport metadata progress: %s\n", progress);
   return -1;
 }
@@ -429,17 +425,18 @@ parse_volume(struct pipe_metadata_prepared *prepared, const char *volume)
   if ((errno == ERANGE) || (volume == volume_next))
     {
       DPRINTF(E_LOG, L_PLAYER, "Invalid Shairport airplay volume in string (%s): %s\n", volume,
-	      (errno == ERANGE ? strerror(errno) : "First token is not a number."));
+          (errno == ERANGE ? strerror(errno) : "First token is not a number."));
       goto error;
     }
 
   if (strcmp(volume_next, ",0.00,0.00,0.00") != 0)
     {
-      DPRINTF(E_DBG, L_PLAYER, "Not applying Shairport airplay volume while software volume control is enabled (%s)\n", volume);
+      DPRINTF(E_DBG, L_PLAYER, "Not applying Shairport airplay volume while software volume control is enabled (%s)\n",
+          volume);
       goto error; // Not strictly an error but goes through same flow
     }
 
-  if (((int) airplay_volume) == -144)
+  if (((int)airplay_volume) == -144)
     {
       DPRINTF(E_DBG, L_PLAYER, "Applying Shairport airplay volume ('mute', value: %.2f)\n", airplay_volume);
       prepared->volume = 0;
@@ -448,7 +445,8 @@ parse_volume(struct pipe_metadata_prepared *prepared, const char *volume)
     {
       local_volume = (int)(100.0 + (airplay_volume / 30.0 * 100.0));
 
-      DPRINTF(E_DBG, L_PLAYER, "Applying Shairport airplay volume (percent: %d, value: %.2f)\n", local_volume, airplay_volume);
+      DPRINTF(E_DBG, L_PLAYER, "Applying Shairport airplay volume (percent: %d, value: %.2f)\n", local_volume,
+          airplay_volume);
       prepared->volume = local_volume;
     }
   else
@@ -459,7 +457,7 @@ parse_volume(struct pipe_metadata_prepared *prepared, const char *volume)
 
   return 0;
 
- error:
+error:
   return -1;
 }
 
@@ -489,22 +487,26 @@ parse_picture(struct pipe_metadata_prepared *prepared, uint8_t *data, int data_l
       goto error;
     }
 
-  prepared->pict_tmpfile_fd = pict_tmpfile_recreate(prepared->pict_tmpfile_path, sizeof(prepared->pict_tmpfile_path), prepared->pict_tmpfile_fd, ext);
+  prepared->pict_tmpfile_fd = pict_tmpfile_recreate(
+      prepared->pict_tmpfile_path, sizeof(prepared->pict_tmpfile_path), prepared->pict_tmpfile_fd, ext);
   if (prepared->pict_tmpfile_fd < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not open tmpfile for pipe artwork '%s': %s\n", prepared->pict_tmpfile_path, strerror(errno));
+      DPRINTF(E_LOG, L_PLAYER, "Could not open tmpfile for pipe artwork '%s': %s\n", prepared->pict_tmpfile_path,
+          strerror(errno));
       goto error;
     }
 
   ret = write(prepared->pict_tmpfile_fd, data, data_len);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Error writing artwork from metadata pipe to '%s': %s\n", prepared->pict_tmpfile_path, strerror(errno));
+      DPRINTF(E_LOG, L_PLAYER, "Error writing artwork from metadata pipe to '%s': %s\n", prepared->pict_tmpfile_path,
+          strerror(errno));
       goto error;
     }
   else if (ret != data_len)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Incomplete write of artwork to '%s' (%zd/%d)\n", prepared->pict_tmpfile_path, ret, data_len);
+      DPRINTF(E_LOG, L_PLAYER, "Incomplete write of artwork to '%s' (%zd/%d)\n", prepared->pict_tmpfile_path, ret,
+          data_len);
       goto error;
     }
 
@@ -514,7 +516,7 @@ parse_picture(struct pipe_metadata_prepared *prepared, uint8_t *data, int data_l
 
   return 9;
 
- error:
+error:
   return -1;
 }
 
@@ -542,7 +544,7 @@ parse_item_xml(uint32_t *type, uint32_t *code, uint8_t **data, int *data_len, co
   xml_node *xml;
   const char *s;
 
-//  DPRINTF(E_DBG, L_PLAYER, "Got pipe metadata item: '%s'\n", item);
+  //  DPRINTF(E_DBG, L_PLAYER, "Got pipe metadata item: '%s'\n", item);
 
   xml = xml_from_string(item);
   if (!xml)
@@ -582,7 +584,7 @@ parse_item_xml(uint32_t *type, uint32_t *code, uint8_t **data, int *data_len, co
   xml_free(xml);
   return 0;
 
- error:
+error:
   xml_free(xml);
   return -1;
 }
@@ -637,7 +639,7 @@ parse_item(enum pipe_metadata_msg *out_msg, struct pipe_metadata_prepared *prepa
   else if (message == PIPE_METADATA_MSG_VOLUME)
     ret = parse_volume(prepared, (char *)data);
   else if (message == PIPE_METADATA_MSG_PICTURE)
-    ret= parse_picture(prepared, data, data_len);
+    ret = parse_picture(prepared, data, data_len);
   else if (dstptr)
     swap_pointers(dstptr, (char **)&data);
 
@@ -650,7 +652,7 @@ parse_item(enum pipe_metadata_msg *out_msg, struct pipe_metadata_prepared *prepa
   free(data);
   return 0;
 
- ignore:
+ignore:
   *out_msg = 0;
   free(data);
   return 0;
@@ -702,7 +704,6 @@ pipe_metadata_parse(enum pipe_metadata_msg *out_msg, struct pipe_metadata_prepar
 
   return 0;
 }
-
 
 /* ------------------------------ PIPE WATCHING ----------------------------- */
 /*                                 Thread: pipe                               */
@@ -822,7 +823,6 @@ pipe_thread_run(void *arg)
   pthread_exit(NULL);
 }
 
-
 /* --------------------------- METADATA PIPE HANDLING ----------------------- */
 /*                                Thread: worker                              */
 
@@ -868,7 +868,8 @@ pipe_metadata_read_cb(evutil_socket_t fd, short event, void *arg)
   len = evbuffer_get_length(pipe_metadata.evbuf);
   if (len > PIPE_METADATA_BUFLEN_MAX)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Buffer for metadata pipe '%s' is full, discarding %zu bytes\n", pipe_metadata.pipe->path, len);
+      DPRINTF(E_LOG, L_PLAYER, "Buffer for metadata pipe '%s' is full, discarding %zu bytes\n",
+          pipe_metadata.pipe->path, len);
       evbuffer_drain(pipe_metadata.evbuf, len);
       goto readd;
     }
@@ -881,7 +882,8 @@ pipe_metadata_read_cb(evutil_socket_t fd, short event, void *arg)
   pthread_mutex_unlock(&pipe_metadata.prepared.lock);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Error parsing incoming data on metadata pipe '%s', will stop reading\n", pipe_metadata.pipe->path);
+      DPRINTF(E_LOG, L_PLAYER, "Error parsing incoming data on metadata pipe '%s', will stop reading\n",
+          pipe_metadata.pipe->path);
       pipe_metadata_watch_del(NULL);
       return;
     }
@@ -893,7 +895,7 @@ pipe_metadata_read_cb(evutil_socket_t fd, short event, void *arg)
   if (message & PIPE_METADATA_MSG_FLUSH)
     player_playback_flush();
 
- readd:
+readd:
   if (pipe_metadata.pipe && pipe_metadata.pipe->ev)
     event_add(pipe_metadata.pipe->ev, NULL);
 }
@@ -923,7 +925,6 @@ pipe_metadata_watch_add(void *arg)
       return;
     }
 }
-
 
 /* ----------------------- PIPE WATCH THREAD START/STOP --------------------- */
 /*                             Thread: filescanner                            */
@@ -1020,7 +1021,6 @@ pipe_listener_cb(short event_mask)
 
   commands_exec_async(cmdbase, pipe_watch_update, cmdarg);
 }
-
 
 /* --------------------------- PIPE INPUT INTERFACE ------------------------- */
 /*                                Thread: input                               */
@@ -1179,8 +1179,7 @@ deinit(void)
   CHECK_ERR(L_PLAYER, pthread_mutex_destroy(&pipe_metadata.prepared.lock));
 }
 
-struct input_definition input_pipe =
-{
+struct input_definition input_pipe = {
   .name = "pipe",
   .type = INPUT_TYPE_PIPE,
   .disabled = 0,

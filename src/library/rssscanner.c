@@ -18,19 +18,19 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdio.h>
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <sys/types.h>
 #include <unistd.h>
-#include <errno.h>
 
 // For strptime()
 #ifndef _XOPEN_SOURCE
@@ -41,14 +41,14 @@
 #include <event2/buffer.h>
 
 #include "conffile.h"
-#include "logger.h"
 #include "db.h"
 #include "http.h"
+#include "library.h"
+#include "library/filescanner.h"
+#include "logger.h"
 #include "misc.h"
 #include "misc_json.h"
 #include "misc_xml.h"
-#include "library.h"
-#include "library/filescanner.h"
 
 #define APPLE_PODCASTS_SERVER "https://podcasts.apple.com/"
 #define APPLE_ITUNES_SERVER "https://itunes.apple.com/"
@@ -226,7 +226,7 @@ playlist_fetch(bool *is_new, const char *path)
   *is_new = true;
   return pli;
 
- error:
+error:
   DPRINTF(E_LOG, L_SCAN, "Error adding playlist for RSS feed '%s'\n", path);
   free_pli(pli, 0);
   return NULL;
@@ -258,13 +258,14 @@ rss_xml_get(const char *url)
   ret = http_client_request(&ctx, NULL);
   if (ret < 0 || ctx.response_code != HTTP_OK)
     {
-      DPRINTF(E_LOG, L_LIB, "Failed to fetch RSS from '%s' (return %d, error code %d)\n", ctx.url, ret, ctx.response_code);
+      DPRINTF(
+          E_LOG, L_LIB, "Failed to fetch RSS from '%s' (return %d, error code %d)\n", ctx.url, ret, ctx.response_code);
       goto cleanup;
     }
 
   evbuffer_add(ctx.input_body, "", 1);
 
-  raw = (const char*)evbuffer_pullup(ctx.input_body, -1);
+  raw = (const char *)evbuffer_pullup(ctx.input_body, -1);
 
   xml = xml_from_string(raw);
   if (!xml)
@@ -273,7 +274,7 @@ rss_xml_get(const char *url)
       goto cleanup;
     }
 
- cleanup:
+cleanup:
   evbuffer_free(ctx.input_body);
   free(feedurl);
   return xml;
@@ -307,19 +308,20 @@ ri_from_item(struct rss_item_info *ri, xml_node *item)
 {
   memset(ri, 0, sizeof(struct rss_item_info));
 
-  ri->title   = xml_get_val(item, "title");
+  ri->title = xml_get_val(item, "title");
   ri->pubdate = xml_get_val(item, "pubDate");
-  ri->link    = xml_get_val(item, "link");
+  ri->link = xml_get_val(item, "link");
 
-  ri->url     = xml_get_attr(item, "enclosure", "url");
-  ri->type    = xml_get_attr(item, "enclosure", "type");
+  ri->url = xml_get_attr(item, "enclosure", "url");
+  ri->type = xml_get_attr(item, "enclosure", "type");
 }
 
 // The RSS spec states:
 //    Elements of <item>
 //    .... All elements of an item are optional, however at least one of title or description must be present
 static void
-mfi_metadata_fixup(struct media_file_info *mfi, struct rss_item_info *ri, const char *feed_title, const char *feed_author, uint32_t time_added)
+mfi_metadata_fixup(struct media_file_info *mfi, struct rss_item_info *ri, const char *feed_title,
+    const char *feed_author, uint32_t time_added)
 {
   struct tm tm;
 
@@ -327,17 +329,17 @@ mfi_metadata_fixup(struct media_file_info *mfi, struct rss_item_info *ri, const 
   free(mfi->artist);
   mfi->artist = safe_strdup(feed_author);
   free(mfi->album);
-  mfi->album  = safe_strdup(feed_title);
+  mfi->album = safe_strdup(feed_title);
 
   // Some podcasts (Apple) can use mp4 streams which tend not to have decent tags so
   // in those cases take info from the RSS and not the stream
   if (!mfi->url)
-    mfi->url    = safe_strdup(ri->link);
+    mfi->url = safe_strdup(ri->link);
 
   if (mfi->genre && strcmp("(186)Podcast", mfi->genre) == 0)
     {
       free(mfi->genre);
-      mfi->genre  = strdup("Podcast");
+      mfi->genre = strdup("Podcast");
     }
 
   // The title from the xml is usually better quality
@@ -408,7 +410,8 @@ rss_save(struct playlist_info *pli, int *count, enum rss_scan_type scan_type)
   *count = 0;
   db_transaction_begin();
   db_pl_clear_items(pli->id);
-  for (item = xml_get_node(xml, "rss/channel/item"); item && (*count < pli->query_limit); item = xml_get_next(xml, item))
+  for (item = xml_get_node(xml, "rss/channel/item"); item && (*count < pli->query_limit);
+       item = xml_get_next(xml, item))
     {
       if (library_is_exiting())
 	{
@@ -420,11 +423,13 @@ rss_save(struct playlist_info *pli, int *count, enum rss_scan_type scan_type)
       ri_from_item(&ri, item);
       if (!ri.url)
 	{
-	  DPRINTF(E_WARN, L_LIB, "Missing URL for item '%s' (date %s) in RSS feed '%s'\n", ri.title, ri.pubdate, feed_title);
+	  DPRINTF(E_WARN, L_LIB, "Missing URL for item '%s' (date %s) in RSS feed '%s'\n", ri.title, ri.pubdate,
+	      feed_title);
 	  continue;
 	}
 
-      DPRINTF(E_DBG, L_LIB, "RSS/xml item: title '%s' pubdate: '%s' link: '%s' url: '%s' type: '%s'\n", ri.title, ri.pubdate, ri.link, ri.url, ri.type);
+      DPRINTF(E_DBG, L_LIB, "RSS/xml item: title '%s' pubdate: '%s' link: '%s' url: '%s' type: '%s'\n", ri.title,
+          ri.pubdate, ri.link, ri.url, ri.type);
 
       db_pl_add_item_bypath(pli->id, ri.url);
       (*count)++;
@@ -493,7 +498,7 @@ rss_scan(const char *path, enum rss_scan_type scan_type)
   free_pli(pli, 0);
   return 0;
 
- error:
+error:
   if (pl_is_new)
     db_pl_delete(pli->id);
   free_pli(pli, 0);
@@ -598,8 +603,7 @@ rss_add(const char *path)
   return LIBRARY_OK;
 }
 
-struct library_source rssscanner =
-{
+struct library_source rssscanner = {
   .scan_kind = SCAN_KIND_RSS,
   .disabled = 0,
   .initscan = rss_rescan,

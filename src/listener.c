@@ -18,13 +18,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "listener.h"
 
-struct listener
-{
+struct listener {
   notify notify_cb;
   short events;
   struct listener *next;
@@ -37,7 +36,7 @@ listener_add(notify notify_cb, short events)
 {
   struct listener *listener;
 
-  listener = (struct listener*)malloc(sizeof(struct listener));
+  listener = (struct listener *)malloc(sizeof(struct listener));
   if (!listener)
     {
       return -1;

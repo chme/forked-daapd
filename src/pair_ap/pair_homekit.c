@@ -34,10 +34,10 @@
  *
  */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 
 #include <assert.h>
 
@@ -45,7 +45,6 @@
 
 #include "pair-internal.h"
 #include "pair-tlv.h"
-
 
 /* ----------------------------- DEFINES ETC ------------------------------- */
 
@@ -57,8 +56,7 @@
 
 // #define DEBUG_SHORT_A 1
 
-enum pair_keys
-{
+enum pair_keys {
   PAIR_SETUP_MSG01 = 0,
   PAIR_SETUP_MSG02,
   PAIR_SETUP_MSG03,
@@ -77,52 +75,50 @@ enum pair_keys
   PAIR_EVENTS_READ,
 };
 
-struct pair_keys_map
-{
+struct pair_keys_map {
   uint8_t state;
   const char *salt;
   const char *info;
   const char nonce[8];
 };
 
-static struct pair_keys_map pair_keys_map[] =
-{
+static struct pair_keys_map pair_keys_map[] = {
   // Used for /pair-setup
-  { 0x01, NULL, NULL, "" },
-  { 0x02, NULL, NULL, "" },
-  { 0x03, NULL, NULL, "" },
-  { 0x04, NULL, NULL, "" },
-  { 0x05, "Pair-Setup-Encrypt-Salt", "Pair-Setup-Encrypt-Info", "PS-Msg05" },
-  { 0x06, "Pair-Setup-Encrypt-Salt", "Pair-Setup-Encrypt-Info", "PS-Msg06" },
-  { 0, "Pair-Setup-Controller-Sign-Salt", "Pair-Setup-Controller-Sign-Info", "" },
-  { 0, "Pair-Setup-Accessory-Sign-Salt", "Pair-Setup-Accessory-Sign-Info", "" },
+  { 0x01, NULL,                              NULL,                              ""         },
+  { 0x02, NULL,                              NULL,                              ""         },
+  { 0x03, NULL,                              NULL,                              ""         },
+  { 0x04, NULL,                              NULL,                              ""         },
+  { 0x05, "Pair-Setup-Encrypt-Salt",         "Pair-Setup-Encrypt-Info",         "PS-Msg05" },
+  { 0x06, "Pair-Setup-Encrypt-Salt",         "Pair-Setup-Encrypt-Info",         "PS-Msg06" },
+  { 0,    "Pair-Setup-Controller-Sign-Salt", "Pair-Setup-Controller-Sign-Info", ""         },
+  { 0,    "Pair-Setup-Accessory-Sign-Salt",  "Pair-Setup-Accessory-Sign-Info",  ""         },
 
   // Used for /pair-verify
-  { 0x01, NULL, NULL, "" },
-  { 0x02, "Pair-Verify-Encrypt-Salt", "Pair-Verify-Encrypt-Info", "PV-Msg02" },
-  { 0x03, "Pair-Verify-Encrypt-Salt", "Pair-Verify-Encrypt-Info", "PV-Msg03" },
-  { 0x04, NULL, NULL, "" },
+  { 0x01, NULL,                              NULL,                              ""         },
+  { 0x02, "Pair-Verify-Encrypt-Salt",        "Pair-Verify-Encrypt-Info",        "PV-Msg02" },
+  { 0x03, "Pair-Verify-Encrypt-Salt",        "Pair-Verify-Encrypt-Info",        "PV-Msg03" },
+  { 0x04, NULL,                              NULL,                              ""         },
 
   // Encryption/decryption of control channel
-  { 0, "Control-Salt", "Control-Write-Encryption-Key", "" },
-  { 0, "Control-Salt", "Control-Read-Encryption-Key", "" },
+  { 0,    "Control-Salt",                    "Control-Write-Encryption-Key",    ""         },
+  { 0,    "Control-Salt",                    "Control-Read-Encryption-Key",     ""         },
 
   // Encryption/decryption of event channel
-  { 0, "Events-Salt", "Events-Write-Encryption-Key", "" },
-  { 0, "Events-Salt", "Events-Read-Encryption-Key", "" },
+  { 0,    "Events-Salt",                     "Events-Write-Encryption-Key",     ""         },
+  { 0,    "Events-Salt",                     "Events-Read-Encryption-Key",      ""         },
 };
 
 enum pair_method {
-  PairingMethodPairSetup          = 0x00,
-  PairingMethodPairSetupWithAuth  = 0x01,
-  PairingMethodPairVerify         = 0x02,
-  PairingMethodAddPairing         = 0x03,
-  PairingMethodRemovePairing      = 0x04,
-  PairingMethodListPairings       = 0x05
+  PairingMethodPairSetup = 0x00,
+  PairingMethodPairSetupWithAuth = 0x01,
+  PairingMethodPairVerify = 0x02,
+  PairingMethodAddPairing = 0x03,
+  PairingMethodRemovePairing = 0x04,
+  PairingMethodListPairings = 0x05
 };
 
 enum pair_flags {
-  PairingFlagsTransient           = 0x10,
+  PairingFlagsTransient = 0x10,
 };
 
 // Forwards
@@ -130,107 +126,89 @@ const struct pair_definition pair_client_homekit_normal;
 const struct pair_definition pair_client_homekit_transient;
 const struct pair_definition pair_server_homekit;
 
-
 /* ---------------------------------- SRP ----------------------------------- */
 
-typedef enum
-{
-  SRP_NG_2048,
-  SRP_NG_3072,
-  SRP_NG_CUSTOM
-} SRP_NGType;
+typedef enum { SRP_NG_2048, SRP_NG_3072, SRP_NG_CUSTOM } SRP_NGType;
 
-typedef struct
-{
+typedef struct {
   int N_len;
   bnum N;
   bnum g;
 } NGConstant;
 
-struct SRPUser
-{
-  enum hash_alg     alg;
-  NGConstant        *ng;
+struct SRPUser {
+  enum hash_alg alg;
+  NGConstant *ng;
 
   bnum a;
   bnum A;
   bnum S;
 
   const unsigned char *bytes_A;
-  int           authenticated;
+  int authenticated;
 
-  char          *username;
+  char *username;
   unsigned char *password;
-  int           password_len;
+  int password_len;
 
-  unsigned char M           [SHA512_DIGEST_LENGTH];
-  unsigned char H_AMK       [SHA512_DIGEST_LENGTH];
-  unsigned char session_key [SHA512_DIGEST_LENGTH];
-  int           session_key_len;
+  unsigned char M[SHA512_DIGEST_LENGTH];
+  unsigned char H_AMK[SHA512_DIGEST_LENGTH];
+  unsigned char session_key[SHA512_DIGEST_LENGTH];
+  int session_key_len;
 };
 
-struct SRPVerifier
-{
-  enum hash_alg     alg;
-  NGConstant        *ng;
+struct SRPVerifier {
+  enum hash_alg alg;
+  NGConstant *ng;
 
   const unsigned char *bytes_B;
-  int           authenticated;
+  int authenticated;
 
-  char          *username;
+  char *username;
 
-  unsigned char M           [SHA512_DIGEST_LENGTH];
-  unsigned char H_AMK       [SHA512_DIGEST_LENGTH];
-  unsigned char session_key [SHA512_DIGEST_LENGTH];
-  int           session_key_len;
+  unsigned char M[SHA512_DIGEST_LENGTH];
+  unsigned char H_AMK[SHA512_DIGEST_LENGTH];
+  unsigned char session_key[SHA512_DIGEST_LENGTH];
+  int session_key_len;
 };
 
-struct NGHex
-{
+struct NGHex {
   int N_len;
   const char *n_hex;
   const char *g_hex;
 };
 
 // These constants here were pulled from Appendix A of RFC 5054
-static struct NGHex global_Ng_constants[] =
-{
+static struct NGHex global_Ng_constants[] = {
   { /* 2048 */
-    256,
-    "AC6BDB41324A9A9BF166DE5E1389582FAF72B6651987EE07FC3192943DB56050A37329CBB4"
-    "A099ED8193E0757767A13DD52312AB4B03310DCD7F48A9DA04FD50E8083969EDB767B0CF60"
-    "95179A163AB3661A05FBD5FAAAE82918A9962F0B93B855F97993EC975EEAA80D740ADBF4FF"
-    "747359D041D5C33EA71D281E446B14773BCA97B43A23FB801676BD207A436C6481F1D2B907"
-    "8717461A5B9D32E688F87748544523B524B0D57D5EA77A2775D2ECFA032CFBDBF52FB37861"
-    "60279004E57AE6AF874E7303CE53299CCC041C7BC308D82A5698F3A8D0C38271AE35F8E9DB"
-    "FBB694B5C803D89F7AE435DE236D525F54759B65E372FCD68EF20FA7111F9E4AFF73",
-    "2"
-  },
+      256, "AC6BDB41324A9A9BF166DE5E1389582FAF72B6651987EE07FC3192943DB56050A37329CBB4"
+      "A099ED8193E0757767A13DD52312AB4B03310DCD7F48A9DA04FD50E8083969EDB767B0CF60"
+      "95179A163AB3661A05FBD5FAAAE82918A9962F0B93B855F97993EC975EEAA80D740ADBF4FF"
+      "747359D041D5C33EA71D281E446B14773BCA97B43A23FB801676BD207A436C6481F1D2B907"
+      "8717461A5B9D32E688F87748544523B524B0D57D5EA77A2775D2ECFA032CFBDBF52FB37861"
+      "60279004E57AE6AF874E7303CE53299CCC041C7BC308D82A5698F3A8D0C38271AE35F8E9DB"
+      "FBB694B5C803D89F7AE435DE236D525F54759B65E372FCD68EF20FA7111F9E4AFF73", "2" },
   { /* 3072 */
-    384,
-    "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B"
-    "139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485"
-    "B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1F"
-    "E649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23"
-    "DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32"
-    "905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF69558"
-    "17183995497CEA956AE515D2261898FA051015728E5A8AAAC42DAD33170D04507A33A85521"
-    "ABDF1CBA64ECFB850458DBEF0A8AEA71575D060C7DB3970F85A6E1E4C7ABF5AE8CDB0933D7"
-    "1E8C94E04A25619DCEE3D2261AD2EE6BF12FFA06D98A0864D87602733EC86A64521F2B1817"
-    "7B200CBBE117577A615D6C770988C0BAD946E208E24FA074E5AB3143DB5BFCE0FD108E4B82"
-    "D120A93AD2CAFFFFFFFFFFFFFFFF",
-    "5"
-  },
-  {0} /* null sentinel */
+      384, "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B"
+      "139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485"
+      "B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1F"
+      "E649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23"
+      "DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32"
+      "905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF69558"
+      "17183995497CEA956AE515D2261898FA051015728E5A8AAAC42DAD33170D04507A33A85521"
+      "ABDF1CBA64ECFB850458DBEF0A8AEA71575D060C7DB3970F85A6E1E4C7ABF5AE8CDB0933D7"
+      "1E8C94E04A25619DCEE3D2261AD2EE6BF12FFA06D98A0864D87602733EC86A64521F2B1817"
+      "7B200CBBE117577A615D6C770988C0BAD946E208E24FA074E5AB3143DB5BFCE0FD108E4B82"
+      "D120A93AD2CAFFFFFFFFFFFFFFFF", "5" },
+  { 0 }  /* null sentinel */
 };
-
 
 static NGConstant *
 new_ng(SRP_NGType ng_type, const char *n_hex, const char *g_hex)
 {
   NGConstant *ng = calloc(1, sizeof(NGConstant));
 
-  if ( ng_type != SRP_NG_CUSTOM )
+  if (ng_type != SRP_NG_CUSTOM)
     {
       n_hex = global_Ng_constants[ng_type].n_hex;
       g_hex = global_Ng_constants[ng_type].g_hex;
@@ -247,7 +225,7 @@ new_ng(SRP_NGType ng_type, const char *n_hex, const char *g_hex)
 }
 
 static void
-free_ng(NGConstant * ng)
+free_ng(NGConstant *ng)
 {
   if (!ng)
     return;
@@ -270,78 +248,78 @@ static bnum
 calculate_x(enum hash_alg alg, const bnum salt, const char *username, const unsigned char *password, int password_len)
 {
   unsigned char ucp_hash[SHA512_DIGEST_LENGTH];
-  HashCTX       ctx;
+  HashCTX ctx;
 
-  hash_init( alg, &ctx );
-  hash_update( alg, &ctx, username, strlen(username) );
-  hash_update( alg, &ctx, ":", 1 );
-  hash_update( alg, &ctx, password, password_len );
-  hash_final( alg, &ctx, ucp_hash );
+  hash_init(alg, &ctx);
+  hash_update(alg, &ctx, username, strlen(username));
+  hash_update(alg, &ctx, ":", 1);
+  hash_update(alg, &ctx, password, password_len);
+  hash_final(alg, &ctx, ucp_hash);
 
-  return H_ns( alg, salt, ucp_hash, hash_length(alg) );
+  return H_ns(alg, salt, ucp_hash, hash_length(alg));
 }
 
 static void
-calculate_M(enum hash_alg alg, NGConstant *ng, unsigned char *dest, const char *I, const bnum s,
-            const bnum A, const bnum B, const unsigned char *K, int K_len)
+calculate_M(enum hash_alg alg, NGConstant *ng, unsigned char *dest, const char *I, const bnum s, const bnum A,
+    const bnum B, const unsigned char *K, int K_len)
 {
-  unsigned char H_N[ SHA512_DIGEST_LENGTH ];
-  unsigned char H_g[ SHA512_DIGEST_LENGTH ];
-  unsigned char H_I[ SHA512_DIGEST_LENGTH ];
-  unsigned char H_xor[ SHA512_DIGEST_LENGTH ];
-  HashCTX       ctx;
-  int           i = 0;
-  int           hash_len = hash_length(alg);
+  unsigned char H_N[SHA512_DIGEST_LENGTH];
+  unsigned char H_g[SHA512_DIGEST_LENGTH];
+  unsigned char H_I[SHA512_DIGEST_LENGTH];
+  unsigned char H_xor[SHA512_DIGEST_LENGTH];
+  HashCTX ctx;
+  int i = 0;
+  int hash_len = hash_length(alg);
 
-  hash_num( alg, ng->N, H_N );
-  hash_num( alg, ng->g, H_g );
+  hash_num(alg, ng->N, H_N);
+  hash_num(alg, ng->g, H_g);
 
   hash(alg, (const unsigned char *)I, strlen(I), H_I);
 
-  for (i=0; i < hash_len; i++ )
+  for (i = 0; i < hash_len; i++)
     H_xor[i] = H_N[i] ^ H_g[i];
-    
-  hash_init( alg, &ctx );
 
-  hash_update( alg, &ctx, H_xor, hash_len );
-  hash_update( alg, &ctx, H_I,   hash_len );
-  update_hash_n( alg, &ctx, s );
-  update_hash_n( alg, &ctx, A );
-  update_hash_n( alg, &ctx, B );
-  hash_update( alg, &ctx, K, K_len );
+  hash_init(alg, &ctx);
 
-  hash_final( alg, &ctx, dest );
+  hash_update(alg, &ctx, H_xor, hash_len);
+  hash_update(alg, &ctx, H_I, hash_len);
+  update_hash_n(alg, &ctx, s);
+  update_hash_n(alg, &ctx, A);
+  update_hash_n(alg, &ctx, B);
+  hash_update(alg, &ctx, K, K_len);
+
+  hash_final(alg, &ctx, dest);
 }
 
 static void
-calculate_H_AMK(enum hash_alg alg, unsigned char *dest, const bnum A, const unsigned char * M, const unsigned char * K, int K_len)
+calculate_H_AMK(
+    enum hash_alg alg, unsigned char *dest, const bnum A, const unsigned char *M, const unsigned char *K, int K_len)
 {
   HashCTX ctx;
 
-  hash_init( alg, &ctx );
+  hash_init(alg, &ctx);
 
-  update_hash_n( alg, &ctx, A );
-  hash_update( alg, &ctx, M, hash_length(alg) );
-  hash_update( alg, &ctx, K, K_len );
+  update_hash_n(alg, &ctx, A);
+  hash_update(alg, &ctx, M, hash_length(alg));
+  hash_update(alg, &ctx, K, K_len);
 
-  hash_final( alg, &ctx, dest );
+  hash_final(alg, &ctx, dest);
 }
 
 /* ----------------------- SRP for the client side -------------------------- */
 
 static struct SRPUser *
-srp_user_new(enum hash_alg alg, SRP_NGType ng_type, const char *username,
-             const unsigned char *bytes_password, int len_password,
-             const char *n_hex, const char *g_hex)
+srp_user_new(enum hash_alg alg, SRP_NGType ng_type, const char *username, const unsigned char *bytes_password,
+    int len_password, const char *n_hex, const char *g_hex)
 {
-  struct SRPUser  *usr  = calloc(1, sizeof(struct SRPUser));
-  int              ulen = strlen(username) + 1;
+  struct SRPUser *usr = calloc(1, sizeof(struct SRPUser));
+  int ulen = strlen(username) + 1;
 
   if (!usr)
     goto err_exit;
 
   usr->alg = alg;
-  usr->ng  = new_ng( ng_type, n_hex, g_hex );
+  usr->ng = new_ng(ng_type, n_hex, g_hex);
 
   bnum_new(usr->a);
   bnum_new(usr->A);
@@ -350,14 +328,14 @@ srp_user_new(enum hash_alg alg, SRP_NGType ng_type, const char *username,
   if (!usr->ng || !usr->a || !usr->A || !usr->S)
     goto err_exit;
 
-  usr->username     = malloc(ulen);
-  usr->password     = malloc(len_password);
+  usr->username = malloc(ulen);
+  usr->password = malloc(len_password);
   usr->password_len = len_password;
 
   if (!usr->username || !usr->password)
     goto err_exit;
 
-  memcpy(usr->username, username,       ulen);
+  memcpy(usr->username, username, ulen);
   memcpy(usr->password, bytes_password, len_password);
 
   usr->authenticated = 0;
@@ -365,7 +343,7 @@ srp_user_new(enum hash_alg alg, SRP_NGType ng_type, const char *username,
 
   return usr;
 
- err_exit:
+err_exit:
   if (!usr)
     return NULL;
 
@@ -387,7 +365,7 @@ srp_user_new(enum hash_alg alg, SRP_NGType ng_type, const char *username,
 static void
 srp_user_free(struct SRPUser *usr)
 {
-  if(!usr)
+  if (!usr)
     return;
 
   bnum_free(usr->a);
@@ -423,17 +401,46 @@ srp_user_get_session_key(struct SRPUser *usr, int *key_length)
 #ifdef DEBUG_SHORT_A
 // This value of "a" will yield a 383 byte A
 static uint8_t short_a[] = {
- 0xef, 0xb5, 0x93, 0xf5, 0x03, 0x97, 0x69, 0x8e, 0x15, 0xed, 0xee, 0x5b, 0xf2, 0xf9, 0x23, 0x6c,
- 0xf0, 0x59, 0x6c, 0xe2, 0x77, 0xf2, 0x14, 0x16, 0xac, 0x99, 0xfa, 0x31, 0xae, 0x2b, 0xd3, 0x41,
+  0xef,
+  0xb5,
+  0x93,
+  0xf5,
+  0x03,
+  0x97,
+  0x69,
+  0x8e,
+  0x15,
+  0xed,
+  0xee,
+  0x5b,
+  0xf2,
+  0xf9,
+  0x23,
+  0x6c,
+  0xf0,
+  0x59,
+  0x6c,
+  0xe2,
+  0x77,
+  0xf2,
+  0x14,
+  0x16,
+  0xac,
+  0x99,
+  0xfa,
+  0x31,
+  0xae,
+  0x2b,
+  0xd3,
+  0x41,
 };
 #endif
 
 /* Output: username, bytes_A, len_A */
 static void
-srp_user_start_authentication(struct SRPUser *usr, const char **username,
-                              const unsigned char **bytes_A, int *len_A)
+srp_user_start_authentication(struct SRPUser *usr, const char **username, const unsigned char **bytes_A, int *len_A)
 {
-//  BN_hex2bn(&(usr->a), "D929DFB605687233C9E9030C2280156D03BDB9FDCF3CCE3BC27D9CCFCB5FF6A1");
+  //  BN_hex2bn(&(usr->a), "D929DFB605687233C9E9030C2280156D03BDB9FDCF3CCE3BC27D9CCFCB5FF6A1");
   bnum_random(usr->a, 256);
 #ifdef DEBUG_SHORT_A
   bnum_bin2bn(usr->a, short_a, sizeof(short_a));
@@ -443,8 +450,8 @@ srp_user_start_authentication(struct SRPUser *usr, const char **username,
 #endif
 
   bnum_modexp(usr->A, usr->ng->g, usr->a, usr->ng->N);
-    
-  *len_A   = bnum_num_bytes(usr->A);
+
+  *len_A = bnum_num_bytes(usr->A);
   *bytes_A = malloc(*len_A);
 
   if (!*bytes_A)
@@ -455,7 +462,7 @@ srp_user_start_authentication(struct SRPUser *usr, const char **username,
       return;
     }
 
-  bnum_bn2bin(usr->A, (unsigned char *) *bytes_A, *len_A);
+  bnum_bn2bin(usr->A, (unsigned char *)*bytes_A, *len_A);
 
   usr->bytes_A = *bytes_A;
   *username = usr->username;
@@ -463,9 +470,8 @@ srp_user_start_authentication(struct SRPUser *usr, const char **username,
 
 /* Output: bytes_M. Buffer length is SHA512_DIGEST_LENGTH */
 static void
-srp_user_process_challenge(struct SRPUser *usr, const unsigned char *bytes_s, int len_s,
-                           const unsigned char *bytes_B, int len_B,
-                           const unsigned char **bytes_M, int *len_M )
+srp_user_process_challenge(struct SRPUser *usr, const unsigned char *bytes_s, int len_s, const unsigned char *bytes_B,
+    int len_B, const unsigned char **bytes_M, int *len_M)
 {
   bnum s, B, k, v;
   bnum tmp1, tmp2, tmp3;
@@ -499,10 +505,10 @@ srp_user_process_challenge(struct SRPUser *usr, const unsigned char *bytes_s, in
 
       // S = (B - k*(g^x)) ^ (a + ux)
       bnum_mul(tmp1, u, x);
-      bnum_add(tmp2, usr->a, tmp1);        // tmp2 = (a + ux)
+      bnum_add(tmp2, usr->a, tmp1); // tmp2 = (a + ux)
       bnum_modexp(tmp1, usr->ng->g, x, usr->ng->N);
-      bnum_mul(tmp3, k, tmp1);             // tmp3 = k*(g^x)
-      bnum_sub(tmp1, B, tmp3);             // tmp1 = (B - K*(g^x))
+      bnum_mul(tmp3, k, tmp1); // tmp3 = k*(g^x)
+      bnum_sub(tmp1, B, tmp3); // tmp1 = (B - K*(g^x))
       bnum_modexp(usr->S, tmp1, tmp2, usr->ng->N);
 
       hash_num(usr->alg, usr->S, usr->session_key);
@@ -515,10 +521,10 @@ srp_user_process_challenge(struct SRPUser *usr, const unsigned char *bytes_s, in
       *len_M = hash_length(usr->alg);
     }
 
- cleanup2:
+cleanup2:
   bnum_free(x);
   bnum_free(u);
- cleanup1:
+cleanup1:
   bnum_free(tmp3);
   bnum_free(tmp2);
   bnum_free(tmp1);
@@ -535,16 +541,12 @@ srp_user_verify_session(struct SRPUser *usr, const unsigned char *bytes_HAMK)
     usr->authenticated = 1;
 }
 
-
 /* ----------------------- SRP for the server side -------------------------- */
 
 static int
-srp_create_salted_verification_key(enum hash_alg alg,
-                                   SRP_NGType ng_type, const char *username,
-                                   const unsigned char *password, int len_password,
-                                   unsigned char **bytes_s, int *len_s, 
-                                   unsigned char **bytes_v, int *len_v,
-                                   const char *n_hex, const char *g_hex )
+srp_create_salted_verification_key(enum hash_alg alg, SRP_NGType ng_type, const char *username,
+    const unsigned char *password, int len_password, unsigned char **bytes_s, int *len_s, unsigned char **bytes_v,
+    int *len_v, const char *n_hex, const char *g_hex)
 {
   bnum s, v, x;
   NGConstant *ng;
@@ -580,8 +582,8 @@ srp_create_salted_verification_key(enum hash_alg alg,
   if (!(*bytes_s) || !(*bytes_v))
     goto error;
 
-  bnum_bn2bin(s, (unsigned char *) *bytes_s, *len_s);
-  bnum_bn2bin(v, (unsigned char *) *bytes_v, *len_v);
+  bnum_bn2bin(s, (unsigned char *)*bytes_s, *len_s);
+  bnum_bn2bin(v, (unsigned char *)*bytes_v, *len_v);
 
   free_ng(ng);
   bnum_free(s);
@@ -589,7 +591,7 @@ srp_create_salted_verification_key(enum hash_alg alg,
   bnum_free(x);
   return 0;
 
- error:
+error:
   free(*bytes_s);
   free(*bytes_v);
   free_ng(ng);
@@ -600,11 +602,8 @@ srp_create_salted_verification_key(enum hash_alg alg,
 }
 
 static int
-srp_verifier_start_authentication(enum hash_alg alg, SRP_NGType ng_type,
-                                  const unsigned char *bytes_v, int len_v,
-                                  unsigned char **bytes_b, int *len_b,
-                                  unsigned char **bytes_B, int *len_B,
-                                  const char *n_hex, const char *g_hex)
+srp_verifier_start_authentication(enum hash_alg alg, SRP_NGType ng_type, const unsigned char *bytes_v, int len_v,
+    unsigned char **bytes_b, int *len_b, unsigned char **bytes_B, int *len_B, const char *n_hex, const char *g_hex)
 {
   bnum v, k, b, B, tmp1, tmp2;
   NGConstant *ng;
@@ -616,9 +615,9 @@ srp_verifier_start_authentication(enum hash_alg alg, SRP_NGType ng_type,
   bnum_new(tmp1);
   bnum_new(tmp2);
 
-  *len_b   = 0;
+  *len_b = 0;
   *bytes_b = NULL;
-  *len_B   = 0;
+  *len_B = 0;
   *bytes_B = NULL;
 
   ng = new_ng(ng_type, n_hex, g_hex);
@@ -650,8 +649,8 @@ srp_verifier_start_authentication(enum hash_alg alg, SRP_NGType ng_type,
   if (!(*bytes_B) || !(*bytes_b))
     goto error;
 
-  bnum_bn2bin(B, (unsigned char *) *bytes_B, *len_B);
-  bnum_bn2bin(b, (unsigned char *) *bytes_b, *len_b);
+  bnum_bn2bin(B, (unsigned char *)*bytes_B, *len_B);
+  bnum_bn2bin(b, (unsigned char *)*bytes_b, *len_b);
 
   bnum_free(b);
   bnum_free(B);
@@ -662,7 +661,7 @@ srp_verifier_start_authentication(enum hash_alg alg, SRP_NGType ng_type,
   free_ng(ng);
   return 0;
 
- error:
+error:
   free(*bytes_B);
   free(*bytes_b);
   bnum_free(b);
@@ -690,13 +689,9 @@ srp_verifier_free(struct SRPVerifier *ver)
 }
 
 static struct SRPVerifier *
-srp_verifier_new(enum hash_alg alg, SRP_NGType ng_type, const char *username,
-                 const unsigned char *bytes_s, int len_s,
-                 const unsigned char *bytes_v, int len_v,
-                 const unsigned char *bytes_A, int len_A,
-                 const unsigned char *bytes_b, int len_b,
-                 const unsigned char *bytes_B, int len_B,
-                 const char *n_hex, const char *g_hex )
+srp_verifier_new(enum hash_alg alg, SRP_NGType ng_type, const char *username, const unsigned char *bytes_s, int len_s,
+    const unsigned char *bytes_v, int len_v, const unsigned char *bytes_A, int len_A, const unsigned char *bytes_b,
+    int len_b, const unsigned char *bytes_B, int len_B, const char *n_hex, const char *g_hex)
 {
   struct SRPVerifier *ver = NULL;
   bnum s, v, A, b, B, S, tmp1, tmp2, u, k;
@@ -726,7 +721,7 @@ srp_verifier_new(enum hash_alg alg, SRP_NGType ng_type, const char *username,
   ulen = strlen(username) + 1;
 
   ver->alg = alg;
-  ver->ng  = ng;
+  ver->ng = ng;
 
   ver->username = malloc(ulen);
   if (!ver->username)
@@ -742,7 +737,7 @@ srp_verifier_new(enum hash_alg alg, SRP_NGType ng_type, const char *username,
     goto error;
 
   k = H_nn_pad(alg, ng->N, ng->g, ng->N_len); // MODIFIED from H_nn(alg, ng->N, ng->g)
-  u = H_nn_pad(alg, A, B, ng->N_len); // MODIFIED from H_nn(alg, A, B)
+  u = H_nn_pad(alg, A, B, ng->N_len);         // MODIFIED from H_nn(alg, A, B)
 
   // S = (A *(v^u)) ^ b
   bnum_modexp(tmp1, v, u, ng->N);
@@ -769,7 +764,7 @@ srp_verifier_new(enum hash_alg alg, SRP_NGType ng_type, const char *username,
   bnum_free(tmp2);
   return ver;
 
- error:
+error:
   srp_verifier_free(ver);
   bnum_free(s);
   bnum_free(v);
@@ -814,7 +809,7 @@ hexread(uint8_t *out, size_t out_len, const char *in)
   char hex[] = { 0, 0, 0 };
   int i;
 
-  for (i = 0; i < out_len; i++, in+=2)
+  for (i = 0; i < out_len; i++, in += 2)
     {
       hex[0] = in[0];
       hex[1] = in[1];
@@ -868,7 +863,7 @@ message_process(const uint8_t *data, size_t data_len, const char **errmsg)
 
   return response;
 
- error:
+error:
   pair_tlv_free(response);
   return NULL;
 }
@@ -887,17 +882,21 @@ hkdf_extract_expand(uint8_t *okm, size_t okm_len, const uint8_t *ikm, size_t ikm
 
   if (okm_len > SHA512_DIGEST_LENGTH)
     return -1;
-  if (! (pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, NULL)))
+  if (!(pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, NULL)))
     return -1;
   if (EVP_PKEY_derive_init(pctx) <= 0)
     goto error;
   if (EVP_PKEY_CTX_set_hkdf_md(pctx, EVP_sha512()) <= 0)
     goto error;
-  if (EVP_PKEY_CTX_set1_hkdf_salt(pctx, (const unsigned char *)pair_keys_map[pair_key].salt, strlen(pair_keys_map[pair_key].salt)) <= 0)
+  if (EVP_PKEY_CTX_set1_hkdf_salt(
+          pctx, (const unsigned char *)pair_keys_map[pair_key].salt, strlen(pair_keys_map[pair_key].salt))
+      <= 0)
     goto error;
   if (EVP_PKEY_CTX_set1_hkdf_key(pctx, ikm, ikm_len) <= 0)
     goto error;
-  if (EVP_PKEY_CTX_add1_hkdf_info(pctx, (const unsigned char *)pair_keys_map[pair_key].info, strlen(pair_keys_map[pair_key].info)) <= 0)
+  if (EVP_PKEY_CTX_add1_hkdf_info(
+          pctx, (const unsigned char *)pair_keys_map[pair_key].info, strlen(pair_keys_map[pair_key].info))
+      <= 0)
     goto error;
   if (EVP_PKEY_derive(pctx, okm, &okm_len) <= 0)
     goto error;
@@ -905,7 +904,7 @@ hkdf_extract_expand(uint8_t *okm, size_t okm_len, const uint8_t *ikm, size_t ikm
   EVP_PKEY_CTX_free(pctx);
   return 0;
 
- error:
+error:
   EVP_PKEY_CTX_free(pctx);
   return -1;
 #elif CONFIG_GCRYPT
@@ -916,7 +915,9 @@ hkdf_extract_expand(uint8_t *okm, size_t okm_len, const uint8_t *ikm, size_t ikm
     return -1; // Below calculation not valid if output is larger than hash size
   if (gcry_md_open(&hmac_handle, GCRY_MD_SHA512, GCRY_MD_FLAG_HMAC) != GPG_ERR_NO_ERROR)
     return -1;
-  if (gcry_md_setkey(hmac_handle, (const unsigned char *)pair_keys_map[pair_key].salt, strlen(pair_keys_map[pair_key].salt)) != GPG_ERR_NO_ERROR)
+  if (gcry_md_setkey(
+          hmac_handle, (const unsigned char *)pair_keys_map[pair_key].salt, strlen(pair_keys_map[pair_key].salt))
+      != GPG_ERR_NO_ERROR)
     goto error;
   gcry_md_write(hmac_handle, ikm, ikm_len);
   memcpy(prk, gcry_md_read(hmac_handle, 0), sizeof(prk));
@@ -933,7 +934,7 @@ hkdf_extract_expand(uint8_t *okm, size_t okm_len, const uint8_t *ikm, size_t ikm
   gcry_md_close(hmac_handle);
   return 0;
 
- error:
+error:
   gcry_md_close(hmac_handle);
   return -1;
 #else
@@ -942,13 +943,14 @@ hkdf_extract_expand(uint8_t *okm, size_t okm_len, const uint8_t *ikm, size_t ikm
 }
 
 static int
-encrypt_chacha(uint8_t *cipher, const uint8_t *plain, size_t plain_len, const uint8_t *key, size_t key_len, const void *ad, size_t ad_len, uint8_t *tag, size_t tag_len, const uint8_t nonce[NONCE_LENGTH])
+encrypt_chacha(uint8_t *cipher, const uint8_t *plain, size_t plain_len, const uint8_t *key, size_t key_len,
+    const void *ad, size_t ad_len, uint8_t *tag, size_t tag_len, const uint8_t nonce[NONCE_LENGTH])
 {
 #ifdef CONFIG_OPENSSL
   EVP_CIPHER_CTX *ctx;
   int len;
 
-  if (! (ctx = EVP_CIPHER_CTX_new()))
+  if (!(ctx = EVP_CIPHER_CTX_new()))
     return -1;
 
   if (EVP_EncryptInit_ex(ctx, EVP_chacha20_poly1305(), NULL, key, nonce) != 1)
@@ -974,7 +976,7 @@ encrypt_chacha(uint8_t *cipher, const uint8_t *plain, size_t plain_len, const ui
   EVP_CIPHER_CTX_free(ctx);
   return 0;
 
- error:
+error:
   EVP_CIPHER_CTX_free(ctx);
   return -1;
 #elif CONFIG_GCRYPT
@@ -1001,7 +1003,7 @@ encrypt_chacha(uint8_t *cipher, const uint8_t *plain, size_t plain_len, const ui
   gcry_cipher_close(hd);
   return 0;
 
- error:
+error:
   gcry_cipher_close(hd);
   return -1;
 #else
@@ -1010,13 +1012,14 @@ encrypt_chacha(uint8_t *cipher, const uint8_t *plain, size_t plain_len, const ui
 }
 
 static int
-decrypt_chacha(uint8_t *plain, const uint8_t *cipher, size_t cipher_len, const uint8_t *key, size_t key_len, const void *ad, size_t ad_len, uint8_t *tag, size_t tag_len, const uint8_t nonce[NONCE_LENGTH])
+decrypt_chacha(uint8_t *plain, const uint8_t *cipher, size_t cipher_len, const uint8_t *key, size_t key_len,
+    const void *ad, size_t ad_len, uint8_t *tag, size_t tag_len, const uint8_t nonce[NONCE_LENGTH])
 {
 #ifdef CONFIG_OPENSSL
   EVP_CIPHER_CTX *ctx;
   int len;
 
-  if (! (ctx = EVP_CIPHER_CTX_new()))
+  if (!(ctx = EVP_CIPHER_CTX_new()))
     return -1;
 
   if (EVP_DecryptInit_ex(ctx, EVP_chacha20_poly1305(), NULL, key, nonce) != 1)
@@ -1040,7 +1043,7 @@ decrypt_chacha(uint8_t *plain, const uint8_t *cipher, size_t cipher_len, const u
   EVP_CIPHER_CTX_free(ctx);
   return 0;
 
- error:
+error:
   EVP_CIPHER_CTX_free(ctx);
   return -1;
 #elif CONFIG_GCRYPT
@@ -1067,7 +1070,7 @@ decrypt_chacha(uint8_t *plain, const uint8_t *cipher, size_t cipher_len, const u
   gcry_cipher_close(hd);
   return 0;
 
- error:
+error:
   gcry_cipher_close(hd);
   return -1;
 #else
@@ -1076,7 +1079,8 @@ decrypt_chacha(uint8_t *plain, const uint8_t *cipher, size_t cipher_len, const u
 }
 
 static int
-create_info(uint8_t *info, size_t *info_len, uint8_t *a, size_t a_len, uint8_t *b, size_t b_len, uint8_t *c, size_t c_len)
+create_info(
+    uint8_t *info, size_t *info_len, uint8_t *a, size_t a_len, uint8_t *b, size_t b_len, uint8_t *c, size_t c_len)
 {
   if (a_len + b_len + c_len > *info_len)
     return -1;
@@ -1090,7 +1094,8 @@ create_info(uint8_t *info, size_t *info_len, uint8_t *a, size_t a_len, uint8_t *
 }
 
 static int
-create_and_sign_device_info(uint8_t *msg, size_t *msg_len, const char *device_id, uint8_t *device_x, size_t device_x_len, uint8_t *pk, size_t pk_len, uint8_t *sk)
+create_and_sign_device_info(uint8_t *msg, size_t *msg_len, const char *device_id, uint8_t *device_x,
+    size_t device_x_len, uint8_t *pk, size_t pk_len, uint8_t *sk)
 {
   pair_tlv_values_t *tlv;
   uint8_t device_info[256];
@@ -1102,7 +1107,8 @@ create_and_sign_device_info(uint8_t *msg, size_t *msg_len, const char *device_id
   device_id_len = strlen(device_id);
   device_info_len = sizeof(device_info);
 
-  ret = create_info(device_info, &device_info_len, device_x, device_x_len, (uint8_t *)device_id, device_id_len, pk, pk_len);
+  ret = create_info(
+      device_info, &device_info_len, device_x, device_x_len, (uint8_t *)device_id, device_id_len, pk, pk_len);
   if (ret < 0)
     return -1;
 
@@ -1119,7 +1125,8 @@ create_and_sign_device_info(uint8_t *msg, size_t *msg_len, const char *device_id
 }
 
 static int
-create_and_sign_accessory_info(uint8_t *msg, size_t *msg_len, uint8_t *server_pk, size_t server_pk_len, const char *accessory_id, uint8_t *client_pk, size_t client_pk_len, uint8_t *sk)
+create_and_sign_accessory_info(uint8_t *msg, size_t *msg_len, uint8_t *server_pk, size_t server_pk_len,
+    const char *accessory_id, uint8_t *client_pk, size_t client_pk_len, uint8_t *sk)
 {
   pair_tlv_values_t *tlv;
   uint8_t accessory_info[256];
@@ -1131,7 +1138,8 @@ create_and_sign_accessory_info(uint8_t *msg, size_t *msg_len, uint8_t *server_pk
   accessory_id_len = strlen(accessory_id);
   accessory_info_len = sizeof(accessory_info);
 
-  ret = create_info(accessory_info, &accessory_info_len, server_pk, server_pk_len, (uint8_t *)accessory_id, accessory_id_len, client_pk, client_pk_len);
+  ret = create_info(accessory_info, &accessory_info_len, server_pk, server_pk_len, (uint8_t *)accessory_id,
+      accessory_id_len, client_pk, client_pk_len);
   if (ret < 0)
     return -1;
 
@@ -1148,7 +1156,8 @@ create_and_sign_accessory_info(uint8_t *msg, size_t *msg_len, uint8_t *server_pk
 }
 
 static int
-verify_info(uint8_t *signature, uint8_t *pk, uint8_t *a, size_t a_len, uint8_t *b, size_t b_len, uint8_t *c, size_t c_len)
+verify_info(
+    uint8_t *signature, uint8_t *pk, uint8_t *a, size_t a_len, uint8_t *b, size_t b_len, uint8_t *c, size_t c_len)
 {
   uint8_t info[256];
   size_t info_len;
@@ -1162,11 +1171,11 @@ verify_info(uint8_t *signature, uint8_t *pk, uint8_t *a, size_t a_len, uint8_t *
   return crypto_sign_verify_detached(signature, info, info_len, pk);
 }
 
-
 /* ------------------------- CLIENT IMPLEMENTATION -------------------------- */
 
 static int
-client_setup_new(struct pair_setup_context *handle, const char *pin, pair_cb add_cb, void *cb_arg, const char *device_id)
+client_setup_new(
+    struct pair_setup_context *handle, const char *pin, pair_cb add_cb, void *cb_arg, const char *device_id)
 {
   struct pair_client_setup_context *sctx = &handle->sctx.client;
 
@@ -1233,7 +1242,7 @@ client_setup_request1(size_t *len, struct pair_setup_context *handle)
   request = pair_tlv_new();
 
   // Test here instead of setup_new() so we can give an error message
-  if(*(char *)&endian_test != 1)
+  if (*(char *)&endian_test != 1)
     {
       handle->errmsg = "Setup request 1: No support for big endian architechture";
       goto error;
@@ -1247,7 +1256,8 @@ client_setup_request1(size_t *len, struct pair_setup_context *handle)
     }
 
   method = PairingMethodPairSetup;
-  pair_tlv_add_value(request, TLVType_State, &pair_keys_map[PAIR_SETUP_MSG01].state, sizeof(pair_keys_map[PAIR_SETUP_MSG01].state));
+  pair_tlv_add_value(
+      request, TLVType_State, &pair_keys_map[PAIR_SETUP_MSG01].state, sizeof(pair_keys_map[PAIR_SETUP_MSG01].state));
   pair_tlv_add_value(request, TLVType_Method, &method, sizeof(method));
 
   if (handle->type == &pair_client_homekit_transient)
@@ -1268,7 +1278,7 @@ client_setup_request1(size_t *len, struct pair_setup_context *handle)
   pair_tlv_free(request);
   return data;
 
- error:
+error:
   pair_tlv_free(request);
   free(data);
   return NULL;
@@ -1292,9 +1302,11 @@ client_setup_request2(size_t *len, struct pair_setup_context *handle)
   srp_user_start_authentication(sctx->user, &auth_username, &sctx->pkA, &sctx->pkA_len);
 
   // Calculate M1 (client proof)
-  srp_user_process_challenge(sctx->user, (const unsigned char *)sctx->salt, sctx->salt_len, (const unsigned char *)sctx->pkB, sctx->pkB_len, &sctx->M1, &sctx->M1_len);
+  srp_user_process_challenge(sctx->user, (const unsigned char *)sctx->salt, sctx->salt_len,
+      (const unsigned char *)sctx->pkB, sctx->pkB_len, &sctx->M1, &sctx->M1_len);
 
-  pair_tlv_add_value(request, TLVType_State, &pair_keys_map[PAIR_SETUP_MSG03].state, sizeof(pair_keys_map[PAIR_SETUP_MSG03].state));
+  pair_tlv_add_value(
+      request, TLVType_State, &pair_keys_map[PAIR_SETUP_MSG03].state, sizeof(pair_keys_map[PAIR_SETUP_MSG03].state));
   pair_tlv_add_value(request, TLVType_PublicKey, sctx->pkA, sctx->pkA_len);
   pair_tlv_add_value(request, TLVType_Proof, sctx->M1, sctx->M1_len);
 
@@ -1310,7 +1322,7 @@ client_setup_request2(size_t *len, struct pair_setup_context *handle)
   pair_tlv_free(request);
   return data;
 
- error:
+error:
   pair_tlv_free(request);
   free(data);
   return NULL;
@@ -1353,7 +1365,8 @@ client_setup_request3(size_t *len, struct pair_setup_context *handle)
       goto error;
     }
 
-  ret = create_and_sign_device_info(data, &data_len, sctx->device_id, device_x, sizeof(device_x), sctx->public_key, sizeof(sctx->public_key), sctx->private_key);
+  ret = create_and_sign_device_info(data, &data_len, sctx->device_id, device_x, sizeof(device_x), sctx->public_key,
+      sizeof(sctx->public_key), sctx->private_key);
   if (ret < 0)
     {
       handle->errmsg = "Setup request 3: error creating signed device info";
@@ -1385,7 +1398,8 @@ client_setup_request3(size_t *len, struct pair_setup_context *handle)
   encrypted_data_len = data_len + sizeof(tag); // Space for ciphered payload and authtag
   encrypted_data = malloc(encrypted_data_len);
 
-  ret = encrypt_chacha(encrypted_data, data, data_len, derived_key, sizeof(derived_key), NULL, 0, tag, sizeof(tag), nonce);
+  ret = encrypt_chacha(
+      encrypted_data, data, data_len, derived_key, sizeof(derived_key), NULL, 0, tag, sizeof(tag), nonce);
   if (ret < 0)
     {
       handle->errmsg = "Setup request 3: Could not encrypt";
@@ -1394,7 +1408,8 @@ client_setup_request3(size_t *len, struct pair_setup_context *handle)
 
   memcpy(encrypted_data + data_len, tag, sizeof(tag));
 
-  pair_tlv_add_value(request, TLVType_State, &pair_keys_map[PAIR_SETUP_MSG05].state, sizeof(pair_keys_map[PAIR_SETUP_MSG05].state));
+  pair_tlv_add_value(
+      request, TLVType_State, &pair_keys_map[PAIR_SETUP_MSG05].state, sizeof(pair_keys_map[PAIR_SETUP_MSG05].state));
   pair_tlv_add_value(request, TLVType_EncryptedData, encrypted_data, encrypted_data_len);
 
   data_len = REQUEST_BUFSIZE; // Re-using *data, so pass original length to pair_tlv_format
@@ -1411,7 +1426,7 @@ client_setup_request3(size_t *len, struct pair_setup_context *handle)
   pair_tlv_free(request);
   return data;
 
- error:
+error:
   free(encrypted_data);
   pair_tlv_free(request);
   free(data);
@@ -1457,7 +1472,7 @@ client_setup_response1(struct pair_setup_context *handle, const uint8_t *data, s
   pair_tlv_free(response);
   return 0;
 
- error:
+error:
   pair_tlv_free(response);
   return -1;
 }
@@ -1500,7 +1515,7 @@ client_setup_response2(struct pair_setup_context *handle, const uint8_t *data, s
     {
       session_key = srp_user_get_session_key(sctx->user, &session_key_len);
       if (!session_key)
-        {
+	{
 	  handle->errmsg = "Setup response 2: Could not compute session key";
 	  goto error;
 	}
@@ -1516,7 +1531,7 @@ client_setup_response2(struct pair_setup_context *handle, const uint8_t *data, s
   pair_tlv_free(response);
   return 0;
 
- error:
+error:
   pair_tlv_free(response);
   return -1;
 }
@@ -1580,7 +1595,8 @@ client_setup_response3(struct pair_setup_context *handle, const uint8_t *data, s
 
   decrypted_data = malloc(encrypted_len);
 
-  ret = decrypt_chacha(decrypted_data, encrypted_data->value, encrypted_len, derived_key, sizeof(derived_key), NULL, 0, tag, sizeof(tag), nonce);
+  ret = decrypt_chacha(decrypted_data, encrypted_data->value, encrypted_len, derived_key, sizeof(derived_key), NULL, 0,
+      tag, sizeof(tag), nonce);
   if (ret < 0)
     {
       handle->errmsg = "Setup response 3: Decryption error";
@@ -1604,13 +1620,15 @@ client_setup_response3(struct pair_setup_context *handle, const uint8_t *data, s
   device_id = pair_tlv_get_value(response, TLVType_Identifier);
   pk = pair_tlv_get_value(response, TLVType_PublicKey);
   signature = pair_tlv_get_value(response, TLVType_Signature);
-  if (!device_id || device_id->size >= sizeof(handle->result.device_id) || !pk || pk->size != crypto_sign_PUBLICKEYBYTES || !signature || signature->size != crypto_sign_BYTES)
+  if (!device_id || device_id->size >= sizeof(handle->result.device_id) || !pk || pk->size != crypto_sign_PUBLICKEYBYTES
+      || !signature || signature->size != crypto_sign_BYTES)
     {
       handle->errmsg = "Setup response 3: Missing/invalid device ID, public key or signature";
       goto error;
     }
 
-  ret = verify_info(signature->value, pk->value, device_x, sizeof(device_x), device_id->value, device_id->size, pk->value, pk->size);
+  ret = verify_info(
+      signature->value, pk->value, device_x, sizeof(device_x), device_id->value, device_id->size, pk->value, pk->size);
   if (ret < 0)
     {
       handle->errmsg = "Setup request 3: Invalid signature";
@@ -1635,7 +1653,7 @@ client_setup_response3(struct pair_setup_context *handle, const uint8_t *data, s
   pair_tlv_free(response);
   return 0;
 
- error:
+error:
   free(decrypted_data);
   pair_tlv_free(response);
   return -1;
@@ -1647,7 +1665,8 @@ client_setup_result(struct pair_setup_context *handle)
   char *ptr;
   int i;
 
-  assert(sizeof(handle->result_str) >= 2 * sizeof(handle->result.client_private_key) + 2 * sizeof(handle->result.server_public_key) + 1);
+  assert(sizeof(handle->result_str)
+         >= 2 * sizeof(handle->result.client_private_key) + 2 * sizeof(handle->result.server_public_key) + 1);
 
   // It is enough to export the private key, since the public key can be
   // extracted from that with crypto_sign_ed25519_sk_to_pk (it is the last 32
@@ -1663,7 +1682,8 @@ client_setup_result(struct pair_setup_context *handle)
 }
 
 static int
-client_verify_new(struct pair_verify_context *handle, const char *client_setup_keys, pair_cb cb, void *cb_arg, const char *device_id)
+client_verify_new(
+    struct pair_verify_context *handle, const char *client_setup_keys, pair_cb cb, void *cb_arg, const char *device_id)
 {
   struct pair_client_verify_context *vctx = &handle->vctx.client;
   size_t hexkey_len;
@@ -1681,10 +1701,14 @@ client_verify_new(struct pair_verify_context *handle, const char *client_setup_k
   if (hexkey_len == 2 * sizeof(vctx->client_private_key) + 2 * sizeof(vctx->server_public_key))
     {
       hexread(vctx->client_private_key, sizeof(vctx->client_private_key), client_setup_keys);
-      hexread(vctx->server_public_key, sizeof(vctx->server_public_key), client_setup_keys + 2 * sizeof(vctx->client_private_key));
+      hexread(vctx->server_public_key, sizeof(vctx->server_public_key),
+          client_setup_keys + 2 * sizeof(vctx->client_private_key));
       vctx->verify_server_signature = true;
     }
-  else if (hexkey_len == 2 * sizeof(vctx->client_private_key)) // No server public key known, so signature validation will be skipped
+  else if (hexkey_len
+           == 2
+                  * sizeof(
+                      vctx->client_private_key)) // No server public key known, so signature validation will be skipped
     {
       hexread(vctx->client_private_key, sizeof(vctx->client_private_key), client_setup_keys);
     }
@@ -1702,7 +1726,7 @@ static uint8_t *
 client_verify_request1(size_t *len, struct pair_verify_context *handle)
 {
   struct pair_client_verify_context *vctx = &handle->vctx.client;
-//  const uint8_t basepoint[crypto_scalarmult_BYTES] = {9}; // 32 bytes
+  //  const uint8_t basepoint[crypto_scalarmult_BYTES] = {9}; // 32 bytes
   pair_tlv_values_t *request;
   uint8_t *data;
   size_t data_len;
@@ -1714,17 +1738,18 @@ client_verify_request1(size_t *len, struct pair_verify_context *handle)
 
   crypto_box_keypair(vctx->client_eph_public_key, vctx->client_eph_private_key);
 
-/*
-  // TODO keep around in case box_keypair doesn't work
-  ret = crypto_scalarmult(vctx->client_eph_public_key, vctx->client_eph_private_key, basepoint);
-  if (ret < 0)
-    {
-      handle->errmsg = "Verify request 1: Curve 25519 returned an error";
-      goto error;
-    }
-*/
+  /*
+    // TODO keep around in case box_keypair doesn't work
+    ret = crypto_scalarmult(vctx->client_eph_public_key, vctx->client_eph_private_key, basepoint);
+    if (ret < 0)
+      {
+        handle->errmsg = "Verify request 1: Curve 25519 returned an error";
+        goto error;
+      }
+  */
 
-  pair_tlv_add_value(request, TLVType_State, &pair_keys_map[PAIR_VERIFY_MSG01].state, sizeof(pair_keys_map[PAIR_VERIFY_MSG01].state));
+  pair_tlv_add_value(
+      request, TLVType_State, &pair_keys_map[PAIR_VERIFY_MSG01].state, sizeof(pair_keys_map[PAIR_VERIFY_MSG01].state));
   pair_tlv_add_value(request, TLVType_PublicKey, vctx->client_eph_public_key, sizeof(vctx->client_eph_public_key));
 
   ret = pair_tlv_format(request, data, &data_len);
@@ -1739,7 +1764,7 @@ client_verify_request1(size_t *len, struct pair_verify_context *handle)
   pair_tlv_free(request);
   return data;
 
- error:
+error:
   pair_tlv_free(request);
   free(data);
   return NULL;
@@ -1763,15 +1788,17 @@ client_verify_request2(size_t *len, struct pair_verify_context *handle)
   data = malloc(data_len);
   request = pair_tlv_new();
 
-  ret = create_and_sign_device_info(data, &data_len, vctx->device_id, vctx->client_eph_public_key, sizeof(vctx->client_eph_public_key),
-                                    vctx->server_eph_public_key, sizeof(vctx->server_eph_public_key), vctx->client_private_key);
+  ret = create_and_sign_device_info(data, &data_len, vctx->device_id, vctx->client_eph_public_key,
+      sizeof(vctx->client_eph_public_key), vctx->server_eph_public_key, sizeof(vctx->server_eph_public_key),
+      vctx->client_private_key);
   if (ret < 0)
     {
       handle->errmsg = "Verify request 2: error creating signed device info";
       goto error;
     }
 
-  ret = hkdf_extract_expand(derived_key, sizeof(derived_key), vctx->shared_secret, sizeof(vctx->shared_secret), PAIR_VERIFY_MSG03);
+  ret = hkdf_extract_expand(
+      derived_key, sizeof(derived_key), vctx->shared_secret, sizeof(vctx->shared_secret), PAIR_VERIFY_MSG03);
   if (ret < 0)
     {
       handle->errmsg = "Verify request 2: hkdf error getting derived_key";
@@ -1783,7 +1810,8 @@ client_verify_request2(size_t *len, struct pair_verify_context *handle)
   encrypted_data_len = data_len + sizeof(tag); // Space for ciphered payload and authtag
   encrypted_data = malloc(encrypted_data_len);
 
-  ret = encrypt_chacha(encrypted_data, data, data_len, derived_key, sizeof(derived_key), NULL, 0, tag, sizeof(tag), nonce);
+  ret = encrypt_chacha(
+      encrypted_data, data, data_len, derived_key, sizeof(derived_key), NULL, 0, tag, sizeof(tag), nonce);
   if (ret < 0)
     {
       handle->errmsg = "Verify request 2: Could not encrypt";
@@ -1792,7 +1820,8 @@ client_verify_request2(size_t *len, struct pair_verify_context *handle)
 
   memcpy(encrypted_data + data_len, tag, sizeof(tag));
 
-  pair_tlv_add_value(request, TLVType_State, &pair_keys_map[PAIR_VERIFY_MSG03].state, sizeof(pair_keys_map[PAIR_VERIFY_MSG03].state));
+  pair_tlv_add_value(
+      request, TLVType_State, &pair_keys_map[PAIR_VERIFY_MSG03].state, sizeof(pair_keys_map[PAIR_VERIFY_MSG03].state));
   pair_tlv_add_value(request, TLVType_EncryptedData, encrypted_data, encrypted_data_len);
 
   data_len = REQUEST_BUFSIZE; // Re-using *data, so pass original length to pair_tlv_format
@@ -1809,7 +1838,7 @@ client_verify_request2(size_t *len, struct pair_verify_context *handle)
   pair_tlv_free(request);
   return data;
 
- error:
+error:
   free(encrypted_data);
   pair_tlv_free(request);
   free(data);
@@ -1860,7 +1889,8 @@ client_verify_response1(struct pair_verify_context *handle, const uint8_t *data,
       goto error;
     }
 
-  ret = hkdf_extract_expand(derived_key, sizeof(derived_key), vctx->shared_secret, sizeof(vctx->shared_secret), PAIR_VERIFY_MSG02);
+  ret = hkdf_extract_expand(
+      derived_key, sizeof(derived_key), vctx->shared_secret, sizeof(vctx->shared_secret), PAIR_VERIFY_MSG02);
   if (ret < 0)
     {
       handle->errmsg = "Verify response 1: hkdf error getting derived_key";
@@ -1880,7 +1910,8 @@ client_verify_response1(struct pair_verify_context *handle, const uint8_t *data,
 
   decrypted_data = malloc(encrypted_len);
 
-  ret = decrypt_chacha(decrypted_data, encrypted_data->value, encrypted_len, derived_key, sizeof(derived_key), NULL, 0, tag, sizeof(tag), nonce);
+  ret = decrypt_chacha(decrypted_data, encrypted_data->value, encrypted_len, derived_key, sizeof(derived_key), NULL, 0,
+      tag, sizeof(tag), nonce);
   if (ret < 0)
     {
       handle->errmsg = "Verify response 1: Decryption error";
@@ -1904,20 +1935,21 @@ client_verify_response1(struct pair_verify_context *handle, const uint8_t *data,
 
   if (vctx->verify_server_signature)
     {
-      ret = verify_info(signature->value, vctx->server_public_key, vctx->server_eph_public_key, sizeof(vctx->server_eph_public_key),
-                        device_id->value, device_id->size, vctx->client_eph_public_key, sizeof(vctx->client_eph_public_key));
+      ret = verify_info(signature->value, vctx->server_public_key, vctx->server_eph_public_key,
+          sizeof(vctx->server_eph_public_key), device_id->value, device_id->size, vctx->client_eph_public_key,
+          sizeof(vctx->client_eph_public_key));
       if (ret < 0)
-        {
-          handle->errmsg = "Verify response 1: Invalid signature";
-          goto error;
-        }
+	{
+	  handle->errmsg = "Verify response 1: Invalid signature";
+	  goto error;
+	}
     }
 
   free(decrypted_data);
   pair_tlv_free(response);
   return 0;
 
- error:
+error:
   free(decrypted_data);
   pair_tlv_free(response);
   return -1;
@@ -1943,7 +1975,6 @@ client_verify_response2(struct pair_verify_context *handle, const uint8_t *data,
   pair_tlv_free(response);
   return 0;
 }
-
 
 /* ------------------------- SERVER IMPLEMENTATION -------------------------- */
 
@@ -1989,7 +2020,8 @@ server_auth_failed_response(size_t *len, enum pair_keys msg_state)
 }
 
 static int
-server_setup_new(struct pair_setup_context *handle, const char *pin, pair_cb add_cb, void *cb_arg, const char *device_id)
+server_setup_new(
+    struct pair_setup_context *handle, const char *pin, pair_cb add_cb, void *cb_arg, const char *device_id)
 {
   struct pair_server_setup_context *sctx = &handle->sctx.server;
 
@@ -2036,7 +2068,7 @@ static int
 server_setup_request1(struct pair_setup_context *handle, const uint8_t *data, size_t data_len)
 {
   struct pair_server_setup_context *sctx = &handle->sctx.server;
-//  enum pair_keys msg_state = PAIR_SETUP_MSG01;
+  //  enum pair_keys msg_state = PAIR_SETUP_MSG01;
   pair_tlv_values_t *request;
   pair_tlv_t *method;
   pair_tlv_t *type;
@@ -2058,15 +2090,15 @@ server_setup_request1(struct pair_setup_context *handle, const uint8_t *data, si
   sctx->is_transient = (type && type->size == 1 && type->value[0] == PairingFlagsTransient);
 
   // Note this is modified to return a 16 byte salt
-  ret = srp_create_salted_verification_key(HASH_SHA512, SRP_NG_3072, USERNAME, (unsigned char *)sctx->pin, strlen(sctx->pin),
-    &sctx->salt, &sctx->salt_len, &sctx->v, &sctx->v_len, NULL, NULL);
+  ret = srp_create_salted_verification_key(HASH_SHA512, SRP_NG_3072, USERNAME, (unsigned char *)sctx->pin,
+      strlen(sctx->pin), &sctx->salt, &sctx->salt_len, &sctx->v, &sctx->v_len, NULL, NULL);
   if (ret < 0)
     {
       RETURN_ERROR(PAIR_STATUS_INVALID, "Setup request 1: Could not create verification key");
     }
 
-  ret = srp_verifier_start_authentication(HASH_SHA512, SRP_NG_3072, sctx->v, sctx->v_len,
-    &sctx->b, &sctx->b_len, &sctx->pkB, &sctx->pkB_len, NULL, NULL);
+  ret = srp_verifier_start_authentication(
+      HASH_SHA512, SRP_NG_3072, sctx->v, sctx->v_len, &sctx->b, &sctx->b_len, &sctx->pkB, &sctx->pkB_len, NULL, NULL);
   if (ret < 0)
     {
       RETURN_ERROR(PAIR_STATUS_INVALID, "Setup request 1: Could not compute B");
@@ -2075,7 +2107,7 @@ server_setup_request1(struct pair_setup_context *handle, const uint8_t *data, si
   pair_tlv_free(request);
   return 0;
 
- error:
+error:
   pair_tlv_free(request);
   return -1;
 }
@@ -2084,7 +2116,7 @@ static int
 server_setup_request2(struct pair_setup_context *handle, const uint8_t *data, size_t data_len)
 {
   struct pair_server_setup_context *sctx = &handle->sctx.server;
-//  enum pair_keys msg_state = PAIR_SETUP_MSG03;
+  //  enum pair_keys msg_state = PAIR_SETUP_MSG03;
   pair_tlv_values_t *request;
   pair_tlv_t *pk;
   pair_tlv_t *proof;
@@ -2115,8 +2147,8 @@ server_setup_request2(struct pair_setup_context *handle, const uint8_t *data, si
   sctx->M1 = malloc(sctx->M1_len);
   memcpy(sctx->M1, proof->value, sctx->M1_len);
 
-  sctx->verifier = srp_verifier_new(HASH_SHA512, SRP_NG_3072, USERNAME, sctx->salt, sctx->salt_len, sctx->v, sctx->v_len,
-    sctx->pkA, sctx->pkA_len, sctx->b, sctx->b_len, sctx->pkB, sctx->pkB_len, NULL, NULL);
+  sctx->verifier = srp_verifier_new(HASH_SHA512, SRP_NG_3072, USERNAME, sctx->salt, sctx->salt_len, sctx->v,
+      sctx->v_len, sctx->pkA, sctx->pkA_len, sctx->b, sctx->b_len, sctx->pkB, sctx->pkB_len, NULL, NULL);
   if (!sctx->verifier)
     {
       handle->status = PAIR_STATUS_AUTH_FAILED;
@@ -2131,11 +2163,11 @@ server_setup_request2(struct pair_setup_context *handle, const uint8_t *data, si
       goto out; // Not an error, server should give proper TLV-formatet reply
     }
 
- out:
+out:
   pair_tlv_free(request);
   return 0;
 
- error:
+error:
   pair_tlv_free(request);
   return -1;
 }
@@ -2196,7 +2228,8 @@ server_setup_request3(struct pair_setup_context *handle, const uint8_t *data, si
 
   decrypted_data = malloc(encrypted_len);
 
-  ret = decrypt_chacha(decrypted_data, encrypted_data->value, encrypted_len, derived_key, sizeof(derived_key), NULL, 0, tag, sizeof(tag), nonce);
+  ret = decrypt_chacha(decrypted_data, encrypted_data->value, encrypted_len, derived_key, sizeof(derived_key), NULL, 0,
+      tag, sizeof(tag), nonce);
   if (ret < 0)
     {
       RETURN_ERROR(PAIR_STATUS_INVALID, "Setup request 3: Decryption error");
@@ -2218,12 +2251,14 @@ server_setup_request3(struct pair_setup_context *handle, const uint8_t *data, si
   device_id = pair_tlv_get_value(request, TLVType_Identifier);
   pk = pair_tlv_get_value(request, TLVType_PublicKey);
   signature = pair_tlv_get_value(request, TLVType_Signature);
-  if (!device_id || device_id->size >= sizeof(handle->result.device_id) || !pk || pk->size != crypto_sign_PUBLICKEYBYTES || !signature || signature->size != crypto_sign_BYTES)
+  if (!device_id || device_id->size >= sizeof(handle->result.device_id) || !pk || pk->size != crypto_sign_PUBLICKEYBYTES
+      || !signature || signature->size != crypto_sign_BYTES)
     {
       RETURN_ERROR(PAIR_STATUS_INVALID, "Setup request 3: Missing/invalid device ID, public key or signature");
     }
 
-  ret = verify_info(signature->value, pk->value, device_x, sizeof(device_x), device_id->value, device_id->size, pk->value, pk->size);
+  ret = verify_info(
+      signature->value, pk->value, device_x, sizeof(device_x), device_id->value, device_id->size, pk->value, pk->size);
   if (ret < 0)
     {
       handle->status = PAIR_STATUS_AUTH_FAILED;
@@ -2233,12 +2268,12 @@ server_setup_request3(struct pair_setup_context *handle, const uint8_t *data, si
   memcpy(handle->result.device_id, device_id->value, device_id->size);
   memcpy(handle->result.client_public_key, pk->value, pk->size);
 
- out:
+out:
   free(decrypted_data);
   pair_tlv_free(request);
   return 0;
 
- error:
+error:
   free(decrypted_data);
   pair_tlv_free(request);
   return -1;
@@ -2262,7 +2297,7 @@ server_setup_response1(size_t *len, struct pair_setup_context *handle)
   response = pair_tlv_new();
 
   pair_tlv_add_value(response, TLVType_State, &pair_keys_map[msg_state].state, sizeof(pair_keys_map[msg_state].state));
-  pair_tlv_add_value(response, TLVType_Salt, sctx->salt, sctx->salt_len); // 16
+  pair_tlv_add_value(response, TLVType_Salt, sctx->salt, sctx->salt_len);    // 16
   pair_tlv_add_value(response, TLVType_PublicKey, sctx->pkB, sctx->pkB_len); // 384
 
   ret = pair_tlv_format(response, data, &data_len);
@@ -2276,7 +2311,7 @@ server_setup_response1(size_t *len, struct pair_setup_context *handle)
   pair_tlv_free(response);
   return data;
 
- error:
+error:
   free(data);
   pair_tlv_free(response);
   return NULL;
@@ -2314,7 +2349,7 @@ server_setup_response2(size_t *len, struct pair_setup_context *handle)
     {
       session_key = srp_verifier_get_session_key(sctx->verifier, &session_key_len);
       if (!session_key)
-        {
+	{
 	  RETURN_ERROR(PAIR_STATUS_INVALID, "Setup request 2: Could not compute session key");
 	}
 
@@ -2331,7 +2366,7 @@ server_setup_response2(size_t *len, struct pair_setup_context *handle)
   pair_tlv_free(response);
   return data;
 
- error:
+error:
   free(data);
   pair_tlv_free(response);
   return NULL;
@@ -2376,7 +2411,8 @@ server_setup_response3(size_t *len, struct pair_setup_context *handle)
       RETURN_ERROR(PAIR_STATUS_INVALID, "Setup response 3: hkdf error getting device_x");
     }
 
-  ret = create_and_sign_device_info(data, &data_len, sctx->device_id, device_x, sizeof(device_x), sctx->public_key, sizeof(sctx->public_key), sctx->private_key);
+  ret = create_and_sign_device_info(data, &data_len, sctx->device_id, device_x, sizeof(device_x), sctx->public_key,
+      sizeof(sctx->public_key), sctx->private_key);
   if (ret < 0)
     {
       RETURN_ERROR(PAIR_STATUS_INVALID, "Setup response 3: create device info returned an error");
@@ -2405,7 +2441,8 @@ server_setup_response3(size_t *len, struct pair_setup_context *handle)
   encrypted_data_len = data_len + sizeof(tag); // Space for ciphered payload and authtag
   encrypted_data = malloc(encrypted_data_len);
 
-  ret = encrypt_chacha(encrypted_data, data, data_len, derived_key, sizeof(derived_key), NULL, 0, tag, sizeof(tag), nonce);
+  ret = encrypt_chacha(
+      encrypted_data, data, data_len, derived_key, sizeof(derived_key), NULL, 0, tag, sizeof(tag), nonce);
   if (ret < 0)
     {
       RETURN_ERROR(PAIR_STATUS_INVALID, "Setup response 3: Could not encrypt");
@@ -2434,16 +2471,16 @@ server_setup_response3(size_t *len, struct pair_setup_context *handle)
   pair_tlv_free(response);
   return data;
 
- error:
+error:
   free(encrypted_data);
   free(data);
   pair_tlv_free(response);
   return NULL;
 }
 
-
 static int
-server_verify_new(struct pair_verify_context *handle, const char *client_setup_keys, pair_cb cb, void *cb_arg, const char *device_id)
+server_verify_new(
+    struct pair_verify_context *handle, const char *client_setup_keys, pair_cb cb, void *cb_arg, const char *device_id)
 {
   struct pair_server_verify_context *vctx = &handle->vctx.server;
 
@@ -2471,7 +2508,7 @@ static int
 server_verify_request1(struct pair_verify_context *handle, const uint8_t *data, size_t data_len)
 {
   struct pair_server_verify_context *vctx = &handle->vctx.server;
-//  enum pair_keys msg_state = PAIR_VERIFY_MSG01;
+  //  enum pair_keys msg_state = PAIR_VERIFY_MSG01;
   pair_tlv_values_t *request;
   pair_tlv_t *pk;
 
@@ -2492,7 +2529,7 @@ server_verify_request1(struct pair_verify_context *handle, const uint8_t *data, 
   pair_tlv_free(request);
   return 0;
 
- error:
+error:
   pair_tlv_free(request);
   return -1;
 }
@@ -2521,7 +2558,8 @@ server_verify_request2(struct pair_verify_context *handle, const uint8_t *data, 
       RETURN_ERROR(PAIR_STATUS_INVALID, handle->errmsg);
     }
 
-  ret = hkdf_extract_expand(derived_key, sizeof(derived_key), vctx->shared_secret, sizeof(vctx->shared_secret), msg_state);
+  ret = hkdf_extract_expand(
+      derived_key, sizeof(derived_key), vctx->shared_secret, sizeof(vctx->shared_secret), msg_state);
   if (ret < 0)
     {
       RETURN_ERROR(PAIR_STATUS_INVALID, "Verify request 2: hkdf error getting derived_key");
@@ -2545,7 +2583,8 @@ server_verify_request2(struct pair_verify_context *handle, const uint8_t *data, 
 
   decrypted_data = malloc(encrypted_len);
 
-  ret = decrypt_chacha(decrypted_data, encrypted_data->value, encrypted_len, derived_key, sizeof(derived_key), NULL, 0, tag, sizeof(tag), nonce);
+  ret = decrypt_chacha(decrypted_data, encrypted_data->value, encrypted_len, derived_key, sizeof(derived_key), NULL, 0,
+      tag, sizeof(tag), nonce);
   if (ret < 0)
     {
       RETURN_ERROR(PAIR_STATUS_INVALID, "Verify request 2: Decryption error");
@@ -2568,34 +2607,35 @@ server_verify_request2(struct pair_verify_context *handle, const uint8_t *data, 
   if (vctx->verify_client_signature)
     {
       if (device_id->size >= sizeof(id_str))
-        {
-          RETURN_ERROR(PAIR_STATUS_INVALID, "Verify request 2: Device ID from peer is too long");
-        }
+	{
+	  RETURN_ERROR(PAIR_STATUS_INVALID, "Verify request 2: Device ID from peer is too long");
+	}
 
       memcpy(id_str, device_id->value, device_id->size);
 
       ret = vctx->get_cb(client_public_key, id_str, vctx->get_cb_arg);
       if (ret < 0)
-        {
-          handle->status = PAIR_STATUS_AUTH_FAILED;
-          goto out;
-        }
+	{
+	  handle->status = PAIR_STATUS_AUTH_FAILED;
+	  goto out;
+	}
 
-      ret = verify_info(signature->value, client_public_key, vctx->client_eph_public_key, sizeof(vctx->client_eph_public_key),
-                        device_id->value, device_id->size, vctx->server_eph_public_key, sizeof(vctx->server_eph_public_key));
+      ret = verify_info(signature->value, client_public_key, vctx->client_eph_public_key,
+          sizeof(vctx->client_eph_public_key), device_id->value, device_id->size, vctx->server_eph_public_key,
+          sizeof(vctx->server_eph_public_key));
       if (ret < 0)
-        {
-          handle->status = PAIR_STATUS_AUTH_FAILED;
-          goto out;
-        }
+	{
+	  handle->status = PAIR_STATUS_AUTH_FAILED;
+	  goto out;
+	}
     }
 
- out:
+out:
   free(decrypted_data);
   pair_tlv_free(request);
   return 0;
 
- error:
+error:
   free(decrypted_data);
   pair_tlv_free(request);
   return -1;
@@ -2631,14 +2671,16 @@ server_verify_response1(size_t *len, struct pair_verify_context *handle)
       RETURN_ERROR(PAIR_STATUS_INVALID, "Verify response 1: Error generating shared secret");
     }
 
-  ret = create_and_sign_accessory_info(data, &data_len, vctx->server_eph_public_key, sizeof(vctx->server_eph_public_key), vctx->device_id,
-                                       vctx->client_eph_public_key, sizeof(vctx->client_eph_public_key), vctx->server_private_key);
+  ret = create_and_sign_accessory_info(data, &data_len, vctx->server_eph_public_key,
+      sizeof(vctx->server_eph_public_key), vctx->device_id, vctx->client_eph_public_key,
+      sizeof(vctx->client_eph_public_key), vctx->server_private_key);
   if (ret < 0)
     {
       RETURN_ERROR(PAIR_STATUS_INVALID, "Verify response 1: Error creating device info");
     }
 
-  ret = hkdf_extract_expand(derived_key, sizeof(derived_key), vctx->shared_secret, sizeof(vctx->shared_secret), msg_state);
+  ret = hkdf_extract_expand(
+      derived_key, sizeof(derived_key), vctx->shared_secret, sizeof(vctx->shared_secret), msg_state);
   if (ret < 0)
     {
       RETURN_ERROR(PAIR_STATUS_INVALID, "Verify response 1: hkdf error getting derived_key");
@@ -2649,7 +2691,8 @@ server_verify_response1(size_t *len, struct pair_verify_context *handle)
   encrypted_data_len = data_len + sizeof(tag); // Space for ciphered payload and authtag
   encrypted_data = malloc(encrypted_data_len);
 
-  ret = encrypt_chacha(encrypted_data, data, data_len, derived_key, sizeof(derived_key), NULL, 0, tag, sizeof(tag), nonce);
+  ret = encrypt_chacha(
+      encrypted_data, data, data_len, derived_key, sizeof(derived_key), NULL, 0, tag, sizeof(tag), nonce);
   if (ret < 0)
     {
       RETURN_ERROR(PAIR_STATUS_INVALID, "Verify response 1: Could not encrypt");
@@ -2674,7 +2717,7 @@ server_verify_response1(size_t *len, struct pair_verify_context *handle)
   pair_tlv_free(response);
   return data;
 
- error:
+error:
   free(encrypted_data);
   free(data);
   pair_tlv_free(response);
@@ -2716,7 +2759,7 @@ server_verify_response2(size_t *len, struct pair_verify_context *handle)
   pair_tlv_free(response);
   return data;
 
- error:
+error:
   free(data);
   pair_tlv_free(response);
   return NULL;
@@ -2758,7 +2801,7 @@ server_add_remove_request(pair_cb cb, void *cb_arg, const uint8_t *in, size_t in
   pair_tlv_free(request);
   return 0;
 
- error:
+error:
   pair_tlv_free(request);
   return -1;
 }
@@ -2789,7 +2832,7 @@ server_add_remove_response(size_t *len)
   pair_tlv_free(response);
   return data;
 
- error:
+error:
   free(data);
   pair_tlv_free(response);
   return NULL;
@@ -2858,7 +2901,7 @@ server_list_response(size_t *len, pair_list_cb cb, void *cb_arg)
   pair_tlv_free(response);
   return data;
 
- error:
+error:
   free(data);
   pair_tlv_free(response);
   return NULL;
@@ -2876,7 +2919,6 @@ server_list(uint8_t **out, size_t *out_len, pair_list_cb cb, void *cb_arg, const
 
   return 0;
 }
-
 
 /* ----------------------- CIPHERING IMPLEMENTATION ------------------------- */
 
@@ -2900,24 +2942,24 @@ cipher_new(struct pair_definition *type, int channel, const uint8_t *shared_secr
   // Note that events is opposite, probably because it is a reverse connection
   switch (channel)
     {
-      case 0:
-	write_key = PAIR_CONTROL_WRITE;
-	read_key = PAIR_CONTROL_READ;
-	break;
-      case 1:
-	write_key = PAIR_EVENTS_READ;
-	read_key = PAIR_EVENTS_WRITE;
-	break;
-      case 2:
-	write_key = PAIR_CONTROL_READ;
-	read_key = PAIR_CONTROL_WRITE;
-	break;
-      case 3:
-	write_key = PAIR_EVENTS_WRITE;
-	read_key = PAIR_EVENTS_READ;
-	break;
-      default:
-	return NULL;
+    case 0:
+      write_key = PAIR_CONTROL_WRITE;
+      read_key = PAIR_CONTROL_READ;
+      break;
+    case 1:
+      write_key = PAIR_EVENTS_READ;
+      read_key = PAIR_EVENTS_WRITE;
+      break;
+    case 2:
+      write_key = PAIR_CONTROL_READ;
+      read_key = PAIR_CONTROL_WRITE;
+      break;
+    case 3:
+      write_key = PAIR_EVENTS_WRITE;
+      read_key = PAIR_EVENTS_READ;
+      break;
+    default:
+      return NULL;
     }
 
   cctx = calloc(1, sizeof(struct pair_cipher_context));
@@ -2926,23 +2968,26 @@ cipher_new(struct pair_definition *type, int channel, const uint8_t *shared_secr
 
   cctx->type = type;
 
-  ret = hkdf_extract_expand(cctx->encryption_key, sizeof(cctx->encryption_key), shared_secret, shared_secret_len, write_key);
+  ret = hkdf_extract_expand(
+      cctx->encryption_key, sizeof(cctx->encryption_key), shared_secret, shared_secret_len, write_key);
   if (ret < 0)
     goto error;
 
-  ret = hkdf_extract_expand(cctx->decryption_key, sizeof(cctx->decryption_key), shared_secret, shared_secret_len, read_key);
+  ret = hkdf_extract_expand(
+      cctx->decryption_key, sizeof(cctx->decryption_key), shared_secret, shared_secret_len, read_key);
   if (ret < 0)
     goto error;
 
   return cctx;
 
- error:
+error:
   pair_cipher_free(cctx);
   return NULL;
 }
 
 static ssize_t
-encrypt(uint8_t **ciphertext, size_t *ciphertext_len, const uint8_t *plaintext, size_t plaintext_len, struct pair_cipher_context *cctx)
+encrypt(uint8_t **ciphertext, size_t *ciphertext_len, const uint8_t *plaintext, size_t plaintext_len,
+    struct pair_cipher_context *cctx)
 {
   uint8_t nonce[NONCE_LENGTH] = { 0 };
   uint8_t tag[AUTHTAG_LENGTH];
@@ -2971,11 +3016,12 @@ encrypt(uint8_t **ciphertext, size_t *ciphertext_len, const uint8_t *plaintext, 
       // If it is the last block we will encrypt only the remaining data
       block_len = (i + 1 == nblocks) ? (plaintext + plaintext_len - plain_block) : ENCRYPTED_LEN_MAX;
 
-      memcpy(nonce + 4, &(cctx->encryption_counter), sizeof(cctx->encryption_counter));// TODO BE or LE?
+      memcpy(nonce + 4, &(cctx->encryption_counter), sizeof(cctx->encryption_counter)); // TODO BE or LE?
 
       // Write the ciphered block
       memcpy(cipher_block, &block_len, sizeof(block_len)); // TODO BE or LE?
-      ret = encrypt_chacha(cipher_block + sizeof(block_len), plain_block, block_len, cctx->encryption_key, sizeof(cctx->encryption_key), &block_len, sizeof(block_len), tag, sizeof(tag), nonce);
+      ret = encrypt_chacha(cipher_block + sizeof(block_len), plain_block, block_len, cctx->encryption_key,
+          sizeof(cctx->encryption_key), &block_len, sizeof(block_len), tag, sizeof(tag), nonce);
       if (ret < 0)
 	{
 	  cctx->errmsg = "Encryption with chacha poly1305 failed";
@@ -2998,7 +3044,8 @@ encrypt(uint8_t **ciphertext, size_t *ciphertext_len, const uint8_t *plaintext, 
 }
 
 static ssize_t
-decrypt(uint8_t **plaintext, size_t *plaintext_len, const uint8_t *ciphertext, size_t ciphertext_len, struct pair_cipher_context *cctx)
+decrypt(uint8_t **plaintext, size_t *plaintext_len, const uint8_t *ciphertext, size_t ciphertext_len,
+    struct pair_cipher_context *cctx)
 {
   uint8_t nonce[NONCE_LENGTH] = { 0 };
   uint8_t tag[AUTHTAG_LENGTH];
@@ -3016,7 +3063,7 @@ decrypt(uint8_t **plaintext, size_t *plaintext_len, const uint8_t *ciphertext, s
 
   cctx->decryption_counter_prev = cctx->decryption_counter;
 
-  for (plain_block = *plaintext, cipher_block = ciphertext; cipher_block < ciphertext + ciphertext_len; )
+  for (plain_block = *plaintext, cipher_block = ciphertext; cipher_block < ciphertext + ciphertext_len;)
     {
       memcpy(&block_len, cipher_block, sizeof(block_len)); // TODO BE or LE?
       if (cipher_block + block_len + sizeof(block_len) + AUTHTAG_LENGTH > ciphertext + ciphertext_len)
@@ -3026,9 +3073,10 @@ decrypt(uint8_t **plaintext, size_t *plaintext_len, const uint8_t *ciphertext, s
 	}
 
       memcpy(tag, cipher_block + sizeof(block_len) + block_len, sizeof(tag));
-      memcpy(nonce + 4, &(cctx->decryption_counter), sizeof(cctx->decryption_counter));// TODO BE or LE?
+      memcpy(nonce + 4, &(cctx->decryption_counter), sizeof(cctx->decryption_counter)); // TODO BE or LE?
 
-      ret = decrypt_chacha(plain_block, cipher_block + sizeof(block_len), block_len, cctx->decryption_key, sizeof(cctx->decryption_key), &block_len, sizeof(block_len), tag, sizeof(tag), nonce);
+      ret = decrypt_chacha(plain_block, cipher_block + sizeof(block_len), block_len, cctx->decryption_key,
+          sizeof(cctx->decryption_key), &block_len, sizeof(block_len), tag, sizeof(tag), nonce);
       if (ret < 0)
 	{
 	  cctx->errmsg = "Decryption with chacha poly1305 failed";
@@ -3081,7 +3129,7 @@ state_get(const char **errmsg, const uint8_t *data, size_t data_len)
   pair_tlv_free(message);
   return ret;
 
- error:
+error:
   pair_tlv_free(message);
   return -1;
 }
@@ -3093,8 +3141,7 @@ public_key_get(uint8_t server_public_key[crypto_sign_PUBLICKEYBYTES], const char
   server_keypair(server_public_key, private_key, device_id);
 }
 
-const struct pair_definition pair_client_homekit_normal =
-{
+const struct pair_definition pair_client_homekit_normal = {
   .pair_setup_new = client_setup_new,
   .pair_setup_free = client_setup_free,
   .pair_setup_result = client_setup_result,
@@ -3124,8 +3171,7 @@ const struct pair_definition pair_client_homekit_normal =
   .pair_state_get = state_get,
 };
 
-const struct pair_definition pair_client_homekit_transient =
-{
+const struct pair_definition pair_client_homekit_transient = {
   .pair_setup_new = client_setup_new,
   .pair_setup_free = client_setup_free,
 
@@ -3154,8 +3200,7 @@ const struct pair_definition pair_client_homekit_transient =
   .pair_state_get = state_get,
 };
 
-const struct pair_definition pair_server_homekit =
-{
+const struct pair_definition pair_server_homekit = {
   .pair_setup_new = server_setup_new,
   .pair_setup_free = server_setup_free,
 

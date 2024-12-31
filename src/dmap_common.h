@@ -7,21 +7,20 @@
 
 #include "db.h"
 
-enum dmap_type
-  {
-    DMAP_TYPE_UBYTE   = 0x01,
-    DMAP_TYPE_BYTE    = 0x02,
-    DMAP_TYPE_USHORT  = 0x03,
-    DMAP_TYPE_SHORT   = 0x04,
-    DMAP_TYPE_UINT    = 0x05,
-    DMAP_TYPE_INT     = 0x06,
-    DMAP_TYPE_ULONG   = 0x07,
-    DMAP_TYPE_LONG    = 0x08,
-    DMAP_TYPE_STRING  = 0x09,
-    DMAP_TYPE_DATE    = 0x0a,
-    DMAP_TYPE_VERSION = 0x0b,
-    DMAP_TYPE_LIST    = 0x0c,
-  };
+enum dmap_type {
+  DMAP_TYPE_UBYTE = 0x01,
+  DMAP_TYPE_BYTE = 0x02,
+  DMAP_TYPE_USHORT = 0x03,
+  DMAP_TYPE_SHORT = 0x04,
+  DMAP_TYPE_UINT = 0x05,
+  DMAP_TYPE_INT = 0x06,
+  DMAP_TYPE_ULONG = 0x07,
+  DMAP_TYPE_LONG = 0x08,
+  DMAP_TYPE_STRING = 0x09,
+  DMAP_TYPE_DATE = 0x0a,
+  DMAP_TYPE_VERSION = 0x0b,
+  DMAP_TYPE_LIST = 0x0c,
+};
 
 struct dmap_field_map {
   ssize_t mfi_offset;
@@ -36,17 +35,14 @@ struct dmap_field {
   enum dmap_type type;
 };
 
-
 extern const struct dmap_field_map dfm_dmap_mimc;
 extern const struct dmap_field_map dfm_dmap_aeSP;
-
 
 const struct dmap_field *
 dmap_get_fields_table(int *nfields);
 
 const struct dmap_field *
 dmap_find_field_wrapper(const char *str, int len);
-
 
 void
 dmap_add_container(struct evbuffer *evbuf, const char *tag, int len);
@@ -79,7 +75,8 @@ void
 dmap_error_make(struct evbuffer *evbuf, const char *container, const char *errmsg);
 
 int
-dmap_encode_file_metadata(struct evbuffer *songlist, struct evbuffer *song, struct db_media_file_info *dbmfi, const struct dmap_field **meta, int nmeta, int sort_tags);
+dmap_encode_file_metadata(struct evbuffer *songlist, struct evbuffer *song, struct db_media_file_info *dbmfi,
+    const struct dmap_field **meta, int nmeta, int sort_tags);
 
 int
 dmap_encode_queue_metadata(struct evbuffer *songlist, struct evbuffer *song, struct db_queue_item *queue_item);

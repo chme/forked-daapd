@@ -17,19 +17,19 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 
 // For fstat()
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 // For file copy
 #include <fcntl.h>
@@ -41,15 +41,15 @@
 #include <libavformat/avformat.h>
 #include <libavutil/opt.h>
 
+#include "conffile.h"
 #include "db.h"
+#include "http.h"
 #include "logger.h"
 #include "misc.h"
-#include "http.h"
-#include "conffile.h"
 
 // From libavutil 57.37.100
 #if !defined(HAVE_DECL_AV_DICT_ITERATE) || !(HAVE_DECL_AV_DICT_ITERATE)
-# define av_dict_iterate(dict, entry) av_dict_get((dict), "", (entry), AV_DICT_IGNORE_SUFFIX)
+#define av_dict_iterate(dict, entry) av_dict_get((dict), "", (entry), AV_DICT_IGNORE_SUFFIX)
 #endif
 
 /* Mapping between the metadata name(s) and the offset
@@ -75,7 +75,7 @@ err2str(int errnum)
 static int
 parse_genre(struct media_file_info *mfi, const char *genre_string)
 {
-  char **genre = (char**)((char *) mfi + mfi_offsetof(genre));
+  char **genre = (char **)((char *)mfi + mfi_offsetof(genre));
   char *ptr;
 
   if (*genre) // Previous genre tag exists
@@ -87,7 +87,7 @@ parse_genre(struct media_file_info *mfi, const char *genre_string)
     {
       ptr = strchr(*genre, ';');
       if (ptr)
-        *ptr = '\0';
+	*ptr = '\0';
     }
 
   return 1;
@@ -109,7 +109,7 @@ parse_slash_separated_ints(const char *string, uint32_t *firstval, uint32_t *sec
     {
       *ptr = '\0';
       if (safe_atou32(ptr + 1, secondval) == 0)
-        numvals++;
+	numvals++;
     }
 
   if (safe_atou32(buf, firstval) == 0)
@@ -121,8 +121,8 @@ parse_slash_separated_ints(const char *string, uint32_t *firstval, uint32_t *sec
 static int
 parse_track(struct media_file_info *mfi, const char *track_string)
 {
-  uint32_t *track = (uint32_t *) ((char *) mfi + mfi_offsetof(track));
-  uint32_t *total_tracks = (uint32_t *) ((char *) mfi + mfi_offsetof(total_tracks));
+  uint32_t *track = (uint32_t *)((char *)mfi + mfi_offsetof(track));
+  uint32_t *total_tracks = (uint32_t *)((char *)mfi + mfi_offsetof(total_tracks));
 
   return parse_slash_separated_ints(track_string, track, total_tracks);
 }
@@ -130,8 +130,8 @@ parse_track(struct media_file_info *mfi, const char *track_string)
 static int
 parse_disc(struct media_file_info *mfi, const char *disc_string)
 {
-  uint32_t *disc = (uint32_t *) ((char *) mfi + mfi_offsetof(disc));
-  uint32_t *total_discs = (uint32_t *) ((char *) mfi + mfi_offsetof(total_discs));
+  uint32_t *disc = (uint32_t *)((char *)mfi + mfi_offsetof(disc));
+  uint32_t *total_discs = (uint32_t *)((char *)mfi + mfi_offsetof(total_discs));
 
   return parse_slash_separated_ints(disc_string, disc, total_discs);
 }
@@ -140,9 +140,9 @@ static int
 parse_date(struct media_file_info *mfi, const char *date_string)
 {
   char year_string[32];
-  uint32_t *year = (uint32_t *) ((char *) mfi + mfi_offsetof(year));
+  uint32_t *year = (uint32_t *)((char *)mfi + mfi_offsetof(year));
   // signed in db.h to handle dates before 1970
-  int64_t *date_released = (int64_t *) ((char *) mfi + mfi_offsetof(date_released));
+  int64_t *date_released = (int64_t *)((char *)mfi + mfi_offsetof(date_released));
   struct tm tm = { 0 };
   int ret = 0;
 
@@ -150,11 +150,9 @@ parse_date(struct media_file_info *mfi, const char *date_string)
     ret++;
 
   // musl doesn't support %F, so %Y-%m-%d is used instead
-  if ( strptime(date_string, "%Y-%m-%dT%T%z", &tm) // ISO 8601, %T=%H:%M:%S
-       || strptime(date_string, "%Y-%m-%d %T", &tm)
-       || strptime(date_string, "%Y-%m-%d %H:%M", &tm)
-       || strptime(date_string, "%Y-%m-%d", &tm)
-     )
+  if (strptime(date_string, "%Y-%m-%dT%T%z", &tm) // ISO 8601, %T=%H:%M:%S
+      || strptime(date_string, "%Y-%m-%d %T", &tm) || strptime(date_string, "%Y-%m-%d %H:%M", &tm)
+      || strptime(date_string, "%Y-%m-%d", &tm))
     {
       *date_released = mktime(&tm);
       ret++;
@@ -206,64 +204,61 @@ parse_rating(struct media_file_info *mfi, const char *rating_string)
   return 1;
 }
 
-
 /* Lookup is case-insensitive, first occurrence takes precedence */
-static const struct metadata_map md_map_generic[] =
-  {
-    { "title",        0, mfi_offsetof(title),              NULL },
-    { "artist",       0, mfi_offsetof(artist),             NULL },
-    { "author",       0, mfi_offsetof(artist),             NULL },
-    { "album_artist", 0, mfi_offsetof(album_artist),       NULL },
-    { "album",        0, mfi_offsetof(album),              NULL },
-    { "genre",        0, mfi_offsetof(genre),              parse_genre },
-    { "composer",     0, mfi_offsetof(composer),           NULL },
-    { "grouping",     0, mfi_offsetof(grouping),           NULL },
-    { "orchestra",    0, mfi_offsetof(orchestra),          NULL },
-    { "conductor",    0, mfi_offsetof(conductor),          NULL },
-    { "comment",      0, mfi_offsetof(comment),            NULL },
-    { "description",  0, mfi_offsetof(comment),            NULL },
-    { "track",        1, mfi_offsetof(track),              parse_track },
-    { "disc",         1, mfi_offsetof(disc),               parse_disc },
-    { "year",         1, mfi_offsetof(year),               NULL },
-    { "date",         1, mfi_offsetof(date_released),      parse_date },
-    { "title-sort",   0, mfi_offsetof(title_sort),         NULL },
-    { "artist-sort",  0, mfi_offsetof(artist_sort),        NULL },
-    { "album-sort",   0, mfi_offsetof(album_sort),         NULL },
-    { "compilation",  1, mfi_offsetof(compilation),        NULL },
-    { "lyrics",       0, mfi_offsetof(lyrics),             NULL,       AV_DICT_IGNORE_SUFFIX },
-    { "rating",       1, mfi_offsetof(rating),             parse_rating },
+static const struct metadata_map md_map_generic[] = {
+  { "title", 0, mfi_offsetof(title), NULL },
+  { "artist", 0, mfi_offsetof(artist), NULL },
+  { "author", 0, mfi_offsetof(artist), NULL },
+  { "album_artist", 0, mfi_offsetof(album_artist), NULL },
+  { "album", 0, mfi_offsetof(album), NULL },
+  { "genre", 0, mfi_offsetof(genre), parse_genre },
+  { "composer", 0, mfi_offsetof(composer), NULL },
+  { "grouping", 0, mfi_offsetof(grouping), NULL },
+  { "orchestra", 0, mfi_offsetof(orchestra), NULL },
+  { "conductor", 0, mfi_offsetof(conductor), NULL },
+  { "comment", 0, mfi_offsetof(comment), NULL },
+  { "description", 0, mfi_offsetof(comment), NULL },
+  { "track", 1, mfi_offsetof(track), parse_track },
+  { "disc", 1, mfi_offsetof(disc), parse_disc },
+  { "year", 1, mfi_offsetof(year), NULL },
+  { "date", 1, mfi_offsetof(date_released), parse_date },
+  { "title-sort", 0, mfi_offsetof(title_sort), NULL },
+  { "artist-sort", 0, mfi_offsetof(artist_sort), NULL },
+  { "album-sort", 0, mfi_offsetof(album_sort), NULL },
+  { "compilation", 1, mfi_offsetof(compilation), NULL },
+  { "lyrics", 0, mfi_offsetof(lyrics), NULL, AV_DICT_IGNORE_SUFFIX },
+  { "rating", 1, mfi_offsetof(rating), parse_rating },
 
-    // ALAC sort tags
-    { "sort_name",           0, mfi_offsetof(title_sort),         NULL },
-    { "sort_artist",         0, mfi_offsetof(artist_sort),        NULL },
-    { "sort_album",          0, mfi_offsetof(album_sort),         NULL },
-    { "sort_album_artist",   0, mfi_offsetof(album_artist_sort),  NULL },
-    { "sort_composer",       0, mfi_offsetof(composer_sort),      NULL },
+  // ALAC sort tags
+  { "sort_name", 0, mfi_offsetof(title_sort), NULL },
+  { "sort_artist", 0, mfi_offsetof(artist_sort), NULL },
+  { "sort_album", 0, mfi_offsetof(album_sort), NULL },
+  { "sort_album_artist", 0, mfi_offsetof(album_artist_sort), NULL },
+  { "sort_composer", 0, mfi_offsetof(composer_sort), NULL },
 
-    // These tags are used to determine if files belong to a common compilation
-    // or album, ref. https://picard.musicbrainz.org/docs/tags
-    { "MusicBrainz Album Id",         1, mfi_offsetof(songalbumid), parse_albumid },
-    { "MUSICBRAINZ_ALBUMID",          1, mfi_offsetof(songalbumid), parse_albumid },
-    { "MusicBrainz Release Group Id", 1, mfi_offsetof(songalbumid), parse_albumid },
-    { "MusicBrainz DiscID",           1, mfi_offsetof(songalbumid), parse_albumid },
-    { "CDDB DiscID",                  1, mfi_offsetof(songalbumid), parse_albumid },
-    { "CATALOGNUMBER",                1, mfi_offsetof(songalbumid), parse_albumid },
-    { "BARCODE",                      1, mfi_offsetof(songalbumid), parse_albumid },
+  // These tags are used to determine if files belong to a common compilation
+  // or album, ref. https://picard.musicbrainz.org/docs/tags
+  { "MusicBrainz Album Id", 1, mfi_offsetof(songalbumid), parse_albumid },
+  { "MUSICBRAINZ_ALBUMID", 1, mfi_offsetof(songalbumid), parse_albumid },
+  { "MusicBrainz Release Group Id", 1, mfi_offsetof(songalbumid), parse_albumid },
+  { "MusicBrainz DiscID", 1, mfi_offsetof(songalbumid), parse_albumid },
+  { "CDDB DiscID", 1, mfi_offsetof(songalbumid), parse_albumid },
+  { "CATALOGNUMBER", 1, mfi_offsetof(songalbumid), parse_albumid },
+  { "BARCODE", 1, mfi_offsetof(songalbumid), parse_albumid },
 
-    { NULL,           0, 0,                                NULL }
-  };
+  { NULL, 0, 0, NULL }
+};
 
-static const struct metadata_map md_map_tv[] =
-  {
-    { "stik",         1, mfi_offsetof(media_kind),         NULL },
-    { "show",         0, mfi_offsetof(tv_series_name),     NULL },
-    { "episode_id",   0, mfi_offsetof(tv_episode_num_str), NULL },
-    { "network",      0, mfi_offsetof(tv_network_name),    NULL },
-    { "episode_sort", 1, mfi_offsetof(tv_episode_sort),    NULL },
-    { "season_number",1, mfi_offsetof(tv_season_num),      NULL },
+static const struct metadata_map md_map_tv[] = {
+  { "stik",          1, mfi_offsetof(media_kind),         NULL },
+  { "show",          0, mfi_offsetof(tv_series_name),     NULL },
+  { "episode_id",    0, mfi_offsetof(tv_episode_num_str), NULL },
+  { "network",       0, mfi_offsetof(tv_network_name),    NULL },
+  { "episode_sort",  1, mfi_offsetof(tv_episode_sort),    NULL },
+  { "season_number", 1, mfi_offsetof(tv_season_num),      NULL },
 
-    { NULL,           0, 0,                                NULL }
-  };
+  { NULL,            0, 0,                                NULL }
+};
 
 /* NOTE about VORBIS comments:
  *  Only a small set of VORBIS comment fields are officially designated. Most
@@ -274,19 +269,18 @@ static const struct metadata_map md_map_tv[] =
  *  for example--are of course handled. The rest of these tags are reported to
  *  have been used by various programs in the wild.
  */
-static const struct metadata_map md_map_vorbis[] =
-  {
-    { "albumartist",  0, mfi_offsetof(album_artist),      NULL },
-    { "album artist", 0, mfi_offsetof(album_artist),      NULL },
-    { "tracknumber",  1, mfi_offsetof(track),             NULL },
-    { "tracktotal",   1, mfi_offsetof(total_tracks),      NULL },
-    { "totaltracks",  1, mfi_offsetof(total_tracks),      NULL },
-    { "discnumber",   1, mfi_offsetof(disc),              NULL },
-    { "disctotal",    1, mfi_offsetof(total_discs),       NULL },
-    { "totaldiscs",   1, mfi_offsetof(total_discs),       NULL },
+static const struct metadata_map md_map_vorbis[] = {
+  { "albumartist",  0, mfi_offsetof(album_artist), NULL },
+  { "album artist", 0, mfi_offsetof(album_artist), NULL },
+  { "tracknumber",  1, mfi_offsetof(track),        NULL },
+  { "tracktotal",   1, mfi_offsetof(total_tracks), NULL },
+  { "totaltracks",  1, mfi_offsetof(total_tracks), NULL },
+  { "discnumber",   1, mfi_offsetof(disc),         NULL },
+  { "disctotal",    1, mfi_offsetof(total_discs),  NULL },
+  { "totaldiscs",   1, mfi_offsetof(total_discs),  NULL },
 
-    { NULL,           0, 0,                               NULL }
-  };
+  { NULL,           0, 0,                          NULL }
+};
 
 /* NOTE about ID3 tag names:
  *  metadata conversion for ID3v2 tags was added in ffmpeg in september 2009
@@ -303,25 +297,24 @@ static const struct metadata_map md_map_vorbis[] =
  * well supported by ffmpeg, and the server was parsing TDA/TDAT incorrectly
  *
  */
-static const struct metadata_map md_map_id3[] =
-  {
-    { "TT1",                 0, mfi_offsetof(grouping),              NULL },              /* ID3v2.2 */
-    { "TIT1",                0, mfi_offsetof(grouping),              NULL },              /* ID3v2.3 */
-    { "GP1",                 0, mfi_offsetof(grouping),              NULL },              /* unofficial iTunes */
-    { "GRP1",                0, mfi_offsetof(grouping),              NULL },              /* unofficial iTunes */
-    { "TCM",                 0, mfi_offsetof(composer),              NULL },              /* ID3v2.2 */
-    { "TPA",                 1, mfi_offsetof(disc),                  parse_disc },        /* ID3v2.2 */
-    { "XSOA",                0, mfi_offsetof(album_sort),            NULL },              /* ID3v2.3 */
-    { "XSOP",                0, mfi_offsetof(artist_sort),           NULL },              /* ID3v2.3 */
-    { "XSOT",                0, mfi_offsetof(title_sort),            NULL },              /* ID3v2.3 */
-    { "TS2",                 0, mfi_offsetof(album_artist_sort),     NULL },              /* ID3v2.2 */
-    { "TSO2",                0, mfi_offsetof(album_artist_sort),     NULL },              /* ID3v2.3 */
-    { "ALBUMARTISTSORT",     0, mfi_offsetof(album_artist_sort),     NULL },              /* ID3v2.x */
-    { "TSC",                 0, mfi_offsetof(composer_sort),         NULL },              /* ID3v2.2 */
-    { "TSOC",                0, mfi_offsetof(composer_sort),         NULL },              /* ID3v2.3 */
+static const struct metadata_map md_map_id3[] = {
+  { "TT1",             0, mfi_offsetof(grouping),          NULL       }, /* ID3v2.2 */
+  { "TIT1",            0, mfi_offsetof(grouping),          NULL       }, /* ID3v2.3 */
+  { "GP1",             0, mfi_offsetof(grouping),          NULL       }, /* unofficial iTunes */
+  { "GRP1",            0, mfi_offsetof(grouping),          NULL       }, /* unofficial iTunes */
+  { "TCM",             0, mfi_offsetof(composer),          NULL       }, /* ID3v2.2 */
+  { "TPA",             1, mfi_offsetof(disc),              parse_disc }, /* ID3v2.2 */
+  { "XSOA",            0, mfi_offsetof(album_sort),        NULL       }, /* ID3v2.3 */
+  { "XSOP",            0, mfi_offsetof(artist_sort),       NULL       }, /* ID3v2.3 */
+  { "XSOT",            0, mfi_offsetof(title_sort),        NULL       }, /* ID3v2.3 */
+  { "TS2",             0, mfi_offsetof(album_artist_sort), NULL       }, /* ID3v2.2 */
+  { "TSO2",            0, mfi_offsetof(album_artist_sort), NULL       }, /* ID3v2.3 */
+  { "ALBUMARTISTSORT", 0, mfi_offsetof(album_artist_sort), NULL       }, /* ID3v2.x */
+  { "TSC",             0, mfi_offsetof(composer_sort),     NULL       }, /* ID3v2.2 */
+  { "TSOC",            0, mfi_offsetof(composer_sort),     NULL       }, /* ID3v2.3 */
 
-    { NULL,                  0, 0,                                   NULL }
-  };
+  { NULL,              0, 0,                               NULL       }
+};
 
 static int
 extract_metadata_from_dict(struct media_file_info *mfi, AVDictionary *md, const struct metadata_map *md_map)
@@ -354,7 +347,7 @@ extract_metadata_from_dict(struct media_file_info *mfi, AVDictionary *md, const 
 
       if (!md_map[i].as_int)
 	{
-	  strval = (char **) ((char *) mfi + md_map[i].offset);
+	  strval = (char **)((char *)mfi + md_map[i].offset);
 
 	  if (*strval != NULL)
 	    continue;
@@ -363,7 +356,7 @@ extract_metadata_from_dict(struct media_file_info *mfi, AVDictionary *md, const 
 	}
       else
 	{
-	  intval = (uint32_t *) ((char *) mfi + md_map[i].offset);
+	  intval = (uint32_t *)((char *)mfi + md_map[i].offset);
 
 	  if (*intval != 0)
 	    continue;
@@ -379,7 +372,8 @@ extract_metadata_from_dict(struct media_file_info *mfi, AVDictionary *md, const 
 }
 
 static int
-extract_metadata(struct media_file_info *mfi, AVFormatContext *ctx, AVStream *audio_stream, AVStream *video_stream, const struct metadata_map *md_map)
+extract_metadata(struct media_file_info *mfi, AVFormatContext *ctx, AVStream *audio_stream, AVStream *video_stream,
+    const struct metadata_map *md_map)
 {
   int mdcount = 0;
   int ret;
@@ -415,7 +409,8 @@ extract_metadata(struct media_file_info *mfi, AVFormatContext *ctx, AVStream *au
  * Fills metadata read with ffmpeg/libav from the given path into the given mfi
  *
  * Following attributes from the given mfi are read to control how to read metadata:
- * - data_kind: if data_kind is http, icy metadata is used, if the path points to a playlist the first stream-uri in that playlist is used
+ * - data_kind: if data_kind is http, icy metadata is used, if the path points to a playlist the first stream-uri in
+ * that playlist is used
  * - media_kind: if media_kind is podcast or audiobook, video streams in the file are ignored
  * - compilation: like podcast/audiobook video streams are ignored for compilations
  * - file_size: if bitrate could not be read through ffmpeg/libav, file_size is used to estimate the bitrate
@@ -521,46 +516,46 @@ scan_metadata_ffmpeg(struct media_file_info *mfi, const char *file)
 #endif
       switch (codec_type)
 	{
-	  case AVMEDIA_TYPE_VIDEO:
-	    if (ctx->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
-	      {
-		DPRINTF(E_DBG, L_SCAN, "Found embedded artwork (stream %d)\n", i);
-		mfi->artwork = ARTWORK_EMBEDDED;
+	case AVMEDIA_TYPE_VIDEO:
+	  if (ctx->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
+	    {
+	      DPRINTF(E_DBG, L_SCAN, "Found embedded artwork (stream %d)\n", i);
+	      mfi->artwork = ARTWORK_EMBEDDED;
 
-		break;
-	      }
-
-	    // We treat these as audio no matter what
-	    if (mfi->compilation || (mfi->media_kind & (MEDIA_KIND_PODCAST | MEDIA_KIND_AUDIOBOOK)))
 	      break;
+	    }
 
-	    if (!video_stream)
-	      {
-		DPRINTF(E_DBG, L_SCAN, "File has video (stream %d)\n", i);
-
-		video_stream = ctx->streams[i];
-		video_codec_id = codec_id;
-
-		mfi->has_video = 1;
-	      }
+	  // We treat these as audio no matter what
+	  if (mfi->compilation || (mfi->media_kind & (MEDIA_KIND_PODCAST | MEDIA_KIND_AUDIOBOOK)))
 	    break;
 
-	  case AVMEDIA_TYPE_AUDIO:
-	    if (!audio_stream)
-	      {
-		audio_stream = ctx->streams[i];
-		audio_codec_id = codec_id;
+	  if (!video_stream)
+	    {
+	      DPRINTF(E_DBG, L_SCAN, "File has video (stream %d)\n", i);
 
-		mfi->samplerate = sample_rate;
-		mfi->bits_per_sample = 8 * av_get_bytes_per_sample(sample_fmt);
-		if (mfi->bits_per_sample == 0)
-		  mfi->bits_per_sample = av_get_bits_per_sample(codec_id);
-		mfi->channels = channels;
-	      }
-	    break;
+	      video_stream = ctx->streams[i];
+	      video_codec_id = codec_id;
 
-	  default:
-	    break;
+	      mfi->has_video = 1;
+	    }
+	  break;
+
+	case AVMEDIA_TYPE_AUDIO:
+	  if (!audio_stream)
+	    {
+	      audio_stream = ctx->streams[i];
+	      audio_codec_id = codec_id;
+
+	      mfi->samplerate = sample_rate;
+	      mfi->bits_per_sample = 8 * av_get_bytes_per_sample(sample_fmt);
+	      if (mfi->bits_per_sample == 0)
+		mfi->bits_per_sample = av_get_bits_per_sample(codec_id);
+	      mfi->channels = channels;
+	    }
+	  break;
+
+	default:
+	  break;
 	}
     }
 
@@ -581,7 +576,8 @@ scan_metadata_ffmpeg(struct media_file_info *mfi, const char *file)
   else if (ctx->duration > AV_TIME_BASE) /* guesstimate */
     mfi->bitrate = ((mfi->file_size * 8) / (ctx->duration / AV_TIME_BASE)) / 1000;
 
-  DPRINTF(E_DBG, L_SCAN, "Duration %d ms, bitrate %d kbps, samplerate %d channels %d\n", mfi->song_length, mfi->bitrate, mfi->samplerate, mfi->channels);
+  DPRINTF(E_DBG, L_SCAN, "Duration %d ms, bitrate %d kbps, samplerate %d channels %d\n", mfi->song_length, mfi->bitrate,
+      mfi->samplerate, mfi->channels);
 
   /* Try to extract ICY metadata if http stream */
   if (mfi->data_kind == DATA_KIND_HTTP)
@@ -629,134 +625,133 @@ scan_metadata_ffmpeg(struct media_file_info *mfi, const char *file)
   codec_id = (mfi->has_video) ? video_codec_id : audio_codec_id;
   switch (codec_id)
     {
-      case AV_CODEC_ID_AAC:
-	DPRINTF(E_DBG, L_SCAN, "AAC\n");
-	mfi->type = strdup("m4a");
-	mfi->codectype = strdup("mp4a");
-	mfi->description = strdup("AAC audio file");
-	break;
+    case AV_CODEC_ID_AAC:
+      DPRINTF(E_DBG, L_SCAN, "AAC\n");
+      mfi->type = strdup("m4a");
+      mfi->codectype = strdup("mp4a");
+      mfi->description = strdup("AAC audio file");
+      break;
 
-      case AV_CODEC_ID_ALAC:
-	DPRINTF(E_DBG, L_SCAN, "ALAC\n");
-	mfi->type = strdup("m4a");
-	mfi->codectype = strdup("alac");
-	mfi->description = strdup("Apple Lossless audio file");
-	break;
+    case AV_CODEC_ID_ALAC:
+      DPRINTF(E_DBG, L_SCAN, "ALAC\n");
+      mfi->type = strdup("m4a");
+      mfi->codectype = strdup("alac");
+      mfi->description = strdup("Apple Lossless audio file");
+      break;
 
-      case AV_CODEC_ID_FLAC:
-	DPRINTF(E_DBG, L_SCAN, "FLAC\n");
-	mfi->type = strdup("flac");
-	mfi->codectype = strdup("flac");
-	mfi->description = strdup("FLAC audio file");
+    case AV_CODEC_ID_FLAC:
+      DPRINTF(E_DBG, L_SCAN, "FLAC\n");
+      mfi->type = strdup("flac");
+      mfi->codectype = strdup("flac");
+      mfi->description = strdup("FLAC audio file");
 
-	extra_md_map = md_map_vorbis;
-	break;
+      extra_md_map = md_map_vorbis;
+      break;
 
-      case AV_CODEC_ID_APE:
-	DPRINTF(E_DBG, L_SCAN, "APE\n");
-	mfi->type = strdup("ape");
-	mfi->codectype = strdup("ape");
-	mfi->description = strdup("Monkey's audio");
-	break;
+    case AV_CODEC_ID_APE:
+      DPRINTF(E_DBG, L_SCAN, "APE\n");
+      mfi->type = strdup("ape");
+      mfi->codectype = strdup("ape");
+      mfi->description = strdup("Monkey's audio");
+      break;
 
-      case AV_CODEC_ID_MUSEPACK7:
-      case AV_CODEC_ID_MUSEPACK8:
-	DPRINTF(E_DBG, L_SCAN, "Musepack\n");
-	mfi->type = strdup("mpc");
-	mfi->codectype = strdup("mpc");
-	mfi->description = strdup("Musepack audio file");
-	break;
+    case AV_CODEC_ID_MUSEPACK7:
+    case AV_CODEC_ID_MUSEPACK8:
+      DPRINTF(E_DBG, L_SCAN, "Musepack\n");
+      mfi->type = strdup("mpc");
+      mfi->codectype = strdup("mpc");
+      mfi->description = strdup("Musepack audio file");
+      break;
 
-      case AV_CODEC_ID_MPEG4: /* Video */
-      case AV_CODEC_ID_H264:
-	DPRINTF(E_DBG, L_SCAN, "MPEG4 video\n");
-	mfi->type = strdup("m4v");
-	mfi->codectype = strdup("mp4v");
-	mfi->description = strdup("MPEG-4 video file");
+    case AV_CODEC_ID_MPEG4: /* Video */
+    case AV_CODEC_ID_H264:
+      DPRINTF(E_DBG, L_SCAN, "MPEG4 video\n");
+      mfi->type = strdup("m4v");
+      mfi->codectype = strdup("mp4v");
+      mfi->description = strdup("MPEG-4 video file");
 
-	extra_md_map = md_map_tv;
-	break;
+      extra_md_map = md_map_tv;
+      break;
 
-      case AV_CODEC_ID_MP3:
-	DPRINTF(E_DBG, L_SCAN, "MP3\n");
-	mfi->type = strdup("mp3");
-	mfi->codectype = strdup("mpeg");
-	mfi->description = strdup("MPEG audio file");
+    case AV_CODEC_ID_MP3:
+      DPRINTF(E_DBG, L_SCAN, "MP3\n");
+      mfi->type = strdup("mp3");
+      mfi->codectype = strdup("mpeg");
+      mfi->description = strdup("MPEG audio file");
 
-	extra_md_map = md_map_id3;
-	break;
+      extra_md_map = md_map_id3;
+      break;
 
-      case AV_CODEC_ID_VORBIS:
-	DPRINTF(E_DBG, L_SCAN, "VORBIS\n");
-	mfi->type = strdup("ogg");
-	mfi->codectype = strdup("ogg");
-	mfi->description = strdup("Ogg Vorbis audio file");
+    case AV_CODEC_ID_VORBIS:
+      DPRINTF(E_DBG, L_SCAN, "VORBIS\n");
+      mfi->type = strdup("ogg");
+      mfi->codectype = strdup("ogg");
+      mfi->description = strdup("Ogg Vorbis audio file");
 
-	extra_md_map = md_map_vorbis;
-	break;
+      extra_md_map = md_map_vorbis;
+      break;
 
-      case AV_CODEC_ID_WMAV1:
-      case AV_CODEC_ID_WMAV2:
-      case AV_CODEC_ID_WMAVOICE:
-	DPRINTF(E_DBG, L_SCAN, "WMA Voice\n");
-	mfi->type = strdup("wma");
-	mfi->codectype = strdup("wmav");
-	mfi->description = strdup("WMA audio file");
-	break;
+    case AV_CODEC_ID_WMAV1:
+    case AV_CODEC_ID_WMAV2:
+    case AV_CODEC_ID_WMAVOICE:
+      DPRINTF(E_DBG, L_SCAN, "WMA Voice\n");
+      mfi->type = strdup("wma");
+      mfi->codectype = strdup("wmav");
+      mfi->description = strdup("WMA audio file");
+      break;
 
-      case AV_CODEC_ID_WMAPRO:
-	DPRINTF(E_DBG, L_SCAN, "WMA Pro\n");
-	mfi->type = strdup("wmap");
-	mfi->codectype = strdup("wma");
-	mfi->description = strdup("WMA audio file");
-	break;
+    case AV_CODEC_ID_WMAPRO:
+      DPRINTF(E_DBG, L_SCAN, "WMA Pro\n");
+      mfi->type = strdup("wmap");
+      mfi->codectype = strdup("wma");
+      mfi->description = strdup("WMA audio file");
+      break;
 
-      case AV_CODEC_ID_WMALOSSLESS:
-	DPRINTF(E_DBG, L_SCAN, "WMA Lossless\n");
-	mfi->type = strdup("wma");
-	mfi->codectype = strdup("wmal");
-	mfi->description = strdup("WMA audio file");
-	break;
+    case AV_CODEC_ID_WMALOSSLESS:
+      DPRINTF(E_DBG, L_SCAN, "WMA Lossless\n");
+      mfi->type = strdup("wma");
+      mfi->codectype = strdup("wmal");
+      mfi->description = strdup("WMA audio file");
+      break;
 
-      case AV_CODEC_ID_PCM_S16LE ... AV_CODEC_ID_PCM_F64LE:
-	if (strcmp(ctx->iformat->name, "aiff") == 0)
-	  {
-	    DPRINTF(E_DBG, L_SCAN, "AIFF\n");
-	    mfi->type = strdup("aif");
-	    mfi->codectype = strdup("aif");
-	    mfi->description = strdup("AIFF audio file");
-	    break;
-	  }
-	else if (strcmp(ctx->iformat->name, "wav") == 0)
-	  {
-	    DPRINTF(E_DBG, L_SCAN, "WAV\n");
-	    mfi->type = strdup("wav");
-	    mfi->codectype = strdup("wav");
-	    mfi->description = strdup("WAV audio file");
-	    break;
-	  }
-	/* WARNING: will fallthrough to default case, don't move */
-	/* FALLTHROUGH */
+    case AV_CODEC_ID_PCM_S16LE ... AV_CODEC_ID_PCM_F64LE:
+      if (strcmp(ctx->iformat->name, "aiff") == 0)
+	{
+	  DPRINTF(E_DBG, L_SCAN, "AIFF\n");
+	  mfi->type = strdup("aif");
+	  mfi->codectype = strdup("aif");
+	  mfi->description = strdup("AIFF audio file");
+	  break;
+	}
+      else if (strcmp(ctx->iformat->name, "wav") == 0)
+	{
+	  DPRINTF(E_DBG, L_SCAN, "WAV\n");
+	  mfi->type = strdup("wav");
+	  mfi->codectype = strdup("wav");
+	  mfi->description = strdup("WAV audio file");
+	  break;
+	}
+      /* WARNING: will fallthrough to default case, don't move */
+      /* FALLTHROUGH */
 
-      default:
-	DPRINTF(E_DBG, L_SCAN, "Unknown codec 0x%x (video: %s), format %s (%s)\n",
-		codec_id, (mfi->has_video) ? "yes" : "no", ctx->iformat->name, ctx->iformat->long_name);
-	mfi->type = strdup("unkn");
-	mfi->codectype = strdup("unkn");
-	if (mfi->has_video)
-	  {
-	    mfi->description = strdup("Unknown video file format");
-	    extra_md_map = md_map_tv;
-	  }
-	else
-	  mfi->description = strdup("Unknown audio file format");
-	break;
+    default:
+      DPRINTF(E_DBG, L_SCAN, "Unknown codec 0x%x (video: %s), format %s (%s)\n", codec_id,
+          (mfi->has_video) ? "yes" : "no", ctx->iformat->name, ctx->iformat->long_name);
+      mfi->type = strdup("unkn");
+      mfi->codectype = strdup("unkn");
+      if (mfi->has_video)
+	{
+	  mfi->description = strdup("Unknown video file format");
+	  extra_md_map = md_map_tv;
+	}
+      else
+	mfi->description = strdup("Unknown audio file format");
+      break;
     }
 
   mdcount = 0;
 
-  if ((!ctx->metadata) && (!audio_stream->metadata)
-      && (video_stream && !video_stream->metadata))
+  if ((!ctx->metadata) && (!audio_stream->metadata) && (video_stream && !video_stream->metadata))
     {
       DPRINTF(E_WARN, L_SCAN, "ffmpeg reports no metadata\n");
 
@@ -788,7 +783,7 @@ scan_metadata_ffmpeg(struct media_file_info *mfi, const char *file)
       mfi->media_kind = MEDIA_KIND_MOVIE;
     }
 
- skip_extract:
+skip_extract:
   avformat_close_input(&ctx);
 
   if (mdcount == 0)
@@ -802,7 +797,6 @@ scan_metadata_ffmpeg(struct media_file_info *mfi, const char *file)
 
   return 0;
 }
-
 
 /* ----------------------- Writing metadata to files ------------------------ */
 
@@ -857,7 +851,7 @@ file_copy(const char *dst, const char *src)
   close(fd_dst);
   return 0;
 
- error:
+error:
   if (fd_src != -1)
     close(fd_src);
   if (fd_dst != -1)
@@ -911,7 +905,7 @@ file_copy_to_tmp(char *dst, size_t dst_size, const char *src)
   close(fd_dst);
   return 0;
 
- error:
+error:
   if (fd_src != -1)
     close(fd_src);
   if (fd_dst != -1)
@@ -929,7 +923,8 @@ file_write_rating(const char *dst, const char *src, const char *rating)
   const AVDictionaryEntry *tag;
   AVStream *out_stream;
   AVStream *in_stream;
-#if (LIBAVCODEC_VERSION_MAJOR > 59) || ((LIBAVCODEC_VERSION_MAJOR == 59) && (LIBAVCODEC_VERSION_MINOR >= 0) && (LIBAVCODEC_VERSION_MICRO >= 100))
+#if (LIBAVCODEC_VERSION_MAJOR > 59)                                                                                    \
+    || ((LIBAVCODEC_VERSION_MAJOR == 59) && (LIBAVCODEC_VERSION_MINOR >= 0) && (LIBAVCODEC_VERSION_MICRO >= 100))
   const AVOutputFormat *out_fmt;
 #else
   AVOutputFormat *out_fmt;
@@ -952,7 +947,8 @@ file_write_rating(const char *dst, const char *src, const char *rating)
   ret = avformat_find_stream_info(in_fmt_ctx, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error reading input stream information from '%s': %s\n", in_fmt_ctx->url, av_err2str(ret));
+      DPRINTF(
+          E_LOG, L_SCAN, "Error reading input stream information from '%s': %s\n", in_fmt_ctx->url, av_err2str(ret));
       goto error;
     }
 
@@ -986,10 +982,10 @@ file_write_rating(const char *dst, const char *src, const char *rating)
 
       out_stream = avformat_new_stream(out_fmt_ctx, NULL);
       if (!out_stream)
-        {
+	{
 	  DPRINTF(E_LOG, L_SCAN, "Error allocating output stream for '%s'\n", in_fmt_ctx->url);
 	  goto error;
-        }
+	}
 
       ret = avcodec_parameters_copy(out_stream->codecpar, in_stream->codecpar);
       if (ret < 0)
@@ -1046,8 +1042,10 @@ file_write_rating(const char *dst, const char *src, const char *rating)
       out_stream = out_fmt_ctx->streams[pkt.stream_index];
 
       /* copy packet */
-      pkt.pts = av_rescale_q_rnd(pkt.pts, in_stream->time_base, out_stream->time_base, AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
-      pkt.dts = av_rescale_q_rnd(pkt.dts, in_stream->time_base, out_stream->time_base, AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+      pkt.pts = av_rescale_q_rnd(
+          pkt.pts, in_stream->time_base, out_stream->time_base, AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
+      pkt.dts = av_rescale_q_rnd(
+          pkt.dts, in_stream->time_base, out_stream->time_base, AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
       pkt.duration = av_rescale_q(pkt.duration, in_stream->time_base, out_stream->time_base);
       pkt.pos = -1;
 
@@ -1069,7 +1067,7 @@ file_write_rating(const char *dst, const char *src, const char *rating)
   av_freep(&stream_mapping);
   return 0;
 
- error:
+error:
   if (out_fmt_ctx && !(out_fmt_ctx->oformat->flags & AVFMT_NOFILE))
     avio_closep(&out_fmt_ctx->pb);
   avformat_free_context(out_fmt_ctx);
@@ -1090,7 +1088,8 @@ file_rating_matches(const char *path, const char *rating)
   ret = avformat_open_input(&in_fmt_ctx, path, NULL, NULL);
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Failed to open library file for rating metadata update '%s' - %s\n", path, av_err2str(ret));
+      DPRINTF(
+          E_LOG, L_SCAN, "Failed to open library file for rating metadata update '%s' - %s\n", path, av_err2str(ret));
       return true; // Return true so called aborts
     }
 

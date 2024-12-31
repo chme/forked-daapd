@@ -22,39 +22,39 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <arpa/inet.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <net/if.h>
+#include <sys/types.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <poll.h>
 
 #include <event2/event.h>
 
-#include <avahi-common/watch.h>
-#include <avahi-common/malloc.h>
-#include <avahi-common/error.h>
 #include <avahi-client/client.h>
-#include <avahi-client/publish.h>
 #include <avahi-client/lookup.h>
+#include <avahi-client/publish.h>
+#include <avahi-common/error.h>
+#include <avahi-common/malloc.h>
+#include <avahi-common/watch.h>
 
 // Hack for FreeBSD, don't want to bother with sysconf()
 #ifndef HOST_NAME_MAX
-# include <limits.h>
-# define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#include <limits.h>
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
 #endif
 
-#include "logger.h"
 #include "conffile.h"
+#include "logger.h"
 #include "mdns.h"
 
 #define MDNSERR avahi_strerror(avahi_client_errno(mdns_client))
@@ -69,9 +69,7 @@ static AvahiClient *mdns_client = NULL;
 static AvahiEntryGroup *mdns_group = NULL;
 static AvahiIfIndex mdns_interface = AVAHI_IF_UNSPEC;
 
-
-struct AvahiWatch
-{
+struct AvahiWatch {
   struct event *ev;
 
   AvahiWatchCallback cb;
@@ -80,8 +78,7 @@ struct AvahiWatch
   AvahiWatch *next;
 };
 
-struct AvahiTimeout
-{
+struct AvahiTimeout {
   struct event *ev;
 
   AvahiTimeoutCallback cb;
@@ -331,23 +328,18 @@ ev_timeout_free(AvahiTimeout *t)
   free(t);
 }
 
-static struct AvahiPoll ev_poll_api =
-  {
-    .userdata = NULL,
-    .watch_new = ev_watch_new,
-    .watch_update = ev_watch_update,
-    .watch_get_events = ev_watch_get_events,
-    .watch_free = ev_watch_free,
-    .timeout_new = ev_timeout_new,
-    .timeout_update = ev_timeout_update,
-    .timeout_free = ev_timeout_free
-  };
-
+static struct AvahiPoll ev_poll_api = { .userdata = NULL,
+  .watch_new = ev_watch_new,
+  .watch_update = ev_watch_update,
+  .watch_get_events = ev_watch_get_events,
+  .watch_free = ev_watch_free,
+  .timeout_new = ev_timeout_new,
+  .timeout_update = ev_timeout_update,
+  .timeout_free = ev_timeout_free };
 
 /* Avahi client callbacks & helpers */
 
-struct mdns_browser
-{
+struct mdns_browser {
   char *type;
   AvahiProtocol protocol;
   mdns_browse_cb cb;
@@ -366,8 +358,7 @@ struct mdns_record_browser {
   int port;
 };
 
-struct mdns_resolver
-{
+struct mdns_resolver {
   char *name;
   AvahiServiceResolver *resolver;
   AvahiProtocol proto;
@@ -375,14 +366,12 @@ struct mdns_resolver
   struct mdns_resolver *next;
 };
 
-enum publish
-{
+enum publish {
   MDNS_PUBLISH_SERVICE,
   MDNS_PUBLISH_CNAME,
 };
 
-struct mdns_group_entry
-{
+struct mdns_group_entry {
   enum publish publish;
   char *name;
   char *type;
@@ -475,15 +464,15 @@ interface_index_get(const char *addr)
 
 // Creates a resolver and adds to list
 static int
-resolver_add(struct mdns_resolver **head, AvahiIfIndex intf, AvahiProtocol proto,
-             const char *name, const char *type, const char *domain,
-             AvahiServiceResolverCallback cb, void *user_data)
+resolver_add(struct mdns_resolver **head, AvahiIfIndex intf, AvahiProtocol proto, const char *name, const char *type,
+    const char *domain, AvahiServiceResolverCallback cb, void *user_data)
 {
   struct mdns_resolver *r;
 
   CHECK_NULL(L_MDNS, r = calloc(1, sizeof(struct mdns_resolver)));
 
-  r->resolver = avahi_service_resolver_new(mdns_client, intf, proto, name, type, domain, AVAHI_PROTO_UNSPEC, 0, cb, user_data);
+  r->resolver
+      = avahi_service_resolver_new(mdns_client, intf, proto, name, type, domain, AVAHI_PROTO_UNSPEC, 0, cb, user_data);
   if (!r->resolver)
     {
       DPRINTF(E_LOG, L_MDNS, "Failed to create service resolver: %s\n", MDNSERR);
@@ -600,14 +589,16 @@ connection_test(int family, const char *address, const char *address_log, int po
   ret = getaddrinfo(address, strport, &hints, &ai);
   if (ret != 0)
     {
-      DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with getaddrinfo error: %s\n", address_log, port, gai_strerror(ret));
+      DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with getaddrinfo error: %s\n", address_log, port,
+          gai_strerror(ret));
       return -1;
     }
 
   sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
   if (sock < 0)
     {
-      DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with socket error: %s\n", address_log, port, strerror(errno));
+      DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with socket error: %s\n", address_log, port,
+          strerror(errno));
       goto out_free_ai;
     }
 
@@ -616,21 +607,24 @@ connection_test(int family, const char *address, const char *address_log, int po
   flags = fcntl(sock, F_GETFL, 0);
   if (flags < 0)
     {
-      DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with fcntl get flags error: %s\n", address_log, port, strerror(errno));
+      DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with fcntl get flags error: %s\n", address_log, port,
+          strerror(errno));
       goto out_close_socket;
     }
 
   ret = fcntl(sock, F_SETFL, flags | O_NONBLOCK);
   if (ret < 0)
     {
-      DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with fcntl set flags error: %s\n", address_log, port, strerror(errno));
+      DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with fcntl set flags error: %s\n", address_log, port,
+          strerror(errno));
       goto out_close_socket;
     }
 
   ret = connect(sock, ai->ai_addr, ai->ai_addrlen);
   if (ret < 0 && errno != EINPROGRESS)
     {
-      DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with connect error: %s\n", address_log, port, strerror(errno));
+      DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with connect error: %s\n", address_log, port,
+          strerror(errno));
       goto out_close_socket;
     }
 
@@ -641,16 +635,18 @@ connection_test(int family, const char *address, const char *address_log, int po
       // Use poll here since select requires using fdset that would be overflowed in FreeBSD
       fd.fd = sock;
       fd.events = POLLOUT;
-       
+
       ret = poll(&fd, 1, MDNS_CONNECT_TEST_TIMEOUT * 1000);
       if (ret < 0)
 	{
-	  DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with select error: %s\n", address_log, port, strerror(errno));
+	  DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with select error: %s\n", address_log, port,
+	      strerror(errno));
 	  goto out_close_socket;
 	}
       else if (ret == 0)
 	{
-	  DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d timed out (limit is %d seconds)\n", address_log, port, MDNS_CONNECT_TEST_TIMEOUT);
+	  DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d timed out (limit is %d seconds)\n", address_log, port,
+	      MDNS_CONNECT_TEST_TIMEOUT);
 	  goto out_close_socket;
 	}
 
@@ -658,12 +654,14 @@ connection_test(int family, const char *address, const char *address_log, int po
       ret = getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &len);
       if (ret < 0)
 	{
-	  DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with getsockopt error: %s\n", address_log, port, strerror(errno));
+	  DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with getsockopt error: %s\n", address_log, port,
+	      strerror(errno));
 	  goto out_close_socket;
 	}
       else if (error)
 	{
-	  DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with getsockopt return: %s\n", address_log, port, strerror(error));
+	  DPRINTF(E_WARN, L_MDNS, "Connection test to %s:%d failed with getsockopt return: %s\n", address_log, port,
+	      strerror(error));
 	  goto out_close_socket;
 	}
     }
@@ -672,9 +670,9 @@ connection_test(int family, const char *address, const char *address_log, int po
 
   retval = 0;
 
- out_close_socket:
+out_close_socket:
   close(sock);
- out_free_ai:
+out_free_ai:
   freeaddrinfo(ai);
 
   return retval;
@@ -700,15 +698,19 @@ address_check(const char *hostname, const AvahiAddress *addr, int port, enum mdn
   else
     snprintf(address_log, sizeof(address_log), "[%s]", address);
 
-  if (addr->proto == AVAHI_PROTO_INET6 && (flags & MDNS_IPV4ONLY || !cfg_getbool(cfg_getsec(cfg, "general"), "ipv6"))) {
-    DPRINTF(E_WARN, L_MDNS, "Ignoring announcement from %s, address %s is ipv6, but ipv6 is disabled\n", hostname, address_log);
-    return -1;
-  }
+  if (addr->proto == AVAHI_PROTO_INET6 && (flags & MDNS_IPV4ONLY || !cfg_getbool(cfg_getsec(cfg, "general"), "ipv6")))
+    {
+      DPRINTF(E_WARN, L_MDNS, "Ignoring announcement from %s, address %s is ipv6, but ipv6 is disabled\n", hostname,
+          address_log);
+      return -1;
+    }
 
-  if ((addr->proto == AVAHI_PROTO_INET && is_v4ll(&(addr->data.ipv4))) || (addr->proto == AVAHI_PROTO_INET6 && is_v6ll(&(addr->data.ipv6)))) {
-    DPRINTF(E_WARN, L_MDNS, "Ignoring announcement from %s, address %s is link-local\n", hostname, address_log);
-    return -1;
-  }
+  if ((addr->proto == AVAHI_PROTO_INET && is_v4ll(&(addr->data.ipv4)))
+      || (addr->proto == AVAHI_PROTO_INET6 && is_v6ll(&(addr->data.ipv6))))
+    {
+      DPRINTF(E_WARN, L_MDNS, "Ignoring announcement from %s, address %s is link-local\n", hostname, address_log);
+      return -1;
+    }
 
   if (!(flags & MDNS_CONNECTION_TEST))
     return 0; // All done
@@ -724,9 +726,9 @@ address_check(const char *hostname, const AvahiAddress *addr, int port, enum mdn
 }
 
 static void
-browse_record_callback(AvahiRecordBrowser *b, AvahiIfIndex intf, AvahiProtocol proto,
-                       AvahiBrowserEvent event, const char *hostname, uint16_t clazz, uint16_t rtype,
-                       const void *rdata, size_t rsize, AvahiLookupResultFlags flags, void *userdata)
+browse_record_callback(AvahiRecordBrowser *b, AvahiIfIndex intf, AvahiProtocol proto, AvahiBrowserEvent event,
+    const char *hostname, uint16_t clazz, uint16_t rtype, const void *rdata, size_t rsize, AvahiLookupResultFlags flags,
+    void *userdata)
 {
   struct mdns_record_browser *rb_data;
   AvahiAddress addr;
@@ -754,7 +756,8 @@ browse_record_callback(AvahiRecordBrowser *b, AvahiIfIndex intf, AvahiProtocol p
 
   CHECK_NULL(L_MDNS, avahi_address_snprint(address, sizeof(address), &addr));
 
-  DPRINTF(E_DBG, L_MDNS, "Avahi Record Browser (%s, proto %d): NEW record %s for service type '%s'\n", hostname, proto, address, rb_data->mb->type);
+  DPRINTF(E_DBG, L_MDNS, "Avahi Record Browser (%s, proto %d): NEW record %s for service type '%s'\n", hostname, proto,
+      address, rb_data->mb->type);
 
   ret = address_check(hostname, &addr, rb_data->port, rb_data->mb->flags);
   if (ret < 0)
@@ -762,10 +765,11 @@ browse_record_callback(AvahiRecordBrowser *b, AvahiIfIndex intf, AvahiProtocol p
 
   // Execute callback (mb->cb) with all the data
   family = avahi_proto_to_af(addr.proto);
-  rb_data->mb->cb(rb_data->name, rb_data->mb->type, rb_data->domain, hostname, family, address, rb_data->port, rb_data->txt_kv);
+  rb_data->mb->cb(
+      rb_data->name, rb_data->mb->type, rb_data->domain, hostname, family, address, rb_data->port, rb_data->txt_kv);
 
   // Stop record browser, we found an address (or there was an error)
- out_free_record_browser:
+out_free_record_browser:
   keyval_clear(rb_data->txt_kv);
   free(rb_data->txt_kv);
   free(rb_data->name);
@@ -783,8 +787,8 @@ browse_record_callback(AvahiRecordBrowser *b, AvahiIfIndex intf, AvahiProtocol p
 // address record may be NULL if the resolver is returning a failure.
 static void
 browse_resolve_callback(AvahiServiceResolver *r, AvahiIfIndex intf, AvahiProtocol proto, AvahiResolverEvent event,
-			const char *name, const char *type, const char *domain, const char *hostname, const AvahiAddress *addr,
-			uint16_t port, AvahiStringList *txt, AvahiLookupResultFlags flags, void *userdata)
+    const char *name, const char *type, const char *domain, const char *hostname, const AvahiAddress *addr,
+    uint16_t port, AvahiStringList *txt, AvahiLookupResultFlags flags, void *userdata)
 {
   AvahiRecordBrowser *rb;
   struct mdns_browser *mb;
@@ -802,7 +806,8 @@ browse_resolve_callback(AvahiServiceResolver *r, AvahiIfIndex intf, AvahiProtoco
   if (event != AVAHI_RESOLVER_FOUND)
     {
       if (event == AVAHI_RESOLVER_FAILURE)
-	DPRINTF(E_LOG, L_MDNS, "Avahi Resolver failure: service '%s' type '%s' proto %d: %s\n", name, type, proto, MDNSERR);
+	DPRINTF(
+	    E_LOG, L_MDNS, "Avahi Resolver failure: service '%s' type '%s' proto %d: %s\n", name, type, proto, MDNSERR);
       else
 	DPRINTF(E_LOG, L_MDNS, "Avahi Resolver empty callback\n");
 
@@ -818,8 +823,8 @@ browse_resolve_callback(AvahiServiceResolver *r, AvahiIfIndex intf, AvahiProtoco
 
   CHECK_NULL(L_MDNS, avahi_address_snprint(address, sizeof(address), addr));
 
-  DPRINTF(E_DBG, L_MDNS, "Avahi Resolver: resolved service '%s' type '%s' proto %d/%d, host %s, address %s\n",
-    name, type, proto, addr->proto, hostname, address);
+  DPRINTF(E_DBG, L_MDNS, "Avahi Resolver: resolved service '%s' type '%s' proto %d/%d, host %s, address %s\n", name,
+      type, proto, addr->proto, hostname, address);
 
   CHECK_NULL(L_MDNS, txt_kv = keyval_alloc());
 
@@ -864,7 +869,8 @@ browse_resolve_callback(AvahiServiceResolver *r, AvahiIfIndex intf, AvahiProtoco
       else
 	dns_type = AVAHI_DNS_TYPE_A;
 
-      rb = avahi_record_browser_new(mdns_client, intf, proto, hostname, AVAHI_DNS_CLASS_IN, dns_type, 0, browse_record_callback, rb_data);
+      rb = avahi_record_browser_new(
+          mdns_client, intf, proto, hostname, AVAHI_DNS_CLASS_IN, dns_type, 0, browse_record_callback, rb_data);
       if (!rb)
 	DPRINTF(E_LOG, L_MDNS, "Could not create record browser for host %s: %s\n", hostname, MDNSERR);
 
@@ -882,53 +888,52 @@ browse_resolve_callback(AvahiServiceResolver *r, AvahiIfIndex intf, AvahiProtoco
 
 static void
 browse_callback(AvahiServiceBrowser *b, AvahiIfIndex intf, AvahiProtocol proto, AvahiBrowserEvent event,
-		const char *name, const char *type, const char *domain, AvahiLookupResultFlags flags, void *userdata)
+    const char *name, const char *type, const char *domain, AvahiLookupResultFlags flags, void *userdata)
 {
   struct mdns_browser *mb = userdata;
   int family;
 
   switch (event)
     {
-      case AVAHI_BROWSER_FAILURE:
-	DPRINTF(E_LOG, L_MDNS, "Avahi Browser failure: %s\n", MDNSERR);
+    case AVAHI_BROWSER_FAILURE:
+      DPRINTF(E_LOG, L_MDNS, "Avahi Browser failure: %s\n", MDNSERR);
 
-	avahi_service_browser_free(b);
+      avahi_service_browser_free(b);
 
-	b = avahi_service_browser_new(mdns_client, mdns_interface, mb->protocol, mb->type, NULL, 0, browse_callback, mb);
-	if (!b)
-	  {
-	    DPRINTF(E_LOG, L_MDNS, "Failed to recreate service browser (service type %s): %s\n", mb->type, MDNSERR);
-	    return;
-	  }
+      b = avahi_service_browser_new(mdns_client, mdns_interface, mb->protocol, mb->type, NULL, 0, browse_callback, mb);
+      if (!b)
+	{
+	  DPRINTF(E_LOG, L_MDNS, "Failed to recreate service browser (service type %s): %s\n", mb->type, MDNSERR);
+	  return;
+	}
 
-	break;
+      break;
 
-      case AVAHI_BROWSER_NEW:
-	DPRINTF(E_DBG, L_MDNS, "Avahi Browser: NEW service '%s' type '%s' proto %d\n", name, type, proto);
+    case AVAHI_BROWSER_NEW:
+      DPRINTF(E_DBG, L_MDNS, "Avahi Browser: NEW service '%s' type '%s' proto %d\n", name, type, proto);
 
-	resolver_add(&resolver_list, intf, proto, name, type, domain, browse_resolve_callback, mb);
+      resolver_add(&resolver_list, intf, proto, name, type, domain, browse_resolve_callback, mb);
 
-	break;
+      break;
 
-      case AVAHI_BROWSER_REMOVE:
-	DPRINTF(E_DBG, L_MDNS, "Avahi Browser: REMOVE service '%s' type '%s' proto %d\n", name, type, proto);
+    case AVAHI_BROWSER_REMOVE:
+      DPRINTF(E_DBG, L_MDNS, "Avahi Browser: REMOVE service '%s' type '%s' proto %d\n", name, type, proto);
 
-	family = avahi_proto_to_af(proto);
-	if (family != AF_UNSPEC)
-	  mb->cb(name, type, domain, NULL, family, NULL, -1, NULL);
+      family = avahi_proto_to_af(proto);
+      if (family != AF_UNSPEC)
+	mb->cb(name, type, domain, NULL, family, NULL, -1, NULL);
 
-	resolver_remove(&resolver_list, name, proto);
+      resolver_remove(&resolver_list, name, proto);
 
-	break;
+      break;
 
-      case AVAHI_BROWSER_ALL_FOR_NOW:
-      case AVAHI_BROWSER_CACHE_EXHAUSTED:
-	DPRINTF(E_DBG, L_MDNS, "Avahi Browser (%s): no more results (%s)\n", mb->type,
-		(event == AVAHI_BROWSER_CACHE_EXHAUSTED) ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW");
-	break;
+    case AVAHI_BROWSER_ALL_FOR_NOW:
+    case AVAHI_BROWSER_CACHE_EXHAUSTED:
+      DPRINTF(E_DBG, L_MDNS, "Avahi Browser (%s): no more results (%s)\n", mb->type,
+          (event == AVAHI_BROWSER_CACHE_EXHAUSTED) ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW");
+      break;
     }
 }
-
 
 static void
 entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state, AVAHI_GCC_UNUSED void *userdata)
@@ -938,25 +943,25 @@ entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state, AVAHI_GCC_U
 
   switch (state)
     {
-      case AVAHI_ENTRY_GROUP_ESTABLISHED:
-        DPRINTF(E_DBG, L_MDNS, "Successfully added mDNS services\n");
-        break;
+    case AVAHI_ENTRY_GROUP_ESTABLISHED:
+      DPRINTF(E_DBG, L_MDNS, "Successfully added mDNS services\n");
+      break;
 
-      case AVAHI_ENTRY_GROUP_COLLISION:
-        DPRINTF(E_DBG, L_MDNS, "Group collision\n");
-        break;
+    case AVAHI_ENTRY_GROUP_COLLISION:
+      DPRINTF(E_DBG, L_MDNS, "Group collision\n");
+      break;
 
-      case AVAHI_ENTRY_GROUP_FAILURE:
-        DPRINTF(E_DBG, L_MDNS, "Group failure\n");
-        break;
+    case AVAHI_ENTRY_GROUP_FAILURE:
+      DPRINTF(E_DBG, L_MDNS, "Group failure\n");
+      break;
 
-      case AVAHI_ENTRY_GROUP_UNCOMMITED:
-        DPRINTF(E_DBG, L_MDNS, "Group uncommitted\n");
-	break;
+    case AVAHI_ENTRY_GROUP_UNCOMMITED:
+      DPRINTF(E_DBG, L_MDNS, "Group uncommitted\n");
+      break;
 
-      case AVAHI_ENTRY_GROUP_REGISTERING:
-        DPRINTF(E_DBG, L_MDNS, "Group registering\n");
-        break;
+    case AVAHI_ENTRY_GROUP_REGISTERING:
+      DPRINTF(E_DBG, L_MDNS, "Group registering\n");
+      break;
     }
 }
 
@@ -983,9 +988,8 @@ create_group_entry(struct mdns_group_entry *ge, int commit)
     {
       DPRINTF(E_DBG, L_MDNS, "Adding service %s/%s\n", ge->name, ge->type);
 
-      ret = avahi_entry_group_add_service_strlst(mdns_group, mdns_interface, AVAHI_PROTO_UNSPEC, 0,
-						 ge->name, ge->type,
-						 NULL, NULL, ge->port, ge->txt);
+      ret = avahi_entry_group_add_service_strlst(
+          mdns_group, mdns_interface, AVAHI_PROTO_UNSPEC, 0, ge->name, ge->type, NULL, NULL, ge->port, ge->txt);
       if (ret < 0)
 	{
 	  DPRINTF(E_LOG, L_MDNS, "Could not add mDNS service %s/%s: %s\n", ge->name, ge->type, avahi_strerror(ret));
@@ -1007,15 +1011,15 @@ create_group_entry(struct mdns_group_entry *ge, int commit)
 
       ret = snprintf(rdata, sizeof(rdata), ".%s.local", hostname);
       if (!(ret > 0 && ret < sizeof(rdata)))
-        {
+	{
 	  DPRINTF(E_LOG, L_MDNS, "Could not add CNAME %s, hostname is invalid\n", ge->name);
 	  return -1;
-        }
+	}
 
       // Convert to dns string: .myserver.local -> \12myserver\6local
       count = 0;
       for (i = ret - 1; i >= 0; i--)
-        {
+	{
 	  if (rdata[i] == '.')
 	    {
 	      rdata[i] = count;
@@ -1023,13 +1027,12 @@ create_group_entry(struct mdns_group_entry *ge, int commit)
 	    }
 	  else
 	    count++;
-        }
+	}
 
       // ret + 1 should be the string length of rdata incl. 0-terminator
       ret = avahi_entry_group_add_record(mdns_group, mdns_interface, AVAHI_PROTO_UNSPEC,
-                                         AVAHI_PUBLISH_USE_MULTICAST | AVAHI_PUBLISH_ALLOW_MULTIPLE,
-                                         ge->name, AVAHI_DNS_CLASS_IN, AVAHI_DNS_TYPE_CNAME,
-                                         AVAHI_DEFAULT_TTL, rdata, ret + 1);
+          AVAHI_PUBLISH_USE_MULTICAST | AVAHI_PUBLISH_ALLOW_MULTIPLE, ge->name, AVAHI_DNS_CLASS_IN,
+          AVAHI_DNS_TYPE_CNAME, AVAHI_DEFAULT_TTL, rdata, ret + 1);
       if (ret < 0)
 	{
 	  DPRINTF(E_LOG, L_MDNS, "Could not add CNAME record %s: %s\n", ge->name, avahi_strerror(ret));
@@ -1080,7 +1083,7 @@ create_all_group_entries(void)
 }
 
 static void
-client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata)
+client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void *userdata)
 {
   struct mdns_browser *mb;
   AvahiServiceBrowser *b;
@@ -1088,62 +1091,62 @@ client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * 
 
   switch (state)
     {
-      case AVAHI_CLIENT_S_RUNNING:
-        DPRINTF(E_LOG, L_MDNS, "Avahi state change: Client running\n");
-        if (!mdns_group)
-	  create_all_group_entries();
+    case AVAHI_CLIENT_S_RUNNING:
+      DPRINTF(E_LOG, L_MDNS, "Avahi state change: Client running\n");
+      if (!mdns_group)
+	create_all_group_entries();
 
-	for (mb = browser_list; mb; mb = mb->next)
-	  {
-	    b = avahi_service_browser_new(mdns_client, mdns_interface, mb->protocol, mb->type, NULL, 0, browse_callback, mb);
-	    if (!b)
-	      DPRINTF(E_LOG, L_MDNS, "Failed to recreate service browser (service type %s): %s\n", mb->type, MDNSERR);
-	  }
-        break;
+      for (mb = browser_list; mb; mb = mb->next)
+	{
+	  b = avahi_service_browser_new(
+	      mdns_client, mdns_interface, mb->protocol, mb->type, NULL, 0, browse_callback, mb);
+	  if (!b)
+	    DPRINTF(E_LOG, L_MDNS, "Failed to recreate service browser (service type %s): %s\n", mb->type, MDNSERR);
+	}
+      break;
 
-      case AVAHI_CLIENT_S_COLLISION:
-        DPRINTF(E_LOG, L_MDNS, "Avahi state change: Client collision\n");
-        if(mdns_group)
-	  avahi_entry_group_reset(mdns_group);
-        break;
+    case AVAHI_CLIENT_S_COLLISION:
+      DPRINTF(E_LOG, L_MDNS, "Avahi state change: Client collision\n");
+      if (mdns_group)
+	avahi_entry_group_reset(mdns_group);
+      break;
 
-      case AVAHI_CLIENT_FAILURE:
-        DPRINTF(E_LOG, L_MDNS, "Avahi state change: Client failure\n");
+    case AVAHI_CLIENT_FAILURE:
+      DPRINTF(E_LOG, L_MDNS, "Avahi state change: Client failure\n");
 
-	error = avahi_client_errno(c);
-	if (error == AVAHI_ERR_DISCONNECTED)
-	  {
-	    DPRINTF(E_LOG, L_MDNS, "Avahi Server disconnected, reconnecting\n");
+      error = avahi_client_errno(c);
+      if (error == AVAHI_ERR_DISCONNECTED)
+	{
+	  DPRINTF(E_LOG, L_MDNS, "Avahi Server disconnected, reconnecting\n");
 
-	    // All resolvers are lost, free our list. Must be done before freeing
-	    // mdns_client below, otherwise r->resolver will be invalid.
-	    resolver_remove_all(&resolver_list);
+	  // All resolvers are lost, free our list. Must be done before freeing
+	  // mdns_client below, otherwise r->resolver will be invalid.
+	  resolver_remove_all(&resolver_list);
 
-	    avahi_client_free(mdns_client);
-	    mdns_group = NULL;
+	  avahi_client_free(mdns_client);
+	  mdns_group = NULL;
 
-	    mdns_client = avahi_client_new(&ev_poll_api, AVAHI_CLIENT_NO_FAIL, client_callback, NULL, &error);
-	    if (!mdns_client)
-	      DPRINTF(E_LOG, L_MDNS, "Failed to create new Avahi client: %s\n", avahi_strerror(error));
-	  }
-	else
-	  {
-	    DPRINTF(E_LOG, L_MDNS, "Avahi client failure: %s\n", avahi_strerror(error));
-	  }
-        break;
+	  mdns_client = avahi_client_new(&ev_poll_api, AVAHI_CLIENT_NO_FAIL, client_callback, NULL, &error);
+	  if (!mdns_client)
+	    DPRINTF(E_LOG, L_MDNS, "Failed to create new Avahi client: %s\n", avahi_strerror(error));
+	}
+      else
+	{
+	  DPRINTF(E_LOG, L_MDNS, "Avahi client failure: %s\n", avahi_strerror(error));
+	}
+      break;
 
-      case AVAHI_CLIENT_S_REGISTERING:
-        DPRINTF(E_LOG, L_MDNS, "Avahi state change: Client registering\n");
-        if (mdns_group)
-	  avahi_entry_group_reset(mdns_group);
-        break;
+    case AVAHI_CLIENT_S_REGISTERING:
+      DPRINTF(E_LOG, L_MDNS, "Avahi state change: Client registering\n");
+      if (mdns_group)
+	avahi_entry_group_reset(mdns_group);
+      break;
 
-      case AVAHI_CLIENT_CONNECTING:
-        DPRINTF(E_LOG, L_MDNS, "Avahi state change: Client connecting\n");
-        break;
+    case AVAHI_CLIENT_CONNECTING:
+      DPRINTF(E_LOG, L_MDNS, "Avahi state change: Client connecting\n");
+      break;
     }
 }
-
 
 /* mDNS interface - to be called only from the main thread */
 
@@ -1272,7 +1275,8 @@ mdns_browse(char *type, mdns_browse_cb cb, enum mdns_options flags)
   b = avahi_service_browser_new(mdns_client, mdns_interface, mb->protocol, mb->type, NULL, 0, browse_callback, mb);
   if (!b)
     {
-      DPRINTF(E_LOG, L_MDNS, "Error '%s' when creating service browser for %s, check that Avahi is running\n", MDNSERR, type);
+      DPRINTF(E_LOG, L_MDNS, "Error '%s' when creating service browser for %s, check that Avahi is running\n", MDNSERR,
+          type);
 
       browser_list = mb->next;
       free(mb->type);

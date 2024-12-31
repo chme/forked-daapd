@@ -1,41 +1,37 @@
 #ifndef __RTP_COMMON_H__
 #define __RTP_COMMON_H__
 
-#include <stdint.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-struct rtcp_timestamp
-{
+struct rtcp_timestamp {
   uint32_t pos;
   struct timespec ts;
 };
 
-struct ntp_timestamp
-{
+struct ntp_timestamp {
   uint32_t sec;
   uint32_t frac;
 };
 
-struct rtp_packet
-{
-  uint16_t seqnum;     // Sequence number
-  int samples;         // Number of samples in the packet
+struct rtp_packet {
+  uint16_t seqnum; // Sequence number
+  int samples;     // Number of samples in the packet
 
-  uint8_t *header;     // Pointer to the RTP header
-  size_t header_len;   // Length of RTP header (12 bytes)
+  uint8_t *header;   // Pointer to the RTP header
+  size_t header_len; // Length of RTP header (12 bytes)
 
   uint8_t *payload;    // Pointer to the RTP payload
   size_t payload_size; // Size of allocated memory for RTP payload
   size_t payload_len;  // Length of payload (must of course not exceed size)
 
-  uint8_t *data;       // Pointer to the complete packet data
-  size_t data_size;    // Size of packet data
-  size_t data_len;     // Length of actual packet data
+  uint8_t *data;    // Pointer to the complete packet data
+  size_t data_size; // Size of packet data
+  size_t data_len;  // Length of actual packet data
 };
 
-struct rtcp_packet
-{
+struct rtcp_packet {
   uint8_t version; // Always 2
   bool padding;
   uint16_t len;
@@ -44,48 +40,42 @@ struct rtcp_packet
   uint8_t *payload;
   size_t payload_len;
 
-  enum rtcp_packet_type
-    {
-      RTCP_PACKET_RR = 201, // RFC 3550
-      RTCP_PACKET_APP = 204, // RFC 1889
-      RTCP_PACKET_PSFB = 206, // RFC 4585
-      RTCP_PACKET_XR = 207, // RFC 3611
-    } packet_type;
+  enum rtcp_packet_type {
+    RTCP_PACKET_RR = 201,   // RFC 3550
+    RTCP_PACKET_APP = 204,  // RFC 1889
+    RTCP_PACKET_PSFB = 206, // RFC 4585
+    RTCP_PACKET_XR = 207,   // RFC 3611
+  } packet_type;
 
   union
-    {
-      struct rtcp_packet_rr
-	{
-	  uint8_t report_count;
-	} rr;
-      struct rtcp_packet_app
-	{
-	  uint8_t subtype;
-	  char name[5]; // Zero-terminated
-	} app;
-      struct rtcp_packet_psfb
-	{
-	  uint8_t message_type;
-	  uint32_t media_src;
-	  uint8_t *fci;
-	  size_t fci_len;
-	} psfb;
-      struct rtcp_packet_xr
-	{
-	  uint8_t block_type;
-	  uint8_t block_specific;
-	  uint16_t block_len;
-	  struct ntp_timestamp ntp;
-	} xr;
-    };
+  {
+    struct rtcp_packet_rr {
+      uint8_t report_count;
+    } rr;
+    struct rtcp_packet_app {
+      uint8_t subtype;
+      char name[5]; // Zero-terminated
+    } app;
+    struct rtcp_packet_psfb {
+      uint8_t message_type;
+      uint32_t media_src;
+      uint8_t *fci;
+      size_t fci_len;
+    } psfb;
+    struct rtcp_packet_xr {
+      uint8_t block_type;
+      uint8_t block_specific;
+      uint16_t block_len;
+      struct ntp_timestamp ntp;
+    } xr;
+  };
 };
 
 // An RTP session is characterised by all the receivers belonging to the session
 // getting the same RTP and RTCP packets. So if you have clients that require
 // different sample rates or where only some can accept encrypted payloads then
 // you need multiple sessions.
-struct rtp_session
-{
+struct rtp_session {
   uint32_t ssrc_id;
   uint32_t pos;
   uint16_t seqnum;
@@ -105,7 +95,6 @@ struct rtp_session
   struct rtp_packet sync_packet_next;
 };
 
-
 struct rtp_session *
 rtp_session_new(struct media_quality *quality, int pktbuf_size, int sync_each_nsamples);
 
@@ -114,7 +103,6 @@ rtp_session_free(struct rtp_session *session);
 
 void
 rtp_session_flush(struct rtp_session *session);
-
 
 /* Gets the next packet from the packet buffer, pkt->payload will be allocated
  * to a size of payload_len (or larger).
@@ -157,4 +145,4 @@ rtp_sync_packet_next(struct rtp_session *session, struct rtcp_timestamp cur_stam
 int
 rtcp_packet_parse(struct rtcp_packet *pkt, uint8_t *data, size_t size);
 
-#endif  /* !__RTP_COMMON_H__ */
+#endif /* !__RTP_COMMON_H__ */

@@ -31,12 +31,11 @@
 #include "conffile.h"
 #include "db.h"
 #include "http.h"
+#include "inputs/spotify.h"
 #include "library.h"
 #include "listener.h"
 #include "logger.h"
 #include "misc_json.h"
-#include "inputs/spotify.h"
-
 
 enum spotify_request_type {
   SPOTIFY_REQUEST_TYPE_DEFAULT,
@@ -55,8 +54,7 @@ enum spotify_item_type {
   SPOTIFY_ITEM_TYPE_UNKNOWN,
 };
 
-struct spotify_album
-{
+struct spotify_album {
   const char *added_at;
   time_t mtime;
 
@@ -76,8 +74,7 @@ struct spotify_album
   const char *type;
 };
 
-struct spotify_track
-{
+struct spotify_track {
   const char *added_at;
   time_t mtime;
 
@@ -104,8 +101,7 @@ struct spotify_track
   const char *type;
 };
 
-struct spotify_playlist
-{
+struct spotify_playlist {
   const char *id;
   const char *name;
   const char *owner;
@@ -118,8 +114,7 @@ struct spotify_playlist
 };
 
 // Credentials for the web api
-struct spotify_credentials
-{
+struct spotify_credentials {
   char *access_token;
   char *refresh_token;
   char *granted_scope;
@@ -130,8 +125,7 @@ struct spotify_credentials
   time_t token_time_requested;
 };
 
-struct spotify_http_session
-{
+struct spotify_http_session {
   pthread_mutex_t lock;
   struct http_client_session session;
 };
@@ -147,27 +141,27 @@ static int spotify_base_plid;
 // Flag to avoid triggering playlist change events while the (re)scan is running
 static bool scanning;
 
-
 // Endpoints and credentials for the web api
-static const char *spotify_client_id     = "0e684a5422384114a8ae7ac020f01789";
+static const char *spotify_client_id = "0e684a5422384114a8ae7ac020f01789";
 static const char *spotify_client_secret = "232af95f39014c9ba218285a5c11a239";
-static const char *spotify_scope         = "playlist-read-private playlist-read-collaborative user-library-read user-read-private streaming";
+static const char *spotify_scope
+    = "playlist-read-private playlist-read-collaborative user-library-read user-read-private streaming";
 
-static const char *spotify_auth_uri      = "https://accounts.spotify.com/authorize";
-static const char *spotify_token_uri     = "https://accounts.spotify.com/api/token";
+static const char *spotify_auth_uri = "https://accounts.spotify.com/authorize";
+static const char *spotify_token_uri = "https://accounts.spotify.com/api/token";
 
-static const char *spotify_track_uri           = "https://api.spotify.com/v1/tracks/%s";
-static const char *spotify_me_uri              = "https://api.spotify.com/v1/me";
-static const char *spotify_albums_uri          = "https://api.spotify.com/v1/me/albums?limit=50";
-static const char *spotify_album_uri           = "https://api.spotify.com/v1/albums/%s";
-static const char *spotify_album_tracks_uri    = "https://api.spotify.com/v1/albums/%s/tracks";
-static const char *spotify_playlists_uri       = "https://api.spotify.com/v1/me/playlists?limit=50";
+static const char *spotify_track_uri = "https://api.spotify.com/v1/tracks/%s";
+static const char *spotify_me_uri = "https://api.spotify.com/v1/me";
+static const char *spotify_albums_uri = "https://api.spotify.com/v1/me/albums?limit=50";
+static const char *spotify_album_uri = "https://api.spotify.com/v1/albums/%s";
+static const char *spotify_album_tracks_uri = "https://api.spotify.com/v1/albums/%s/tracks";
+static const char *spotify_playlists_uri = "https://api.spotify.com/v1/me/playlists?limit=50";
 static const char *spotify_playlist_tracks_uri = "https://api.spotify.com/v1/playlists/%s/tracks";
-static const char *spotify_artist_albums_uri   = "https://api.spotify.com/v1/artists/%s/albums?include_groups=album,single";
-static const char *spotify_shows_uri           = "https://api.spotify.com/v1/me/shows?limit=50";
-static const char *spotify_shows_episodes_uri  = "https://api.spotify.com/v1/shows/%s/episodes";
-static const char *spotify_episode_uri         = "https://api.spotify.com/v1/episodes/%s";
-
+static const char *spotify_artist_albums_uri
+    = "https://api.spotify.com/v1/artists/%s/albums?include_groups=album,single";
+static const char *spotify_shows_uri = "https://api.spotify.com/v1/me/shows?limit=50";
+static const char *spotify_shows_episodes_uri = "https://api.spotify.com/v1/shows/%s/episodes";
+static const char *spotify_episode_uri = "https://api.spotify.com/v1/episodes/%s";
 
 static enum spotify_item_type
 parse_type_from_uri(const char *uri)
@@ -332,10 +326,10 @@ request_access_tokens(struct spotify_credentials *credentials, struct keyval *kv
 
   ret = 0;
 
- out_free_input_body:
+out_free_input_body:
   evbuffer_free(ctx.input_body);
   free(param);
- out_clear_kv:
+out_clear_kv:
 
   return ret;
 }
@@ -383,14 +377,14 @@ request_endpoint(const char *uri, const char *access_token)
   // 0-terminate for safety
   evbuffer_add(ctx->input_body, "", 1);
 
-  response_body = (char *) evbuffer_pullup(ctx->input_body, -1);
+  response_body = (char *)evbuffer_pullup(ctx->input_body, -1);
   if (!response_body || (strlen(response_body) == 0))
     {
       DPRINTF(E_LOG, L_SPOTIFY, "Request for '%s' failed, response was empty\n", uri);
       goto out;
     }
 
-//  DPRINTF(E_DBG, L_SPOTIFY, "Web api response for '%s'\n%s\n", uri, response_body);
+  //  DPRINTF(E_DBG, L_SPOTIFY, "Web api response for '%s'\n%s\n", uri, response_body);
 
   json_response = json_tokener_parse(response_body);
   if (!json_response)
@@ -398,7 +392,7 @@ request_endpoint(const char *uri, const char *access_token)
   else
     DPRINTF(E_DBG, L_SPOTIFY, "Got JSON response for request to '%s'\n", uri);
 
- out:
+out:
   free_http_client_ctx(ctx);
 
   return json_response;
@@ -446,11 +440,10 @@ token_get(struct spotify_credentials *credentials, const char *code, const char 
   int ret;
 
   *err = "";
-  ret = ( (keyval_add(&kv, "grant_type", "authorization_code") == 0) &&
-          (keyval_add(&kv, "code", code) == 0) &&
-          (keyval_add(&kv, "client_id", spotify_client_id) == 0) &&
-          (keyval_add(&kv, "client_secret", spotify_client_secret) == 0) &&
-          (keyval_add(&kv, "redirect_uri", redirect_uri) == 0) );
+  ret = ((keyval_add(&kv, "grant_type", "authorization_code") == 0) && (keyval_add(&kv, "code", code) == 0)
+         && (keyval_add(&kv, "client_id", spotify_client_id) == 0)
+         && (keyval_add(&kv, "client_secret", spotify_client_secret) == 0)
+         && (keyval_add(&kv, "redirect_uri", redirect_uri) == 0));
 
   if (!ret)
     {
@@ -485,7 +478,8 @@ token_refresh(struct spotify_credentials *credentials)
   const char *err;
   int ret;
 
-  if (credentials->token_time_requested && difftime(time(NULL), credentials->token_time_requested) < credentials->token_expires_in)
+  if (credentials->token_time_requested
+      && difftime(time(NULL), credentials->token_time_requested) < credentials->token_expires_in)
     {
       return 0; // Spotify token still valid
     }
@@ -498,10 +492,9 @@ token_refresh(struct spotify_credentials *credentials)
 
   DPRINTF(E_DBG, L_SPOTIFY, "Spotify refresh-token: '%s'\n", refresh_token);
 
-  ret = ( (keyval_add(&kv, "grant_type", "refresh_token") == 0) &&
-	  (keyval_add(&kv, "client_id", spotify_client_id) == 0) &&
-	  (keyval_add(&kv, "client_secret", spotify_client_secret) == 0) &&
-          (keyval_add(&kv, "refresh_token", refresh_token) == 0) );
+  ret = ((keyval_add(&kv, "grant_type", "refresh_token") == 0) && (keyval_add(&kv, "client_id", spotify_client_id) == 0)
+         && (keyval_add(&kv, "client_secret", spotify_client_secret) == 0)
+         && (keyval_add(&kv, "refresh_token", refresh_token) == 0));
   if (!ret)
     {
       DPRINTF(E_LOG, L_SPOTIFY, "Add parameters to keyval failed");
@@ -522,7 +515,7 @@ token_refresh(struct spotify_credentials *credentials)
 
   return 0;
 
- error:
+error:
   free(refresh_token);
   keyval_clear(&kv);
   return -1;
@@ -552,7 +545,8 @@ request_endpoint_with_token_refresh(struct spotify_credentials *credentials, con
 }
 
 typedef int (*paging_request_cb)(void *arg);
-typedef int (*paging_item_cb)(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg, struct spotify_credentials *);
+typedef int (*paging_item_cb)(json_object *item, int index, int total, enum spotify_request_type request_type,
+    void *arg, struct spotify_credentials *);
 
 /*
  * Request the spotify endpoint at 'href'
@@ -583,8 +577,9 @@ typedef int (*paging_item_cb)(json_object *item, int index, int total, enum spot
  * @return 0 on success, -1 on failure
  */
 static int
-request_pagingobject_endpoint(const char *href, paging_item_cb item_cb, paging_request_cb pre_request_cb, paging_request_cb post_request_cb,
-                              bool with_market, struct spotify_credentials *credentials, enum spotify_request_type request_type, void *arg)
+request_pagingobject_endpoint(const char *href, paging_item_cb item_cb, paging_request_cb pre_request_cb,
+    paging_request_cb post_request_cb, bool with_market, struct spotify_credentials *credentials,
+    enum spotify_request_type request_type, void *arg)
 {
   char *next_href;
   json_object *response;
@@ -617,7 +612,8 @@ request_pagingobject_endpoint(const char *href, paging_item_cb item_cb, paging_r
 
       if (!response)
 	{
-	  DPRINTF(E_LOG, L_SPOTIFY, "Unexpected JSON: no response for paging endpoint (API endpoint: '%s')\n", next_href);
+	  DPRINTF(
+	      E_LOG, L_SPOTIFY, "Unexpected JSON: no response for paging endpoint (API endpoint: '%s')\n", next_href);
 
 	  if (post_request_cb)
 	    post_request_cb(arg);
@@ -633,23 +629,23 @@ request_pagingobject_endpoint(const char *href, paging_item_cb item_cb, paging_r
       total = jparse_int_from_obj(response, "total");
 
       if (jparse_array_from_obj(response, "items", &items) == 0)
-        {
+	{
 	  count = json_object_array_length(items);
 	  for (i = 0; i < count; i++)
 	    {
 	      item = json_object_array_get_idx(items, i);
 	      if (!item)
-	        {
-		  DPRINTF(E_LOG, L_SPOTIFY, "Unexpected JSON: no item at index %d in '%s' (API endpoint: '%s')\n",
-			  i, json_object_to_json_string(items), href);
+		{
+		  DPRINTF(E_LOG, L_SPOTIFY, "Unexpected JSON: no item at index %d in '%s' (API endpoint: '%s')\n", i,
+		      json_object_to_json_string(items), href);
 		  continue;
 		}
 
 	      ret = item_cb(item, (i + offset), total, request_type, arg, credentials);
 	      if (ret < 0)
 		{
-		  DPRINTF(E_LOG, L_SPOTIFY, "Couldn't add item at index %d '%s' (API endpoint: '%s')\n",
-			  i, json_object_to_json_string(item), href);
+		  DPRINTF(E_LOG, L_SPOTIFY, "Couldn't add item at index %d '%s' (API endpoint: '%s')\n", i,
+		      json_object_to_json_string(item), href);
 		}
 	    }
 	}
@@ -780,7 +776,7 @@ get_year_from_date(const char *date)
 static void
 parse_metadata_album(json_object *jsonalbum, struct spotify_album *album, int max_w)
 {
-  json_object* jsonartists;
+  json_object *jsonartists;
 
   memset(album, 0, sizeof(struct spotify_album));
 
@@ -806,8 +802,9 @@ parse_metadata_album(json_object *jsonalbum, struct spotify_album *album, int ma
   if (max_w > 0)
     album->artwork_url = get_album_image(jsonalbum, max_w);
 
-  // TODO Genre is an array of strings ('genres'), but it is always empty (https://github.com/spotify/web-api/issues/157)
-  //album->genre = jparse_str_from_obj(jsonalbum, "genre");
+  // TODO Genre is an array of strings ('genres'), but it is always empty
+  // (https://github.com/spotify/web-api/issues/157)
+  // album->genre = jparse_str_from_obj(jsonalbum, "genre");
 }
 
 static void
@@ -917,7 +914,7 @@ get_playlist_tracks_endpoint_uri(const char *uri)
 
   endpoint_uri = safe_asprintf(spotify_playlist_tracks_uri, id);
 
- out:
+out:
   free(id);
   return endpoint_uri;
 }
@@ -938,7 +935,7 @@ get_album_endpoint_uri(const char *uri)
 
   endpoint_uri = safe_asprintf(spotify_album_uri, id);
 
- out:
+out:
   free(id);
   return endpoint_uri;
 }
@@ -959,7 +956,7 @@ get_album_tracks_endpoint_uri(const char *uri)
 
   endpoint_uri = safe_asprintf(spotify_album_tracks_uri, id);
 
- out:
+out:
   free(id);
   return endpoint_uri;
 }
@@ -980,7 +977,7 @@ get_track_endpoint_uri(const char *uri)
 
   endpoint_uri = safe_asprintf(spotify_track_uri, id);
 
- out:
+out:
   free(id);
   return endpoint_uri;
 }
@@ -1001,7 +998,7 @@ get_artist_albums_endpoint_uri(const char *uri)
 
   endpoint_uri = safe_asprintf(spotify_artist_albums_uri, id);
 
- out:
+out:
   free(id);
   return endpoint_uri;
 }
@@ -1022,7 +1019,7 @@ get_episode_endpoint_uri(const char *uri)
 
   endpoint_uri = safe_asprintf(spotify_episode_uri, id);
 
- out:
+out:
   free(id);
   return endpoint_uri;
 }
@@ -1105,7 +1102,8 @@ map_track_to_queueitem(struct db_queue_item *item, const struct spotify_track *t
 }
 
 static int
-queue_add_track(int *count, int *new_item_id, const char *uri, int position, char reshuffle, uint32_t item_id, struct spotify_credentials *credentials)
+queue_add_track(int *count, int *new_item_id, const char *uri, int position, char reshuffle, uint32_t item_id,
+    struct spotify_credentials *credentials)
 {
   json_object *response = NULL;
   struct spotify_track track;
@@ -1141,7 +1139,7 @@ queue_add_track(int *count, int *new_item_id, const char *uri, int position, cha
   jparse_free(response);
   return 0;
 
- error:
+error:
   free_queue_item(&item, 1);
   jparse_free(response);
   return -1;
@@ -1153,7 +1151,8 @@ struct queue_add_album_param {
 };
 
 static int
-queue_add_album_tracks(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg, struct spotify_credentials *credentials)
+queue_add_album_tracks(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg,
+    struct spotify_credentials *credentials)
 {
   struct queue_add_album_param *param;
   struct spotify_track track;
@@ -1166,7 +1165,8 @@ queue_add_album_tracks(json_object *item, int index, int total, enum spotify_req
 
   if (!track.uri || !track.is_playable)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
+      DPRINTF(E_LOG, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist,
+          track.name, track.uri, track.restrictions);
       return -1;
     }
 
@@ -1180,7 +1180,8 @@ queue_add_album_tracks(json_object *item, int index, int total, enum spotify_req
 }
 
 static int
-queue_add_album(int *count, int *new_item_id, const char *uri, int position, char reshuffle, uint32_t item_id, struct spotify_credentials *credentials)
+queue_add_album(int *count, int *new_item_id, const char *uri, int position, char reshuffle, uint32_t item_id,
+    struct spotify_credentials *credentials)
 {
   char *album_endpoint_uri = NULL;
   char *endpoint_uri = NULL;
@@ -1198,7 +1199,8 @@ queue_add_album(int *count, int *new_item_id, const char *uri, int position, cha
 
   endpoint_uri = get_album_tracks_endpoint_uri(uri);
 
-  ret = request_pagingobject_endpoint(endpoint_uri, queue_add_album_tracks, NULL, NULL, true, credentials, SPOTIFY_REQUEST_TYPE_DEFAULT, &param);
+  ret = request_pagingobject_endpoint(
+      endpoint_uri, queue_add_album_tracks, NULL, NULL, true, credentials, SPOTIFY_REQUEST_TYPE_DEFAULT, &param);
 
   ret = db_queue_add_end(&param.queue_add_info, reshuffle, item_id, ret);
   if (ret < 0)
@@ -1207,7 +1209,7 @@ queue_add_album(int *count, int *new_item_id, const char *uri, int position, cha
   if (count)
     *count = param.queue_add_info.count;
 
- out:
+out:
   free(album_endpoint_uri);
   free(endpoint_uri);
   jparse_free(json_album);
@@ -1216,7 +1218,8 @@ queue_add_album(int *count, int *new_item_id, const char *uri, int position, cha
 }
 
 static int
-queue_add_albums(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg, struct spotify_credentials *credentials)
+queue_add_albums(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg,
+    struct spotify_credentials *credentials)
 {
   struct db_queue_add_info *param;
   struct queue_add_album_param param_add_album;
@@ -1229,17 +1232,18 @@ queue_add_albums(json_object *item, int index, int total, enum spotify_request_t
   parse_metadata_album(item, &param_add_album.album, ART_DEFAULT_WIDTH);
 
   endpoint_uri = get_album_tracks_endpoint_uri(param_add_album.album.uri);
-  ret = request_pagingobject_endpoint(endpoint_uri, queue_add_album_tracks, NULL, NULL, true, credentials, SPOTIFY_REQUEST_TYPE_DEFAULT, &param_add_album);
+  ret = request_pagingobject_endpoint(endpoint_uri, queue_add_album_tracks, NULL, NULL, true, credentials,
+      SPOTIFY_REQUEST_TYPE_DEFAULT, &param_add_album);
 
   *param = param_add_album.queue_add_info;
 
   free(endpoint_uri);
   return ret;
-
 }
 
 static int
-queue_add_artist(int *count, int *new_item_id, const char *uri, int position, char reshuffle, uint32_t item_id, struct spotify_credentials *credentials)
+queue_add_artist(int *count, int *new_item_id, const char *uri, int position, char reshuffle, uint32_t item_id,
+    struct spotify_credentials *credentials)
 {
   struct db_queue_add_info queue_add_info;
   char *endpoint_uri = NULL;
@@ -1250,7 +1254,8 @@ queue_add_artist(int *count, int *new_item_id, const char *uri, int position, ch
     goto out;
 
   endpoint_uri = get_artist_albums_endpoint_uri(uri);
-  ret = request_pagingobject_endpoint(endpoint_uri, queue_add_albums, NULL, NULL, true, credentials, SPOTIFY_REQUEST_TYPE_DEFAULT, &queue_add_info);
+  ret = request_pagingobject_endpoint(
+      endpoint_uri, queue_add_albums, NULL, NULL, true, credentials, SPOTIFY_REQUEST_TYPE_DEFAULT, &queue_add_info);
 
   ret = db_queue_add_end(&queue_add_info, reshuffle, item_id, ret);
   if (ret < 0)
@@ -1259,13 +1264,14 @@ queue_add_artist(int *count, int *new_item_id, const char *uri, int position, ch
   if (count)
     *count = queue_add_info.count;
 
- out:
+out:
   free(endpoint_uri);
   return ret;
 }
 
 static int
-queue_add_playlist_tracks(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg, struct spotify_credentials *credentials)
+queue_add_playlist_tracks(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg,
+    struct spotify_credentials *credentials)
 {
   struct db_queue_add_info *queue_add_info;
   struct spotify_track track;
@@ -1287,7 +1293,8 @@ queue_add_playlist_tracks(json_object *item, int index, int total, enum spotify_
 
   if (!track.uri || !track.is_playable)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
+      DPRINTF(E_LOG, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist,
+          track.name, track.uri, track.restrictions);
       return -1;
     }
 
@@ -1301,7 +1308,8 @@ queue_add_playlist_tracks(json_object *item, int index, int total, enum spotify_
 }
 
 static int
-queue_add_playlist(int *count, int *new_item_id, const char *uri, int position, char reshuffle, uint32_t item_id, struct spotify_credentials *credentials)
+queue_add_playlist(int *count, int *new_item_id, const char *uri, int position, char reshuffle, uint32_t item_id,
+    struct spotify_credentials *credentials)
 {
   char *endpoint_uri = NULL;
   struct db_queue_add_info queue_add_info;
@@ -1313,7 +1321,8 @@ queue_add_playlist(int *count, int *new_item_id, const char *uri, int position, 
 
   endpoint_uri = get_playlist_tracks_endpoint_uri(uri);
 
-  ret = request_pagingobject_endpoint(endpoint_uri, queue_add_playlist_tracks, NULL, NULL, true, credentials, SPOTIFY_REQUEST_TYPE_DEFAULT, &queue_add_info);
+  ret = request_pagingobject_endpoint(endpoint_uri, queue_add_playlist_tracks, NULL, NULL, true, credentials,
+      SPOTIFY_REQUEST_TYPE_DEFAULT, &queue_add_info);
 
   ret = db_queue_add_end(&queue_add_info, reshuffle, item_id, ret);
   if (ret < 0)
@@ -1322,11 +1331,10 @@ queue_add_playlist(int *count, int *new_item_id, const char *uri, int position, 
   if (count)
     *count = queue_add_info.count;
 
- out:
+out:
   free(endpoint_uri);
   return ret;
 }
-
 
 /*
  * Returns the directory id for /spotify:/<artist>/<album>, if the directory (or the parent
@@ -1371,7 +1379,8 @@ prepare_directories(const char *artist, const char *album)
 }
 
 static void
-map_track_to_mfi(struct media_file_info *mfi, const struct spotify_track *track, const struct spotify_album *album, const char *pl_name)
+map_track_to_mfi(struct media_file_info *mfi, const struct spotify_track *track, const struct spotify_album *album,
+    const char *pl_name)
 {
   char virtual_path[PATH_MAX];
 
@@ -1381,13 +1390,13 @@ map_track_to_mfi(struct media_file_info *mfi, const struct spotify_track *track,
   mfi->song_length = track->duration_ms;
   mfi->track = track->track_number;
 
-  mfi->data_kind   = DATA_KIND_SPOTIFY;
+  mfi->data_kind = DATA_KIND_SPOTIFY;
   if (strcmp(track->type, "episode") == 0)
-    mfi->media_kind  = MEDIA_KIND_PODCAST;
+    mfi->media_kind = MEDIA_KIND_PODCAST;
   else
-    mfi->media_kind  = MEDIA_KIND_MUSIC;
-  mfi->type        = strdup("spotify");
-  mfi->codectype   = strdup("wav");
+    mfi->media_kind = MEDIA_KIND_MUSIC;
+  mfi->type = strdup("spotify");
+  mfi->codectype = strdup("wav");
   mfi->description = strdup("Spotify audio");
 
   mfi->path = strdup(track->uri);
@@ -1434,7 +1443,8 @@ map_track_to_mfi(struct media_file_info *mfi, const struct spotify_track *track,
 }
 
 static int
-track_add(struct spotify_track *track, struct spotify_album *album, const char *pl_name, int dir_id, enum spotify_request_type request_type)
+track_add(struct spotify_track *track, struct spotify_album *album, const char *pl_name, int dir_id,
+    enum spotify_request_type request_type)
 {
   struct media_file_info mfi;
   int ret;
@@ -1442,7 +1452,7 @@ track_add(struct spotify_track *track, struct spotify_album *album, const char *
   if (!track->uri || !track->is_playable)
     {
       DPRINTF(E_LOG, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n",
-	      track->artist, track->name, track->uri, track->restrictions);
+          track->artist, track->name, track->uri, track->restrictions);
       return -1;
     }
 
@@ -1452,8 +1462,8 @@ track_add(struct spotify_track *track, struct spotify_album *album, const char *
   ret = db_file_ping_bypath(track->uri, track->mtime);
   if (ret == 0 || request_type == SPOTIFY_REQUEST_TYPE_METARESCAN)
     {
-      DPRINTF(E_DBG, L_SPOTIFY, "Track '%s' (%s) is new or modified (mtime is %" PRIi64 ")\n",
-	      track->name, track->uri, (int64_t)track->mtime);
+      DPRINTF(E_DBG, L_SPOTIFY, "Track '%s' (%s) is new or modified (mtime is %" PRIi64 ")\n", track->name, track->uri,
+          (int64_t)track->mtime);
 
       memset(&mfi, 0, sizeof(struct media_file_info));
 
@@ -1495,7 +1505,8 @@ playlist_add_or_update(struct playlist_info *pli)
  * Add a saved album to the library
  */
 static int
-saved_album_add(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg, struct spotify_credentials *credentials)
+saved_album_add(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg,
+    struct spotify_credentials *credentials)
 {
   json_object *jsonalbum;
   struct spotify_album album;
@@ -1565,7 +1576,8 @@ scan_saved_albums(enum spotify_request_type request_type, struct spotify_credent
 {
   int ret;
 
-  ret = request_pagingobject_endpoint(spotify_albums_uri, saved_album_add, NULL, NULL, true, credentials, request_type, NULL);
+  ret = request_pagingobject_endpoint(
+      spotify_albums_uri, saved_album_add, NULL, NULL, true, credentials, request_type, NULL);
 
   return ret;
 }
@@ -1574,7 +1586,8 @@ scan_saved_albums(enum spotify_request_type request_type, struct spotify_credent
  * Add a saved podcast show to the library
  */
 static int
-saved_episodes_add(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg, struct spotify_credentials *credentials)
+saved_episodes_add(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg,
+    struct spotify_credentials *credentials)
 {
   struct spotify_album *show = arg;
   struct spotify_track episode;
@@ -1597,7 +1610,8 @@ saved_episodes_add(json_object *item, int index, int total, enum spotify_request
  * Add a saved podcast show to the library
  */
 static int
-saved_show_add(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg, struct spotify_credentials *credentials)
+saved_show_add(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg,
+    struct spotify_credentials *credentials)
 {
   json_object *jsonshow;
   struct spotify_album show;
@@ -1616,10 +1630,10 @@ saved_show_add(json_object *item, int index, int total, enum spotify_request_typ
   show.added_at = jparse_str_from_obj(item, "added_at");
   show.mtime = jparse_time_from_obj(item, "added_at");
 
-
   // Now map the show episodes and insert/update them in the files database
   endpoint_uri = safe_asprintf(spotify_shows_episodes_uri, show.id);
-  request_pagingobject_endpoint(endpoint_uri, saved_episodes_add, transaction_start, transaction_end, true, credentials, request_type, &show);
+  request_pagingobject_endpoint(
+      endpoint_uri, saved_episodes_add, transaction_start, transaction_end, true, credentials, request_type, &show);
   free(endpoint_uri);
 
   if ((index + 1) >= total || ((index + 1) % 10 == 0))
@@ -1638,7 +1652,8 @@ scan_saved_shows(enum spotify_request_type request_type, struct spotify_credenti
 {
   int ret;
 
-  ret = request_pagingobject_endpoint(spotify_shows_uri, saved_show_add, NULL, NULL, true, credentials, request_type, NULL);
+  ret = request_pagingobject_endpoint(
+      spotify_shows_uri, saved_show_add, NULL, NULL, true, credentials, request_type, NULL);
 
   return ret;
 }
@@ -1647,7 +1662,8 @@ scan_saved_shows(enum spotify_request_type request_type, struct spotify_credenti
  * Add a saved playlist's tracks to the library
  */
 static int
-saved_playlist_tracks_add(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg, struct spotify_credentials *credentials)
+saved_playlist_tracks_add(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg,
+    struct spotify_credentials *credentials)
 {
   struct spotify_track track;
   struct spotify_album album;
@@ -1671,7 +1687,8 @@ saved_playlist_tracks_add(json_object *item, int index, int total, enum spotify_
 
   if (!track.uri || !track.is_playable)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
+      DPRINTF(E_LOG, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist,
+          track.name, track.uri, track.restrictions);
       return 0;
     }
 
@@ -1695,11 +1712,13 @@ saved_playlist_tracks_add(json_object *item, int index, int total, enum spotify_
 
 /* Thread: library */
 static int
-scan_playlist_tracks(const char *playlist_tracks_endpoint_uri, struct playlist_info *pli, enum spotify_request_type request_type, struct spotify_credentials *credentials)
+scan_playlist_tracks(const char *playlist_tracks_endpoint_uri, struct playlist_info *pli,
+    enum spotify_request_type request_type, struct spotify_credentials *credentials)
 {
   int ret;
 
-  ret = request_pagingobject_endpoint(playlist_tracks_endpoint_uri, saved_playlist_tracks_add, transaction_start, transaction_end, true, credentials, request_type, pli);
+  ret = request_pagingobject_endpoint(playlist_tracks_endpoint_uri, saved_playlist_tracks_add, transaction_start,
+      transaction_end, true, credentials, request_type, pli);
 
   return ret;
 }
@@ -1709,12 +1728,12 @@ map_playlist_to_pli(struct playlist_info *pli, struct spotify_playlist *playlist
 {
   memset(pli, 0, sizeof(struct playlist_info));
 
-  pli->type  = PL_PLAIN;
-  pli->path  = strdup(playlist->uri);
+  pli->type = PL_PLAIN;
+  pli->path = strdup(playlist->uri);
   pli->title = safe_strdup(playlist->name);
 
-  pli->parent_id      = spotify_base_plid;
-  pli->directory_id   = DIR_SPOTIFY;
+  pli->parent_id = spotify_base_plid;
+  pli->directory_id = DIR_SPOTIFY;
   pli->scan_kind = SCAN_KIND_SPOTIFY;
 
   if (playlist->owner)
@@ -1727,7 +1746,8 @@ map_playlist_to_pli(struct playlist_info *pli, struct spotify_playlist *playlist
  * Add a saved playlist to the library
  */
 static int
-saved_playlist_add(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg, struct spotify_credentials *credentials)
+saved_playlist_add(json_object *item, int index, int total, enum spotify_request_type request_type, void *arg,
+    struct spotify_credentials *credentials)
 {
   struct spotify_playlist playlist;
   struct playlist_info pli;
@@ -1736,11 +1756,13 @@ saved_playlist_add(json_object *item, int index, int total, enum spotify_request
   // Map playlist information
   parse_metadata_playlist(item, &playlist);
 
-  DPRINTF(E_DBG, L_SPOTIFY, "Got playlist: '%s' with %d tracks (%s) \n", playlist.name, playlist.tracks_count, playlist.uri);
+  DPRINTF(E_DBG, L_SPOTIFY, "Got playlist: '%s' with %d tracks (%s) \n", playlist.name, playlist.tracks_count,
+      playlist.uri);
 
   if (!playlist.uri || !playlist.name || playlist.tracks_count == 0)
     {
-      DPRINTF(E_INFO, L_SPOTIFY, "Ignoring playlist '%s' with %d tracks (%s)\n", playlist.name, playlist.tracks_count, playlist.uri);
+      DPRINTF(E_INFO, L_SPOTIFY, "Ignoring playlist '%s' with %d tracks (%s)\n", playlist.name, playlist.tracks_count,
+          playlist.uri);
       return 0; // Ignore
     }
 
@@ -1771,7 +1793,8 @@ scan_playlists(enum spotify_request_type request_type, struct spotify_credential
 {
   int ret;
 
-  ret = request_pagingobject_endpoint(spotify_playlists_uri, saved_playlist_add, NULL, NULL, false, credentials, request_type, NULL);
+  ret = request_pagingobject_endpoint(
+      spotify_playlists_uri, saved_playlist_add, NULL, NULL, false, credentials, request_type, NULL);
 
   return ret;
 }
@@ -1783,13 +1806,12 @@ static void
 create_base_playlist(void)
 {
   cfg_t *spotify_cfg;
-  struct playlist_info pli =
-    {
-      .path = strdup("spotify:playlistfolder"),
-      .title = strdup("Spotify"),
-      .type = PL_FOLDER,
-      .scan_kind = SCAN_KIND_SPOTIFY,
-    };
+  struct playlist_info pli = {
+    .path = strdup("spotify:playlistfolder"),
+    .title = strdup("Spotify"),
+    .type = PL_FOLDER,
+    .scan_kind = SCAN_KIND_SPOTIFY,
+  };
 
   spotify_base_plid = 0;
   spotify_cfg = cfg_getsec(cfg, "spotify");
@@ -1840,12 +1862,12 @@ scan(enum spotify_request_type request_type, struct spotify_credentials *credent
   DPRINTF(E_LOG, L_SPOTIFY, "Spotify scan completed in %.f sec\n", difftime(end, start));
 }
 
-
 /* --------------------------- Library interface ---------------------------- */
 /*                              Thread: library                               */
 
 static int
-spotifywebapi_library_queue_item_add(const char *uri, int position, char reshuffle, uint32_t item_id, int *count, int *new_item_id)
+spotifywebapi_library_queue_item_add(
+    const char *uri, int position, char reshuffle, uint32_t item_id, int *count, int *new_item_id)
 {
   enum spotify_item_type type;
 
@@ -1876,7 +1898,7 @@ spotifywebapi_library_queue_item_add(const char *uri, int position, char reshuff
   CHECK_ERR(L_SPOTIFY, pthread_mutex_unlock(&spotify_credentials_lock));
   return LIBRARY_PATH_INVALID;
 
- out:
+out:
   CHECK_ERR(L_SPOTIFY, pthread_mutex_unlock(&spotify_credentials_lock));
   return LIBRARY_OK;
 }
@@ -1904,8 +1926,9 @@ spotifywebapi_library_initscan(void)
   ret = spotify_relogin();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Spotify playback library could not log in. In order to use Spotify, "
-	"provide valid credentials by visiting http://owntone.local:3689\n");
+      DPRINTF(E_LOG, L_SPOTIFY,
+          "Spotify playback library could not log in. In order to use Spotify, "
+          "provide valid credentials by visiting http://owntone.local:3689\n");
 
       db_spotify_purge();
       return 0;
@@ -1978,8 +2001,7 @@ spotifywebapi_library_deinit()
   CHECK_ERR(L_SPOTIFY, pthread_mutex_unlock(&spotify_credentials_lock));
 }
 
-struct library_source spotifyscanner =
-{
+struct library_source spotifyscanner = {
   .scan_kind = SCAN_KIND_SPOTIFY,
   .disabled = 0,
   .queue_item_add = spotifywebapi_library_queue_item_add,
@@ -1990,7 +2012,6 @@ struct library_source spotifyscanner =
   .init = spotifywebapi_library_init,
   .deinit = spotifywebapi_library_deinit,
 };
-
 
 /* ------------------------ Public API command callbacks -------------------- */
 /*                              Thread: library                               */
@@ -2023,7 +2044,6 @@ webapi_purge(void *arg, int *ret)
   return COMMAND_END;
 }
 
-
 /* ------------------------------ Public API -------------------------------- */
 
 char *
@@ -2036,11 +2056,9 @@ spotifywebapi_oauth_uri_get(const char *redirect_uri)
   int ret;
 
   uri = NULL;
-  ret = ( (keyval_add(&kv, "client_id", spotify_client_id) == 0) &&
-	  (keyval_add(&kv, "response_type", "code") == 0) &&
-	  (keyval_add(&kv, "redirect_uri", redirect_uri) == 0) &&
-	  (keyval_add(&kv, "scope", spotify_scope) == 0) &&
-	  (keyval_add(&kv, "show_dialog", "false") == 0) );
+  ret = ((keyval_add(&kv, "client_id", spotify_client_id) == 0) && (keyval_add(&kv, "response_type", "code") == 0)
+         && (keyval_add(&kv, "redirect_uri", redirect_uri) == 0) && (keyval_add(&kv, "scope", spotify_scope) == 0)
+         && (keyval_add(&kv, "show_dialog", "false") == 0));
   if (!ret)
     {
       DPRINTF(E_LOG, L_SPOTIFY, "Cannot display Spotify oath interface (error adding parameters to keyval)\n");
@@ -2059,7 +2077,7 @@ spotifywebapi_oauth_uri_get(const char *redirect_uri)
       free(param);
     }
 
- out_clear_kv:
+out_clear_kv:
   keyval_clear(&kv);
 
   return uri;
@@ -2101,7 +2119,7 @@ spotifywebapi_oauth_callback(struct evkeyvalq *param, const char *redirect_uri, 
 
   return 0;
 
- error:
+error:
   CHECK_ERR(L_SPOTIFY, pthread_mutex_unlock(&spotify_credentials_lock));
   return -1;
 }
@@ -2205,7 +2223,8 @@ spotifywebapi_access_token_get(struct spotifywebapi_access_token *info)
   token_refresh(&spotify_credentials);
 
   if (spotify_credentials.token_time_requested > 0)
-    info->expires_in = spotify_credentials.token_expires_in - difftime(time(NULL), spotify_credentials.token_time_requested);
+    info->expires_in
+        = spotify_credentials.token_expires_in - difftime(time(NULL), spotify_credentials.token_time_requested);
   else
     info->expires_in = 0;
 

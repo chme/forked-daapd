@@ -17,34 +17,32 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <ifaddrs.h>
+#include <inttypes.h>
 #include <net/if.h>
 #include <netinet/in.h>
-#include <ifaddrs.h>
-#include <unistd.h>
-#include <fcntl.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
 #include <string.h>
-#include <errno.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <assert.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "misc.h"
 #include "conffile.h"
 #include "logger.h"
-#include "player.h"
-#include "outputs.h"
 #include "mdns.h"
-
+#include "misc.h"
+#include "outputs.h"
+#include "player.h"
 
 /* RCP is the Roku Soundbridge control protocol; we can request a Soundbridge to
  * play data from our internal .mp3 stream and the Soundbridge will act as an
@@ -90,32 +88,31 @@
  *
  * RCP/Roku devices only support ipv4
  */
-enum rcp_state
-{
-  RCP_STATE_SETUP,					// 0
+enum rcp_state {
+  RCP_STATE_SETUP, // 0
   RCP_STATE_SETUP_WAKEUP,
 
   RCP_STATE_SETUP_GET_CONNECTED_SERVER,
   RCP_STATE_SETUP_SERVER_DISCONNECT_TRANS_INIT,
   RCP_STATE_SETUP_SERVER_DISCONNECT_DISCONNECTED,
-  RCP_STATE_SETUP_SERVER_DISCONNECT_TRANS_END,		// 5
+  RCP_STATE_SETUP_SERVER_DISCONNECT_TRANS_END, // 5
   RCP_STATE_SETUP_SERVER_DISCONNECT,
   RCP_STATE_SETUP_SET_SERVER_FILTER,
   RCP_STATE_SETUP_LIST_SERVERS_RESULT_SIZE,
   RCP_STATE_SETUP_LIST_SERVERS_INTERNET_RADIO,
-  RCP_STATE_SETUP_LIST_SERVERS_RESULTS_END,		// 10
+  RCP_STATE_SETUP_LIST_SERVERS_RESULTS_END, // 10
   RCP_STATE_SETUP_LIST_SERVERS,
   RCP_STATE_SETUP_SERVER_CONNECT_TRANS_INIT,
   RCP_STATE_SETUP_SERVER_CONNECT_CONNECTED,
   RCP_STATE_SETUP_SERVER_CONNECT_TRANS_END,
-  RCP_STATE_SETUP_SERVER_CONNECT,			// 15
+  RCP_STATE_SETUP_SERVER_CONNECT, // 15
 
   RCP_STATE_SETUP_VOL_SET,
 
   RCP_STATE_QUEUING_CLEAR,
   RCP_STATE_QUEUING_SET_TITLE,
   RCP_STATE_QUEUING_SET_PLAYLIST_URL,
-  RCP_STATE_QUEUING_SET_REMOTE_STREAM,			// 20
+  RCP_STATE_QUEUING_SET_REMOTE_STREAM, // 20
   RCP_STATE_QUEUING_PLAY,
 
   RCP_STATE_STREAMING,
@@ -123,33 +120,31 @@ enum rcp_state
   RCP_STATE_VOL_GET,
   RCP_STATE_VOL_SET,
 
-  RCP_STATE_STOPPING,					// 25
+  RCP_STATE_STOPPING, // 25
 
   RCP_STATE_SHUTDOWN_STOPPED,
   RCP_STATE_SHUTDOWN_GET_CONNECTED_SERVER,
   RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_TRANS_INIT,
   RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_DISCONNECTED,
-  RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_TRANS_END,	// 30
+  RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_TRANS_END, // 30
   RCP_STATE_SHUTDOWN_SERVER_DISCONNECT,
 
   // grouped order
   RCP_STATE_STANDBY,
   RCP_STATE_DISCONNECTED,
-  RCP_STATE_FAILED,					// 35
+  RCP_STATE_FAILED, // 35
 
   RCP_STATE_MAX
 };
 
-struct rcp_state_map
-{
+struct rcp_state_map {
   enum rcp_state state;
   char *cmd;
   bool has_arg;
 };
 
 // direct mapping to cmds against state, if applicable
-static const struct rcp_state_map  rcp_state_send_map[] =
-{
+static const struct rcp_state_map rcp_state_send_map[] = {
   { RCP_STATE_SETUP, NULL },
   { RCP_STATE_SETUP_WAKEUP, "SetPowerState on no" },
 
@@ -172,7 +167,7 @@ static const struct rcp_state_map  rcp_state_send_map[] =
 
   { RCP_STATE_QUEUING_CLEAR, "ClearWorkingSong" },
   { RCP_STATE_QUEUING_SET_TITLE, "SetWorkingSongInfo title", true },
-  { RCP_STATE_QUEUING_SET_PLAYLIST_URL, "SetWorkingSongInfo playlistURL", true },  // set from session's own url
+  { RCP_STATE_QUEUING_SET_PLAYLIST_URL, "SetWorkingSongInfo playlistURL", true }, // set from session's own url
   { RCP_STATE_QUEUING_SET_REMOTE_STREAM, "SetWorkingSongInfo remoteStream 1" },
   { RCP_STATE_QUEUING_PLAY, "QueueAndPlayOne working" },
 
@@ -197,8 +192,7 @@ static const struct rcp_state_map  rcp_state_send_map[] =
   { RCP_STATE_MAX, NULL },
 };
 
-struct rcp_session
-{
+struct rcp_session {
   // enum output_device_state state;
   enum rcp_state state;
 
@@ -208,14 +202,14 @@ struct rcp_session
   char *address;
   unsigned short port;
   int sock;
-  char *stream_url;  // usues ip4 addr that the Roku believes we're on
+  char *stream_url; // usues ip4 addr that the Roku believes we're on
 
   bool clear_on_close;
   unsigned close_timeout;
 
   // the rcp cmds are limited length - used to build response
 #define RCP_RESP_BUF_SIZE 256
-  char respbuf[RCP_RESP_BUF_SIZE+1];
+  char respbuf[RCP_RESP_BUF_SIZE + 1];
   // pointer into our buffer, next available location for data resp
   char *respptr;
 
@@ -235,7 +229,8 @@ static struct rcp_session *rcp_sessions;
 extern struct event_base *evbase_player;
 
 // fwd
-static int rcp_send(struct rcp_session* s, enum rcp_state next_state, const char *cmd);
+static int
+rcp_send(struct rcp_session *s, enum rcp_state next_state, const char *cmd);
 
 /* ---------------------------- STATE MACHINE ------------------------------- */
 
@@ -250,7 +245,7 @@ rcp_state_verify(struct rcp_session *s, const char *resp)
   int ret;
 
   switch (s->state)
-  {
+    {
     case RCP_STATE_SETUP:
       if (strcmp(resp, "roku: ready\r\n") == 0)
 	return 0;
@@ -296,8 +291,8 @@ rcp_state_verify(struct rcp_session *s, const char *resp)
 
     case RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_DISCONNECTED:
     case RCP_STATE_SETUP_SERVER_DISCONNECT_DISCONNECTED:
-      if (strcmp(resp, "ServerDisconnect: Disconnected\r\n") == 0 ||
-          strcmp(resp, "ServerDisconnect: ErrorDisconnected\r\n") == 0)
+      if (strcmp(resp, "ServerDisconnect: Disconnected\r\n") == 0
+          || strcmp(resp, "ServerDisconnect: ErrorDisconnected\r\n") == 0)
 	{
 	  if (s->state == RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_DISCONNECTED)
 	    s->state = RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_TRANS_END;
@@ -310,8 +305,8 @@ rcp_state_verify(struct rcp_session *s, const char *resp)
     case RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_TRANS_END:
     case RCP_STATE_SETUP_SERVER_DISCONNECT_TRANS_END:
       if (strcmp(resp, "ServerDisconnect: TransactionComplete\r\n") == 0)
-        {
-          if (s->state == RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_TRANS_END)
+	{
+	  if (s->state == RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_TRANS_END)
 	    s->state = RCP_STATE_SHUTDOWN_SERVER_DISCONNECT;
 	  else
 	    s->state = RCP_STATE_SETUP_SERVER_DISCONNECT;
@@ -403,13 +398,14 @@ rcp_state_verify(struct rcp_session *s, const char *resp)
     case RCP_STATE_QUEUING_PLAY:
       if (strcmp(resp, "QueueAndPlayOne: OK\r\n") == 0)
 	return 0;
- 
+
       /* this means the address we used in request to play in
        * RCP_STATE_QUEUING_SET_PLAYLIST_URL is invalid
        */
       if (strcmp(resp, "QueueAndPlayOne: ParameterError\r\n") == 0)
 	{
-	  DPRINTF(E_LOG, L_RCP, "Failed to start stream, remote unable to reach '%s' from '%s' at %s\n", s->stream_url, s->devname, s->address);
+	  DPRINTF(E_LOG, L_RCP, "Failed to start stream, remote unable to reach '%s' from '%s' at %s\n", s->stream_url,
+	      s->devname, s->address);
 	  return 1;
 	}
 
@@ -434,8 +430,7 @@ rcp_state_verify(struct rcp_session *s, const char *resp)
 
     case RCP_STATE_SETUP_VOL_SET:
     case RCP_STATE_VOL_SET:
-      if (strcmp(resp, "SetVolume: OK\r\n") == 0 ||
-          strcmp(resp, "SetVolume: ParameterError\r\n")  == 0)
+      if (strcmp(resp, "SetVolume: OK\r\n") == 0 || strcmp(resp, "SetVolume: ParameterError\r\n") == 0)
 	return 0;
       goto resp_err;
 
@@ -447,7 +442,7 @@ rcp_state_verify(struct rcp_session *s, const char *resp)
 
     default:
       goto resp_err;
-  }
+    }
 
   return 0;
 
@@ -456,7 +451,7 @@ resp_err:
 }
 
 void
-rcp_session_shutdown(struct rcp_session* s, enum rcp_state state);
+rcp_session_shutdown(struct rcp_session *s, enum rcp_state state);
 
 /* Handle current state, action and move to next state
  * returns -1 when machine is done
@@ -467,178 +462,178 @@ rcp_state_transition(struct rcp_session *s)
   char buf[128];
   switch (s->state)
     {
-      case RCP_STATE_SETUP:
-	rcp_send(s, RCP_STATE_SETUP_WAKEUP, NULL);
-	break;
+    case RCP_STATE_SETUP:
+      rcp_send(s, RCP_STATE_SETUP_WAKEUP, NULL);
+      break;
 
-	  /* RCP spec - "Usage Scenario: Testing an Internet Radio URL", page 176:
-	   *   To play back an arbitrary Internet Radio URL from RCP, you must set the
-	   *   “working” song to identify the URL you want to play, make sure you are
-	   *   connected to an appropriate music server, and then execute the
-	   *   QueueAndPlayOne command
-	   *
-	   *   First, we ensure that we’re connected to the Internet Radio music server. Note
-	   *   that we set the server filter to “radio” before invoking the ListServers command,
-	   *   ensuring that the only list result is the built-in Internet Radio server [...]
-	   *
-	   * ->  GetConnectedServer
-	   * << "GetConnectedServer: OK"
-	   * ->  ServerDisconnect
-	   * << "ServerDisconnect: TransactionInitiated"
-	   * << "ServerDisconnect: Disconnected"
-	   * << "ServerDisconnect: TransactionComplete"
-	   * ->  SetServerFilter radio
-	   * << "SetServerFilter: OK"
-	   * ->  ListServers
-	   * << "ListServers: ListResultSize 1"
-	   * << "ListServers: Internet Radio"
-	   * << "ListServers: ListResultEnd"
-	   * ->  ServerConnect 0
-	   * << "ServerConnect: TransactionInitiated"
-	   * << "ServerConnect: Connected"
-	   * << "ServerConnect: TransactionComplete"
-	   * 
-	   * ->  ClearWorkingSong
-	   * << "ClearWorkingSong: OK"
-	   * ->  SetWorkingSongInfo playlistURL http://ownetone.local:3689/stream.mp3
-	   * << "SetWorkingSongInfo: OK"
-	   * ->  SetWorkingSongInfo remoteStream 1
-	   * << "SetWorkingSongInfo: OK"
-	   * ->  QueueAndPlayOne working
-	   * << "QueueAndPlayOne: OK"
-	   *
-	   * alternative but ICY meta not displayed
-	   *
-	   * RCP spec - "Usage Scenario: Playing a music File on the local network", page 177:
-	   *   The RCP client may wish to play back a music files stored on the
-	   *   local network that is not servedby amusic server. This is possible
-	   *   using the RCP session’s working song variable. The RCP client must
-	   *   setup the working song’s url and format fields and then call
-	   *   QueueAndPlayOne. It is recommended to not set the remoteStream
-	   *   field, as this will cause the file to be played back over 
-	   *   automatically once it reaches the end of the file
-	   *
-	   *
-	   * Note that the RCP spec has a copy/paste error; it refers to
-	   * 'ClearWorkingSongInfo' which is an invalid command
-	   *
-	   * ->  ClearWorkingSong
-	   * << "ClearWorkingSong: OK"
-	   * ->  SetWorkingSongInfo title xxx
-	   * << "SetWorkingSongInfo: OK"
-	   * ->  SetWorkingSongInfo url http://ownetone.local:3689/stream.mp3
-	   * << "SetWorkingSongInfo: OK"
-	   * ->  SetWorkingSongInfo format MP3
-	   * << "SetWorkingSongInfo: OK"
-	   * ->  QueueAndPlayOne working
-	   * << "QueueAndPlayOne: OK"
-	   */
+      /* RCP spec - "Usage Scenario: Testing an Internet Radio URL", page 176:
+       *   To play back an arbitrary Internet Radio URL from RCP, you must set the
+       *   “working” song to identify the URL you want to play, make sure you are
+       *   connected to an appropriate music server, and then execute the
+       *   QueueAndPlayOne command
+       *
+       *   First, we ensure that we’re connected to the Internet Radio music server. Note
+       *   that we set the server filter to “radio” before invoking the ListServers command,
+       *   ensuring that the only list result is the built-in Internet Radio server [...]
+       *
+       * ->  GetConnectedServer
+       * << "GetConnectedServer: OK"
+       * ->  ServerDisconnect
+       * << "ServerDisconnect: TransactionInitiated"
+       * << "ServerDisconnect: Disconnected"
+       * << "ServerDisconnect: TransactionComplete"
+       * ->  SetServerFilter radio
+       * << "SetServerFilter: OK"
+       * ->  ListServers
+       * << "ListServers: ListResultSize 1"
+       * << "ListServers: Internet Radio"
+       * << "ListServers: ListResultEnd"
+       * ->  ServerConnect 0
+       * << "ServerConnect: TransactionInitiated"
+       * << "ServerConnect: Connected"
+       * << "ServerConnect: TransactionComplete"
+       *
+       * ->  ClearWorkingSong
+       * << "ClearWorkingSong: OK"
+       * ->  SetWorkingSongInfo playlistURL http://ownetone.local:3689/stream.mp3
+       * << "SetWorkingSongInfo: OK"
+       * ->  SetWorkingSongInfo remoteStream 1
+       * << "SetWorkingSongInfo: OK"
+       * ->  QueueAndPlayOne working
+       * << "QueueAndPlayOne: OK"
+       *
+       * alternative but ICY meta not displayed
+       *
+       * RCP spec - "Usage Scenario: Playing a music File on the local network", page 177:
+       *   The RCP client may wish to play back a music files stored on the
+       *   local network that is not servedby amusic server. This is possible
+       *   using the RCP session’s working song variable. The RCP client must
+       *   setup the working song’s url and format fields and then call
+       *   QueueAndPlayOne. It is recommended to not set the remoteStream
+       *   field, as this will cause the file to be played back over
+       *   automatically once it reaches the end of the file
+       *
+       *
+       * Note that the RCP spec has a copy/paste error; it refers to
+       * 'ClearWorkingSongInfo' which is an invalid command
+       *
+       * ->  ClearWorkingSong
+       * << "ClearWorkingSong: OK"
+       * ->  SetWorkingSongInfo title xxx
+       * << "SetWorkingSongInfo: OK"
+       * ->  SetWorkingSongInfo url http://ownetone.local:3689/stream.mp3
+       * << "SetWorkingSongInfo: OK"
+       * ->  SetWorkingSongInfo format MP3
+       * << "SetWorkingSongInfo: OK"
+       * ->  QueueAndPlayOne working
+       * << "QueueAndPlayOne: OK"
+       */
 
-      case RCP_STATE_SETUP_WAKEUP:
-	rcp_send(s, RCP_STATE_SETUP_GET_CONNECTED_SERVER, NULL);
-	break;
+    case RCP_STATE_SETUP_WAKEUP:
+      rcp_send(s, RCP_STATE_SETUP_GET_CONNECTED_SERVER, NULL);
+      break;
 
-      case RCP_STATE_SHUTDOWN_STOPPED:
-	rcp_send(s, RCP_STATE_SHUTDOWN_GET_CONNECTED_SERVER, NULL);
-	break;
+    case RCP_STATE_SHUTDOWN_STOPPED:
+      rcp_send(s, RCP_STATE_SHUTDOWN_GET_CONNECTED_SERVER, NULL);
+      break;
 
-      case RCP_STATE_SHUTDOWN_GET_CONNECTED_SERVER:
-	rcp_send(s, RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_TRANS_INIT, NULL);
-	break;
+    case RCP_STATE_SHUTDOWN_GET_CONNECTED_SERVER:
+      rcp_send(s, RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_TRANS_INIT, NULL);
+      break;
 
-      case RCP_STATE_SETUP_GET_CONNECTED_SERVER:
-	rcp_send(s, RCP_STATE_SETUP_SERVER_DISCONNECT_TRANS_INIT, NULL);
-	break;
+    case RCP_STATE_SETUP_GET_CONNECTED_SERVER:
+      rcp_send(s, RCP_STATE_SETUP_SERVER_DISCONNECT_TRANS_INIT, NULL);
+      break;
 
-      case RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_TRANS_INIT:
-      case RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_DISCONNECTED:
-      case RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_TRANS_END:
-      case RCP_STATE_SETUP_SERVER_DISCONNECT_TRANS_INIT:
-      case RCP_STATE_SETUP_SERVER_DISCONNECT_DISCONNECTED:
-      case RCP_STATE_SETUP_SERVER_DISCONNECT_TRANS_END:
-	// no response, multistage response
-	break;
+    case RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_TRANS_INIT:
+    case RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_DISCONNECTED:
+    case RCP_STATE_SHUTDOWN_SERVER_DISCONNECT_TRANS_END:
+    case RCP_STATE_SETUP_SERVER_DISCONNECT_TRANS_INIT:
+    case RCP_STATE_SETUP_SERVER_DISCONNECT_DISCONNECTED:
+    case RCP_STATE_SETUP_SERVER_DISCONNECT_TRANS_END:
+      // no response, multistage response
+      break;
 
-      case RCP_STATE_SETUP_SERVER_DISCONNECT:
-	rcp_send(s, RCP_STATE_SETUP_SET_SERVER_FILTER, NULL);
-	break;
+    case RCP_STATE_SETUP_SERVER_DISCONNECT:
+      rcp_send(s, RCP_STATE_SETUP_SET_SERVER_FILTER, NULL);
+      break;
 
-      case RCP_STATE_SETUP_SET_SERVER_FILTER:
-	rcp_send(s, RCP_STATE_SETUP_LIST_SERVERS_RESULT_SIZE, NULL);
-	break;
+    case RCP_STATE_SETUP_SET_SERVER_FILTER:
+      rcp_send(s, RCP_STATE_SETUP_LIST_SERVERS_RESULT_SIZE, NULL);
+      break;
 
-      case RCP_STATE_SETUP_LIST_SERVERS_RESULT_SIZE:
-      case RCP_STATE_SETUP_LIST_SERVERS_INTERNET_RADIO:
-      case RCP_STATE_SETUP_LIST_SERVERS_RESULTS_END:
-	// no response, multistage response
-	break;
+    case RCP_STATE_SETUP_LIST_SERVERS_RESULT_SIZE:
+    case RCP_STATE_SETUP_LIST_SERVERS_INTERNET_RADIO:
+    case RCP_STATE_SETUP_LIST_SERVERS_RESULTS_END:
+      // no response, multistage response
+      break;
 
-      case RCP_STATE_SETUP_LIST_SERVERS:
-	rcp_send(s, RCP_STATE_SETUP_SERVER_CONNECT_TRANS_INIT, NULL);
-	break;
+    case RCP_STATE_SETUP_LIST_SERVERS:
+      rcp_send(s, RCP_STATE_SETUP_SERVER_CONNECT_TRANS_INIT, NULL);
+      break;
 
-      case RCP_STATE_SETUP_SERVER_CONNECT_TRANS_INIT:
-      case RCP_STATE_SETUP_SERVER_CONNECT_CONNECTED:
-      case RCP_STATE_SETUP_SERVER_CONNECT_TRANS_END:
-	break;
+    case RCP_STATE_SETUP_SERVER_CONNECT_TRANS_INIT:
+    case RCP_STATE_SETUP_SERVER_CONNECT_CONNECTED:
+    case RCP_STATE_SETUP_SERVER_CONNECT_TRANS_END:
+      break;
 
-      case RCP_STATE_SETUP_SERVER_CONNECT:
-	snprintf(buf, sizeof(buf), "%d", s->device->volume);
-	rcp_send(s, RCP_STATE_SETUP_VOL_SET, buf);
-	break;
+    case RCP_STATE_SETUP_SERVER_CONNECT:
+      snprintf(buf, sizeof(buf), "%d", s->device->volume);
+      rcp_send(s, RCP_STATE_SETUP_VOL_SET, buf);
+      break;
 
-      case RCP_STATE_SETUP_VOL_SET:
-	rcp_send(s, RCP_STATE_QUEUING_CLEAR, NULL);
-	break;
+    case RCP_STATE_SETUP_VOL_SET:
+      rcp_send(s, RCP_STATE_QUEUING_CLEAR, NULL);
+      break;
 
-      case RCP_STATE_QUEUING_CLEAR:
-	rcp_send(s, RCP_STATE_QUEUING_SET_TITLE, cfg_getstr(cfg_getsec(cfg, "library"), "name"));
-	break;
+    case RCP_STATE_QUEUING_CLEAR:
+      rcp_send(s, RCP_STATE_QUEUING_SET_TITLE, cfg_getstr(cfg_getsec(cfg, "library"), "name"));
+      break;
 
-      case RCP_STATE_QUEUING_SET_TITLE:
-	rcp_send(s, RCP_STATE_QUEUING_SET_PLAYLIST_URL, s->stream_url);
-	break;
+    case RCP_STATE_QUEUING_SET_TITLE:
+      rcp_send(s, RCP_STATE_QUEUING_SET_PLAYLIST_URL, s->stream_url);
+      break;
 
-      case RCP_STATE_QUEUING_SET_PLAYLIST_URL:
-	rcp_send(s, RCP_STATE_QUEUING_SET_REMOTE_STREAM, NULL);
-	break;
+    case RCP_STATE_QUEUING_SET_PLAYLIST_URL:
+      rcp_send(s, RCP_STATE_QUEUING_SET_REMOTE_STREAM, NULL);
+      break;
 
-      case RCP_STATE_QUEUING_SET_REMOTE_STREAM:
-	rcp_send(s, RCP_STATE_QUEUING_PLAY, NULL);
-	break;
+    case RCP_STATE_QUEUING_SET_REMOTE_STREAM:
+      rcp_send(s, RCP_STATE_QUEUING_PLAY, NULL);
+      break;
 
-      case RCP_STATE_QUEUING_PLAY:
-        DPRINTF(E_INFO, L_RCP, "Ready '%s' volume at %d\n", s->devname, s->volume);
-	event_del(s->reply_timeout);
-	// fall through
+    case RCP_STATE_QUEUING_PLAY:
+      DPRINTF(E_INFO, L_RCP, "Ready '%s' volume at %d\n", s->devname, s->volume);
+      event_del(s->reply_timeout);
+      // fall through
 
-      case RCP_STATE_VOL_GET:
-      case RCP_STATE_VOL_SET:
-	s->state = RCP_STATE_STREAMING;
-	break;
+    case RCP_STATE_VOL_GET:
+    case RCP_STATE_VOL_SET:
+      s->state = RCP_STATE_STREAMING;
+      break;
 
-      case RCP_STATE_STOPPING:
-	s->state = RCP_STATE_SHUTDOWN_STOPPED;
-	break;
+    case RCP_STATE_STOPPING:
+      s->state = RCP_STATE_SHUTDOWN_STOPPED;
+      break;
 
-      case RCP_STATE_STREAMING:
-	break;
+    case RCP_STATE_STREAMING:
+      break;
 
-      case RCP_STATE_SHUTDOWN_SERVER_DISCONNECT:
-	rcp_send(s, RCP_STATE_STANDBY, NULL);
-	break;
+    case RCP_STATE_SHUTDOWN_SERVER_DISCONNECT:
+      rcp_send(s, RCP_STATE_STANDBY, NULL);
+      break;
 
-      case RCP_STATE_STANDBY:
-	rcp_session_shutdown(s, RCP_STATE_DISCONNECTED);
-	goto done;
-	break;
+    case RCP_STATE_STANDBY:
+      rcp_session_shutdown(s, RCP_STATE_DISCONNECTED);
+      goto done;
+      break;
 
-      case RCP_STATE_DISCONNECTED:
-	goto done;
-	break;
+    case RCP_STATE_DISCONNECTED:
+      goto done;
+      break;
 
-      default:
-	DPRINTF(E_WARN, L_RCP, "Unhandled state transition %d '%s'\n", s->state, s->devname);
+    default:
+      DPRINTF(E_WARN, L_RCP, "Unhandled state transition %d '%s'\n", s->state, s->devname);
     }
   return 0;
 
@@ -651,65 +646,66 @@ rcp_status(struct rcp_session *s);
 
 // send to remote and transition to next state
 static int
-rcp_send(struct rcp_session* s, enum rcp_state next_state, const char *arg)
+rcp_send(struct rcp_session *s, enum rcp_state next_state, const char *arg)
 {
-    struct iovec  iov[] = { 
-      { NULL, 0 },  // cmd
-      { "", 0 },  // arg spacer
-      { "", 0 },  // arg
-      { (void*)"\r\n", 2 }
-    };
-    const struct rcp_state_map *map = NULL;
-    int ret;
+  struct iovec iov[] = {
+    { NULL,           0 }, // cmd
+    { "",             0 }, // arg spacer
+    { "",             0 }, // arg
+    { (void *)"\r\n", 2 }
+  };
+  const struct rcp_state_map *map = NULL;
+  int ret;
 
-    // ensure the state has a mapping
-    for (int i=0; i<RCP_STATE_MAX; ++i)
-      {
-	if (rcp_state_send_map[i].state == next_state &&
-	    rcp_state_send_map[i].cmd) 
-	  {
-	    map = &rcp_state_send_map[i];
-	    break;
-	  }
-      }
-    if (!map || (map && map->cmd == NULL))
-      {
-	DPRINTF(E_WARN, L_RCP, "BUG - state machine has no cmd for state %d on '%s'\n", s->state, s->devname);
-	return -1;
-      }
-
-    iov[0].iov_base = (void*)map->cmd;
-    iov[0].iov_len  = strlen(map->cmd);
-    if (map->has_arg)
-      {
-	iov[1].iov_base = (void*)" ";
-	iov[1].iov_len  = 1;
-	iov[2].iov_base = (void*)(arg ? arg : "");
-	iov[2].iov_len  = arg ? strlen(arg) : 0;
-      }
-
-//    DPRINTF(E_DBG, L_RCP, "Device %" PRIu64 " state %d send '%s%s%s'\n", s->device->id, s->state, (char*)(iov[0].iov_base), (char*)(iov[1].iov_base), (char*)(iov[2].iov_base));
-
-    if (s->sock <= 0) {
-	DPRINTF(E_LOG, L_RCP, "Ignoring send request on %s, state = %d\n", s->address, s->state);
-	return -1;
+  // ensure the state has a mapping
+  for (int i = 0; i < RCP_STATE_MAX; ++i)
+    {
+      if (rcp_state_send_map[i].state == next_state && rcp_state_send_map[i].cmd)
+	{
+	  map = &rcp_state_send_map[i];
+	  break;
+	}
+    }
+  if (!map || (map && map->cmd == NULL))
+    {
+      DPRINTF(E_WARN, L_RCP, "BUG - state machine has no cmd for state %d on '%s'\n", s->state, s->devname);
+      return -1;
     }
 
-    ret = writev(s->sock, iov, 4);
-    if (ret < 0)
-      {
-	s->state = RCP_STATE_FAILED;
-	return -1;
-      }
-    if (ret == 0)
-      {
-	s->state = RCP_STATE_DISCONNECTED;
-	return -1;
-      }
+  iov[0].iov_base = (void *)map->cmd;
+  iov[0].iov_len = strlen(map->cmd);
+  if (map->has_arg)
+    {
+      iov[1].iov_base = (void *)" ";
+      iov[1].iov_len = 1;
+      iov[2].iov_base = (void *)(arg ? arg : "");
+      iov[2].iov_len = arg ? strlen(arg) : 0;
+    }
 
-    s->state = next_state;
+  //    DPRINTF(E_DBG, L_RCP, "Device %" PRIu64 " state %d send '%s%s%s'\n", s->device->id, s->state,
+  //    (char*)(iov[0].iov_base), (char*)(iov[1].iov_base), (char*)(iov[2].iov_base));
 
-    return 0;
+  if (s->sock <= 0)
+    {
+      DPRINTF(E_LOG, L_RCP, "Ignoring send request on %s, state = %d\n", s->address, s->state);
+      return -1;
+    }
+
+  ret = writev(s->sock, iov, 4);
+  if (ret < 0)
+    {
+      s->state = RCP_STATE_FAILED;
+      return -1;
+    }
+  if (ret == 0)
+    {
+      s->state = RCP_STATE_DISCONNECTED;
+      return -1;
+    }
+
+  s->state = next_state;
+
+  return 0;
 }
 
 /* Returns:
@@ -725,11 +721,12 @@ rcp_recv(struct rcp_session *s)
    * limit the input buf
    */
   ssize_t recvd;
-  const size_t  avail = RCP_RESP_BUF_SIZE - (s->respptr - s->respbuf);
+  const size_t avail = RCP_RESP_BUF_SIZE - (s->respptr - s->respbuf);
 
   if (avail == 0)
     {
-      DPRINTF(E_WARN, L_RCP, "Protocol BUG, cmd buf (%d) exhausted %" PRIu64 " state %d\n", RCP_RESP_BUF_SIZE, s->device->id, s->state);
+      DPRINTF(E_WARN, L_RCP, "Protocol BUG, cmd buf (%d) exhausted %" PRIu64 " state %d\n", RCP_RESP_BUF_SIZE,
+          s->device->id, s->state);
 
       s->state = RCP_STATE_FAILED;
       return -1;
@@ -737,10 +734,12 @@ rcp_recv(struct rcp_session *s)
 
   recvd = read(s->sock, s->respptr, avail);
 
-//  DPRINTF(E_DBG,  L_RCP, "Device %" PRIu64 " state %d recv'd %zd bytes '%s'\n", s->device->id, s->state, recvd, s->respptr);
+  //  DPRINTF(E_DBG,  L_RCP, "Device %" PRIu64 " state %d recv'd %zd bytes '%s'\n", s->device->id, s->state, recvd,
+  //  s->respptr);
   if (recvd <= 0)
     {
-      DPRINTF(E_LOG,  L_RCP, "Failed to read response from '%s' - %s\n", s->devname, strerror(recvd == 0 ? ECONNRESET : errno));
+      DPRINTF(E_LOG, L_RCP, "Failed to read response from '%s' - %s\n", s->devname,
+          strerror(recvd == 0 ? ECONNRESET : errno));
       s->state = RCP_STATE_DISCONNECTED;
       return -1;
     }
@@ -768,28 +767,28 @@ rcp_state_1resp(char *resp, struct rcp_session *s)
     return NULL;
 
   p = s->respbuf;
-  q = p+1;
+  q = p + 1;
   while (q < s->respptr)
     {
       if (*p == '\r' && *q == '\n')
-      {
-	  len = q+1 - s->respbuf;
+	{
+	  len = q + 1 - s->respbuf;
 	  memcpy(resp, s->respbuf, len);
 	  resp[len] = '\0';
 
 	  // now slide the rest of the s->respbuf to begining
-	  memmove(s->respbuf, s->respbuf+len, s->respptr - s->respbuf - len);
+	  memmove(s->respbuf, s->respbuf + len, s->respptr - s->respbuf - len);
 	  s->respptr -= len;
 	  memset(s->respptr, 0, len);
 
 	  ret = &resp[0];
-      }
+	}
       ++p;
       ++q;
 
       if (ret)
 	break;
-   }
+    }
   return ret;
 }
 
@@ -804,7 +803,7 @@ rcp_disconnect(int fd)
 }
 
 void
-rcp_session_shutdown(struct rcp_session* s, enum rcp_state state)
+rcp_session_shutdown(struct rcp_session *s, enum rcp_state state)
 {
   event_del(s->ev);
   event_del(s->reply_timeout);
@@ -816,18 +815,17 @@ rcp_session_shutdown(struct rcp_session* s, enum rcp_state state)
 
   // we've shutdown, ensure state is valid
   switch (state)
-  {
+    {
     case RCP_STATE_STANDBY ... RCP_STATE_FAILED:
       break;
 
     default:
       state = RCP_STATE_FAILED;
-  }
+    }
   s->state = state;
- 
+
   rcp_status(s);
 }
-
 
 static void
 rcp_reply_shutdown_timeout_cb(int fd, short what, void *arg)
@@ -846,7 +844,7 @@ rcp_reply_shutdown_timeout_cb(int fd, short what, void *arg)
 }
 
 static void
-rcp_session_shutdown_init(struct rcp_session* s)
+rcp_session_shutdown_init(struct rcp_session *s)
 {
   struct timeval clear_timeout = { 15, 0 };
 
@@ -861,7 +859,8 @@ rcp_session_shutdown_init(struct rcp_session* s)
     }
   else
     {
-      DPRINTF(E_DBG, L_RCP, "Limiting shutdown timeout %ld sec '%s' at %s\n", clear_timeout.tv_sec, s->devname, s->address);
+      DPRINTF(
+          E_DBG, L_RCP, "Limiting shutdown timeout %ld sec '%s' at %s\n", clear_timeout.tv_sec, s->devname, s->address);
 
       // ensure we're not blocked forever on responses
       event_add(s->reply_timeout, &clear_timeout);
@@ -872,11 +871,7 @@ rcp_session_shutdown_init(struct rcp_session* s)
        *
        * some users prefer non Roku connected state
        */
-      rcp_send(s,
-	       s->clear_on_close ?
-		  RCP_STATE_SHUTDOWN_GET_CONNECTED_SERVER :
-		  RCP_STATE_STANDBY,
-	      NULL);
+      rcp_send(s, s->clear_on_close ? RCP_STATE_SHUTDOWN_GET_CONNECTED_SERVER : RCP_STATE_STANDBY, NULL);
     }
 }
 
@@ -889,7 +884,7 @@ rcp_listen_cb(int fd, short what, void *arg)
 {
   struct rcp_session *s;
   const char *p;
-  char cmd[RCP_RESP_BUF_SIZE+1] = { 0 };
+  char cmd[RCP_RESP_BUF_SIZE + 1] = { 0 };
   int ret;
 
   for (s = rcp_sessions; s; s = s->next)
@@ -923,7 +918,7 @@ rcp_listen_cb(int fd, short what, void *arg)
     }
 
   // process all full responses in s->respbuf
-  while ( (p = rcp_state_1resp(cmd, s)) )
+  while ((p = rcp_state_1resp(cmd, s)))
     {
       // ensure respose matches state otherwise state machine is out of whack
       ret = rcp_state_verify(s, cmd);
@@ -942,10 +937,11 @@ rcp_listen_cb(int fd, short what, void *arg)
 
   return;
 
- resp_fail:
-  DPRINTF(E_WARN, L_RCP, "Unexpected response (parsed cmd '%s' remaining buf '%s') in state %d '%s' at %s\n", cmd, s->respbuf, s->state, s->devname, s->address);
+resp_fail:
+  DPRINTF(E_WARN, L_RCP, "Unexpected response (parsed cmd '%s' remaining buf '%s') in state %d '%s' at %s\n", cmd,
+      s->respbuf, s->state, s->devname, s->address);
 
- fail:
+fail:
   // Downgrade state to make rcp_session_shutdown perform an exit which is
   // quick and won't require a reponse from remote
   s->state = RCP_STATE_FAILED;
@@ -969,11 +965,10 @@ rcp_reply_timeout_cb(int fd, short what, void *arg)
     }
 }
 
-
 /* RCP spec - "RCP Sessions" #2, page 8:
- *   Telnet (TCP port 5555) – SoundBridge and WMM devices listen on TCP port 
+ *   Telnet (TCP port 5555) – SoundBridge and WMM devices listen on TCP port
  *   5555 at their configured IPaddress for incoming connections, and expose the
- *   RCP shell directly on this connection. Once connected, the device will 
+ *   RCP shell directly on this connection. Once connected, the device will
  *   answer with the RCP initiation sequence, “roku:ready”, indicating that the
  *   connection is ready for commands.
  */
@@ -1010,14 +1005,14 @@ rcp_session_make(struct output_device *device, int callback_id)
       goto out_free_session;
     }
 
-  ret = getsockname(s->sock, (struct sockaddr*)&ss, &socklen);
+  ret = getsockname(s->sock, (struct sockaddr *)&ss, &socklen);
   if (ret < 0)
     {
       DPRINTF(E_LOG, L_RCP, "Could not determine client's connected address %s\n", device->name);
       goto out_close_connection;
     }
 
-  inaddr = &((struct sockaddr_in*)&ss)->sin_addr;
+  inaddr = &((struct sockaddr_in *)&ss)->sin_addr;
   addr = evutil_inet_ntop(ss.ss_family, inaddr, addrbuf, sizeof(addrbuf));
   if (!addr)
     {
@@ -1055,7 +1050,8 @@ rcp_session_make(struct output_device *device, int callback_id)
   s->next = rcp_sessions;
   rcp_sessions = s;
 
-  DPRINTF(E_DBG, L_RCP, "Make session device %" PRIu64 " %s at %s stream url '%s'\n", s->device->id, s->devname, s->address, s->stream_url);
+  DPRINTF(E_DBG, L_RCP, "Make session device %" PRIu64 " %s at %s stream url '%s'\n", s->device->id, s->devname,
+      s->address, s->stream_url);
 
   // s is now the official device session
   outputs_device_session_add(device->id, s);
@@ -1066,17 +1062,16 @@ rcp_session_make(struct output_device *device, int callback_id)
 
   return s;
 
- out_free_ev:
+out_free_ev:
   event_free(s->reply_timeout);
   event_free(s->ev);
- out_close_connection:
+out_close_connection:
   rcp_disconnect(s->sock);
- out_free_session:
+out_free_session:
   free(s);
 
   return NULL;
 }
-
 
 static void
 rcp_session_free(struct rcp_session *s)
@@ -1098,7 +1093,6 @@ rcp_session_free(struct rcp_session *s)
   free(s);
 }
 
-
 static void
 rcp_session_cleanup(struct rcp_session *rs)
 {
@@ -1116,7 +1110,8 @@ rcp_session_cleanup(struct rcp_session *rs)
 
       if (!s)
 	{
-	  DPRINTF(E_WARN, L_RCP, "WARNING: struct rcp_session (%s at %s) not found in list; BUG!\n", rs->devname, rs->address);
+	  DPRINTF(E_WARN, L_RCP, "WARNING: struct rcp_session (%s at %s) not found in list; BUG!\n", rs->devname,
+	      rs->address);
 	  return;
 	}
 
@@ -1128,7 +1123,6 @@ rcp_session_cleanup(struct rcp_session *rs)
   rcp_session_free(rs);
 }
 
-
 /* ---------------------------- STATUS HANDLERS ----------------------------- */
 
 static void
@@ -1138,30 +1132,30 @@ rcp_status(struct rcp_session *s)
 
   switch (s->state)
     {
-      case RCP_STATE_SETUP:
-      case RCP_STATE_SETUP_WAKEUP:
-	state = OUTPUT_STATE_STARTUP;
-	break;
+    case RCP_STATE_SETUP:
+    case RCP_STATE_SETUP_WAKEUP:
+      state = OUTPUT_STATE_STARTUP;
+      break;
 
-      case RCP_STATE_SETUP_GET_CONNECTED_SERVER ... RCP_STATE_SETUP_VOL_SET:
-      case RCP_STATE_QUEUING_CLEAR ... RCP_STATE_QUEUING_PLAY:
-      case RCP_STATE_VOL_GET:
-      case RCP_STATE_VOL_SET:
-      case RCP_STATE_STOPPING ... RCP_STATE_STANDBY:
-	state = OUTPUT_STATE_CONNECTED;
-	break;
+    case RCP_STATE_SETUP_GET_CONNECTED_SERVER ... RCP_STATE_SETUP_VOL_SET:
+    case RCP_STATE_QUEUING_CLEAR ... RCP_STATE_QUEUING_PLAY:
+    case RCP_STATE_VOL_GET:
+    case RCP_STATE_VOL_SET:
+    case RCP_STATE_STOPPING ... RCP_STATE_STANDBY:
+      state = OUTPUT_STATE_CONNECTED;
+      break;
 
-      case RCP_STATE_STREAMING:
-	state = OUTPUT_STATE_STREAMING;
-	break;
+    case RCP_STATE_STREAMING:
+      state = OUTPUT_STATE_STREAMING;
+      break;
 
-      case RCP_STATE_DISCONNECTED:
-	state = OUTPUT_STATE_STOPPED;
-	break;
+    case RCP_STATE_DISCONNECTED:
+      state = OUTPUT_STATE_STOPPED;
+      break;
 
-      case RCP_STATE_FAILED:
-      default:
-	state = OUTPUT_STATE_FAILED;
+    case RCP_STATE_FAILED:
+    default:
+      state = OUTPUT_STATE_FAILED;
     }
 
   DPRINTF(E_DBG, L_RCP, "Mapping state from (internal) %d -> (output) %d\n", s->state, state);
@@ -1171,7 +1165,6 @@ rcp_status(struct rcp_session *s)
   if (state == OUTPUT_STATE_STOPPED || state == OUTPUT_STATE_FAILED)
     rcp_session_cleanup(s);
 }
-
 
 /* ------------------ INTERFACE FUNCTIONS CALLED BY OUTPUTS.C --------------- */
 
@@ -1192,7 +1185,7 @@ rcp_device_stop(struct output_device *device, int callback_id)
 {
   struct rcp_session *s = device->session;
 
-  /* force these devices as deselected (auto state saves in db later) since 
+  /* force these devices as deselected (auto state saves in db later) since
    * these need use to select (and cause the device probe to start connection to
    * remote side
    */
@@ -1225,10 +1218,8 @@ rcp_device_probe(struct output_device *device, int callback_id)
   if (!s)
     return -1;
 
-
   return 1;
 }
-
 
 static int
 rcp_device_volume_set(struct output_device *device, int callback_id)
@@ -1243,9 +1234,10 @@ rcp_device_volume_set(struct output_device *device, int callback_id)
   s->callback_id = callback_id;
 
   ret = snprintf(cmd, sizeof(cmd), "%d", device->volume);
-  if (ret < 0) {
-    return 0;
-  }
+  if (ret < 0)
+    {
+      return 0;
+    }
 
   rcp_send(s, RCP_STATE_VOL_SET, cmd);
 
@@ -1261,28 +1253,30 @@ rcp_device_cb_set(struct output_device *device, int callback_id)
 }
 
 static void
-rcp_mdns_device_cb(const char *name, const char *type, const char *domain, const char *hostname, int family, const char *address, int port, struct keyval *txt)
+rcp_mdns_device_cb(const char *name, const char *type, const char *domain, const char *hostname, int family,
+    const char *address, int port, struct keyval *txt)
 {
   struct output_device *device;
   bool exclude;
   int ret;
 
   /* $ avahi-browse -vrt  _roku-rcp._tcp
-	Server version: avahi 0.7; Host name: foo.local
-	E Ifce Prot Name                       Type                 Domain
-	+  eth0 IPv4 SoundBridge              _roku-rcp._tcp       local
-	=  eth0 IPv4 SoundBridge              _roku-rcp._tcp       local
-	   hostname = [SoundBridge.local]
-	   address = [192.168.0.3]
-	   port = [5555]
-	   txt = []
-	: Cache exhausted
-	: All for now
+        Server version: avahi 0.7; Host name: foo.local
+        E Ifce Prot Name                       Type                 Domain
+        +  eth0 IPv4 SoundBridge              _roku-rcp._tcp       local
+        =  eth0 IPv4 SoundBridge              _roku-rcp._tcp       local
+           hostname = [SoundBridge.local]
+           address = [192.168.0.3]
+           port = [5555]
+           txt = []
+        : Cache exhausted
+        : All for now
    */
 
   exclude = cfg_getbool(cfg_gettsec(cfg, "rcp", name), "exclude");
-  DPRINTF(E_DBG, L_RCP, "Event for %sRCP/SoundBridge device '%s' (address %s, port %d)\n", exclude ? "excluded " : "", name, address, port);
-  
+  DPRINTF(E_DBG, L_RCP, "Event for %sRCP/SoundBridge device '%s' (address %s, port %d)\n", exclude ? "excluded " : "",
+      name, address, port);
+
   if (exclude)
     {
       DPRINTF(E_INFO, L_RCP, "Excluding discovered RCP/SoundBridge device '%s' at %s\n", name, address);
@@ -1316,7 +1310,6 @@ rcp_mdns_device_cb(const char *name, const char *type, const char *domain, const
     outputs_device_free(device);
 }
 
-
 static int
 rcp_init(void)
 {
@@ -1325,13 +1318,14 @@ rcp_init(void)
   int ret;
 
   // validate best we can rcp_state_send_map has all the rcp_states
-  assert(ARRAY_SIZE(rcp_state_send_map) == RCP_STATE_MAX+1);
-  //DPRINTF(E_FATAL, L_RCP, "BUG: rcp_state_send_map[] (%d) out of sync with rcp_states (%d)\n", ARRAY_SIZE(rcp_state_send_map), RCP_STATE_MAX);
+  assert(ARRAY_SIZE(rcp_state_send_map) == RCP_STATE_MAX + 1);
+  // DPRINTF(E_FATAL, L_RCP, "BUG: rcp_state_send_map[] (%d) out of sync with rcp_states (%d)\n",
+  // ARRAY_SIZE(rcp_state_send_map), RCP_STATE_MAX);
 
-  for (i=0; i<RCP_STATE_MAX; i++)
+  for (i = 0; i < RCP_STATE_MAX; i++)
     {
       assert(rcp_state_send_map[i].state == (enum rcp_state)i);
-      //DPRINTF(E_FATAL, L_RCP, "BUG: rcp_state_send_map[%d] out of sync with enum rcp_states\n", i);
+      // DPRINTF(E_FATAL, L_RCP, "BUG: rcp_state_send_map[%d] out of sync with enum rcp_states\n", i);
     }
 
   cfg_rcp = cfg_gettsec(cfg, "rcp", "*");
@@ -1360,8 +1354,7 @@ rcp_deinit(void)
     rcp_session_cleanup(s);
 }
 
-struct output_definition output_rcp =
-{
+struct output_definition output_rcp = {
   .name = "RCP/SoundBridge",
   .type = OUTPUT_TYPE_RCP,
   .priority = 99,

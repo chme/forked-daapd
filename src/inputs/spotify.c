@@ -15,14 +15,14 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "logger.h"
 #include "spotify.h"
@@ -44,7 +44,6 @@ backend_set(void)
   DPRINTF(E_LOG, L_SPOTIFY, "Invalid Spotify configuration (not built with the configured backend)\n");
   return NULL;
 }
-
 
 /* -------------- Dispatches functions exposed via spotify.h ---------------- */
 /*             Called from other threads than the input thread                */

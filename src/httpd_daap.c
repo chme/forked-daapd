@@ -22,38 +22,37 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
+#include <ctype.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
-#include <errno.h>
 #include <sys/queue.h>
 #include <sys/types.h>
-#include <limits.h>
-#include <stdint.h>
-#include <inttypes.h>
 #include <time.h>
-#include <ctype.h>
 
 #include <uninorm.h>
 #include <unistd.h>
 
 #include <event2/event.h>
 
-#include "httpd_internal.h"
-#include "httpd_daap.h"
-#include "logger.h"
-#include "db.h"
+#include "artwork.h"
+#include "cache.h"
 #include "conffile.h"
+#include "db.h"
+#include "dmap_common.h"
+#include "httpd_daap.h"
+#include "httpd_internal.h"
+#include "logger.h"
 #include "misc.h"
 #include "transcode.h"
-#include "artwork.h"
-#include "dmap_common.h"
-#include "cache.h"
-
 
 /* Max number of sessions and session timeout
  * Many clients (including iTunes) don't seem to respect the timeout capability
@@ -63,28 +62,27 @@
  * new sessions - see daap_session_cleanup().
  */
 #define DAAP_SESSION_MAX 200
-#define DAAP_SESSION_TIMEOUT 604800            // One week in seconds
+#define DAAP_SESSION_TIMEOUT 604800 // One week in seconds
 /* We announce this timeout to the client when returning server capabilities */
-#define DAAP_SESSION_TIMEOUT_CAPABILITY 1800   // 30 minutes
+#define DAAP_SESSION_TIMEOUT_CAPABILITY 1800 // 30 minutes
 /* Update requests refresh interval in seconds */
-#define DAAP_UPDATE_REFRESH  0
+#define DAAP_UPDATE_REFRESH 0
 
 /* Database number for the Radio item */
 #define DAAP_DB_RADIO 2
 
 /* Errors that the reply handlers may return */
-enum daap_reply_result
-{
-  DAAP_REPLY_LOGOUT          =  4,
-  DAAP_REPLY_NONE            =  3,
-  DAAP_REPLY_NO_CONTENT      =  2,
-  DAAP_REPLY_OK_NO_GZIP      =  1,
-  DAAP_REPLY_OK              =  0,
-  DAAP_REPLY_NO_CONNECTION   = -1,
-  DAAP_REPLY_ERROR           = -2,
-  DAAP_REPLY_FORBIDDEN       = -3,
-  DAAP_REPLY_BAD_REQUEST     = -4,
-  DAAP_REPLY_SERVUNAVAIL     = -5,
+enum daap_reply_result {
+  DAAP_REPLY_LOGOUT = 4,
+  DAAP_REPLY_NONE = 3,
+  DAAP_REPLY_NO_CONTENT = 2,
+  DAAP_REPLY_OK_NO_GZIP = 1,
+  DAAP_REPLY_OK = 0,
+  DAAP_REPLY_NO_CONNECTION = -1,
+  DAAP_REPLY_ERROR = -2,
+  DAAP_REPLY_FORBIDDEN = -3,
+  DAAP_REPLY_BAD_REQUEST = -4,
+  DAAP_REPLY_SERVUNAVAIL = -5,
 };
 
 struct daap_session {
@@ -112,9 +110,9 @@ struct sort_ctx {
   uint32_t misc_mshn;
 };
 
-
 /* Default meta tags if not provided in the query */
-static char *default_meta_plsongs = "dmap.itemkind,dmap.itemid,dmap.itemname,dmap.containeritemid,dmap.parentcontainerid";
+static char *default_meta_plsongs
+    = "dmap.itemkind,dmap.itemid,dmap.itemname,dmap.containeritemid,dmap.parentcontainerid";
 static char *default_meta_pl = "dmap.itemid,dmap.itemname,dmap.persistentid,com.apple.itunes.smart-playlist";
 static char *default_meta_group = "dmap.itemname,dmap.persistentid,daap.songalbumartist";
 
@@ -125,7 +123,6 @@ static struct daap_session *daap_sessions;
 static int current_rev;
 static struct daap_update_request *update_requests;
 static struct timeval daap_update_refresh_tv = { DAAP_UPDATE_REFRESH, 0 };
-
 
 /* -------------------------- SESSION HANDLING ------------------------------ */
 
@@ -228,7 +225,8 @@ daap_session_add(bool is_remote, int request_session_id)
     }
   else
     {
-      while ( (s->id = rand() + 100) && daap_session_get(s->id) );
+      while ((s->id = rand() + 100) && daap_session_get(s->id))
+	;
     }
 
   s->mtime = time(NULL);
@@ -308,7 +306,6 @@ update_fail_cb(void *arg)
 
   update_remove(ur);
 }
-
 
 /* ------------------------- SORT HEADERS HELPERS --------------------------- */
 
@@ -394,13 +391,14 @@ daap_sort_build(struct sort_ctx *ctx, char *str)
       if (fl == ctx->mshc)
 	ctx->mshn++;
       else
-        {
+	{
 	  dmap_add_container(ctx->headerlist, "mlit", 34);
 	  dmap_add_short(ctx->headerlist, "mshc", ctx->mshc); /* 10 */
 	  dmap_add_int(ctx->headerlist, "mshi", ctx->mshi);   /* 12 */
 	  dmap_add_int(ctx->headerlist, "mshn", ctx->mshn);   /* 12 */
 
-	  DPRINTF(E_DBG, L_DAAP, "Added sort header: mshc = %c, mshi = %u, mshn = %u fl %c\n", ctx->mshc, ctx->mshi, ctx->mshn, fl);
+	  DPRINTF(E_DBG, L_DAAP, "Added sort header: mshc = %c, mshi = %u, mshn = %u fl %c\n", ctx->mshc, ctx->mshi,
+	      ctx->mshn, fl);
 
 	  ctx->mshi = ctx->mshi + ctx->mshn;
 	  ctx->mshn = 1;
@@ -429,7 +427,8 @@ daap_sort_finalize(struct sort_ctx *ctx)
 
       ctx->mshi = ctx->mshi + ctx->mshn;
 
-      DPRINTF(E_DBG, L_DAAP, "Added sort header: mshc = %c, mshi = %u, mshn = %u (final)\n", ctx->mshc, ctx->mshi, ctx->mshn);
+      DPRINTF(E_DBG, L_DAAP, "Added sort header: mshc = %c, mshi = %u, mshn = %u (final)\n", ctx->mshc, ctx->mshi,
+          ctx->mshn);
     }
 
   /* Add misc category */
@@ -438,7 +437,6 @@ daap_sort_finalize(struct sort_ctx *ctx)
   dmap_add_int(ctx->headerlist, "mshi", ctx->mshi);      /* 12 */
   dmap_add_int(ctx->headerlist, "mshn", ctx->misc_mshn); /* 12 */
 }
-
 
 /* ----------------------------- OTHER HELPERS ------------------------------ */
 
@@ -517,13 +515,14 @@ query_params_set(struct query_params *qp, int *sort_headers, struct httpd_reques
 		    {
 		      ret = safe_atoi32(ptr, &high);
 		      if (ret < 0)
-			  DPRINTF(E_LOG, L_DAAP, "Could not parse high index in range: %s\n", param);
+			DPRINTF(E_LOG, L_DAAP, "Could not parse high index in range: %s\n", param);
 		    }
 		}
 	    }
 	}
 
-      DPRINTF(E_DBG, L_DAAP, "Index range %s: low %d, high %d (offset %d, limit %d)\n", param, low, high, qp->offset, qp->limit);
+      DPRINTF(E_DBG, L_DAAP, "Index range %s: low %d, high %d (offset %d, limit %d)\n", param, low, high, qp->offset,
+          qp->limit);
     }
 
   if (high < low)
@@ -582,7 +581,8 @@ query_params_set(struct query_params *qp, int *sort_headers, struct httpd_reques
       if (!qp->filter)
 	DPRINTF(E_LOG, L_DAAP, "Ignoring improper DAAP query: %s\n", param);
 
-      /* iTunes seems to default to this when there is a query (which there is for audiobooks, but not for normal playlists) */
+      /* iTunes seems to default to this when there is a query (which there is for audiobooks, but not for normal
+       * playlists) */
       if (!qp->sort && !(type & Q_F_BROWSE))
 	qp->sort = S_ALBUM;
     }
@@ -617,7 +617,8 @@ parse_meta(const struct dmap_field ***out_meta, const char *param)
   field = strtok_r(metastr, ",", &ptr);
   for (i = 0; field != NULL && i < nmeta; i++)
     {
-      for (n = 0; (n < i) && (strcmp(field, meta[n]->desc) != 0); n++);
+      for (n = 0; (n < i) && (strcmp(field, meta[n]->desc) != 0); n++)
+	;
 
       if (n == i)
 	{
@@ -656,32 +657,32 @@ daap_reply_send(struct httpd_request *hreq, enum daap_reply_result result)
 {
   switch (result)
     {
-      case DAAP_REPLY_LOGOUT:
-	httpd_send_reply(hreq, HTTP_NOCONTENT, "Logout Successful", 0);
-	break;
-      case DAAP_REPLY_NO_CONTENT:
-	httpd_send_reply(hreq, HTTP_NOCONTENT, "No Content", HTTPD_SEND_NO_GZIP);
-	break;
-      case DAAP_REPLY_OK:
-	httpd_send_reply(hreq, HTTP_OK, "OK", 0);
-	break;
-      case DAAP_REPLY_OK_NO_GZIP:
-      case DAAP_REPLY_ERROR:
-	httpd_send_reply(hreq, HTTP_OK, "OK", HTTPD_SEND_NO_GZIP);
-	break;
-      case DAAP_REPLY_FORBIDDEN:
-	httpd_send_error(hreq, HTTP_FORBIDDEN, "Forbidden");
-	break;
-      case DAAP_REPLY_BAD_REQUEST:
-	httpd_send_error(hreq, HTTP_BADREQUEST, "Bad Request");
-	break;
-      case DAAP_REPLY_SERVUNAVAIL:
-	httpd_send_error(hreq, HTTP_SERVUNAVAIL, "Internal Server Error");
-	break;
-      case DAAP_REPLY_NO_CONNECTION:
-      case DAAP_REPLY_NONE:
-	// Send nothing
-	break;
+    case DAAP_REPLY_LOGOUT:
+      httpd_send_reply(hreq, HTTP_NOCONTENT, "Logout Successful", 0);
+      break;
+    case DAAP_REPLY_NO_CONTENT:
+      httpd_send_reply(hreq, HTTP_NOCONTENT, "No Content", HTTPD_SEND_NO_GZIP);
+      break;
+    case DAAP_REPLY_OK:
+      httpd_send_reply(hreq, HTTP_OK, "OK", 0);
+      break;
+    case DAAP_REPLY_OK_NO_GZIP:
+    case DAAP_REPLY_ERROR:
+      httpd_send_reply(hreq, HTTP_OK, "OK", HTTPD_SEND_NO_GZIP);
+      break;
+    case DAAP_REPLY_FORBIDDEN:
+      httpd_send_error(hreq, HTTP_FORBIDDEN, "Forbidden");
+      break;
+    case DAAP_REPLY_BAD_REQUEST:
+      httpd_send_error(hreq, HTTP_BADREQUEST, "Bad Request");
+      break;
+    case DAAP_REPLY_SERVUNAVAIL:
+      httpd_send_error(hreq, HTTP_SERVUNAVAIL, "Internal Server Error");
+      break;
+    case DAAP_REPLY_NO_CONNECTION:
+    case DAAP_REPLY_NONE:
+      // Send nothing
+      break;
     }
 }
 
@@ -708,9 +709,11 @@ daap_request_authorize(struct httpd_request *hreq)
     {
       if (session->id == 0)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Unauthorized request from '%s', DAAP session not found: '%s'\n", hreq->peer_address, hreq->uri);
+	  DPRINTF(E_LOG, L_DAAP, "Unauthorized request from '%s', DAAP session not found: '%s'\n", hreq->peer_address,
+	      hreq->uri);
 
-	  httpd_send_error(hreq, HTTP_UNAUTHORIZED, "Unauthorized");;
+	  httpd_send_error(hreq, HTTP_UNAUTHORIZED, "Unauthorized");
+	  ;
 	  return -1;
 	}
 
@@ -723,8 +726,7 @@ daap_request_authorize(struct httpd_request *hreq)
     return 0;
 
   // If no valid session then we may need to authenticate
-  if ((strcmp(hreq->path, "/server-info") == 0)
-      || (strcmp(hreq->path, "/logout") == 0)
+  if ((strcmp(hreq->path, "/server-info") == 0) || (strcmp(hreq->path, "/logout") == 0)
       || (strcmp(hreq->path, "/content-codes") == 0)
       || (strncmp(hreq->path, "/databases/1/items/", strlen("/databases/1/items/")) == 0))
     return 0; // No authentication
@@ -741,7 +743,6 @@ daap_request_authorize(struct httpd_request *hreq)
 
   return 0;
 }
-
 
 /* --------------------------- REPLY HANDLERS ------------------------------- */
 /* Note that some handlers can be called without a connection (needed for     */
@@ -789,58 +790,59 @@ daap_reply_server_info(struct httpd_request *hreq)
     }
 
   dmap_add_int(content, "mstt", 200);
-  dmap_add_int(content, "mpro", mpro);       // dmap.protocolversion
-  dmap_add_string(content, "minm", name);    // dmap.itemname (server name)
+  dmap_add_int(content, "mpro", mpro);    // dmap.protocolversion
+  dmap_add_string(content, "minm", name); // dmap.itemname (server name)
 
-  dmap_add_int(content, "apro", apro);       // daap.protocolversion
-  dmap_add_int(content, "aeSV", apro);       // com.apple.itunes.music-sharing-version (determines if itunes shows share types)
+  dmap_add_int(content, "apro", apro); // daap.protocolversion
+  dmap_add_int(
+      content, "aeSV", apro); // com.apple.itunes.music-sharing-version (determines if itunes shows share types)
 
-  dmap_add_short(content, "ated", 7);        // daap.supportsextradata
+  dmap_add_short(content, "ated", 7); // daap.supportsextradata
 
   // Sub-optimal user-agent sniffing to solve the problem that iTunes 12.1 and
   // Apple Music do not work if we announce support for groups
   if (hreq->user_agent && (strncmp(hreq->user_agent, "iTunes", strlen("iTunes")) == 0))
-    dmap_add_short(content, "asgr", 0);      // daap.supportsgroups (1=artists, 2=albums, 3=both)
+    dmap_add_short(content, "asgr", 0); // daap.supportsgroups (1=artists, 2=albums, 3=both)
   else if (hreq->user_agent && (strncmp(hreq->user_agent, "Music", strlen("Music")) == 0))
-    dmap_add_short(content, "asgr", 0);      // daap.supportsgroups (1=artists, 2=albums, 3=both)
+    dmap_add_short(content, "asgr", 0); // daap.supportsgroups (1=artists, 2=albums, 3=both)
   else
-    dmap_add_short(content, "asgr", 3);      // daap.supportsgroups (1=artists, 2=albums, 3=both)
+    dmap_add_short(content, "asgr", 3); // daap.supportsgroups (1=artists, 2=albums, 3=both)
 
-//  dmap_add_long(content, "asse", 0x80000); // unknown - used by iTunes
+  //  dmap_add_long(content, "asse", 0x80000); // unknown - used by iTunes
 
-  dmap_add_char(content, "aeMQ", 1);         // unknown - used by iTunes
+  dmap_add_char(content, "aeMQ", 1); // unknown - used by iTunes
 
-//  dmap_add_long(content, "mscu", );        // unknown - used by iTunes
-//  dmap_add_char(content, "aeFR", );        // unknown - used by iTunes
+  //  dmap_add_long(content, "mscu", );        // unknown - used by iTunes
+  //  dmap_add_char(content, "aeFR", );        // unknown - used by iTunes
 
-  dmap_add_char(content, "aeTr", 1);         // unknown - used by iTunes
-  dmap_add_char(content, "aeSL", 1);         // unknown - used by iTunes
-  dmap_add_char(content, "aeSR", 1);         // unknown - used by iTunes
-//  dmap_add_char(content, "aeFP", 2);       // triggers FairPlay request
-//  dmap_add_long(content, "aeSX", );        // unknown - used by iTunes
+  dmap_add_char(content, "aeTr", 1); // unknown - used by iTunes
+  dmap_add_char(content, "aeSL", 1); // unknown - used by iTunes
+  dmap_add_char(content, "aeSR", 1); // unknown - used by iTunes
+                                     //  dmap_add_char(content, "aeFP", 2);       // triggers FairPlay request
+                                     //  dmap_add_long(content, "aeSX", );        // unknown - used by iTunes
 
-//  dmap_add_int(content, "ppro", );         // dpap.protocolversion
+  //  dmap_add_int(content, "ppro", );         // dpap.protocolversion
 
-  dmap_add_char(content, "msed", 0);         // dmap.supportsedit? - we don't support playlist editing
+  dmap_add_char(content, "msed", 0); // dmap.supportsedit? - we don't support playlist editing
 
-  dmap_add_char(content, "mslr", 1);         // dmap.loginrequired
+  dmap_add_char(content, "mslr", 1);                              // dmap.loginrequired
   dmap_add_int(content, "mstm", DAAP_SESSION_TIMEOUT_CAPABILITY); // dmap.timeoutinterval
-  dmap_add_char(content, "msal", 1);         // dmap.supportsautologout
-//  dmap_add_char(content, "msas", 3);       // dmap.authenticationschemes
+  dmap_add_char(content, "msal", 1);                              // dmap.supportsautologout
+  //  dmap_add_char(content, "msas", 3);       // dmap.authenticationschemes
   dmap_add_char(content, "msau", (passwd) ? 2 : 0); // dmap.authenticationmethod
 
-  dmap_add_char(content, "msup", 1);         // dmap.supportsupdate
-  dmap_add_char(content, "mspi", 1);         // dmap.supportspersistentids
-  dmap_add_char(content, "msex", 1);         // dmap.supportsextensions
-  dmap_add_char(content, "msbr", 1);         // dmap.supportsbrowse
-  dmap_add_char(content, "msqy", 1);         // dmap.supportsquery
-  dmap_add_char(content, "msix", 1);         // dmap.supportsindex
-//  dmap_add_char(content, "msrs", 1);       // dmap.supportsresolve
+  dmap_add_char(content, "msup", 1); // dmap.supportsupdate
+  dmap_add_char(content, "mspi", 1); // dmap.supportspersistentids
+  dmap_add_char(content, "msex", 1); // dmap.supportsextensions
+  dmap_add_char(content, "msbr", 1); // dmap.supportsbrowse
+  dmap_add_char(content, "msqy", 1); // dmap.supportsquery
+  dmap_add_char(content, "msix", 1); // dmap.supportsindex
+                                     //  dmap_add_char(content, "msrs", 1);       // dmap.supportsresolve
 
-  dmap_add_int(content, "msdc", 2);          // dmap.databasescount
+  dmap_add_int(content, "msdc", 2); // dmap.databasescount
 
-//  dmap_add_int(content, "mstc", );          // dmap.utctime
-//  dmap_add_int(content, "msto", );          // dmap.utcoffset
+  //  dmap_add_int(content, "mstc", );          // dmap.utctime
+  //  dmap_add_int(content, "msto", );          // dmap.utcoffset
 
   // Create container
   len = evbuffer_get_length(content);
@@ -923,9 +925,9 @@ daap_reply_login(struct httpd_request *hreq)
   else
     {
       if (hreq->user_agent)
-        DPRINTF(E_INFO, L_DAAP, "Client '%s' logging in from %s\n", hreq->user_agent, hreq->peer_address);
+	DPRINTF(E_INFO, L_DAAP, "Client '%s' logging in from %s\n", hreq->user_agent, hreq->peer_address);
       else
-        DPRINTF(E_INFO, L_DAAP, "Client (unknown user-agent) logging in from %s\n", hreq->peer_address);
+	DPRINTF(E_INFO, L_DAAP, "Client (unknown user-agent) logging in from %s\n", hreq->peer_address);
     }
 
   param = httpd_query_value_find(hreq->query, "request-session-id");
@@ -949,8 +951,8 @@ daap_reply_login(struct httpd_request *hreq)
     }
 
   dmap_add_container(hreq->out_body, "mlog", 24);
-  dmap_add_int(hreq->out_body, "mstt", 200);          /* 12 */
-  dmap_add_int(hreq->out_body, "mlid", session->id);  /* 12 */
+  dmap_add_int(hreq->out_body, "mstt", 200);         /* 12 */
+  dmap_add_int(hreq->out_body, "mlid", session->id); /* 12 */
 
   return DAAP_REPLY_OK;
 }
@@ -987,8 +989,8 @@ daap_reply_update(struct httpd_request *hreq)
     {
       DPRINTF(E_DBG, L_DAAP, "Missing revision-number in client update request\n");
       /* Some players (Amarok, Banshee) don't supply a revision number.
-	 They get a standard update of everything. */
-      param = "1";  /* Default to "1" will ensure an update */
+         They get a standard update of everything. */
+      param = "1"; /* Default to "1" will ensure an update */
     }
 
   ret = safe_atoi32(param, &reqd_rev);
@@ -1034,7 +1036,7 @@ daap_reply_update(struct httpd_request *hreq)
 	{
 	  DPRINTF(E_LOG, L_DAAP, "Out of memory for update request event\n");
 
-	  dmap_error_make(hreq->out_body, "mupd", "Could not register timer");	
+	  dmap_error_make(hreq->out_body, "mupd", "Could not register timer");
 	  update_free(ur);
 	  return DAAP_REPLY_ERROR;
 	}
@@ -1089,7 +1091,7 @@ daap_reply_dblist(struct httpd_request *hreq)
   dmap_add_int(item, "mimc", (int)count);
   db_pl_get_count(&count); // TODO Don't count empty smart playlists, because they get excluded in aply
   dmap_add_int(item, "mctc", (int)count);
-//  dmap_add_int(content, "aeMk", 0x405);   // com.apple.itunes.extended-media-kind (OR of all in library)
+  //  dmap_add_int(content, "aeMk", 0x405);   // com.apple.itunes.extended-media-kind (OR of all in library)
   dmap_add_int(item, "meds", 3);
 
   // Create container for library db
@@ -1109,7 +1111,7 @@ daap_reply_dblist(struct httpd_request *hreq)
   db_pl_get_count(&count); // TODO This counts too much, should only include stream playlists
   dmap_add_int(item, "mimc", (int)count);
   dmap_add_int(item, "mctc", 0);
-  dmap_add_int(item, "aeMk", 1);   // com.apple.itunes.extended-media-kind (OR of all in library)
+  dmap_add_int(item, "aeMk", 1); // com.apple.itunes.extended-media-kind (OR of all in library)
   dmap_add_int(item, "meds", 3);
 
   // Create container for radio db
@@ -1121,10 +1123,10 @@ daap_reply_dblist(struct httpd_request *hreq)
   // Create container
   len = evbuffer_get_length(content);
   dmap_add_container(hreq->out_body, "avdb", len + 53);
-  dmap_add_int(hreq->out_body, "mstt", 200);     /* 12 */
-  dmap_add_char(hreq->out_body, "muty", 0);      /* 9 */
-  dmap_add_int(hreq->out_body, "mtco", 2);       /* 12 */
-  dmap_add_int(hreq->out_body, "mrco", 2);       /* 12 */
+  dmap_add_int(hreq->out_body, "mstt", 200);       /* 12 */
+  dmap_add_char(hreq->out_body, "muty", 0);        /* 9 */
+  dmap_add_int(hreq->out_body, "mtco", 2);         /* 12 */
+  dmap_add_int(hreq->out_body, "mrco", 2);         /* 12 */
   dmap_add_container(hreq->out_body, "mlcl", len); /* 8 */
 
   CHECK_ERR(L_DAAP, evbuffer_add_buffer(hreq->out_body, content));
@@ -1225,7 +1227,8 @@ daap_reply_songlist_generic(struct httpd_request *hreq, int playlist)
 
   spk_profile = httpd_xcode_profile_get(hreq);
 
-  DPRINTF(E_DBG, L_DAAP, "Speaker check of '%s' (codecs '%s') returned %d\n", hreq->user_agent, accept_codecs, spk_profile);
+  DPRINTF(
+      E_DBG, L_DAAP, "Speaker check of '%s' (codecs '%s') returned %d\n", hreq->user_agent, accept_codecs, spk_profile);
 
   nsongs = 0;
   while ((ret = db_query_fetch_file(&dbmfi, &qp)) == 0)
@@ -1253,11 +1256,11 @@ daap_reply_songlist_generic(struct httpd_request *hreq, int playlist)
 	  quality.bit_rate = cfg_getint(cfg_getsec(cfg, "streaming"), "bit_rate");
 
 	  transcode_metadata_strings_set(&xcode_metadata, profile, &quality, len_ms);
-	  dbmfi.type        = xcode_metadata.type;
-	  dbmfi.codectype   = xcode_metadata.codectype;
+	  dbmfi.type = xcode_metadata.type;
+	  dbmfi.codectype = xcode_metadata.codectype;
 	  dbmfi.description = xcode_metadata.description;
-	  dbmfi.file_size   = xcode_metadata.file_size;
-	  dbmfi.bitrate     = xcode_metadata.bitrate;
+	  dbmfi.file_size = xcode_metadata.file_size;
+	  dbmfi.bitrate = xcode_metadata.bitrate;
 	}
 
       ret = dmap_encode_file_metadata(songlist, song, &dbmfi, meta, nmeta, sort_headers);
@@ -1279,7 +1282,7 @@ daap_reply_songlist_generic(struct httpd_request *hreq, int playlist)
 	      ret = -100;
 	      break;
 	    }
-   	}
+	}
 
       DPRINTF(E_SPAM, L_DAAP, "Done with song\n");
     }
@@ -1314,7 +1317,7 @@ daap_reply_songlist_generic(struct httpd_request *hreq, int playlist)
   dmap_add_char(hreq->out_body, "muty", 0);         /* 9 */
   dmap_add_int(hreq->out_body, "mtco", qp.results); /* 12 */
   dmap_add_int(hreq->out_body, "mrco", nsongs);     /* 12 */
-  dmap_add_container(hreq->out_body, "mlcl", len); /* 8 */
+  dmap_add_container(hreq->out_body, "mlcl", len);  /* 8 */
 
   CHECK_ERR(L_DAAP, evbuffer_add_buffer(hreq->out_body, songlist));
 
@@ -1334,7 +1337,7 @@ daap_reply_songlist_generic(struct httpd_request *hreq, int playlist)
 
   return DAAP_REPLY_OK;
 
- error:
+error:
   free(meta);
   daap_sort_context_free(sctx);
   evbuffer_free(song);
@@ -1367,7 +1370,8 @@ daap_reply_plsonglist(struct httpd_request *hreq)
   // sometimes requests playlist 0
   if (playlist == 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Client '%s' made invalid request for playlist 0, returning playlist 1\n", hreq->user_agent);
+      DPRINTF(
+          E_LOG, L_DAAP, "Client '%s' made invalid request for playlist 0, returning playlist 1\n", hreq->user_agent);
 
       playlist = 1;
     }
@@ -1496,7 +1500,7 @@ daap_reply_playlists(struct httpd_request *hreq)
 		}
 
 	      /* Add field "com.apple.itunes.special-playlist" for special playlists
-		 (excluding the special playlist for "library" with id = 1) */
+	         (excluding the special playlist for "library" with id = 1) */
 	      if ((pltype == PL_SPECIAL) && (plid != 1))
 		{
 		  int32_t aePS = 0;
@@ -1512,10 +1516,10 @@ daap_reply_playlists(struct httpd_request *hreq)
 	  if (dfm->pli_offset < 0)
 	    continue;
 
-          strval = (char **) ((char *)&dbpli + dfm->pli_offset);
+	  strval = (char **)((char *)&dbpli + dfm->pli_offset);
 
-          if (!(*strval) || (**strval == '\0'))
-            continue;
+	  if (!(*strval) || (**strval == '\0'))
+	    continue;
 
 	  dmap_add_field(playlist, df, *strval, 0);
 
@@ -1569,10 +1573,10 @@ daap_reply_playlists(struct httpd_request *hreq)
   /* Add header to evbuf, add playlistlist to evbuf */
   len = evbuffer_get_length(playlistlist);
   dmap_add_container(hreq->out_body, "aply", len + 53);
-  dmap_add_int(hreq->out_body, "mstt", 200); /* 12 */
-  dmap_add_char(hreq->out_body, "muty", 0);  /* 9 */
+  dmap_add_int(hreq->out_body, "mstt", 200);        /* 12 */
+  dmap_add_char(hreq->out_body, "muty", 0);         /* 9 */
   dmap_add_int(hreq->out_body, "mtco", qp.results); /* 12 */
-  dmap_add_int(hreq->out_body,"mrco", npls); /* 12 */
+  dmap_add_int(hreq->out_body, "mrco", npls);       /* 12 */
   dmap_add_container(hreq->out_body, "mlcl", len);
 
   CHECK_ERR(L_DAAP, evbuffer_add_buffer(hreq->out_body, playlistlist));
@@ -1584,7 +1588,7 @@ daap_reply_playlists(struct httpd_request *hreq)
 
   return DAAP_REPLY_OK;
 
- error:
+error:
   free(meta);
   evbuffer_free(playlist);
   evbuffer_free(playlistlist);
@@ -1700,10 +1704,10 @@ daap_reply_groups(struct httpd_request *hreq)
 	  if (dfm->gri_offset < 0)
 	    continue;
 
-          strval = (char **) ((char *)&dbgri + dfm->gri_offset);
+	  strval = (char **)((char *)&dbgri + dfm->gri_offset);
 
-          if (!(*strval) || (**strval == '\0'))
-            continue;
+	  if (!(*strval) || (**strval == '\0'))
+	    continue;
 
 	  dmap_add_field(group, df, *strval, 0);
 
@@ -1730,7 +1734,7 @@ daap_reply_groups(struct httpd_request *hreq)
 
       /* Song album artist (asaa), always added if group-type is albums  */
       if (qp.type == Q_GROUP_ALBUMS)
-        dmap_add_string(group, "asaa", dbgri.songalbumartist);
+	dmap_add_string(group, "asaa", dbgri.songalbumartist);
 
       /* Item id (miid) */
       val = 0;
@@ -1781,7 +1785,7 @@ daap_reply_groups(struct httpd_request *hreq)
   dmap_add_int(hreq->out_body, "mstt", 200);        /* 12 */
   dmap_add_char(hreq->out_body, "muty", 0);         /* 9 */
   dmap_add_int(hreq->out_body, "mtco", qp.results); /* 12 */
-  dmap_add_int(hreq->out_body,"mrco", ngrp);        /* 12 */
+  dmap_add_int(hreq->out_body, "mrco", ngrp);       /* 12 */
   dmap_add_container(hreq->out_body, "mlcl", len);  /* 8 */
 
   CHECK_ERR(L_DAAP, evbuffer_add_buffer(hreq->out_body, grouplist));
@@ -1802,7 +1806,7 @@ daap_reply_groups(struct httpd_request *hreq)
 
   return DAAP_REPLY_OK;
 
- error:
+error:
   free(meta);
   daap_sort_context_free(sctx);
   evbuffer_free(group);
@@ -1925,7 +1929,7 @@ daap_reply_browse(struct httpd_request *hreq)
 
   return DAAP_REPLY_OK;
 
- error:
+error:
   daap_sort_context_free(sctx);
   evbuffer_free(itemlist);
   free_query_params(&qp, 1);
@@ -1994,19 +1998,19 @@ daap_reply_extra_data(struct httpd_request *hreq)
 
   switch (ret)
     {
-      case ART_FMT_PNG:
-	ctype = "image/png";
-	break;
+    case ART_FMT_PNG:
+      ctype = "image/png";
+      break;
 
-      case ART_FMT_JPEG:
-	ctype = "image/jpeg";
-	break;
+    case ART_FMT_JPEG:
+      ctype = "image/jpeg";
+      break;
 
-      default:
-	if (len > 0)
-	  evbuffer_drain(hreq->out_body, len);
+    default:
+      if (len > 0)
+	evbuffer_drain(hreq->out_body, len);
 
-	goto no_artwork;
+      goto no_artwork;
     }
 
   httpd_header_remove(hreq->out_headers, "Content-Type");
@@ -2016,7 +2020,7 @@ daap_reply_extra_data(struct httpd_request *hreq)
 
   return DAAP_REPLY_OK_NO_GZIP;
 
- no_artwork:
+no_artwork:
   return DAAP_REPLY_NO_CONTENT;
 }
 
@@ -2043,15 +2047,15 @@ daap_stream(struct httpd_request *hreq)
 
 #ifdef DMAP_TEST
 static const struct dmap_field dmap_TEST = { "test.container", "TEST", NULL, DMAP_TYPE_LIST };
-static const struct dmap_field dmap_TST1 = { "test.ubyte",     "TST1", NULL, DMAP_TYPE_UBYTE };
-static const struct dmap_field dmap_TST2 = { "test.byte",      "TST2", NULL, DMAP_TYPE_BYTE };
-static const struct dmap_field dmap_TST3 = { "test.ushort",    "TST3", NULL, DMAP_TYPE_USHORT };
-static const struct dmap_field dmap_TST4 = { "test.short",     "TST4", NULL, DMAP_TYPE_SHORT };
-static const struct dmap_field dmap_TST5 = { "test.uint",      "TST5", NULL, DMAP_TYPE_UINT };
-static const struct dmap_field dmap_TST6 = { "test.int",       "TST6", NULL, DMAP_TYPE_INT };
-static const struct dmap_field dmap_TST7 = { "test.ulong",     "TST7", NULL, DMAP_TYPE_ULONG };
-static const struct dmap_field dmap_TST8 = { "test.long",      "TST8", NULL, DMAP_TYPE_LONG };
-static const struct dmap_field dmap_TST9 = { "test.string",    "TST9", NULL, DMAP_TYPE_STRING };
+static const struct dmap_field dmap_TST1 = { "test.ubyte", "TST1", NULL, DMAP_TYPE_UBYTE };
+static const struct dmap_field dmap_TST2 = { "test.byte", "TST2", NULL, DMAP_TYPE_BYTE };
+static const struct dmap_field dmap_TST3 = { "test.ushort", "TST3", NULL, DMAP_TYPE_USHORT };
+static const struct dmap_field dmap_TST4 = { "test.short", "TST4", NULL, DMAP_TYPE_SHORT };
+static const struct dmap_field dmap_TST5 = { "test.uint", "TST5", NULL, DMAP_TYPE_UINT };
+static const struct dmap_field dmap_TST6 = { "test.int", "TST6", NULL, DMAP_TYPE_INT };
+static const struct dmap_field dmap_TST7 = { "test.ulong", "TST7", NULL, DMAP_TYPE_ULONG };
+static const struct dmap_field dmap_TST8 = { "test.long", "TST8", NULL, DMAP_TYPE_LONG };
+static const struct dmap_field dmap_TST9 = { "test.string", "TST9", NULL, DMAP_TYPE_STRING };
 
 static enum daap_reply_result
 daap_reply_dmap_test(struct httpd_request *hreq)
@@ -2131,80 +2135,30 @@ daap_reply_dmap_test(struct httpd_request *hreq)
 }
 #endif /* DMAP_TEST */
 
-static struct httpd_uri_map daap_handlers[] =
+static struct httpd_uri_map daap_handlers[] = {
+  { .regexp = "^/server-info$", .handler = daap_reply_server_info },
+  { .regexp = "^/content-codes$", .handler = daap_reply_content_codes },
+  { .regexp = "^/login$", .handler = daap_reply_login },
+  { .regexp = "^/logout$", .handler = daap_reply_logout },
   {
-    {
-      .regexp = "^/server-info$",
-      .handler = daap_reply_server_info
-    },
-    {
-      .regexp = "^/content-codes$",
-      .handler = daap_reply_content_codes
-    },
-    {
-      .regexp = "^/login$",
-      .handler = daap_reply_login
-    },
-    {
-      .regexp = "^/logout$",
-      .handler = daap_reply_logout
-    },
-    {
-      .regexp = "^/update$",
-      .handler = daap_reply_update,
-    },
-    {
-      .regexp = "^/activity$",
-      .handler = daap_reply_activity
-    },
-    {
-      .regexp = "^/databases$",
-      .handler = daap_reply_dblist
-    },
-    {
-      .regexp = "^/databases/[[:digit:]]+/browse/[^/]+$",
-      .handler = daap_reply_browse
-    },
-    {
-      .regexp = "^/databases/[[:digit:]]+/items$",
-      .handler = daap_reply_dbsonglist
-    },
-    {
-      .regexp = "^/databases/[[:digit:]]+/items/[[:digit:]]+[.][^/]+$",
-      .handler = daap_stream
-    },
-    {
-      .regexp = "^/databases/[[:digit:]]+/items/[[:digit:]]+/extra_data/artwork$",
-      .handler = daap_reply_extra_data
-    },
-    {
-      .regexp = "^/databases/[[:digit:]]+/containers$",
-      .handler = daap_reply_playlists
-    },
-    {
-      .regexp = "^/databases/[[:digit:]]+/containers/[[:digit:]]+/items$",
-      .handler = daap_reply_plsonglist
-    },
-    {
-      .regexp = "^/databases/[[:digit:]]+/groups$",
-      .handler = daap_reply_groups
-    },
-    {
-      .regexp = "^/databases/[[:digit:]]+/groups/[[:digit:]]+/extra_data/artwork$",
-      .handler = daap_reply_extra_data
-    },
+   .regexp = "^/update$",
+   .handler = daap_reply_update,
+   },
+  { .regexp = "^/activity$", .handler = daap_reply_activity },
+  { .regexp = "^/databases$", .handler = daap_reply_dblist },
+  { .regexp = "^/databases/[[:digit:]]+/browse/[^/]+$", .handler = daap_reply_browse },
+  { .regexp = "^/databases/[[:digit:]]+/items$", .handler = daap_reply_dbsonglist },
+  { .regexp = "^/databases/[[:digit:]]+/items/[[:digit:]]+[.][^/]+$", .handler = daap_stream },
+  { .regexp = "^/databases/[[:digit:]]+/items/[[:digit:]]+/extra_data/artwork$", .handler = daap_reply_extra_data },
+  { .regexp = "^/databases/[[:digit:]]+/containers$", .handler = daap_reply_playlists },
+  { .regexp = "^/databases/[[:digit:]]+/containers/[[:digit:]]+/items$", .handler = daap_reply_plsonglist },
+  { .regexp = "^/databases/[[:digit:]]+/groups$", .handler = daap_reply_groups },
+  { .regexp = "^/databases/[[:digit:]]+/groups/[[:digit:]]+/extra_data/artwork$", .handler = daap_reply_extra_data },
 #ifdef DMAP_TEST
-    {
-      .regexp = "^/dmap-test$",
-      .handler = daap_reply_dmap_test
-    },
-#endif /* DMAP_TEST */
-    {
-      .regexp = NULL,
-      .handler = NULL
-    }
-  };
-
+  { .regexp = "^/dmap-test$", .handler = daap_reply_dmap_test },
+#endif  /* DMAP_TEST */
+  { .regexp = NULL, .handler = NULL }
+};
 
 /* ------------------------------- DAAP API --------------------------------- */
 
@@ -2343,7 +2297,7 @@ daap_reply_build(const char *uri, const char *user_agent, int is_remote)
   out_body = hreq->out_body;
   hreq->out_body = NULL;
 
- out:
+out:
   httpd_request_free(hreq);
 
   return out_body;
@@ -2379,14 +2333,14 @@ daap_deinit(void)
     }
 }
 
-struct httpd_module httpd_daap =
-{
+struct httpd_module httpd_daap = {
   .name = "DAAP",
   .type = MODULE_DAAP,
   .logdomain = L_DAAP,
   .subpaths = { "/databases/", NULL },
 #ifdef DMAP_TEST
-  .fullpaths = { "/databases", "/server-info", "/content-codes", "/login", "/update", "/activity", "/logout", "/dmap-test", NULL },
+  .fullpaths
+  = { "/databases", "/server-info", "/content-codes", "/login", "/update", "/activity", "/logout", "/dmap-test", NULL },
 #else
   .fullpaths = { "/databases", "/server-info", "/content-codes", "/login", "/update", "/activity", "/logout", NULL },
 #endif
