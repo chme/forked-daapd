@@ -82,18 +82,31 @@ http_client_session_free(struct http_client_session *session)
 }
 
 static void
-curl_headers_save(struct keyval *kv, CURL *curl)
+curl_headers_save(struct http_client_ctx *ctx, CURL *curl)
 {
+  struct curl_header *header;
   char *content_type;
+  const char *key;
+  int i;
+  CURLHcode res;
   int ret;
 
-  if (!kv || !curl)
+  if (!ctx->input_headers || !curl)
     return;
 
   ret = curl_easy_getinfo(curl, CURLINFO_CONTENT_TYPE, &content_type);
   if (ret == CURLE_OK && content_type)
     {
-      keyval_add(kv, "Content-Type", content_type);
+      keyval_add(ctx->input_headers, "Content-Type", content_type);
+    }
+  for (i = 0; i < ctx->input_header_keys_len; i++)
+    {
+      key = ctx->input_header_keys[i];
+      res = curl_easy_header(curl, key, 0, CURLH_HEADER, -1, &header);
+      if (res == CURLHE_OK && header->value && strlen(header->value) > 0)
+	{
+	  keyval_add(ctx->input_headers, key, header->value);
+	}
     }
 }
 
@@ -227,7 +240,7 @@ http_client_request(struct http_client_ctx *ctx, struct http_client_session *cli
 
   curl_easy_getinfo(session->curl, CURLINFO_RESPONSE_CODE, &response_code);
   ctx->response_code = (int) response_code;
-  curl_headers_save(ctx->input_headers, session->curl);
+  curl_headers_save(ctx, session->curl);
 
 out:
   if (!client_session)

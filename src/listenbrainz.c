@@ -38,30 +38,124 @@ static char *listenbrainz_token = NULL;
 static time_t listenbrainz_rate_limited_until = 0;
 
 static int
-submit_listens(struct media_file_info *mfi)
+call_api_request(struct json_object **response_body, const char *url, struct json_object *request_body)
 {
   struct http_client_ctx ctx = { 0 };
   struct keyval kv_out = { 0 };
   struct keyval kv_in = { 0 };
+  const char *in_keys[] = { "X-RateLimit-Reset-In" };
   char auth_token[1024];
-  json_object *request_body;
-  json_object *listens;
-  json_object *listen;
-  json_object *track_metadata;
-  json_object *additional_info;
   const char *x_rate_limit_reset_in;
   int32_t rate_limit_seconds = -1;
+  char *response = NULL;
   int ret;
 
-  ctx.url = listenbrainz_submit_listens_url;
+  ctx.url = url;
 
   // Set request headers
   ctx.output_headers = &kv_out;
   snprintf(auth_token, sizeof(auth_token), "Token %s", listenbrainz_token);
   keyval_add(ctx.output_headers, "Authorization", auth_token);
-  keyval_add(ctx.output_headers, "Content-Type", "application/json");
+  if (request_body)
+    {
+      // Set request body
+      keyval_add(ctx.output_headers, "Content-Type", "application/json");
+      ctx.output_body = json_object_to_json_string(request_body);
+    }
 
-  // Set request body
+  // Create input evbuffer for the response body and keyval for response headers
+  ctx.input_headers = &kv_in;
+  ctx.input_header_keys = in_keys;
+  ctx.input_header_keys_len = ARRAY_SIZE(in_keys);
+
+  if (response_body)
+    {
+      // Create input evbuffer for the response body
+      ctx.input_body = evbuffer_new();
+    }
+
+  // Send POST request for submit-listens endpoint
+  ret = http_client_request(&ctx, NULL);
+
+  // Process response
+  if (ret < 0)
+    {
+      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Failed api call to '%s'\n", url);
+      goto out;
+    }
+
+  if (ctx.response_code == HTTP_OK)
+    {
+      DPRINTF(E_DBG, L_SCROBBLE, "lbrainz: Success response from call to '%s'\n", url);
+      listenbrainz_rate_limited_until = 0;
+
+      if (response_body)
+	{
+	  // Parse response
+	  // 0-terminate for safety
+	  evbuffer_add(ctx.input_body, "", 1);
+
+	  response = (char *)evbuffer_pullup(ctx.input_body, -1);
+	  if (!response || (strlen(response) == 0))
+	    {
+	      ret = -1;
+	      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Request for '%s' failed, response was empty\n", url);
+	      goto out;
+	    }
+
+	  *response_body = json_tokener_parse(response);
+	  if (!(*response_body))
+	    {
+	      ret = -1;
+	      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: JSON parser returned an error for '%s'\n", url);
+	      goto out;
+	    }
+	}
+    }
+  else if (ctx.response_code == 401)
+    {
+      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Unauthorized request to '%s', disable listenbrainz\n", url);
+      listenbrainz_disabled = true;
+    }
+  else if (ctx.response_code == 429)
+    {
+      x_rate_limit_reset_in = keyval_get(ctx.input_headers, "X-RateLimit-Reset-In");
+      ret = safe_atoi32(x_rate_limit_reset_in, &rate_limit_seconds);
+      if (ret == 0 && rate_limit_seconds > 0)
+	{
+	  listenbrainz_rate_limited_until = time(NULL) + rate_limit_seconds;
+	}
+      DPRINTF(E_INFO, L_SCROBBLE, "lbrainz: Request to '%s' failed, rate limited for %d seconds\n", url,
+          rate_limit_seconds);
+    }
+  else
+    {
+      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Request to '%s' failed, response code: %d\n", url, ctx.response_code);
+    }
+
+out:
+
+  // Clean up
+  jparse_free(request_body);
+  keyval_clear(ctx.output_headers);
+  keyval_clear(ctx.input_headers);
+  if (ctx.input_body)
+    evbuffer_free(ctx.input_body);
+
+  return ret;
+}
+
+static int
+submit_listens(struct media_file_info *mfi)
+{
+  json_object *request_body;
+  json_object *listens;
+  json_object *listen;
+  json_object *track_metadata;
+  json_object *additional_info;
+  int ret;
+
+  // Create request body
   request_body = json_object_new_object();
   json_object_object_add(request_body, "listen_type", json_object_new_string("single"));
   listens = json_object_new_array();
@@ -81,55 +175,22 @@ submit_listens(struct media_file_info *mfi)
   json_object_object_add(additional_info, "submission_client", json_object_new_string(PACKAGE_NAME));
   json_object_object_add(additional_info, "submission_client_version", json_object_new_string(PACKAGE_VERSION));
   json_object_object_add(additional_info, "duration_ms", json_object_new_int((int32_t)mfi->song_length));
-  ctx.output_body = json_object_to_json_string(request_body);
-
-  // Create input evbuffer for the response body and keyval for response headers
-  ctx.input_headers = &kv_in;
 
   // Send POST request for submit-listens endpoint
-  ret = http_client_request(&ctx, NULL);
+  ret = call_api_request(NULL, listenbrainz_submit_listens_url, request_body);
 
   // Process response
   if (ret < 0)
     {
       DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Failed to scrobble '%s' by '%s'\n", mfi->title, mfi->artist);
-      goto out;
-    }
-
-  if (ctx.response_code == HTTP_OK)
-    {
-      DPRINTF(E_INFO, L_SCROBBLE, "lbrainz: Scrobbled '%s' by '%s'\n", mfi->title, mfi->artist);
-      listenbrainz_rate_limited_until = 0;
-    }
-  else if (ctx.response_code == 401)
-    {
-      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Failed to scrobble '%s' by '%s', unauthorized, disable scrobbling\n", mfi->title,
-          mfi->artist);
-      listenbrainz_disabled = true;
-    }
-  else if (ctx.response_code == 429)
-    {
-      x_rate_limit_reset_in = keyval_get(ctx.input_headers, "X-RateLimit-Reset-In");
-      ret = safe_atoi32(x_rate_limit_reset_in, &rate_limit_seconds);
-      if (ret == 0 && rate_limit_seconds > 0)
-	{
-	  listenbrainz_rate_limited_until = time(NULL) + rate_limit_seconds;
-	}
-      DPRINTF(E_INFO, L_SCROBBLE, "lbrainz: Failed to scrobble '%s' by '%s', rate limited for %d seconds\n", mfi->title,
-          mfi->artist, rate_limit_seconds);
     }
   else
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Failed to scrobble '%s' by '%s', response code: %d\n", mfi->title, mfi->artist,
-          ctx.response_code);
+      DPRINTF(E_INFO, L_SCROBBLE, "lbrainz: Scrobbled '%s' by '%s'\n", mfi->title, mfi->artist);
     }
-
-out:
 
   // Clean up
   jparse_free(request_body);
-  keyval_clear(ctx.output_headers);
-  keyval_clear(ctx.input_headers);
 
   return ret;
 }
@@ -137,43 +198,19 @@ out:
 static int
 validate_token(struct listenbrainz_status *status)
 {
-  struct http_client_ctx ctx = { 0 };
-  struct keyval kv_out = { 0 };
-  char auth_token[1024];
-  char *response_body;
   json_object *json_response = NULL;
   int ret = 0;
 
   if (!listenbrainz_token)
     return -1;
 
-  ctx.url = listenbrainz_validate_token_url;
+  ret = call_api_request(&json_response, listenbrainz_validate_token_url, NULL);
 
-  // Set request headers
-  ctx.output_headers = &kv_out;
-  snprintf(auth_token, sizeof(auth_token), "Token %s", listenbrainz_token);
-  keyval_add(ctx.output_headers, "Authorization", auth_token);
-
-  // Create input evbuffer for the response body
-  ctx.input_body = evbuffer_new();
-
-  // Send GET request for validate-token endpoint
-  ret = http_client_request(&ctx, NULL);
-
-  // Parse response
-  // 0-terminate for safety
-  evbuffer_add(ctx.input_body, "", 1);
-
-  response_body = (char *)evbuffer_pullup(ctx.input_body, -1);
-  if (!response_body || (strlen(response_body) == 0))
+  if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Request for '%s' failed, response was empty\n", ctx.url);
+      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Failed to validate ListenBrainz token\n");
       goto out;
     }
-
-  json_response = json_tokener_parse(response_body);
-  if (!json_response)
-    DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: JSON parser returned an error for '%s'\n", ctx.url);
 
   status->user_name = safe_strdup(jparse_str_from_obj(json_response, "user_name"));
   status->token_valid = jparse_bool_from_obj(json_response, "valid");
@@ -183,10 +220,7 @@ validate_token(struct listenbrainz_status *status)
 out:
 
   // Clean up
-  if (ctx.input_body)
-    evbuffer_free(ctx.input_body);
-  keyval_clear(ctx.output_headers);
-
+  jparse_free(json_response);
   return ret;
 }
 

@@ -24,6 +24,10 @@ struct http_client_ctx
    */
   struct keyval *input_headers;
   struct evbuffer *input_body;
+  /* List of response headers that should be added to "input_headers"
+   * in addition to the "Content-Type". */
+  const char **input_header_keys;
+  size_t input_header_keys_len;
 
   /* HTTP Response code */
   int response_code;
