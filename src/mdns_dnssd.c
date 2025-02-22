@@ -285,7 +285,7 @@ mdns_event_cb(evutil_socket_t fd, short flags, void *data) {
   err = DNSServiceProcessResult(mdns_sdref_main);
 
   if (err != kDNSServiceErr_NoError)
-    DPRINTF(E_LOG, L_MDNS, "DNSServiceProcessResult error %d\n", err);
+    DPRINTF(E_ERROR, L_MDNS, "DNSServiceProcessResult error %d\n", err);
 }
 
 int
@@ -306,27 +306,27 @@ mdns_init(void)
   err = DNSServiceCreateConnection(&mdns_sdref_main);
   if (err != kDNSServiceErr_NoError)
     {
-      DPRINTF(E_LOG, L_MDNS, "Could not create mDNS connection\n");
+      DPRINTF(E_ERROR, L_MDNS, "Could not create mDNS connection\n");
       return -1;
     }
 
   fd = DNSServiceRefSockFD(mdns_sdref_main);
   if (fd == -1) {
-      DPRINTF(E_LOG, L_MDNS, "DNSServiceRefSockFD failed\n");
+      DPRINTF(E_ERROR, L_MDNS, "DNSServiceRefSockFD failed\n");
       return mdns_main_free();
   }
   mdns_ev_main = event_new(evbase_main, fd, EV_PERSIST | EV_READ,
                            mdns_event_cb, NULL);
   if (! mdns_ev_main)
     {
-      DPRINTF(E_LOG, L_MDNS, "Could not make new event in mdns\n");
+      DPRINTF(E_ERROR, L_MDNS, "Could not make new event in mdns\n");
       return mdns_main_free();
     }
 
   ret = event_add(mdns_ev_main, NULL);
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_MDNS, "Could not add new event in mdns\n");
+      DPRINTF(E_ERROR, L_MDNS, "Could not add new event in mdns\n");
       return mdns_main_free();
     }
 
@@ -374,7 +374,7 @@ mdns_register(char *name, char *regtype, int port, char **txt)
   s = calloc(1, sizeof(*s));
   if (!s)
     {
-      DPRINTF(E_LOG, L_MDNS, "Out of memory registering service.\n");
+      DPRINTF(E_ERROR, L_MDNS, "Out of memory registering service.\n");
       return -1;
     }
   TXTRecordCreate(&(s->txtRecord), 0, NULL);
@@ -389,7 +389,7 @@ mdns_register(char *name, char *regtype, int port, char **txt)
           *(--eq) = '=';
           if (err != kDNSServiceErr_NoError)
             {
-              DPRINTF(E_LOG, L_MDNS, "Could not set TXT record value\n");
+              DPRINTF(E_ERROR, L_MDNS, "Could not set TXT record value\n");
               return mdns_service_free(s);
             }
         }
@@ -404,7 +404,7 @@ mdns_register(char *name, char *regtype, int port, char **txt)
 
   if (err != kDNSServiceErr_NoError)
     {
-      DPRINTF(E_LOG, L_MDNS, "Error registering service '%s.%s'\n",
+      DPRINTF(E_ERROR, L_MDNS, "Error registering service '%s.%s'\n",
               name, regtype);
       s->sdref = NULL;
       return mdns_service_free(s);
@@ -457,13 +457,13 @@ mdns_register_record(uint16_t rrtype, const char *name, uint16_t rdlen,
   r = calloc(1, sizeof(*r));
   if (!r)
     {
-      DPRINTF(E_LOG, L_MDNS, "Out of memory adding record.\n");
+      DPRINTF(E_ERROR, L_MDNS, "Out of memory adding record.\n");
       return -1;
     }
   r->name = strdup(name);
   if (!(r->name))
     {
-      DPRINTF(E_LOG, L_MDNS, "Out of memory adding record.\n");
+      DPRINTF(E_ERROR, L_MDNS, "Out of memory adding record.\n");
       return mdns_record_free(r);
     }
 
@@ -476,7 +476,7 @@ mdns_register_record(uint16_t rrtype, const char *name, uint16_t rdlen,
 
   if (err != kDNSServiceErr_NoError)
     {
-      DPRINTF(E_LOG, L_MDNS, "Error registering record %s, error %d\n", name,
+      DPRINTF(E_ERROR, L_MDNS, "Error registering record %s, error %d\n", name,
               err);
       return mdns_record_free(r);
     }
@@ -501,7 +501,7 @@ mdns_cname(char *name)
   ret = gethostname(hostname, HOST_NAME_MAX);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MDNS, "Could not add CNAME %s, gethostname failed\n",
+      DPRINTF(E_ERROR, L_MDNS, "Could not add CNAME %s, gethostname failed\n",
               name);
       return -1;
     }
@@ -511,7 +511,7 @@ mdns_cname(char *name)
   ret = snprintf(rdata, sizeof(rdata), ".%s.local", hostname);
   if (!(ret > 0 && ret < sizeof(rdata)))
     {
-      DPRINTF(E_LOG, L_MDNS, "Could not add CNAME %s, hostname is invalid\n",
+      DPRINTF(E_ERROR, L_MDNS, "Could not add CNAME %s, hostname is invalid\n",
               name);
       return -1;
     }
@@ -545,7 +545,7 @@ mdns_browse_call_cb(struct mdns_addr_lookup *lu, const char *hostname,
 
       if (!inet_ntop(AF_INET, &addr->sin_addr, addr_str, sizeof(addr_str)))
         {
-          DPRINTF(E_LOG, L_MDNS, "Could not print IPv4 address: %s\n",
+          DPRINTF(E_ERROR, L_MDNS, "Could not print IPv4 address: %s\n",
                   strerror(errno));
           return;
         }
@@ -572,7 +572,7 @@ mdns_browse_call_cb(struct mdns_addr_lookup *lu, const char *hostname,
 
       if (!inet_ntop(AF_INET6, &addr6->sin6_addr, addr_str, sizeof(addr_str)))
         {
-          DPRINTF(E_LOG, L_MDNS, "Could not print IPv6 address: %s\n",
+          DPRINTF(E_ERROR, L_MDNS, "Could not print IPv6 address: %s\n",
                   strerror(errno));
           return;
         }
@@ -613,7 +613,7 @@ mdns_lookup_callback(DNSServiceRef sdRef, DNSServiceFlags flags,
 
   if (errorCode != kDNSServiceErr_NoError )
     {
-      DPRINTF(E_LOG, L_MDNS, "Error resolving hostname '%s', error %d\n",
+      DPRINTF(E_ERROR, L_MDNS, "Error resolving hostname '%s', error %d\n",
               hostname, errorCode);
       return;
     }
@@ -638,7 +638,7 @@ mdns_addr_lookup_start(struct mdns_resolver *rs, uint32_t interfaceIndex,
   lu = calloc(1, sizeof(*lu));
   if (!lu)
     {
-      DPRINTF(E_LOG, L_MDNS, "Out of memory creating address lookup.\n");
+      DPRINTF(E_ERROR, L_MDNS, "Out of memory creating address lookup.\n");
       return -1;
     }
   lu->port = port;
@@ -651,7 +651,7 @@ mdns_addr_lookup_start(struct mdns_resolver *rs, uint32_t interfaceIndex,
       ret = keyval_add_size(&lu->txt_kv, key, value, valueLen);
       if (ret < 0)
         {
-          DPRINTF(E_LOG, L_MDNS, "Could not build TXT record keyval\n");
+          DPRINTF(E_ERROR, L_MDNS, "Could not build TXT record keyval\n");
           return mdns_addr_lookup_free(lu);
         }
     }
@@ -662,7 +662,7 @@ mdns_addr_lookup_start(struct mdns_resolver *rs, uint32_t interfaceIndex,
                               mdns_lookup_callback, lu);
   if (err != kDNSServiceErr_NoError)
     {
-      DPRINTF(E_LOG, L_MDNS, "Failed to create service resolver.\n");
+      DPRINTF(E_ERROR, L_MDNS, "Failed to create service resolver.\n");
       lu->sdref = NULL;
       return mdns_addr_lookup_free(lu);
     }
@@ -730,7 +730,7 @@ mdns_resolve_callback(DNSServiceRef sdRef, DNSServiceFlags flags,
 
   if (errorCode != kDNSServiceErr_NoError)
     {
-      DPRINTF(E_LOG, L_MDNS, "Error resolving service '%s', error %d\n",
+      DPRINTF(E_ERROR, L_MDNS, "Error resolving service '%s', error %d\n",
               rs->service, errorCode);
     }
   else
@@ -755,26 +755,26 @@ mdns_resolve_start(struct mdns_browser *mb, uint32_t interfaceIndex,
   rs = calloc(1, sizeof(*rs));
   if (!rs)
     {
-      DPRINTF(E_LOG, L_MDNS, "Out of memory creating service resolver.\n");
+      DPRINTF(E_ERROR, L_MDNS, "Out of memory creating service resolver.\n");
       return -1;
     }
 
   rs->service = strdup(serviceName);
   if (!rs->service)
     {
-      DPRINTF(E_LOG, L_MDNS, "Out of memory creating service resolver.\n");
+      DPRINTF(E_ERROR, L_MDNS, "Out of memory creating service resolver.\n");
       return mdns_resolver_free(rs);
     }
   rs->regtype = strdup(regtype);
   if (!rs->regtype)
     {
-      DPRINTF(E_LOG, L_MDNS, "Out of memory creating service resolver.\n");
+      DPRINTF(E_ERROR, L_MDNS, "Out of memory creating service resolver.\n");
       return mdns_resolver_free(rs);
     }
   rs->domain = strdup(replyDomain);
   if (!rs->domain)
     {
-      DPRINTF(E_LOG, L_MDNS, "Out of memory creating service resolver.\n");
+      DPRINTF(E_ERROR, L_MDNS, "Out of memory creating service resolver.\n");
       return mdns_resolver_free(rs);
     }
   rs->mb = mb;
@@ -785,7 +785,7 @@ mdns_resolve_start(struct mdns_browser *mb, uint32_t interfaceIndex,
   rs->timer = evtimer_new(evbase_main, mdns_resolve_timeout_cb, rs->uuid);
   if(! rs->timer)
     {
-      DPRINTF(E_LOG, L_MDNS, "Out of memory creating service resolver timer.\n");
+      DPRINTF(E_ERROR, L_MDNS, "Out of memory creating service resolver timer.\n");
       return mdns_resolver_free(rs);
     }
 
@@ -795,7 +795,7 @@ mdns_resolve_start(struct mdns_browser *mb, uint32_t interfaceIndex,
                           mdns_resolve_callback, rs);
   if (err != kDNSServiceErr_NoError)
     {
-      DPRINTF(E_LOG, L_MDNS, "Failed to create service resolver.\n");
+      DPRINTF(E_ERROR, L_MDNS, "Failed to create service resolver.\n");
       rs->sdref = NULL;
       return mdns_resolver_free(rs);
     }
@@ -847,7 +847,7 @@ mdns_browse_callback(DNSServiceRef sdRef, DNSServiceFlags flags,
   if (errorCode != kDNSServiceErr_NoError)
     {
       // FIXME: if d/c, we sould recreate the browser?
-      DPRINTF(E_LOG, L_MDNS, "Bonjour browsing error %d\n", errorCode);
+      DPRINTF(E_ERROR, L_MDNS, "Bonjour browsing error %d\n", errorCode);
       return;
     }
 
@@ -903,14 +903,14 @@ mdns_browse(char *regtype, mdns_browse_cb cb, enum mdns_options flags)
     mb->protocol = kDNSServiceProtocol_IPv6;
     break;
   default:
-    DPRINTF(E_LOG, L_MDNS, "Unrecognized protocol family %d.\n", family);
+    DPRINTF(E_ERROR, L_MDNS, "Unrecognized protocol family %d.\n", family);
     return mdns_browser_free(mb);
   }
 
   mb->regtype = strdup(regtype);
   if (!mb->regtype)
     {
-      DPRINTF(E_LOG, L_MDNS, "Out of memory creating service browser.\n");
+      DPRINTF(E_ERROR, L_MDNS, "Out of memory creating service browser.\n");
       return mdns_browser_free(mb);
     }
   mb->sdref = mdns_sdref_main;
@@ -918,7 +918,7 @@ mdns_browse(char *regtype, mdns_browse_cb cb, enum mdns_options flags)
                          regtype, NULL, mdns_browse_callback, mb);
   if (err != kDNSServiceErr_NoError)
     {
-      DPRINTF(E_LOG, L_MDNS, "Failed to create service browser.\n");
+      DPRINTF(E_ERROR, L_MDNS, "Failed to create service browser.\n");
       mb->sdref = NULL;
       return mdns_browser_free(mb);
     }

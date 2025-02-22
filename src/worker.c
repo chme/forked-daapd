@@ -123,7 +123,7 @@ worker_execute(void (*cb)(void *), void *cb_arg, size_t arg_size, int delay)
   cmdarg = calloc(1, sizeof(struct worker_arg));
   if (!cmdarg)
     {
-      DPRINTF(E_LOG, L_MAIN, "Could not allocate worker_arg\n");
+      DPRINTF(E_ERROR, L_MAIN, "Could not allocate worker_arg\n");
       return;
     }
 
@@ -132,7 +132,7 @@ worker_execute(void (*cb)(void *), void *cb_arg, size_t arg_size, int delay)
       argcpy = malloc(arg_size);
       if (!argcpy)
 	{
-	  DPRINTF(E_LOG, L_MAIN, "Out of memory\n");
+	  DPRINTF(E_ERROR, L_MAIN, "Out of memory\n");
 	  free(cmdarg);
 	  return;
 	}
@@ -163,14 +163,14 @@ worker_init(void)
   worker_threadpool = evthr_pool_wexit_new(THREADPOOL_NTHREADS, init_cb, exit_cb, NULL);
   if (!worker_threadpool)
     {
-      DPRINTF(E_LOG, L_MAIN, "Could not create worker thread pool\n");
+      DPRINTF(E_ERROR, L_MAIN, "Could not create worker thread pool\n");
       goto error;
     }
 
   ret = evthr_pool_start(worker_threadpool);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MAIN, "Could not spawn worker threads\n");
+      DPRINTF(E_ERROR, L_MAIN, "Could not spawn worker threads\n");
       goto error;
     }
 

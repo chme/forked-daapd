@@ -65,7 +65,7 @@ jparse_free(json_object* haystack)
       json_object_put(haystack);
 #else
       if (json_object_put(haystack) != 1)
-        DPRINTF(E_LOG, L_MISC, "Memleak: JSON parser did not free object\n");
+        DPRINTF(E_ERROR, L_MISC, "Memleak: JSON parser did not free object\n");
 #endif
     }
 }
@@ -169,7 +169,7 @@ jparse_obj_from_evbuffer(struct evbuffer *evbuf)
   json_str = (char *) evbuffer_pullup(evbuf, -1);
   if (!json_str || (strlen(json_str) == 0))
     {
-      DPRINTF(E_LOG, L_MISC, "Failed to parse JSON from input buffer\n");
+      DPRINTF(E_ERROR, L_MISC, "Failed to parse JSON from input buffer\n");
       return NULL;
     }
 
