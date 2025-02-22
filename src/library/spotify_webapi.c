@@ -1284,7 +1284,7 @@ queue_add_album_tracks(json_object *item, int index, int total, enum spotify_req
 
   if (!track.uri || !track.is_playable)
     {
-      DPRINTF(E_ERROR, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
+      DPRINTF(E_INFO, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
       return -1;
     }
 
@@ -1405,7 +1405,7 @@ queue_add_playlist_tracks(json_object *item, int index, int total, enum spotify_
 
   if (!track.uri || !track.is_playable)
     {
-      DPRINTF(E_ERROR, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
+      DPRINTF(E_INFO, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
       return -1;
     }
 
@@ -1559,7 +1559,7 @@ track_add(struct spotify_track *track, struct spotify_album *album, const char *
 
   if (!track->uri || !track->is_playable)
     {
-      DPRINTF(E_ERROR, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n",
+      DPRINTF(E_INFO, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n",
 	      track->artist, track->name, track->uri, track->restrictions);
       return -1;
     }
@@ -1789,7 +1789,7 @@ saved_playlist_tracks_add(json_object *item, int index, int total, enum spotify_
 
   if (!track.uri || !track.is_playable)
     {
-      DPRINTF(E_ERROR, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
+      DPRINTF(E_INFO, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
       return 0;
     }
 
