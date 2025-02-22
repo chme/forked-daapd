@@ -189,7 +189,7 @@ virtual_path_make(char *virtual_path, int virtual_path_len, const char *path)
   ret = snprintf(virtual_path, virtual_path_len, "/file:%s", path);
   if ((ret < 0) || (ret >= virtual_path_len))
     {
-      DPRINTF(E_LOG, L_SCAN, "Virtual path '/file:%s', virtual_path_len exceeded (%d/%d)\n", path, ret, virtual_path_len);
+      DPRINTF(E_ERROR, L_SCAN, "Virtual path '/file:%s', virtual_path_len exceeded (%d/%d)\n", path, ret, virtual_path_len);
       return -1;
     }
 
@@ -226,14 +226,14 @@ push_dir(struct stacked_dir **s, const char *path, int parent_id)
   d = malloc(sizeof(struct stacked_dir));
   if (!d)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not stack directory %s; out of memory\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "Could not stack directory %s; out of memory\n", path);
       return -1;
     }
 
   d->path = strdup(path);
   if (!d->path)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not stack directory %s; out of memory for path\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "Could not stack directory %s; out of memory for path\n", path);
       free(d);
       return -1;
     }
@@ -279,7 +279,7 @@ file_path_ignore(const char *path)
       ret = regcomp(&regex, cfg_getnstr(lib, "filepath_ignore", i), 0);
       if (ret != 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Could not compile regex for matching with file path\n");
+	  DPRINTF(E_ERROR, L_SCAN, "Could not compile regex for matching with file path\n");
 	  return 0;
 	}
 
@@ -779,7 +779,7 @@ read_attributes(char *resolved_path, const char *path, struct stat *sb, int *is_
   ret = lstat(path, sb);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Skipping %s, lstat() failed: %s\n", path, strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Skipping %s, lstat() failed: %s\n", path, strerror(errno));
       return -1;
     }
 
@@ -789,14 +789,14 @@ read_attributes(char *resolved_path, const char *path, struct stat *sb, int *is_
 
       if (!realpath(path, resolved_path))
         {
-	  DPRINTF(E_LOG, L_SCAN, "Skipping %s, could not dereference symlink: %s\n", path, strerror(errno));
+	  DPRINTF(E_ERROR, L_SCAN, "Skipping %s, could not dereference symlink: %s\n", path, strerror(errno));
 	  return -1;
 	}
 
       ret = stat(resolved_path, sb);
       if (ret < 0)
         {
-	  DPRINTF(E_LOG, L_SCAN, "Skipping %s, stat() failed: %s\n", resolved_path, strerror(errno));
+	  DPRINTF(E_ERROR, L_SCAN, "Skipping %s, stat() failed: %s\n", resolved_path, strerror(errno));
 	  return -1;
 	}
     }
@@ -830,7 +830,7 @@ process_directory(char *path, int parent_id, int flags)
   dirp = opendir(path);
   if (!dirp)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not open directory %s: %s\n", path, strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Could not open directory %s: %s\n", path, strerror(errno));
       return;
     }
 
@@ -846,7 +846,7 @@ process_directory(char *path, int parent_id, int flags)
   dir_id = library_directory_save(virtual_path, path, 0, parent_id, SCAN_KIND_FILES);
   if (dir_id <= 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Insert or update of directory failed '%s'\n", virtual_path);
+      DPRINTF(E_ERROR, L_SCAN, "Insert or update of directory failed '%s'\n", virtual_path);
     }
 
   /* Check if compilation and/or podcast directory */
@@ -869,7 +869,7 @@ process_directory(char *path, int parent_id, int flags)
       de = readdir(dirp);
       if (errno)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "readdir error in %s: %s\n", path, strerror(errno));
+	  DPRINTF(E_ERROR, L_SCAN, "readdir error in %s: %s\n", path, strerror(errno));
 	  break;
 	}
 
@@ -882,7 +882,7 @@ process_directory(char *path, int parent_id, int flags)
       ret = snprintf(entry, sizeof(entry), "%s/%s", path, de->d_name);
       if ((ret < 0) || (ret >= sizeof(entry)))
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Skipping %s/%s, PATH_MAX exceeded\n", path, de->d_name);
+	  DPRINTF(E_ERROR, L_SCAN, "Skipping %s/%s, PATH_MAX exceeded\n", path, de->d_name);
 
 	  continue;
 	}
@@ -894,7 +894,7 @@ process_directory(char *path, int parent_id, int flags)
       ret = read_attributes(resolved_path, entry, &sb, &is_link);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Skipping %s, read_attributes() failed\n", entry);
+	  DPRINTF(E_ERROR, L_SCAN, "Skipping %s, read_attributes() failed\n", entry);
 	  continue;
 	}
 
@@ -970,7 +970,7 @@ process_parent_directories(char *path)
       dir_id = library_directory_save(virtual_path, buf, 0, dir_id, SCAN_KIND_FILES);
       if (dir_id <= 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Insert or update of directory failed '%s'\n", virtual_path);
+	  DPRINTF(E_ERROR, L_SCAN, "Insert or update of directory failed '%s'\n", virtual_path);
 
 	  return 0;
 	}
@@ -1037,7 +1037,7 @@ bulk_scan(int flags)
       deref = realpath(path, NULL);
       if (!deref)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Skipping library directory %s, could not dereference: %s\n", path, strerror(errno));
+	  DPRINTF(E_ERROR, L_SCAN, "Skipping library directory %s, could not dereference: %s\n", path, strerror(errno));
 
 	  /* Assume dir is mistakenly not mounted, so just disable everything and update timestamps */
 	  db_file_disable_bymatch(path, STRIP_NONE, 0);
@@ -1048,7 +1048,7 @@ bulk_scan(int flags)
 	  db_pl_ping_bymatch(path, 1);
 	  ret = snprintf(virtual_path, sizeof(virtual_path), "/file:%s", path);
 	  if ((ret < 0) || (ret >= sizeof(virtual_path)))
-	    DPRINTF(E_LOG, L_SCAN, "Virtual path exceeds PATH_MAX (/file:%s)\n", path);
+	    DPRINTF(E_ERROR, L_SCAN, "Virtual path exceeds PATH_MAX (/file:%s)\n", path);
 	  else
 	    db_directory_ping_bymatch(virtual_path);
 
@@ -1073,7 +1073,7 @@ bulk_scan(int flags)
     return;
 
   if (dirstack)
-    DPRINTF(E_LOG, L_SCAN, "WARNING: unhandled leftover directories\n");
+    DPRINTF(E_ERROR, L_SCAN, "WARNING: unhandled leftover directories\n");
 
   end = time(NULL);
 
@@ -1217,7 +1217,7 @@ process_inotify_dir(struct watch_info *wi, char *path, struct inotify_event *ie)
       fd = open(path, O_RDONLY);
       if (fd < 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Directory access to '%s' failed: %s\n", path, strerror(errno));
+	  DPRINTF(E_ERROR, L_SCAN, "Directory access to '%s' failed: %s\n", path, strerror(errno));
 
 	  if (ret == 0)
 	    watches_clear(wi->wd, path);
@@ -1247,7 +1247,7 @@ process_inotify_dir(struct watch_info *wi, char *path, struct inotify_event *ie)
       process_directories(path, parent_id, flags);
 
       if (dirstack)
-	DPRINTF(E_LOG, L_SCAN, "WARNING: unhandled leftover directories\n");
+	DPRINTF(E_ERROR, L_SCAN, "WARNING: unhandled leftover directories\n");
     }
 }
 
@@ -1309,7 +1309,7 @@ process_inotify_file(struct watch_info *wi, char *path, struct inotify_event *ie
       fd = open(path, O_RDONLY);
       if (fd < 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "File access to '%s' failed: %s\n", path, strerror(errno));
+	  DPRINTF(E_ERROR, L_SCAN, "File access to '%s' failed: %s\n", path, strerror(errno));
 
 	  db_file_delete_bypath(path);
 	  cache_artwork_delete_by_path(path);
@@ -1350,7 +1350,7 @@ process_inotify_file(struct watch_info *wi, char *path, struct inotify_event *ie
 		{
 		  ret = db_file_update_directoryid(path, dir_id);
 		  if (ret < 0)
-		    DPRINTF(E_LOG, L_SCAN, "Error updating directory id for file: %s\n", path);
+		    DPRINTF(E_ERROR, L_SCAN, "Error updating directory id for file: %s\n", path);
 		}
 	    }
 	}
@@ -1373,7 +1373,7 @@ process_inotify_file(struct watch_info *wi, char *path, struct inotify_event *ie
       ret = lstat(path, &sb);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Could not lstat() '%s': %s\n", path, strerror(errno));
+	  DPRINTF(E_ERROR, L_SCAN, "Could not lstat() '%s': %s\n", path, strerror(errno));
 
 	  return;
 	}
@@ -1406,7 +1406,7 @@ process_inotify_file(struct watch_info *wi, char *path, struct inotify_event *ie
       ret = read_attributes(resolved_path, path, &sb, &is_link);
       if (ret < 0)
         {
-	  DPRINTF(E_LOG, L_SCAN, "Skipping %s, read_attributes() failed\n", path);
+	  DPRINTF(E_ERROR, L_SCAN, "Skipping %s, read_attributes() failed\n", path);
 
 	  return;
 	}
@@ -1514,7 +1514,7 @@ inotify_cb(int fd, short event, void *arg)
   ret = ioctl(fd, FIONREAD, &size);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not determine inotify queue size: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Could not determine inotify queue size: %s\n", strerror(errno));
 
       return;
     }
@@ -1522,7 +1522,7 @@ inotify_cb(int fd, short event, void *arg)
   buf = malloc(size);
   if (!buf)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not allocate %d bytes for inotify events\n", size);
+      DPRINTF(E_ERROR, L_SCAN, "Could not allocate %d bytes for inotify events\n", size);
 
       return;
     }
@@ -1530,7 +1530,7 @@ inotify_cb(int fd, short event, void *arg)
   ret = read(fd, buf, size);
   if (ret < 0 || ret != size)
     {
-      DPRINTF(E_LOG, L_SCAN, "inotify read failed: %s (ret was %d, size %d)\n", strerror(errno), ret, size);
+      DPRINTF(E_ERROR, L_SCAN, "inotify read failed: %s (ret was %d, size %d)\n", strerror(errno), ret, size);
 
       free(buf);
       return;
@@ -1550,7 +1550,7 @@ inotify_cb(int fd, short event, void *arg)
       if (ret < 0)
 	{
 	  if (!(ie->mask & IN_IGNORED))
-	    DPRINTF(E_LOG, L_SCAN, "No matching watch found, ignoring event (0x%x)\n", ie->mask);
+	    DPRINTF(E_ERROR, L_SCAN, "No matching watch found, ignoring event (0x%x)\n", ie->mask);
 
 	  continue;
 	}
@@ -1577,7 +1577,7 @@ inotify_cb(int fd, short event, void *arg)
       ret = snprintf(path, sizeof(path), "%s", wi.path);
       if ((ret < 0) || (ret >= sizeof(path)))
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Skipping event under %s, PATH_MAX exceeded\n", wi.path);
+	  DPRINTF(E_ERROR, L_SCAN, "Skipping event under %s, PATH_MAX exceeded\n", wi.path);
 
 	  free_wi(&wi, 1);
 	  continue;
@@ -1589,7 +1589,7 @@ inotify_cb(int fd, short event, void *arg)
 	  ret = snprintf(path + ret, namelen, "/%s", ie->name);
 	  if ((ret < 0) || (ret >= namelen))
 	    {
-	      DPRINTF(E_LOG, L_SCAN, "Skipping %s/%s, PATH_MAX exceeded\n", wi.path, ie->name);
+	      DPRINTF(E_ERROR, L_SCAN, "Skipping %s/%s, PATH_MAX exceeded\n", wi.path, ie->name);
 
 	      free_wi(&wi, 1);
 	      continue;
@@ -1716,7 +1716,7 @@ filescanner_initscan()
   ret = db_watch_clear();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error: could not clear old watches from DB\n");
+      DPRINTF(E_ERROR, L_SCAN, "Error: could not clear old watches from DB\n");
       return -1;
     }
 
@@ -1968,7 +1968,7 @@ playlist_path_create(const char *vp_playlist)
   path = virtual_path_to_path(vp_playlist);
   if (!path)
     {
-      DPRINTF(E_LOG, L_SCAN, "Unsupported virtual path '%s'\n", vp_playlist);
+      DPRINTF(E_ERROR, L_SCAN, "Unsupported virtual path '%s'\n", vp_playlist);
       return NULL;
     }
 
@@ -1976,7 +1976,7 @@ playlist_path_create(const char *vp_playlist)
 
   if (!check_path_in_directories(pl_path))
     {
-      DPRINTF(E_LOG, L_SCAN, "Path '%s' is not a virtual path for a configured (local) library directory.\n", pl_path);
+      DPRINTF(E_ERROR, L_SCAN, "Path '%s' is not a virtual path for a configured (local) library directory.\n", pl_path);
       free(pl_path);
       return NULL;
     }
@@ -1984,7 +1984,7 @@ playlist_path_create(const char *vp_playlist)
   pli = db_pl_fetch_byvirtualpath(vp_playlist);
   if (pli && (pli->type != PL_PLAIN || !has_suffix(pli->path, ".m3u")))
     {
-      DPRINTF(E_LOG, L_SCAN, "Playlist with virtual path '%s' already exists and is not a m3u playlist.\n", vp_playlist);
+      DPRINTF(E_ERROR, L_SCAN, "Playlist with virtual path '%s' already exists and is not a m3u playlist.\n", vp_playlist);
       free_pli(pli, 0);
       free(pl_path);
       return NULL;
@@ -2007,7 +2007,7 @@ playlist_add_path(FILE *fp, int pl_id, const char *path)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Failed to add path '%s' to playlist (id = %d)\n", path, pl_id);
+      DPRINTF(E_ERROR, L_SCAN, "Failed to add path '%s' to playlist (id = %d)\n", path, pl_id);
       return -1;
     }
 
@@ -2065,7 +2065,7 @@ playlist_add_files(FILE *fp, int pl_id, const char *virtual_path)
 
       ret = playlist_add_path(fp, pl_id, path);
       if (ret < 0)
-	DPRINTF(E_LOG, L_SCAN, "Failed to add stream '%s' to playlist (id = %d)\n", path, pl_id);
+	DPRINTF(E_ERROR, L_SCAN, "Failed to add stream '%s' to playlist (id = %d)\n", path, pl_id);
       else
 	DPRINTF(E_DBG, L_SCAN, "Item '%s' added to playlist (id = %d)\n", path, pl_id);
     }
@@ -2092,7 +2092,7 @@ playlist_item_add(const char *vp_playlist, const char *vp_item)
   fp = fopen(pl_path, "a");
   if (!fp)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error opening file '%s' for writing: %d\n", pl_path, errno);
+      DPRINTF(E_ERROR, L_SCAN, "Error opening file '%s' for writing: %d\n", pl_path, errno);
       goto error;
     }
 
@@ -2107,7 +2107,7 @@ playlist_item_add(const char *vp_playlist, const char *vp_item)
   ret = playlist_add_files(fp, pl_id, vp_item);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not add %s to playlist\n", vp_item);
+      DPRINTF(E_ERROR, L_SCAN, "Could not add %s to playlist\n", vp_item);
       goto error;
     }
 
@@ -2136,14 +2136,14 @@ playlist_remove(const char *vp_playlist)
   pl_path = playlist_path_create(vp_playlist);
   if (!pl_path)
     {
-      DPRINTF(E_LOG, L_SCAN, "Unsupported virtual path '%s'\n", vp_playlist);
+      DPRINTF(E_ERROR, L_SCAN, "Unsupported virtual path '%s'\n", vp_playlist);
       return LIBRARY_PATH_INVALID;
     }
 
   pli = db_pl_fetch_byvirtualpath(vp_playlist);
   if (!pli || pli->type != PL_PLAIN)
     {
-      DPRINTF(E_LOG, L_SCAN, "Playlist with virtual path '%s' does not exist or is not a plain playlist.\n", vp_playlist);
+      DPRINTF(E_ERROR, L_SCAN, "Playlist with virtual path '%s' does not exist or is not a plain playlist.\n", vp_playlist);
       free_pli(pli, 0);
       free(pl_path);
       return LIBRARY_ERROR;
@@ -2155,7 +2155,7 @@ playlist_remove(const char *vp_playlist)
   free(pl_path);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not remove playlist \"%s\": %d\n", vp_playlist, errno);
+      DPRINTF(E_ERROR, L_SCAN, "Could not remove playlist \"%s\": %d\n", vp_playlist, errno);
       return LIBRARY_ERROR;
     }
 
@@ -2181,7 +2181,7 @@ queue_save(const char *virtual_path)
   fp = fopen(pl_path, "a");
   if (!fp)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error opening file '%s' for writing: %d\n", pl_path, errno);
+      DPRINTF(E_ERROR, L_SCAN, "Error opening file '%s' for writing: %d\n", pl_path, errno);
       goto error;
     }
 
@@ -2197,7 +2197,7 @@ queue_save(const char *virtual_path)
   ret = db_queue_enum_start(&query_params);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Failed to start queue enum\n");
+      DPRINTF(E_ERROR, L_SCAN, "Failed to start queue enum\n");
       goto error;
     }
 
@@ -2231,7 +2231,7 @@ queue_save(const char *virtual_path)
       ret = fprintf(fp, "%s\n", queue_item.path);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Failed to write path '%s' to file '%s'\n", queue_item.path, virtual_path);
+	  DPRINTF(E_ERROR, L_SCAN, "Failed to write path '%s' to file '%s'\n", queue_item.path, virtual_path);
 	  break;
 	}
 

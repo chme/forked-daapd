@@ -50,7 +50,7 @@ smartpl_query_parse_file(struct smartpl *smartpl, const char *file)
   f = fopen(file, "rb");
   if (!f)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not open smart playlist '%s'\n", file);
+      DPRINTF(E_ERROR, L_SCAN, "Could not open smart playlist '%s'\n", file);
       goto error;
     }
 
@@ -58,7 +58,7 @@ smartpl_query_parse_file(struct smartpl *smartpl, const char *file)
   size = ftell(f);
   if (size <= 0 || size > SMARTPL_SIZE_MAX)
     {
-      DPRINTF(E_LOG, L_SCAN, "Smart playlist '%s' is zero bytes or too large (max size is %d)\n", file, SMARTPL_SIZE_MAX);
+      DPRINTF(E_ERROR, L_SCAN, "Smart playlist '%s' is zero bytes or too large (max size is %d)\n", file, SMARTPL_SIZE_MAX);
       goto error;
     }
 
@@ -69,7 +69,7 @@ smartpl_query_parse_file(struct smartpl *smartpl, const char *file)
   got = fread(expression, 1, size, f);
   if (got != size)
     {
-      DPRINTF(E_LOG, L_SCAN, "Unknown error reading smart playlist '%s'\n", file);
+      DPRINTF(E_ERROR, L_SCAN, "Unknown error reading smart playlist '%s'\n", file);
       goto error;
     }
 
@@ -101,13 +101,13 @@ smartpl_query_parse_string(struct smartpl *smartpl, const char *expression)
 
   if (smartpl_lex_parse(&result, expression) != 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not parse '%s': %s\n", expression, result.errmsg);
+      DPRINTF(E_ERROR, L_SCAN, "Could not parse '%s': %s\n", expression, result.errmsg);
       return -1;
     }
 
   if (result.title[0] == '\0' || !result.where)
     {
-      DPRINTF(E_LOG, L_SCAN, "Missing title or filter when parsing '%s'\n", expression);
+      DPRINTF(E_ERROR, L_SCAN, "Missing title or filter when parsing '%s'\n", expression);
       return -1;
     }
 

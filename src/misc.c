@@ -340,7 +340,7 @@ net_connect_impl(const char *addr, unsigned short port, int type, const char *lo
   ret = getaddrinfo(addr, strport, &hints, &servinfo);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MISC, "Could not get '%s' address info for %s (port %u): %s\n", log_service_name, addr, port, gai_strerror(ret));
+      DPRINTF(E_ERROR, L_MISC, "Could not get '%s' address info for %s (port %u): %s\n", log_service_name, addr, port, gai_strerror(ret));
       return -1;
     }
 
@@ -378,7 +378,7 @@ net_connect_impl(const char *addr, unsigned short port, int type, const char *lo
 
   if (!ptr)
     {
-      DPRINTF(E_LOG, L_MISC, "Could not connect to '%s' at %s (port %u): %s\n", log_service_name, addr, port, strerror(errno));
+      DPRINTF(E_ERROR, L_MISC, "Could not connect to '%s' at %s (port %u): %s\n", log_service_name, addr, port, strerror(errno));
       return -1;
     }
 
@@ -423,7 +423,7 @@ net_bind_impl(short unsigned *port, int type, const char *log_service_name, bool
   ret = getaddrinfo(cfgaddr, strport, &hints, &servinfo);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MISC, "Failure creating '%s' service, could not resolve '%s' (port %s): %s\n", log_service_name, cfgaddr ? cfgaddr : "(ANY)", strport, gai_strerror(ret));
+      DPRINTF(E_ERROR, L_MISC, "Failure creating '%s' service, could not resolve '%s' (port %s): %s\n", log_service_name, cfgaddr ? cfgaddr : "(ANY)", strport, gai_strerror(ret));
       return -1;
     }
 
@@ -484,7 +484,7 @@ net_bind_impl(short unsigned *port, int type, const char *log_service_name, bool
 
   if (!ptr)
     {
-      DPRINTF(E_LOG, L_MISC, "Could not create service '%s' with address %s, port %hu: %s\n", log_service_name, cfgaddr ? cfgaddr : "(ANY)", *port, strerror(errno));
+      DPRINTF(E_ERROR, L_MISC, "Could not create service '%s' with address %s, port %hu: %s\n", log_service_name, cfgaddr ? cfgaddr : "(ANY)", *port, strerror(errno));
       goto error;
     }
 
@@ -493,12 +493,12 @@ net_bind_impl(short unsigned *port, int type, const char *log_service_name, bool
   ret = getsockname(fd, &naddr.sa, &naddr_len);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MISC, "Error finding address of service '%s': %s\n", log_service_name, strerror(errno));
+      DPRINTF(E_ERROR, L_MISC, "Error finding address of service '%s': %s\n", log_service_name, strerror(errno));
       goto error;
     }
   else if (naddr_len > sizeof(naddr))
     {
-      DPRINTF(E_LOG, L_MISC, "Unexpected address length of service '%s'\n", log_service_name);
+      DPRINTF(E_ERROR, L_MISC, "Unexpected address length of service '%s'\n", log_service_name);
       goto error;
     }
 
@@ -550,7 +550,7 @@ net_evhttp_bind(struct evhttp *evhttp, unsigned short port, const char *log_serv
       ret = evhttp_bind_socket(evhttp, "::", port);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_MISC, "Could not bind service '%s' to port %d with IPv6, falling back to IPv4\n", log_service_name, port);
+	  DPRINTF(E_ERROR, L_MISC, "Could not bind service '%s' to port %d with IPv6, falling back to IPv4\n", log_service_name, port);
 	  v6_enabled = 0;
 	}
     }
@@ -562,7 +562,7 @@ net_evhttp_bind(struct evhttp *evhttp, unsigned short port, const char *log_serv
 	return -1;
 
 #ifndef __linux__
-      DPRINTF(E_LOG, L_MISC, "Could not bind service '%s' to port %d with IPv4, listening on IPv6 only\n", log_service_name, port);
+      DPRINTF(E_ERROR, L_MISC, "Could not bind service '%s' to port %d with IPv4, listening on IPv6 only\n", log_service_name, port);
 #endif
     }
 
@@ -942,7 +942,7 @@ unicode_fixup_string(char *str, const char *fromcode)
   ret = u8_strconv_from_encoding(str, fromcode, iconveh_question_mark);
   if (!ret)
     {
-      DPRINTF(E_LOG, L_MISC, "Could not convert string '%s' to UTF-8: %s\n", str, strerror(errno));
+      DPRINTF(E_ERROR, L_MISC, "Could not convert string '%s' to UTF-8: %s\n", str, strerror(errno));
 
       return NULL;
     }
@@ -1039,7 +1039,7 @@ two_str_hash(const char *a, const char *b)
   ret = snprintf(hashbuf, sizeof(hashbuf), "%s==%s", (a) ? a : "", (b) ? b : "");
   if (ret < 0 || ret == sizeof(hashbuf))
     {
-      DPRINTF(E_LOG, L_MISC, "Buffer too large to calculate hash: '%s==%s'\n", a, b);
+      DPRINTF(E_ERROR, L_MISC, "Buffer too large to calculate hash: '%s==%s'\n", a, b);
       return 999999; // Stand-in hash...
     }
 
@@ -1247,7 +1247,7 @@ keyval_alloc(void)
   kv = calloc(1, sizeof(struct keyval));
   if (!kv)
     {
-      DPRINTF(E_LOG, L_MISC, "Out of memory for keyval alloc\n");
+      DPRINTF(E_ERROR, L_MISC, "Out of memory for keyval alloc\n");
 
       return NULL;
     }
@@ -1278,7 +1278,7 @@ keyval_add_size(struct keyval *kv, const char *name, const char *value, size_t s
   okv = (struct onekeyval *)malloc(sizeof(struct onekeyval));
   if (!okv)
     {
-      DPRINTF(E_LOG, L_MISC, "Out of memory for new keyval\n");
+      DPRINTF(E_ERROR, L_MISC, "Out of memory for new keyval\n");
 
       return -1;
     }
@@ -1286,7 +1286,7 @@ keyval_add_size(struct keyval *kv, const char *name, const char *value, size_t s
   okv->name = strdup(name);
   if (!okv->name)
     {
-      DPRINTF(E_LOG, L_MISC, "Out of memory for new keyval name\n");
+      DPRINTF(E_ERROR, L_MISC, "Out of memory for new keyval name\n");
 
       free(okv);
       return -1;
@@ -1295,7 +1295,7 @@ keyval_add_size(struct keyval *kv, const char *name, const char *value, size_t s
   okv->value = (char *)malloc(size + 1);
   if (!okv->value)
     {
-      DPRINTF(E_LOG, L_MISC, "Out of memory for new keyval value\n");
+      DPRINTF(E_ERROR, L_MISC, "Out of memory for new keyval value\n");
 
       free(okv->name);
       free(okv);
@@ -1926,7 +1926,7 @@ m_readfile(const char *path, int num_lines)
   fp = fopen(path, "rb");
   if (!fp)
     {
-      DPRINTF(E_LOG, L_MISC, "Could not open file '%s' for reading: %s\n", path, strerror(errno));
+      DPRINTF(E_ERROR, L_MISC, "Could not open file '%s' for reading: %s\n", path, strerror(errno));
       free(lines);
       return NULL;
     }
@@ -1936,14 +1936,14 @@ m_readfile(const char *path, int num_lines)
       line = fgets(buf, sizeof(buf), fp);
       if (!line)
 	{
-	  DPRINTF(E_LOG, L_MISC, "File '%s' has fewer lines than expected (found %d, expected %d)\n", path, i, num_lines);
+	  DPRINTF(E_ERROR, L_MISC, "File '%s' has fewer lines than expected (found %d, expected %d)\n", path, i, num_lines);
 	  goto error;
 	}
 
       lines[i] = atrim(line);
       if (!lines[i] || (strlen(lines[i]) == 0))
 	{
-	  DPRINTF(E_LOG, L_MISC, "Line %d in '%s' is invalid\n", i+1, path);
+	  DPRINTF(E_ERROR, L_MISC, "Line %d in '%s' is invalid\n", i+1, path);
 	  goto error;
 	}
     }

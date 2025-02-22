@@ -152,7 +152,7 @@ daap_session_remove(struct daap_session *s)
 
   if (!ptr)
     {
-      DPRINTF(E_LOG, L_DAAP, "Error: Request to remove non-existent or ad-hoc session. BUG!\n");
+      DPRINTF(E_ERROR, L_DAAP, "Error: Request to remove non-existent or ad-hoc session. BUG!\n");
       return;
     }
 
@@ -199,7 +199,7 @@ daap_session_cleanup(void)
 
       if ((difftime(now, s->mtime) > DAAP_SESSION_TIMEOUT) || (count > DAAP_SESSION_MAX))
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Cleaning up DAAP session (id %d)\n", s->id);
+	  DPRINTF(E_ERROR, L_DAAP, "Cleaning up DAAP session (id %d)\n", s->id);
 
 	  daap_session_remove(s);
 	}
@@ -219,7 +219,7 @@ daap_session_add(bool is_remote, int request_session_id)
     {
       if (daap_session_get(request_session_id))
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Session id requested in login (%d) is not available\n", request_session_id);
+	  DPRINTF(E_ERROR, L_DAAP, "Session id requested in login (%d) is not available\n", request_session_id);
 	  free(s);
 	  return NULL;
 	}
@@ -271,7 +271,7 @@ update_remove(struct daap_update_request *ur)
 
       if (!p)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "WARNING: struct daap_update_request not found in list; BUG!\n");
+	  DPRINTF(E_ERROR, L_DAAP, "WARNING: struct daap_update_request not found in list; BUG!\n");
 	  return;
 	}
 
@@ -321,7 +321,7 @@ daap_sort_context_new(void)
   ctx = calloc(1, sizeof(struct sort_ctx));
   if (!ctx)
     {
-      DPRINTF(E_LOG, L_DAAP, "Out of memory for sorting context\n");
+      DPRINTF(E_ERROR, L_DAAP, "Out of memory for sorting context\n");
 
       return NULL;
     }
@@ -331,7 +331,7 @@ daap_sort_context_new(void)
   ctx->headerlist = evbuffer_new();
   if (!ctx->headerlist)
     {
-      DPRINTF(E_LOG, L_DAAP, "Could not create evbuffer for DAAP sort headers list\n");
+      DPRINTF(E_ERROR, L_DAAP, "Could not create evbuffer for DAAP sort headers list\n");
 
       free(ctx);
       return NULL;
@@ -340,7 +340,7 @@ daap_sort_context_new(void)
   ret = evbuffer_expand(ctx->headerlist, 512);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Could not expand evbuffer for DAAP sort headers list\n");
+      DPRINTF(E_ERROR, L_DAAP, "Could not expand evbuffer for DAAP sort headers list\n");
 
       evbuffer_free(ctx->headerlist);
       free(ctx);
@@ -372,7 +372,7 @@ daap_sort_build(struct sort_ctx *ctx, char *str)
       ret = u8_normalize(UNINORM_NFD, (uint8_t *)str, len + 1, NULL, &len);
       if (!ret)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Could not normalize string for sort header\n");
+	  DPRINTF(E_ERROR, L_DAAP, "Could not normalize string for sort header\n");
 
 	  return -1;
 	}
@@ -499,12 +499,12 @@ query_params_set(struct query_params *qp, int *sort_headers, struct httpd_reques
   if (param)
     {
       if (param[0] == '-') /* -n, last n entries */
-	DPRINTF(E_LOG, L_DAAP, "Unsupported index range: %s\n", param);
+	DPRINTF(E_ERROR, L_DAAP, "Unsupported index range: %s\n", param);
       else
 	{
 	  ret = safe_atoi32(param, &low);
 	  if (ret < 0)
-	    DPRINTF(E_LOG, L_DAAP, "Could not parse index range: %s\n", param);
+	    DPRINTF(E_ERROR, L_DAAP, "Could not parse index range: %s\n", param);
 	  else
 	    {
 	      ptr = strchr(param, '-');
@@ -517,7 +517,7 @@ query_params_set(struct query_params *qp, int *sort_headers, struct httpd_reques
 		    {
 		      ret = safe_atoi32(ptr, &high);
 		      if (ret < 0)
-			  DPRINTF(E_LOG, L_DAAP, "Could not parse high index in range: %s\n", param);
+			  DPRINTF(E_ERROR, L_DAAP, "Could not parse high index in range: %s\n", param);
 		    }
 		}
 	    }
@@ -580,7 +580,7 @@ query_params_set(struct query_params *qp, int *sort_headers, struct httpd_reques
 
       qp->filter = dmap_query_parse_sql(param);
       if (!qp->filter)
-	DPRINTF(E_LOG, L_DAAP, "Ignoring improper DAAP query: %s\n", param);
+	DPRINTF(E_ERROR, L_DAAP, "Ignoring improper DAAP query: %s\n", param);
 
       /* iTunes seems to default to this when there is a query (which there is for audiobooks, but not for normal playlists) */
       if (!qp->sort && !(type & Q_F_BROWSE))
@@ -708,7 +708,7 @@ daap_request_authorize(struct httpd_request *hreq)
     {
       if (session->id == 0)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Unauthorized request from '%s', DAAP session not found: '%s'\n", hreq->peer_address, hreq->uri);
+	  DPRINTF(E_ERROR, L_DAAP, "Unauthorized request from '%s', DAAP session not found: '%s'\n", hreq->peer_address, hreq->uri);
 
 	  httpd_send_error(hreq, HTTP_UNAUTHORIZED, "Unauthorized");;
 	  return -1;
@@ -735,7 +735,7 @@ daap_request_authorize(struct httpd_request *hreq)
   ret = httpd_basic_auth(hreq, NULL, passwd, cfg_getstr(cfg_getsec(cfg, "library"), "name"));
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Unsuccessful library authorization attempt from '%s'\n", hreq->peer_address);
+      DPRINTF(E_ERROR, L_DAAP, "Unsuccessful library authorization attempt from '%s'\n", hreq->peer_address);
       return -1;
     }
 
@@ -761,7 +761,7 @@ daap_reply_server_info(struct httpd_request *hreq)
 
   if (!hreq->backend)
     {
-      DPRINTF(E_LOG, L_DAAP, "Bug! daap_reply_server_info() cannot be called without an actual connection\n");
+      DPRINTF(E_ERROR, L_DAAP, "Bug! daap_reply_server_info() cannot be called without an actual connection\n");
       return DAAP_REPLY_NO_CONNECTION;
     }
 
@@ -902,7 +902,7 @@ daap_reply_login(struct httpd_request *hreq)
     {
       if (strlen(param) < 3)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Login attempt from %s with invalid pairing-guid: %s\n", hreq->peer_address, param);
+	  DPRINTF(E_ERROR, L_DAAP, "Login attempt from %s with invalid pairing-guid: %s\n", hreq->peer_address, param);
 	  return DAAP_REPLY_FORBIDDEN;
 	}
 
@@ -912,7 +912,7 @@ daap_reply_login(struct httpd_request *hreq)
       ret = db_pairing_fetch_byguid(&pi);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Login attempt from %s with invalid pairing-guid: %s\n", hreq->peer_address, param);
+	  DPRINTF(E_ERROR, L_DAAP, "Login attempt from %s with invalid pairing-guid: %s\n", hreq->peer_address, param);
 	  free_pi(&pi, 1);
 	  return DAAP_REPLY_FORBIDDEN;
 	}
@@ -934,7 +934,7 @@ daap_reply_login(struct httpd_request *hreq)
       ret = safe_atoi32(param, &request_session_id);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Login request where request-session-id is not an integer\n");
+	  DPRINTF(E_ERROR, L_DAAP, "Login request where request-session-id is not an integer\n");
 	  request_session_id = 0;
 	}
     }
@@ -978,7 +978,7 @@ daap_reply_update(struct httpd_request *hreq)
 
   if (!hreq->backend)
     {
-      DPRINTF(E_LOG, L_DAAP, "Bug! daap_reply_update() cannot be called without an actual connection\n");
+      DPRINTF(E_ERROR, L_DAAP, "Bug! daap_reply_update() cannot be called without an actual connection\n");
       return DAAP_REPLY_NO_CONNECTION;
     }
 
@@ -994,7 +994,7 @@ daap_reply_update(struct httpd_request *hreq)
   ret = safe_atoi32(param, &reqd_rev);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Parameter revision-number not an integer\n");
+      DPRINTF(E_ERROR, L_DAAP, "Parameter revision-number not an integer\n");
 
       dmap_error_make(hreq->out_body, "mupd", "Invalid request");
       return DAAP_REPLY_ERROR;
@@ -1016,7 +1016,7 @@ daap_reply_update(struct httpd_request *hreq)
   ur = calloc(1, sizeof(struct daap_update_request));
   if (!ur)
     {
-      DPRINTF(E_LOG, L_DAAP, "Out of memory for update request\n");
+      DPRINTF(E_ERROR, L_DAAP, "Out of memory for update request\n");
 
       dmap_error_make(hreq->out_body, "mupd", "Out of memory");
       return DAAP_REPLY_ERROR;
@@ -1032,7 +1032,7 @@ daap_reply_update(struct httpd_request *hreq)
 
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Out of memory for update request event\n");
+	  DPRINTF(E_ERROR, L_DAAP, "Out of memory for update request event\n");
 
 	  dmap_error_make(hreq->out_body, "mupd", "Could not register timer");	
 	  update_free(ur);
@@ -1164,7 +1164,7 @@ daap_reply_songlist_generic(struct httpd_request *hreq, int playlist)
   s = hreq->extra_data;
   if (!s)
     {
-      DPRINTF(E_LOG, L_DAAP, "Bug! daap_reply_songlist_generic() called with NULL session (playlist %d)\n", playlist);
+      DPRINTF(E_ERROR, L_DAAP, "Bug! daap_reply_songlist_generic() called with NULL session (playlist %d)\n", playlist);
       return DAAP_REPLY_ERROR;
     }
 
@@ -1203,7 +1203,7 @@ daap_reply_songlist_generic(struct httpd_request *hreq, int playlist)
       nmeta = parse_meta(&meta, param);
       if (nmeta < 0)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Failed to parse meta parameter in DAAP query\n");
+	  DPRINTF(E_ERROR, L_DAAP, "Failed to parse meta parameter in DAAP query\n");
 	  goto error;
 	}
     }
@@ -1211,7 +1211,7 @@ daap_reply_songlist_generic(struct httpd_request *hreq, int playlist)
   ret = db_query_start(&qp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Could not start query\n");
+      DPRINTF(E_ERROR, L_DAAP, "Could not start query\n");
 
       dmap_error_make(hreq->out_body, tag, "Could not start query");
       goto error;
@@ -1237,7 +1237,7 @@ daap_reply_songlist_generic(struct httpd_request *hreq, int playlist)
       profile = s->is_remote ? XCODE_WAV : transcode_needed(hreq->user_agent, accept_codecs, dbmfi.codectype);
       if (profile == XCODE_UNKNOWN)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Cannot transcode '%s', codec type is unknown\n", dbmfi.fname);
+	  DPRINTF(E_ERROR, L_DAAP, "Cannot transcode '%s', codec type is unknown\n", dbmfi.fname);
 	}
       else if (profile != XCODE_NONE)
 	{
@@ -1263,7 +1263,7 @@ daap_reply_songlist_generic(struct httpd_request *hreq, int playlist)
       ret = dmap_encode_file_metadata(songlist, song, &dbmfi, meta, nmeta, sort_headers);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Failed to encode song metadata\n");
+	  DPRINTF(E_ERROR, L_DAAP, "Failed to encode song metadata\n");
 
 	  ret = -100;
 	  break;
@@ -1274,7 +1274,7 @@ daap_reply_songlist_generic(struct httpd_request *hreq, int playlist)
 	  ret = daap_sort_build(sctx, dbmfi.title_sort);
 	  if (ret < 0)
 	    {
-	      DPRINTF(E_LOG, L_DAAP, "Could not add sort header to DAAP song list reply\n");
+	      DPRINTF(E_ERROR, L_DAAP, "Could not add sort header to DAAP song list reply\n");
 
 	      ret = -100;
 	      break;
@@ -1295,7 +1295,7 @@ daap_reply_songlist_generic(struct httpd_request *hreq, int playlist)
     }
   else if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Error fetching results\n");
+      DPRINTF(E_ERROR, L_DAAP, "Error fetching results\n");
       dmap_error_make(hreq->out_body, tag, "Error fetching query results");
       goto error;
     }
@@ -1367,7 +1367,7 @@ daap_reply_plsonglist(struct httpd_request *hreq)
   // sometimes requests playlist 0
   if (playlist == 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Client '%s' made invalid request for playlist 0, returning playlist 1\n", hreq->user_agent);
+      DPRINTF(E_ERROR, L_DAAP, "Client '%s' made invalid request for playlist 0, returning playlist 1\n", hreq->user_agent);
 
       playlist = 1;
     }
@@ -1421,7 +1421,7 @@ daap_reply_playlists(struct httpd_request *hreq)
   param = httpd_query_value_find(hreq->query, "meta");
   if (!param)
     {
-      DPRINTF(E_LOG, L_DAAP, "No meta parameter in query, using default\n");
+      DPRINTF(E_ERROR, L_DAAP, "No meta parameter in query, using default\n");
 
       param = default_meta_pl;
     }
@@ -1429,7 +1429,7 @@ daap_reply_playlists(struct httpd_request *hreq)
   nmeta = parse_meta(&meta, param);
   if (nmeta < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Failed to parse meta parameter in DAAP query\n");
+      DPRINTF(E_ERROR, L_DAAP, "Failed to parse meta parameter in DAAP query\n");
 
       dmap_error_make(hreq->out_body, "aply", "Failed to parse query");
       goto error;
@@ -1438,7 +1438,7 @@ daap_reply_playlists(struct httpd_request *hreq)
   ret = db_query_start(&qp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Could not start query\n");
+      DPRINTF(E_ERROR, L_DAAP, "Could not start query\n");
 
       dmap_error_make(hreq->out_body, "aply", "Could not start query");
       goto error;
@@ -1543,7 +1543,7 @@ daap_reply_playlists(struct httpd_request *hreq)
       ret = evbuffer_add_buffer(playlistlist, playlist);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Could not add playlist to playlist list for DAAP playlists reply\n");
+	  DPRINTF(E_ERROR, L_DAAP, "Could not add playlist to playlist list for DAAP playlists reply\n");
 
 	  ret = -100;
 	  break;
@@ -1561,7 +1561,7 @@ daap_reply_playlists(struct httpd_request *hreq)
     }
   else if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Error fetching results\n");
+      DPRINTF(E_ERROR, L_DAAP, "Error fetching results\n");
       dmap_error_make(hreq->out_body, "aply", "Error fetching query results");
       goto error;
     }
@@ -1647,7 +1647,7 @@ daap_reply_groups(struct httpd_request *hreq)
   param = httpd_query_value_find(hreq->query, "meta");
   if (!param)
     {
-      DPRINTF(E_LOG, L_DAAP, "No meta parameter in query, using default\n");
+      DPRINTF(E_ERROR, L_DAAP, "No meta parameter in query, using default\n");
 
       param = default_meta_group;
     }
@@ -1655,7 +1655,7 @@ daap_reply_groups(struct httpd_request *hreq)
   nmeta = parse_meta(&meta, param);
   if (nmeta < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Failed to parse meta parameter in DAAP query\n");
+      DPRINTF(E_ERROR, L_DAAP, "Failed to parse meta parameter in DAAP query\n");
 
       dmap_error_make(hreq->out_body, tag, "Failed to parse query");
       goto error;
@@ -1664,7 +1664,7 @@ daap_reply_groups(struct httpd_request *hreq)
   ret = db_query_start(&qp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Could not start query\n");
+      DPRINTF(E_ERROR, L_DAAP, "Could not start query\n");
 
       dmap_error_make(hreq->out_body, tag, "Could not start query");
       goto error;
@@ -1715,7 +1715,7 @@ daap_reply_groups(struct httpd_request *hreq)
 	  ret = daap_sort_build(sctx, dbgri.itemname_sort);
 	  if (ret < 0)
 	    {
-	      DPRINTF(E_LOG, L_DAAP, "Could not add sort header to DAAP groups reply\n");
+	      DPRINTF(E_ERROR, L_DAAP, "Could not add sort header to DAAP groups reply\n");
 
 	      ret = -100;
 	      break;
@@ -1745,7 +1745,7 @@ daap_reply_groups(struct httpd_request *hreq)
       ret = evbuffer_add_buffer(grouplist, group);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Could not add group to group list for DAAP groups reply\n");
+	  DPRINTF(E_ERROR, L_DAAP, "Could not add group to group list for DAAP groups reply\n");
 
 	  ret = -100;
 	  break;
@@ -1763,7 +1763,7 @@ daap_reply_groups(struct httpd_request *hreq)
     }
   else if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Error fetching results\n");
+      DPRINTF(E_ERROR, L_DAAP, "Error fetching results\n");
       dmap_error_make(hreq->out_body, tag, "Error fetching query results");
       goto error;
     }
@@ -1848,7 +1848,7 @@ daap_reply_browse(struct httpd_request *hreq)
     }
   else
     {
-      DPRINTF(E_LOG, L_DAAP, "Invalid DAAP browse request type '%s'\n", hreq->path_parts[3]);
+      DPRINTF(E_ERROR, L_DAAP, "Invalid DAAP browse request type '%s'\n", hreq->path_parts[3]);
       dmap_error_make(hreq->out_body, "abro", "Invalid browse type");
       return DAAP_REPLY_ERROR;
     }
@@ -1861,7 +1861,7 @@ daap_reply_browse(struct httpd_request *hreq)
   ret = db_query_start(&qp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Could not start query\n");
+      DPRINTF(E_ERROR, L_DAAP, "Could not start query\n");
 
       dmap_error_make(hreq->out_body, "abro", "Could not start query");
       goto error;
@@ -1877,7 +1877,7 @@ daap_reply_browse(struct httpd_request *hreq)
 	  ret = daap_sort_build(sctx, sort_item);
 	  if (ret < 0)
 	    {
-	      DPRINTF(E_LOG, L_DAAP, "Could not add sort header to DAAP browse reply\n");
+	      DPRINTF(E_ERROR, L_DAAP, "Could not add sort header to DAAP browse reply\n");
 	      break;
 	    }
 	}
@@ -1889,7 +1889,7 @@ daap_reply_browse(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Error fetching/building results\n");
+      DPRINTF(E_ERROR, L_DAAP, "Error fetching/building results\n");
 
       dmap_error_make(hreq->out_body, "abro", "Error fetching/building query results");
       goto error;
@@ -1948,14 +1948,14 @@ daap_reply_extra_data(struct httpd_request *hreq)
 
   if (!hreq->backend)
     {
-      DPRINTF(E_LOG, L_DAAP, "Bug! daap_reply_extra_data() cannot be called without an actual connection\n");
+      DPRINTF(E_ERROR, L_DAAP, "Bug! daap_reply_extra_data() cannot be called without an actual connection\n");
       return DAAP_REPLY_NO_CONNECTION;
     }
 
   ret = safe_atoi32(hreq->path_parts[3], &id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Could not convert id parameter to integer: '%s'\n", hreq->path_parts[3]);
+      DPRINTF(E_ERROR, L_DAAP, "Could not convert id parameter to integer: '%s'\n", hreq->path_parts[3]);
       return DAAP_REPLY_BAD_REQUEST;
     }
 
@@ -1965,7 +1965,7 @@ daap_reply_extra_data(struct httpd_request *hreq)
       ret = safe_atoi32(param, &max_w);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Could not convert mw parameter to integer: '%s'\n", param);
+	  DPRINTF(E_ERROR, L_DAAP, "Could not convert mw parameter to integer: '%s'\n", param);
 	  return DAAP_REPLY_BAD_REQUEST;
 	}
 
@@ -1973,7 +1973,7 @@ daap_reply_extra_data(struct httpd_request *hreq)
       ret = safe_atoi32(param, &max_h);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DAAP, "Could not convert mh parameter to integer: '%s'\n", param);
+	  DPRINTF(E_ERROR, L_DAAP, "Could not convert mh parameter to integer: '%s'\n", param);
 	  return DAAP_REPLY_BAD_REQUEST;
 	}
     }
@@ -2028,7 +2028,7 @@ daap_stream(struct httpd_request *hreq)
 
   if (!hreq->backend)
     {
-      DPRINTF(E_LOG, L_DAAP, "Bug! daap_stream() cannot be called without an actual connection\n");
+      DPRINTF(E_ERROR, L_DAAP, "Bug! daap_stream() cannot be called without an actual connection\n");
       return DAAP_REPLY_NO_CONNECTION;
     }
 
@@ -2121,7 +2121,7 @@ daap_reply_dmap_test(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Could not add test results to DMAP test reply\n");
+      DPRINTF(E_ERROR, L_DAAP, "Could not add test results to DMAP test reply\n");
 
       dmap_error_make(hreq->out_body, dmap_TEST.tag, "Out of memory");
       return DAAP_REPLY_ERROR;
@@ -2226,7 +2226,7 @@ daap_request(struct httpd_request *hreq)
 
   if (!hreq->handler)
     {
-      DPRINTF(E_LOG, L_DAAP, "Unrecognized path in DAAP request: '%s'\n", hreq->uri);
+      DPRINTF(E_ERROR, L_DAAP, "Unrecognized path in DAAP request: '%s'\n", hreq->uri);
       daap_reply_send(hreq, DAAP_REPLY_BAD_REQUEST);
       return;
     }
@@ -2237,7 +2237,7 @@ daap_request(struct httpd_request *hreq)
     {
       ret = safe_atoi32(param, &id);
       if (ret < 0)
-	DPRINTF(E_LOG, L_DAAP, "Ignoring non-numeric session id in DAAP request: '%s'\n", hreq->uri);
+	DPRINTF(E_ERROR, L_DAAP, "Ignoring non-numeric session id in DAAP request: '%s'\n", hreq->uri);
       else
 	hreq->extra_data = daap_session_get(id);
     }
@@ -2317,14 +2317,14 @@ daap_reply_build(const char *uri, const char *user_agent, int is_remote)
   hreq = httpd_request_new(NULL, NULL, uri, user_agent);
   if (!hreq)
     {
-      DPRINTF(E_LOG, L_DAAP, "Error building request: '%s'\n", uri);
+      DPRINTF(E_ERROR, L_DAAP, "Error building request: '%s'\n", uri);
       goto out;
     }
 
   httpd_request_handler_set(hreq);
   if (!hreq->handler)
     {
-      DPRINTF(E_LOG, L_DAAP, "Cannot build reply, unrecognized path in request: '%s'\n", uri);
+      DPRINTF(E_ERROR, L_DAAP, "Cannot build reply, unrecognized path in request: '%s'\n", uri);
       goto out;
     }
 

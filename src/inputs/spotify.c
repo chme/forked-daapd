@@ -41,7 +41,7 @@ backend_set(void)
 #ifdef SPOTIFY_LIBRESPOTC
   return &spotify_librespotc;
 #endif
-  DPRINTF(E_LOG, L_SPOTIFY, "Invalid Spotify configuration (not built with the configured backend)\n");
+  DPRINTF(E_ERROR, L_SPOTIFY, "Invalid Spotify configuration (not built with the configured backend)\n");
   return NULL;
 }
 

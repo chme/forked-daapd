@@ -208,7 +208,7 @@ validate_token(struct listenbrainz_status *status)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Failed to validate ListenBrainz token\n");
+      DPRINTF(E_ERROR, L_SCROBBLE, "lbrainz: Failed to validate ListenBrainz token\n");
       goto out;
     }
 
@@ -243,7 +243,7 @@ listenbrainz_scrobble(int mfi_id)
   mfi = db_file_fetch_byid(mfi_id);
   if (!mfi)
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Scrobble failed, track id %d is unknown\n", mfi_id);
+      DPRINTF(E_ERROR, L_SCROBBLE, "lbrainz: Scrobble failed, track id %d is unknown\n", mfi_id);
       return -1;
     }
 

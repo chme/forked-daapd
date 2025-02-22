@@ -127,7 +127,7 @@ encoder_setup(enum media_format format, struct media_quality *quality)
 
   if (!encode_args.src_ctx)
     {
-      DPRINTF(E_LOG, L_STREAMING, "Error setting up decoder for quality sr %d, bps %d, ch %d, cannot encode\n",
+      DPRINTF(E_ERROR, L_STREAMING, "Error setting up decoder for quality sr %d, bps %d, ch %d, cannot encode\n",
 	quality->sample_rate, quality->bits_per_sample, quality->channels);
       goto out;
     }
@@ -137,7 +137,7 @@ encoder_setup(enum media_format format, struct media_quality *quality)
 
   if (!encode_ctx)
     {
-      DPRINTF(E_LOG, L_STREAMING, "Error setting up encoder for quality sr %d, bps %d, ch %d, cannot encode\n",
+      DPRINTF(E_ERROR, L_STREAMING, "Error setting up encoder for quality sr %d, bps %d, ch %d, cannot encode\n",
 	quality->sample_rate, quality->bits_per_sample, quality->channels);
       goto out;
     }
@@ -165,7 +165,7 @@ pipe_open(struct pipepair *p)
 #endif
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_STREAMING, "Could not create pipe: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_STREAMING, "Could not create pipe: %s\n", strerror(errno));
       return -1;
     }
 
@@ -344,7 +344,7 @@ wanted_session_add(int *audiofd, int *metadatafd, struct streaming_wanted *w)
 
   if (i == WANTED_PIPES_MAX)
     {
-      DPRINTF(E_LOG, L_STREAMING, "Cannot add streaming session, max pipe limit reached\n");
+      DPRINTF(E_ERROR, L_STREAMING, "Cannot add streaming session, max pipe limit reached\n");
       return -1;
     }
 
@@ -361,7 +361,7 @@ wanted_session_remove(struct streaming_wanted *w, int readfd)
   i = pipe_index_find_byreadfd(w->audio, readfd);
   if (i < 0)
     {
-      DPRINTF(E_LOG, L_STREAMING, "Cannot remove streaming session, readfd %d not found\n", readfd);
+      DPRINTF(E_ERROR, L_STREAMING, "Cannot remove streaming session, readfd %d not found\n", readfd);
       return;
     }
 
@@ -402,7 +402,7 @@ encode_buffer(struct streaming_wanted *w, uint8_t *buf, size_t bufsize)
       ret = evbuffer_remove(w->audio_in, w->frame_data, w->frame_size);
       if (ret != w->frame_size)
 	{
-	  DPRINTF(E_LOG, L_STREAMING, "Bug! Couldn't read a frame of %zu bytes (format %d)\n", w->frame_size, w->format);
+	  DPRINTF(E_ERROR, L_STREAMING, "Bug! Couldn't read a frame of %zu bytes (format %d)\n", w->frame_size, w->format);
 	  goto error;
 	}
 
@@ -411,14 +411,14 @@ encode_buffer(struct streaming_wanted *w, uint8_t *buf, size_t bufsize)
       frame = transcode_frame_new(w->frame_data, w->frame_size, w->nb_samples, &w->quality);
       if (!frame)
 	{
-	  DPRINTF(E_LOG, L_STREAMING, "Could not convert raw PCM to frame (format %d)\n", w->format);
+	  DPRINTF(E_ERROR, L_STREAMING, "Could not convert raw PCM to frame (format %d)\n", w->format);
 	  goto error;
 	}
 
       ret = transcode_encode(w->audio_out, w->xcode_ctx, frame, 0);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_STREAMING, "Encoding error (format %d)\n", w->format);
+	  DPRINTF(E_ERROR, L_STREAMING, "Encoding error (format %d)\n", w->format);
 	  goto error;
 	}
 
@@ -479,7 +479,7 @@ encode_and_write(int *failed_pipe_readfd, struct streaming_wanted *w, struct out
       ret = write(w->audio[i].writefd, buf, len);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_STREAMING, "Error writing to stream pipe %d (format %d): %s\n", w->audio[i].writefd, w->format, strerror(errno));
+	  DPRINTF(E_ERROR, L_STREAMING, "Error writing to stream pipe %d (format %d): %s\n", w->audio[i].writefd, w->format, strerror(errno));
 	  *failed_pipe_readfd = w->audio[i].readfd;
 	}
     }
@@ -558,7 +558,7 @@ streaming_metadata_prepare(struct output_metadata *metadata)
   queue_item = db_queue_fetch_byitemid(metadata->item_id);
   if (!queue_item)
     {
-      DPRINTF(E_LOG, L_STREAMING, "Could not fetch queue item id %d for new metadata\n", metadata->item_id);
+      DPRINTF(E_ERROR, L_STREAMING, "Could not fetch queue item id %d for new metadata\n", metadata->item_id);
       return NULL;
     }
 

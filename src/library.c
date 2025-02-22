@@ -131,7 +131,7 @@ library_media_save(struct media_file_info *mfi)
 
   if (!mfi->path || !mfi->fname || !mfi->scan_kind)
     {
-      DPRINTF(E_LOG, L_LIB, "Ignoring media file with missing values (path='%s', fname='%s', scan_kind='%d', data_kind='%d')\n",
+      DPRINTF(E_ERROR, L_LIB, "Ignoring media file with missing values (path='%s', fname='%s', scan_kind='%d', data_kind='%d')\n",
 	      mfi->path, mfi->fname, mfi->scan_kind, mfi->data_kind);
       return -1;
     }
@@ -156,7 +156,7 @@ library_playlist_save(struct playlist_info *pli)
 {
   if (!pli->path || !pli->scan_kind)
     {
-      DPRINTF(E_LOG, L_LIB, "Ignoring playlist with missing values (path='%s', scan_kind='%d')\n",
+      DPRINTF(E_ERROR, L_LIB, "Ignoring playlist with missing values (path='%s', scan_kind='%d')\n",
 	      pli->path, pli->scan_kind);
       return -1;
     }
@@ -196,7 +196,7 @@ library_directory_save(char *virtual_path, char *path, int disabled, int parent_
 
   if (ret < 0 || id <= 0)
   {
-    DPRINTF(E_LOG, L_DB, "Insert or update of directory failed '%s'\n", virtual_path);
+    DPRINTF(E_ERROR, L_DB, "Insert or update of directory failed '%s'\n", virtual_path);
     return -1;
   }
 
@@ -254,7 +254,7 @@ library_callback_schedule(library_cb cb, void *arg, struct timeval *wait, enum l
     }
   else if (idx_available == -1)
     {
-      DPRINTF(E_LOG, L_LIB, "Error scheduling callback, register full (size=%d, action=%d)\n", LIBRARY_MAX_CALLBACKS, action);
+      DPRINTF(E_ERROR, L_LIB, "Error scheduling callback, register full (size=%d, action=%d)\n", LIBRARY_MAX_CALLBACKS, action);
       return -1;
     }
 
@@ -551,7 +551,7 @@ queue_item_add(void *arg, int *retval)
     }
 
   if (ret != LIBRARY_OK)
-    DPRINTF(E_LOG, L_LIB, "Failed to add items for path '%s' to the queue (%d)\n", param->path, ret);
+    DPRINTF(E_ERROR, L_LIB, "Failed to add items for path '%s' to the queue (%d)\n", param->path, ret);
 
   *retval = ret;
   return COMMAND_END;
@@ -710,7 +710,7 @@ item_attrib_save(void *arg, int *retval)
   return COMMAND_END;
 
  error:
-  DPRINTF(E_LOG, L_LIB, "Error updating attribute %d to %d for file with id %d\n", param->attrib, param->value, param->id);
+  DPRINTF(E_ERROR, L_LIB, "Error updating attribute %d to %d for file with id %d\n", param->attrib, param->value, param->id);
   *retval = LIBRARY_ERROR;
   free_mfi(mfi, 0);
   return COMMAND_END;
@@ -1016,14 +1016,14 @@ library(void *arg)
   ret = pthread_setschedparam(pthread_self(), SCHED_BATCH, &param);
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_LIB, "Warning: Could not set thread priority to SCHED_BATCH\n");
+      DPRINTF(E_ERROR, L_LIB, "Warning: Could not set thread priority to SCHED_BATCH\n");
     }
 #endif
 
   ret = db_perthread_init();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LIB, "Error: DB init failed\n");
+      DPRINTF(E_ERROR, L_LIB, "Error: DB init failed\n");
 
       pthread_exit(NULL);
     }

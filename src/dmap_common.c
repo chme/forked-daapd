@@ -255,7 +255,7 @@ dmap_add_field(struct evbuffer *evbuf, const struct dmap_field *df, char *strval
 
 	  /* DMAP_TYPE_VERSION & DMAP_TYPE_LIST not handled here */
 	  default:
-	    DPRINTF(E_LOG, L_DAAP, "Unsupported DMAP type %d for DMAP field %s\n", df->type, df->desc);
+	    DPRINTF(E_ERROR, L_DAAP, "Unsupported DMAP type %d for DMAP field %s\n", df->type, df->desc);
 	    return;
 	}
     }
@@ -286,7 +286,7 @@ dmap_add_field(struct evbuffer *evbuf, const struct dmap_field *df, char *strval
 
 	  /* DMAP_TYPE_VERSION & DMAP_TYPE_LIST not handled here */
 	  default:
-	    DPRINTF(E_LOG, L_DAAP, "Unsupported DMAP type %d for DMAP field %s\n", df->type, df->desc);
+	    DPRINTF(E_ERROR, L_DAAP, "Unsupported DMAP type %d for DMAP field %s\n", df->type, df->desc);
 	    return;
 	}
     }
@@ -494,7 +494,7 @@ dmap_encode_file_metadata(struct evbuffer *songlist, struct evbuffer *song, stru
   ret = evbuffer_add_buffer(songlist, song);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Could not add song to song list\n");
+      DPRINTF(E_ERROR, L_DAAP, "Could not add song to song list\n");
 
       return -1;
     }
@@ -569,7 +569,7 @@ dmap_encode_queue_metadata(struct evbuffer *songlist, struct evbuffer *song, str
   ret = evbuffer_add_buffer(songlist, song);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Could not add song to song list\n");
+      DPRINTF(E_ERROR, L_DAAP, "Could not add song to song list\n");
 
       return -1;
     }
@@ -589,7 +589,7 @@ dmap_query_parse_sql(const char *dmap_query)
 
   if (daap_lex_parse(&result, dmap_query) != 0)
     {
-      DPRINTF(E_LOG, L_DAAP, "Could not parse '%s': %s\n", dmap_query, result.errmsg);
+      DPRINTF(E_ERROR, L_DAAP, "Could not parse '%s': %s\n", dmap_query, result.errmsg);
       return NULL;
     }
 

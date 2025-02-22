@@ -144,7 +144,7 @@ fifo_make(struct fifo_session *fifo_session)
 
   if (mkfifo(fifo_session->path, 0666) < 0)
     {
-      DPRINTF(E_LOG, L_FIFO, "Could not create FIFO \"%s\": %d\n", fifo_session->path, errno);
+      DPRINTF(E_ERROR, L_FIFO, "Could not create FIFO \"%s\": %d\n", fifo_session->path, errno);
       return -1;
     }
 
@@ -166,13 +166,13 @@ fifo_check(struct fifo_session *fifo_session)
 	  return fifo_make(fifo_session);
 	}
 
-      DPRINTF(E_LOG, L_FIFO, "Failed to stat FIFO \"%s\": %d\n", fifo_session->path, errno);
+      DPRINTF(E_ERROR, L_FIFO, "Failed to stat FIFO \"%s\": %d\n", fifo_session->path, errno);
       return -1;
     }
 
   if (!S_ISFIFO(st.st_mode))
     {
-      DPRINTF(E_LOG, L_FIFO, "\"%s\" already exists, but is not a FIFO\n", fifo_session->path);
+      DPRINTF(E_ERROR, L_FIFO, "\"%s\" already exists, but is not a FIFO\n", fifo_session->path);
       return -1;
     }
 
@@ -191,7 +191,7 @@ fifo_open(struct fifo_session *fifo_session)
   fifo_session->input_fd = open(fifo_session->path, O_RDONLY | O_NONBLOCK, 0);
   if (fifo_session->input_fd < 0)
     {
-      DPRINTF(E_LOG, L_FIFO, "Could not open FIFO \"%s\" for reading: %d\n", fifo_session->path, errno);
+      DPRINTF(E_ERROR, L_FIFO, "Could not open FIFO \"%s\" for reading: %d\n", fifo_session->path, errno);
       fifo_close(fifo_session);
       return -1;
     }
@@ -199,7 +199,7 @@ fifo_open(struct fifo_session *fifo_session)
   fifo_session->output_fd = open(fifo_session->path, O_WRONLY | O_NONBLOCK, 0);
   if (fifo_session->output_fd < 0)
     {
-      DPRINTF(E_LOG, L_FIFO, "Could not open FIFO \"%s\" for writing: %d\n", fifo_session->path, errno);
+      DPRINTF(E_ERROR, L_FIFO, "Could not open FIFO \"%s\" for writing: %d\n", fifo_session->path, errno);
       fifo_close(fifo_session);
       return -1;
     }
@@ -218,7 +218,7 @@ fifo_empty(struct fifo_session *fifo_session)
 
   if (bytes < 0 && errno != EAGAIN)
     {
-      DPRINTF(E_LOG, L_FIFO, "Flush of FIFO \"%s\" failed: %d\n", fifo_session->path, errno);
+      DPRINTF(E_ERROR, L_FIFO, "Flush of FIFO \"%s\" failed: %d\n", fifo_session->path, errno);
     }
 }
 
@@ -407,7 +407,7 @@ fifo_write(struct output_buffer *obuf)
 
   if (!obuf->data[i].buffer)
     {
-      DPRINTF(E_LOG, L_FIFO, "Bug! Did not get audio in quality required\n");
+      DPRINTF(E_ERROR, L_FIFO, "Bug! Did not get audio in quality required\n");
       return;
     }
 
@@ -457,7 +457,7 @@ fifo_write(struct output_buffer *obuf)
 		continue;
 	    }
 
-	  DPRINTF(E_LOG, L_FIFO, "Failed to write to FIFO %s: %d\n", fifo_session->path, errno);
+	  DPRINTF(E_ERROR, L_FIFO, "Failed to write to FIFO %s: %d\n", fifo_session->path, errno);
 	  return;
 	}
     }

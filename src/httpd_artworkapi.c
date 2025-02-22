@@ -44,7 +44,7 @@ request_process(struct httpd_request *hreq, uint32_t *max_w, uint32_t *max_h)
     {
       ret = safe_atou32(param, max_w);
       if (ret < 0)
-	DPRINTF(E_LOG, L_WEB, "Invalid width in request: '%s'\n", hreq->uri);
+	DPRINTF(E_ERROR, L_WEB, "Invalid width in request: '%s'\n", hreq->uri);
     }
 
   param = httpd_query_value_find(hreq->query, "maxheight");
@@ -52,7 +52,7 @@ request_process(struct httpd_request *hreq, uint32_t *max_w, uint32_t *max_h)
     {
       ret = safe_atou32(param, max_h);
       if (ret < 0)
-	DPRINTF(E_LOG, L_WEB, "Invalid height in request: '%s'\n", hreq->uri);
+	DPRINTF(E_ERROR, L_WEB, "Invalid height in request: '%s'\n", hreq->uri);
     }
 
   return 0;
@@ -155,7 +155,7 @@ artworkapi_request(struct httpd_request *hreq)
 
   if (!hreq->handler)
     {
-      DPRINTF(E_LOG, L_WEB, "Unrecognized path in artwork api request: '%s'\n", hreq->uri);
+      DPRINTF(E_ERROR, L_WEB, "Unrecognized path in artwork api request: '%s'\n", hreq->uri);
 
       httpd_send_error(hreq, HTTP_BADREQUEST, "Bad Request");
       return;

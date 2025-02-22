@@ -65,7 +65,7 @@ scan_smartpl(const char *file, time_t mtime, int dir_id)
   ret = smartpl_query_parse_file(&smartpl, file);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error parsing smart playlist '%s'\n", file);
+      DPRINTF(E_ERROR, L_SCAN, "Error parsing smart playlist '%s'\n", file);
       free_smartpl(&smartpl, 1);
       goto free_pli;
     }
@@ -80,7 +80,7 @@ scan_smartpl(const char *file, time_t mtime, int dir_id)
   ret = library_playlist_save(pli);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error saving smart playlist '%s'\n", file);
+      DPRINTF(E_ERROR, L_SCAN, "Error saving smart playlist '%s'\n", file);
       goto free_pli;
     }
 

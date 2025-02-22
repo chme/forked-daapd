@@ -361,7 +361,7 @@ init_settings(struct settings_ctx *settings, enum transcode_profile profile, str
 	break;
 
       default:
-	DPRINTF(E_LOG, L_XCODE, "Bug! Unknown transcoding profile\n");
+	DPRINTF(E_ERROR, L_XCODE, "Bug! Unknown transcoding profile\n");
 	return -1;
     }
 
@@ -387,7 +387,7 @@ init_settings(struct settings_ctx *settings, enum transcode_profile profile, str
 
   if (quality && quality->bits_per_sample && (quality->bits_per_sample != 8 * av_get_bytes_per_sample(settings->sample_format)))
     {
-      DPRINTF(E_LOG, L_XCODE, "Bug! Mismatch between profile (%d bps) and media quality (%d bps)\n", 8 * av_get_bytes_per_sample(settings->sample_format), quality->bits_per_sample);
+      DPRINTF(E_ERROR, L_XCODE, "Bug! Mismatch between profile (%d bps) and media quality (%d bps)\n", 8 * av_get_bytes_per_sample(settings->sample_format), quality->bits_per_sample);
       return -1;
     }
 
@@ -447,7 +447,7 @@ init_settings_from_audio(struct settings_ctx *settings, enum transcode_profile p
 	if (settings->sample_format && settings->audio_codec && settings->format)
 	  return 0;
 
-	DPRINTF(E_LOG, L_XCODE, "Bug! Profile %d has unset encoding parameters\n", profile);
+	DPRINTF(E_ERROR, L_XCODE, "Bug! Profile %d has unset encoding parameters\n", profile);
 	return -1;
     }
 
@@ -626,14 +626,14 @@ stream_add(struct encode_ctx *ctx, struct stream_ctx *s, enum AVCodecID codec_id
   codec_desc = avcodec_descriptor_get(codec_id);
   if (!codec_desc)
     {
-      DPRINTF(E_LOG, L_XCODE, "Invalid codec ID (%d)\n", codec_id);
+      DPRINTF(E_ERROR, L_XCODE, "Invalid codec ID (%d)\n", codec_id);
       return -1;
     }
 
   encoder = avcodec_find_encoder(codec_id);
   if (!encoder)
     {
-      DPRINTF(E_LOG, L_XCODE, "Necessary encoder (%s) not found\n", codec_desc->name);
+      DPRINTF(E_ERROR, L_XCODE, "Necessary encoder (%s) not found\n", codec_desc->name);
       return -1;
     }
 
@@ -666,7 +666,7 @@ stream_add(struct encode_ctx *ctx, struct stream_ctx *s, enum AVCodecID codec_id
   ret = avcodec_open2(s->codec, NULL, &options);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_XCODE, "Cannot open encoder (%s): %s\n", codec_desc->name, err2str(ret));
+      DPRINTF(E_ERROR, L_XCODE, "Cannot open encoder (%s): %s\n", codec_desc->name, err2str(ret));
       goto error;
     }
 
@@ -682,7 +682,7 @@ stream_add(struct encode_ctx *ctx, struct stream_ctx *s, enum AVCodecID codec_id
   ret = avcodec_parameters_from_context(s->stream->codecpar, s->codec);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_XCODE, "Cannot copy stream parameters (%s): %s\n", codec_desc->name, err2str(ret));
+      DPRINTF(E_ERROR, L_XCODE, "Cannot copy stream parameters (%s): %s\n", codec_desc->name, err2str(ret));
       goto error;
     }
 
@@ -719,7 +719,7 @@ decode_interrupt_cb(void *arg)
 
   if (av_gettime() - ctx->timestamp > READ_TIMEOUT)
     {
-      DPRINTF(E_LOG, L_XCODE, "Timeout while reading source (connection problem?)\n");
+      DPRINTF(E_ERROR, L_XCODE, "Timeout while reading source (connection problem?)\n");
 
       return 1;
     }
@@ -845,7 +845,7 @@ filter_encode_write(struct encode_ctx *ctx, struct stream_ctx *s, AVFrame *frame
   ret = av_buffersrc_add_frame(s->buffersrc_ctx, frame);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_XCODE, "Error while feeding the filtergraph: %s\n", err2str(ret));
+      DPRINTF(E_ERROR, L_XCODE, "Error while feeding the filtergraph: %s\n", err2str(ret));
       return -1;
     }
 
@@ -888,7 +888,7 @@ decode_filter_encode_write(struct transcode_ctx *ctx, struct stream_ctx *s, AVPa
   ret = avcodec_send_packet(s->codec, pkt);
   if (ret < 0 && (ret != AVERROR_INVALIDDATA) && (ret != AVERROR(EAGAIN))) // We don't bail on invalid data, some streams work anyway
     {
-      DPRINTF(E_LOG, L_XCODE, "Decoder error, avcodec_send_packet said '%s' (%d)\n", err2str(ret), ret);
+      DPRINTF(E_ERROR, L_XCODE, "Decoder error, avcodec_send_packet said '%s' (%d)\n", err2str(ret), ret);
       return ret;
     }
 
@@ -1031,7 +1031,7 @@ avio_evbuffer_open(struct transcode_evbuf_io *evbuf_io, int is_output)
   ae = calloc(1, sizeof(struct avio_evbuffer));
   if (!ae)
     {
-      DPRINTF(E_LOG, L_FFMPEG, "Out of memory for avio_evbuffer\n");
+      DPRINTF(E_ERROR, L_FFMPEG, "Out of memory for avio_evbuffer\n");
 
       return NULL;
     }
@@ -1039,7 +1039,7 @@ avio_evbuffer_open(struct transcode_evbuf_io *evbuf_io, int is_output)
   ae->buffer = av_mallocz(AVIO_BUFFER_SIZE);
   if (!ae->buffer)
     {
-      DPRINTF(E_LOG, L_FFMPEG, "Out of memory for avio buffer\n");
+      DPRINTF(E_ERROR, L_FFMPEG, "Out of memory for avio buffer\n");
 
       free(ae);
       return NULL;
@@ -1056,7 +1056,7 @@ avio_evbuffer_open(struct transcode_evbuf_io *evbuf_io, int is_output)
 
   if (!s)
     {
-      DPRINTF(E_LOG, L_FFMPEG, "Could not allocate AVIOContext\n");
+      DPRINTF(E_ERROR, L_FFMPEG, "Could not allocate AVIOContext\n");
 
       av_free(ae->buffer);
       free(ae);
@@ -1321,7 +1321,7 @@ open_decoder(AVCodecContext **dec_ctx, unsigned int *stream_index, struct decode
   if (ret < 0)
     {
       if (!ctx->settings.silent)
-	DPRINTF(E_LOG, L_XCODE, "Error finding best stream: %s\n", err2str(ret));
+	DPRINTF(E_ERROR, L_XCODE, "Error finding best stream: %s\n", err2str(ret));
       return ret;
     }
 
@@ -1335,7 +1335,7 @@ open_decoder(AVCodecContext **dec_ctx, unsigned int *stream_index, struct decode
   ret = avcodec_parameters_to_context(*dec_ctx, ctx->ifmt_ctx->streams[*stream_index]->codecpar);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_XCODE, "Failed to copy codecpar for stream #%d: %s\n", *stream_index, err2str(ret));
+      DPRINTF(E_ERROR, L_XCODE, "Failed to copy codecpar for stream #%d: %s\n", *stream_index, err2str(ret));
       avcodec_free_context(dec_ctx);
       return ret;
     }
@@ -1343,7 +1343,7 @@ open_decoder(AVCodecContext **dec_ctx, unsigned int *stream_index, struct decode
   ret = avcodec_open2(*dec_ctx, NULL, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_XCODE, "Failed to open decoder for stream #%d: %s\n", *stream_index, err2str(ret));
+      DPRINTF(E_ERROR, L_XCODE, "Failed to open decoder for stream #%d: %s\n", *stream_index, err2str(ret));
       avcodec_free_context(dec_ctx);
       return ret;
     }
@@ -1415,7 +1415,7 @@ open_input(struct decode_ctx *ctx, const char *path, struct transcode_evbuf_io *
       ifmt = av_find_input_format(ctx->settings.in_format);
       if (!ifmt)
 	{
-	  DPRINTF(E_LOG, L_XCODE, "Could not find input format: '%s'\n", ctx->settings.in_format);
+	  DPRINTF(E_ERROR, L_XCODE, "Could not find input format: '%s'\n", ctx->settings.in_format);
 	  goto out_fail;
 	}
 
@@ -1434,7 +1434,7 @@ open_input(struct decode_ctx *ctx, const char *path, struct transcode_evbuf_io *
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_XCODE, "Cannot open '%s': %s\n", path, err2str(ret));
+      DPRINTF(E_ERROR, L_XCODE, "Cannot open '%s': %s\n", path, err2str(ret));
       goto out_fail;
     }
 
@@ -1447,13 +1447,13 @@ open_input(struct decode_ctx *ctx, const char *path, struct transcode_evbuf_io *
   ret = avformat_find_stream_info(ctx->ifmt_ctx, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_XCODE, "Cannot find stream information: %s\n", err2str(ret));
+      DPRINTF(E_ERROR, L_XCODE, "Cannot find stream information: %s\n", err2str(ret));
       goto out_fail;
     }
 
   if (ctx->ifmt_ctx->nb_streams > MAX_STREAMS)
     {
-      DPRINTF(E_LOG, L_XCODE, "File '%s' has too many streams (%u)\n", path, ctx->ifmt_ctx->nb_streams);
+      DPRINTF(E_ERROR, L_XCODE, "File '%s' has too many streams (%u)\n", path, ctx->ifmt_ctx->nb_streams);
       goto out_fail;
     }
 
@@ -1513,7 +1513,7 @@ open_output(struct encode_ctx *ctx, struct transcode_evbuf_io *evbuf_io, struct 
   oformat = av_guess_format(ctx->settings.format, NULL, NULL);
   if (!oformat)
     {
-      DPRINTF(E_LOG, L_XCODE, "ffmpeg/libav could not find the '%s' output format\n", ctx->settings.format);
+      DPRINTF(E_ERROR, L_XCODE, "ffmpeg/libav could not find the '%s' output format\n", ctx->settings.format);
       return -1;
     }
 
@@ -1549,7 +1549,7 @@ open_output(struct encode_ctx *ctx, struct transcode_evbuf_io *evbuf_io, struct 
   ret = avformat_init_output(ctx->ofmt_ctx, &options);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_XCODE, "Error initializing output: %s\n", err2str(ret));
+      DPRINTF(E_ERROR, L_XCODE, "Error initializing output: %s\n", err2str(ret));
       goto error;
     }
   else if (options)
@@ -1565,7 +1565,7 @@ open_output(struct encode_ctx *ctx, struct transcode_evbuf_io *evbuf_io, struct 
       ret = avformat_write_header(ctx->ofmt_ctx, NULL);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_XCODE, "Error writing header to output buffer: %s\n", err2str(ret));
+	  DPRINTF(E_ERROR, L_XCODE, "Error writing header to output buffer: %s\n", err2str(ret));
 	  goto error;
 	}
     }
@@ -1574,7 +1574,7 @@ open_output(struct encode_ctx *ctx, struct transcode_evbuf_io *evbuf_io, struct 
       ret = make_wav_header(&header, ctx->settings.sample_rate, av_get_bytes_per_sample(ctx->settings.sample_format), ctx->settings.nb_channels, ctx->bytes_total);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_XCODE, "Error creating WAV header\n");
+	  DPRINTF(E_ERROR, L_XCODE, "Error creating WAV header\n");
 	  goto error;
 	}
 
@@ -1591,7 +1591,7 @@ open_output(struct encode_ctx *ctx, struct transcode_evbuf_io *evbuf_io, struct 
       ret = make_mp4_header(&header, src_ctx->ifmt_ctx->url);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_XCODE, "Error creating MP4 header\n");
+	  DPRINTF(E_ERROR, L_XCODE, "Error creating MP4 header\n");
 	  goto error;
 	}
 
@@ -1740,7 +1740,7 @@ define_audio_filters(struct filters *filters, size_t filters_len, bool with_user
   num_user_filters = cfg_size(cfg_getsec(cfg, "library"), "decode_audio_filters");
   if (filters_len < num_user_filters + 3)
     {
-      DPRINTF(E_LOG, L_XCODE, "Too many audio filters configured (%d, max is %zu)\n", num_user_filters, filters_len - 3);
+      DPRINTF(E_ERROR, L_XCODE, "Too many audio filters configured (%d, max is %zu)\n", num_user_filters, filters_len - 3);
       return -1;
     }
 
@@ -1765,7 +1765,7 @@ define_video_filters(struct filters *filters, size_t filters_len, bool with_user
   num_user_filters = cfg_size(cfg_getsec(cfg, "library"), "decode_video_filters");
   if (filters_len < num_user_filters + 3)
     {
-      DPRINTF(E_LOG, L_XCODE, "Too many video filters configured (%d, max is %zu)\n", num_user_filters, filters_len - 3);
+      DPRINTF(E_ERROR, L_XCODE, "Too many video filters configured (%d, max is %zu)\n", num_user_filters, filters_len - 3);
       return -1;
     }
 
@@ -1796,21 +1796,21 @@ add_filters(int *num_added, AVFilterGraph *filter_graph, struct filters *filters
       ret = filters[i].deffn(&def, out_stream, in_stream, filters[i].deffn_arg);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_XCODE, "Error creating filter definition\n");
+	  DPRINTF(E_ERROR, L_XCODE, "Error creating filter definition\n");
 	  return -1;
 	}
 
       av_filter = avfilter_get_by_name(def.name);
       if (!av_filter)
 	{
-	  DPRINTF(E_LOG, L_XCODE, "Could not find filter '%s'\n", def.name);
+	  DPRINTF(E_ERROR, L_XCODE, "Could not find filter '%s'\n", def.name);
 	  return -1;
 	}
 
       ret = avfilter_graph_create_filter(&filters[i].av_ctx, av_filter, def.name, def.args, NULL, filter_graph);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_XCODE, "Error creating filter '%s': %s\n", def.name, err2str(ret));
+	  DPRINTF(E_ERROR, L_XCODE, "Error creating filter '%s': %s\n", def.name, err2str(ret));
 	  return -1;
 	}
 
@@ -1822,7 +1822,7 @@ add_filters(int *num_added, AVFilterGraph *filter_graph, struct filters *filters
       ret = avfilter_link(filters[i - 1].av_ctx, 0, filters[i].av_ctx, 0);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_XCODE, "Error connecting filters: %s\n", err2str(ret));
+	  DPRINTF(E_ERROR, L_XCODE, "Error connecting filters: %s\n", err2str(ret));
 	  return -1;
 	}
     }
@@ -1849,7 +1849,7 @@ create_filtergraph(struct stream_ctx *out_stream, struct filters *filters, size_
   ret = avfilter_graph_config(filter_graph, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_XCODE, "Filter graph config failed: %s\n", err2str(ret));
+      DPRINTF(E_ERROR, L_XCODE, "Filter graph config failed: %s\n", err2str(ret));
       goto out_fail;
     }
 
@@ -2050,7 +2050,7 @@ transcode_decode_setup_raw(enum transcode_profile profile, struct media_quality 
   codec_desc = avcodec_descriptor_get(ctx->settings.audio_codec);
   if (!codec_desc)
     {
-      DPRINTF(E_LOG, L_XCODE, "Invalid codec ID (%d)\n", ctx->settings.audio_codec);
+      DPRINTF(E_ERROR, L_XCODE, "Invalid codec ID (%d)\n", ctx->settings.audio_codec);
       goto out_free_ctx;
     }
 
@@ -2060,7 +2060,7 @@ transcode_decode_setup_raw(enum transcode_profile profile, struct media_quality 
   decoder = avcodec_find_decoder(ctx->settings.audio_codec);
   if (!decoder)
     {
-      DPRINTF(E_LOG, L_XCODE, "Could not find decoder for: %s\n", codec_desc->name);
+      DPRINTF(E_ERROR, L_XCODE, "Could not find decoder for: %s\n", codec_desc->name);
       goto out_free_ctx;
     }
 
@@ -2075,7 +2075,7 @@ transcode_decode_setup_raw(enum transcode_profile profile, struct media_quality 
   ret = avcodec_parameters_from_context(ctx->audio_stream.stream->codecpar, ctx->audio_stream.codec);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_XCODE, "Cannot copy stream parameters (%s): %s\n", codec_desc->name, err2str(ret));
+      DPRINTF(E_ERROR, L_XCODE, "Cannot copy stream parameters (%s): %s\n", codec_desc->name, err2str(ret));
       goto out_free_codec;
     }
 
@@ -2237,7 +2237,7 @@ transcode_decode(transcode_frame **frame, struct decode_ctx *dec_ctx)
   int ret;
 
   if (dec_ctx->got_frame)
-    DPRINTF(E_LOG, L_XCODE, "Bug! Currently no support for multiple calls to transcode_decode()\n");
+    DPRINTF(E_ERROR, L_XCODE, "Bug! Currently no support for multiple calls to transcode_decode()\n");
 
   ctx.decode_ctx = dec_ctx;
   ctx.encode_ctx = NULL;
@@ -2282,14 +2282,14 @@ transcode_encode(struct evbuffer *evbuf, struct encode_ctx *ctx, transcode_frame
     s = &ctx->video_stream;
   else
     {
-      DPRINTF(E_LOG, L_XCODE, "Bug! Encoder could not detect frame type\n");
+      DPRINTF(E_ERROR, L_XCODE, "Bug! Encoder could not detect frame type\n");
       return -1;
     }
 
   ret = filter_encode_write(ctx, s, f);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_XCODE, "Error occurred while encoding: %s\n", err2str(ret));
+      DPRINTF(E_ERROR, L_XCODE, "Error occurred while encoding: %s\n", err2str(ret));
       return ret;
     }
 
@@ -2350,14 +2350,14 @@ transcode_frame_new(void *data, size_t size, int nsamples, struct media_quality 
   f = av_frame_alloc();
   if (!f)
     {
-      DPRINTF(E_LOG, L_XCODE, "Out of memory for frame\n");
+      DPRINTF(E_ERROR, L_XCODE, "Out of memory for frame\n");
       return NULL;
     }
 
   f->format = bitdepth2format(quality->bits_per_sample);
   if (f->format == AV_SAMPLE_FMT_NONE)
     {
-      DPRINTF(E_LOG, L_XCODE, "transcode_frame_new() called with unsupported bps (%d)\n", quality->bits_per_sample);
+      DPRINTF(E_ERROR, L_XCODE, "transcode_frame_new() called with unsupported bps (%d)\n", quality->bits_per_sample);
       av_frame_free(&f);
       return NULL;
     }
@@ -2379,7 +2379,7 @@ transcode_frame_new(void *data, size_t size, int nsamples, struct media_quality 
   ret = avcodec_fill_audio_frame(f, quality->channels, f->format, data, size, 1);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_XCODE, "Error filling frame with rawbuf, size %zu, samples %d (%d/%d/%d): %s\n",
+      DPRINTF(E_ERROR, L_XCODE, "Error filling frame with rawbuf, size %zu, samples %d (%d/%d/%d): %s\n",
 	size, nsamples, quality->sample_rate, quality->bits_per_sample, quality->channels, err2str(ret));
 
       av_frame_free(&f);
@@ -2414,7 +2414,7 @@ transcode_seek(struct transcode_ctx *ctx, int ms)
   s = &dec_ctx->audio_stream;
   if (!s->stream)
     {
-      DPRINTF(E_LOG, L_XCODE, "Could not seek in non-audio input\n");
+      DPRINTF(E_ERROR, L_XCODE, "Could not seek in non-audio input\n");
       return -1;
     }
 

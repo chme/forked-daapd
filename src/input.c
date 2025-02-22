@@ -418,12 +418,12 @@ setup(struct input_source *source, struct db_queue_item *queue_item, int seek_ms
   type = map_data_kind(queue_item->data_kind);
   if (type < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Unknown data kind (%d)\n", queue_item->data_kind);
+      DPRINTF(E_ERROR, L_PLAYER, "Unknown data kind (%d)\n", queue_item->data_kind);
       goto setup_error;
     }
   else if (inputs[type]->disabled)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Input backend for type %d (data kind %d) is disabled\n", type, queue_item->data_kind);
+      DPRINTF(E_ERROR, L_PLAYER, "Input backend for type %d (data kind %d) is disabled\n", type, queue_item->data_kind);
       goto setup_error;
     }
 
@@ -493,7 +493,7 @@ start(void *arg, int *retval)
       queue_item = db_queue_fetch_byitemid(cmdarg->item_id);
       if (!queue_item)
 	{
-	  DPRINTF(E_LOG, L_PLAYER, "Input start was called with an item id that has disappeared (id=%d)\n", cmdarg->item_id);
+	  DPRINTF(E_ERROR, L_PLAYER, "Input start was called with an item id that has disappeared (id=%d)\n", cmdarg->item_id);
 	  goto error;
 	}
 
@@ -620,7 +620,7 @@ input_write(struct evbuffer *evbuf, struct media_quality *quality, short flags)
       ret = evbuffer_add_buffer(input_buffer.evbuf, evbuf);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_PLAYER, "Error adding stream data to input buffer, stopping\n");
+	  DPRINTF(E_ERROR, L_PLAYER, "Error adding stream data to input buffer, stopping\n");
 	  input_stop();
 	  flags |= INPUT_FLAG_ERROR;
 	}
@@ -659,7 +659,7 @@ input(void *arg)
   ret = db_perthread_init();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MAIN, "Error: DB init failed (input thread)\n");
+      DPRINTF(E_ERROR, L_MAIN, "Error: DB init failed (input thread)\n");
       pthread_exit(NULL);
     }
 
@@ -669,7 +669,7 @@ input(void *arg)
 
   if (input_initialized)
     {
-      DPRINTF(E_LOG, L_MAIN, "Input event loop terminated ahead of time!\n");
+      DPRINTF(E_ERROR, L_MAIN, "Input event loop terminated ahead of time!\n");
       input_initialized = false;
     }
 
@@ -770,7 +770,7 @@ input_read(void *data, size_t size, short *flag, void **flagdata)
   len = evbuffer_remove(input_buffer.evbuf, data, size);
   if (len < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Error reading stream data from input buffer\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Error reading stream data from input buffer\n");
       *flag = INPUT_FLAG_ERROR;
       goto out_unlock;
     }
@@ -928,7 +928,7 @@ input_init(void)
   ret = pthread_create(&tid_input, NULL, input, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MAIN, "Could not spawn input thread: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_MAIN, "Could not spawn input thread: %s\n", strerror(errno));
       goto thread_fail;
     }
 

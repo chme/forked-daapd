@@ -207,20 +207,20 @@ pipe_open(const char *path, bool silent)
   fd = open(path, O_RDONLY | O_NONBLOCK);
   if (fd < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not open pipe for reading '%s': %s\n", path, strerror(errno));
+      DPRINTF(E_ERROR, L_PLAYER, "Could not open pipe for reading '%s': %s\n", path, strerror(errno));
       goto error;
     }
 
   if (fstat(fd, &sb) < 0)
     {
       if (!silent)
-	DPRINTF(E_LOG, L_PLAYER, "Could not fstat() '%s': %s\n", path, strerror(errno));
+	DPRINTF(E_ERROR, L_PLAYER, "Could not fstat() '%s': %s\n", path, strerror(errno));
       goto error;
     }
 
   if (!S_ISFIFO(sb.st_mode))
     {
-      DPRINTF(E_LOG, L_PLAYER, "Source type is pipe, but path is not a fifo: %s\n", path);
+      DPRINTF(E_ERROR, L_PLAYER, "Source type is pipe, but path is not a fifo: %s\n", path);
       goto error;
     }
 
@@ -253,7 +253,7 @@ watch_add(struct pipe *pipe)
   pipe->ev = event_new(evbase_pipe, pipe->fd, EV_READ, pipe->cb, pipe);
   if (!pipe->ev)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not watch pipe for new data '%s'\n", pipe->path);
+      DPRINTF(E_ERROR, L_PLAYER, "Could not watch pipe for new data '%s'\n", pipe->path);
       pipe_close(pipe->fd);
       return -1;
     }
@@ -355,13 +355,13 @@ pict_tmpfile_recreate(char *path, size_t path_size, int fd, const char *ext)
 
   if (strlen(ext) > PIPE_TMPFILE_TEMPLATE_EXTLEN)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Invalid extension provided to pict_tmpfile_recreate: '%s'\n", ext);
+      DPRINTF(E_ERROR, L_PLAYER, "Invalid extension provided to pict_tmpfile_recreate: '%s'\n", ext);
       return -1;
     }
 
   if (path_size < sizeof(PIPE_TMPFILE_TEMPLATE))
     {
-      DPRINTF(E_LOG, L_PLAYER, "Invalid path buffer provided to pict_tmpfile_recreate\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Invalid path buffer provided to pict_tmpfile_recreate\n");
       return -1;
     }
 
@@ -412,7 +412,7 @@ parse_progress(struct pipe_metadata_prepared *prepared, char *progress)
   return 0;
 
  error:
-  DPRINTF(E_LOG, L_PLAYER, "Received unexpected Shairport metadata progress: %s\n", progress);
+  DPRINTF(E_ERROR, L_PLAYER, "Received unexpected Shairport metadata progress: %s\n", progress);
   return -1;
 }
 
@@ -428,7 +428,7 @@ parse_volume(struct pipe_metadata_prepared *prepared, const char *volume)
 
   if ((errno == ERANGE) || (volume == volume_next))
     {
-      DPRINTF(E_LOG, L_PLAYER, "Invalid Shairport airplay volume in string (%s): %s\n", volume,
+      DPRINTF(E_ERROR, L_PLAYER, "Invalid Shairport airplay volume in string (%s): %s\n", volume,
 	      (errno == ERANGE ? strerror(errno) : "First token is not a number."));
       goto error;
     }
@@ -453,7 +453,7 @@ parse_volume(struct pipe_metadata_prepared *prepared, const char *volume)
     }
   else
     {
-      DPRINTF(E_LOG, L_PLAYER, "Shairport airplay volume out of range (-144.0, [-30.0 - 0.0]): %.2f\n", airplay_volume);
+      DPRINTF(E_ERROR, L_PLAYER, "Shairport airplay volume out of range (-144.0, [-30.0 - 0.0]): %.2f\n", airplay_volume);
       goto error;
     }
 
@@ -485,26 +485,26 @@ parse_picture(struct pipe_metadata_prepared *prepared, uint8_t *data, int data_l
     ext = ".png";
   else
     {
-      DPRINTF(E_LOG, L_PLAYER, "Unsupported picture format from Shairport metadata pipe\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Unsupported picture format from Shairport metadata pipe\n");
       goto error;
     }
 
   prepared->pict_tmpfile_fd = pict_tmpfile_recreate(prepared->pict_tmpfile_path, sizeof(prepared->pict_tmpfile_path), prepared->pict_tmpfile_fd, ext);
   if (prepared->pict_tmpfile_fd < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not open tmpfile for pipe artwork '%s': %s\n", prepared->pict_tmpfile_path, strerror(errno));
+      DPRINTF(E_ERROR, L_PLAYER, "Could not open tmpfile for pipe artwork '%s': %s\n", prepared->pict_tmpfile_path, strerror(errno));
       goto error;
     }
 
   ret = write(prepared->pict_tmpfile_fd, data, data_len);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Error writing artwork from metadata pipe to '%s': %s\n", prepared->pict_tmpfile_path, strerror(errno));
+      DPRINTF(E_ERROR, L_PLAYER, "Error writing artwork from metadata pipe to '%s': %s\n", prepared->pict_tmpfile_path, strerror(errno));
       goto error;
     }
   else if (ret != data_len)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Incomplete write of artwork to '%s' (%zd/%d)\n", prepared->pict_tmpfile_path, ret, data_len);
+      DPRINTF(E_ERROR, L_PLAYER, "Incomplete write of artwork to '%s' (%zd/%d)\n", prepared->pict_tmpfile_path, ret, data_len);
       goto error;
     }
 
@@ -547,7 +547,7 @@ parse_item_xml(uint32_t *type, uint32_t *code, uint8_t **data, int *data_len, co
   xml = xml_from_string(item);
   if (!xml)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not parse pipe metadata item: %s\n", item);
+      DPRINTF(E_ERROR, L_PLAYER, "Could not parse pipe metadata item: %s\n", item);
       goto error;
     }
 
@@ -561,7 +561,7 @@ parse_item_xml(uint32_t *type, uint32_t *code, uint8_t **data, int *data_len, co
 
   if (*type == 0 || *code == 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "No type (%d) or code (%d) in pipe metadata: %s\n", *type, *code, item);
+      DPRINTF(E_ERROR, L_PLAYER, "No type (%d) or code (%d) in pipe metadata: %s\n", *type, *code, item);
       goto error;
     }
 
@@ -572,7 +572,7 @@ parse_item_xml(uint32_t *type, uint32_t *code, uint8_t **data, int *data_len, co
       *data = b64_decode(data_len, s);
       if (*data == NULL)
 	{
-	  DPRINTF(E_LOG, L_PLAYER, "Base64 decode of '%s' failed\n", s);
+	  DPRINTF(E_ERROR, L_PLAYER, "Base64 decode of '%s' failed\n", s);
 	  goto error;
 	}
     }
@@ -723,7 +723,7 @@ pipe_read_cb(evutil_socket_t fd, short event, void *arg)
     }
   else if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Pipe autostart of '%s' failed because state of player is unknown\n", pipe->path);
+      DPRINTF(E_ERROR, L_PLAYER, "Pipe autostart of '%s' failed because state of player is unknown\n", pipe->path);
       return;
     }
 
@@ -734,7 +734,7 @@ pipe_read_cb(evutil_socket_t fd, short event, void *arg)
   ret = player_playback_start_byid(pipe->id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Autostarting pipe '%s' (fd %d) failed\n", pipe->path, fd);
+      DPRINTF(E_ERROR, L_PLAYER, "Autostarting pipe '%s' (fd %d) failed\n", pipe->path, fd);
       return;
     }
 
@@ -792,7 +792,7 @@ pipe_watch_update(void *arg, int *retval)
 
       if (count > PIPE_MAX_WATCH)
 	{
-	  DPRINTF(E_LOG, L_PLAYER, "Max open pipes reached (%d), will not watch '%s'\n", PIPE_MAX_WATCH, pipe->path);
+	  DPRINTF(E_ERROR, L_PLAYER, "Max open pipes reached (%d), will not watch '%s'\n", PIPE_MAX_WATCH, pipe->path);
 	  pipe_free(pipe);
 	  continue;
 	}
@@ -868,7 +868,7 @@ pipe_metadata_read_cb(evutil_socket_t fd, short event, void *arg)
   len = evbuffer_get_length(pipe_metadata.evbuf);
   if (len > PIPE_METADATA_BUFLEN_MAX)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Buffer for metadata pipe '%s' is full, discarding %zu bytes\n", pipe_metadata.pipe->path, len);
+      DPRINTF(E_ERROR, L_PLAYER, "Buffer for metadata pipe '%s' is full, discarding %zu bytes\n", pipe_metadata.pipe->path, len);
       evbuffer_drain(pipe_metadata.evbuf, len);
       goto readd;
     }
@@ -881,7 +881,7 @@ pipe_metadata_read_cb(evutil_socket_t fd, short event, void *arg)
   pthread_mutex_unlock(&pipe_metadata.prepared.lock);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Error parsing incoming data on metadata pipe '%s', will stop reading\n", pipe_metadata.pipe->path);
+      DPRINTF(E_ERROR, L_PLAYER, "Error parsing incoming data on metadata pipe '%s', will stop reading\n", pipe_metadata.pipe->path);
       pipe_metadata_watch_del(NULL);
       return;
     }
@@ -951,7 +951,7 @@ pipe_thread_stop(void)
 
   ret = pthread_join(tid_pipe, NULL);
   if (ret != 0)
-    DPRINTF(E_LOG, L_PLAYER, "Could not join pipe thread: %s\n", strerror(errno));
+    DPRINTF(E_ERROR, L_PLAYER, "Could not join pipe thread: %s\n", strerror(errno));
 
   event_base_free(evbase_pipe);
   tid_pipe = 0;
@@ -1106,7 +1106,7 @@ play(struct input_source *source)
     }
   else if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not read from pipe '%s': %s\n", source->path, strerror(errno));
+      DPRINTF(E_ERROR, L_PLAYER, "Could not read from pipe '%s': %s\n", source->path, strerror(errno));
       input_write(NULL, NULL, INPUT_FLAG_ERROR);
       stop(source);
       return -1;

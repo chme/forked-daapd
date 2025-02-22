@@ -124,7 +124,7 @@ command_cb(int fd, short what, void *arg)
   ret = read(cmdbase->command_pipe[0], &cmd, sizeof(cmd));
   if (ret != sizeof(cmd))
     {
-      DPRINTF(E_LOG, L_MAIN, "Error reading command from command pipe: expected %zu bytes, read %d bytes\n", sizeof(cmd), ret);
+      DPRINTF(E_ERROR, L_MAIN, "Error reading command from command pipe: expected %zu bytes, read %d bytes\n", sizeof(cmd), ret);
 
       event_add(cmdbase->command_event, NULL);
       return;
@@ -153,14 +153,14 @@ send_command(struct commands_base *cmdbase, struct command *cmd)
 
   if (!cmd->func)
     {
-      DPRINTF(E_LOG, L_MAIN, "Programming error: send_command called with command->func NULL!\n");
+      DPRINTF(E_ERROR, L_MAIN, "Programming error: send_command called with command->func NULL!\n");
       return -1;
     }
 
   ret = write(cmdbase->command_pipe[1], &cmd, sizeof(cmd));
   if (ret != sizeof(cmd))
     {
-      DPRINTF(E_LOG, L_MAIN, "Bad write to command pipe (write incomplete)\n");
+      DPRINTF(E_ERROR, L_MAIN, "Bad write to command pipe (write incomplete)\n");
       return -1;
     }
 
@@ -204,7 +204,7 @@ commands_base_new(struct event_base *evbase, command_exit_cb exit_cb)
 #endif
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MAIN, "Could not create command pipe: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_MAIN, "Could not create command pipe: %s\n", strerror(errno));
       free(cmdbase);
       return NULL;
     }
@@ -212,7 +212,7 @@ commands_base_new(struct event_base *evbase, command_exit_cb exit_cb)
   cmdbase->command_event = event_new(evbase, cmdbase->command_pipe[0], EV_READ, command_cb, cmdbase);
   if (!cmdbase->command_event)
     {
-      DPRINTF(E_LOG, L_MAIN, "Could not create cmd event\n");
+      DPRINTF(E_ERROR, L_MAIN, "Could not create cmd event\n");
       commands_base_free(cmdbase);
       return NULL;
     }
@@ -220,7 +220,7 @@ commands_base_new(struct event_base *evbase, command_exit_cb exit_cb)
   ret = event_add(cmdbase->command_event, NULL);
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_MAIN, "Could not add cmd event\n");
+      DPRINTF(E_ERROR, L_MAIN, "Could not add cmd event\n");
       commands_base_free(cmdbase);
       return NULL;
     }
@@ -324,7 +324,7 @@ commands_exec_sync(struct commands_base *cmdbase, command_function func, command
   ret = send_command(cmdbase, &cmd);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MAIN, "Error sending command\n");
+      DPRINTF(E_ERROR, L_MAIN, "Error sending command\n");
       cmd.ret = -1;
     }
   else

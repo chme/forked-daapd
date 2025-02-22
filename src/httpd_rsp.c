@@ -127,7 +127,7 @@ xml_to_evbuf(struct evbuffer *evbuf, xml_node *tree)
   xml = xml_to_string(tree, RSP_XML_DECLARATION);
   if (!xml)
     {
-      DPRINTF(E_LOG, L_RSP, "Could not finalize RSP reply\n");
+      DPRINTF(E_ERROR, L_RSP, "Could not finalize RSP reply\n");
       return -1;
     }
 
@@ -135,7 +135,7 @@ xml_to_evbuf(struct evbuffer *evbuf, xml_node *tree)
   free(xml);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RSP, "Could not load evbuffer for RSP reply\n");
+      DPRINTF(E_ERROR, L_RSP, "Could not load evbuffer for RSP reply\n");
       return -1;
     }
 
@@ -235,7 +235,7 @@ query_params_set(struct query_params *qp, struct httpd_request *hreq)
       ret = snprintf(query, sizeof(query), "%s", param);
       if (ret < 0 || ret >= sizeof(query))
 	{
-	  DPRINTF(E_LOG, L_RSP, "RSP query is too large for buffer: %s\n", param);
+	  DPRINTF(E_ERROR, L_RSP, "RSP query is too large for buffer: %s\n", param);
 	  return -1;
 	}
 
@@ -245,12 +245,12 @@ query_params_set(struct query_params *qp, struct httpd_request *hreq)
       ret = safe_snreplace(query, sizeof(query), "artist=\"", "album_artist=\"");
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_RSP, "RSP query is too large for buffer: %s\n", param);
+	  DPRINTF(E_ERROR, L_RSP, "RSP query is too large for buffer: %s\n", param);
 	  return -1;
 	}
 
       if (rsp_lex_parse(&parse_result, query) != 0)
-	DPRINTF(E_LOG, L_RSP, "Ignoring improper RSP query: %s\n", query);
+	DPRINTF(E_ERROR, L_RSP, "Ignoring improper RSP query: %s\n", query);
       else
 	qp->filter = safe_asprintf("(%s) AND %s", parse_result.str, rsp_filter_files);
     }
@@ -301,7 +301,7 @@ rsp_request_authorize(struct httpd_request *hreq)
   ret = httpd_basic_auth(hreq, NULL, passwd, cfg_getstr(cfg_getsec(cfg, "library"), "name"));
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_RSP, "Unsuccessful library authorization attempt from '%s'\n", hreq->peer_address);
+      DPRINTF(E_ERROR, L_RSP, "Unsuccessful library authorization attempt from '%s'\n", hreq->peer_address);
       return -1;
     }
 
@@ -358,7 +358,7 @@ rsp_reply_db(struct httpd_request *hreq)
   ret = db_query_start(&qp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RSP, "Could not start query\n");
+      DPRINTF(E_ERROR, L_RSP, "Could not start query\n");
 
       rsp_send_error(hreq, "Could not start query");
       return -1;
@@ -391,7 +391,7 @@ rsp_reply_db(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RSP, "Error fetching results\n");
+      DPRINTF(E_ERROR, L_RSP, "Error fetching results\n");
 
       xml_free(response);
       db_query_end(&qp);
@@ -435,7 +435,7 @@ item_add(xml_node *parent, struct query_params *qp, enum transcode_profile spk_p
   profile = transcode_needed(user_agent, accept_codecs, dbmfi.codectype);
   if (profile == XCODE_UNKNOWN)
     {
-      DPRINTF(E_LOG, L_DAAP, "Cannot transcode '%s', codec type is unknown\n", dbmfi.fname);
+      DPRINTF(E_ERROR, L_DAAP, "Cannot transcode '%s', codec type is unknown\n", dbmfi.fname);
     }
   else if (profile != XCODE_NONE)
     {
@@ -527,7 +527,7 @@ rsp_reply_playlist(struct httpd_request *hreq)
       else if (strcasecmp(param, "detailed") == 0)
 	mode = F_DETAILED;
       else
-	DPRINTF(E_LOG, L_RSP, "Unknown browse mode %s\n", param);
+	DPRINTF(E_ERROR, L_RSP, "Unknown browse mode %s\n", param);
     }
 
   ret = query_params_set(&qp, hreq);
@@ -537,7 +537,7 @@ rsp_reply_playlist(struct httpd_request *hreq)
   ret = db_query_start(&qp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RSP, "Could not start query\n");
+      DPRINTF(E_ERROR, L_RSP, "Could not start query\n");
 
       rsp_send_error(hreq, "Could not start query");
 
@@ -568,7 +568,7 @@ rsp_reply_playlist(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RSP, "Error fetching results\n");
+      DPRINTF(E_ERROR, L_RSP, "Error fetching results\n");
 
       xml_free(response);
       db_query_end(&qp);
@@ -621,7 +621,7 @@ rsp_reply_browse(struct httpd_request *hreq)
     }
   else
     {
-      DPRINTF(E_LOG, L_RSP, "Unsupported browse type '%s'\n", hreq->path_parts[3]);
+      DPRINTF(E_ERROR, L_RSP, "Unsupported browse type '%s'\n", hreq->path_parts[3]);
 
       rsp_send_error(hreq, "Unsupported browse type");
       return -1;
@@ -641,7 +641,7 @@ rsp_reply_browse(struct httpd_request *hreq)
   ret = db_query_start(&qp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RSP, "Could not start query\n");
+      DPRINTF(E_ERROR, L_RSP, "Could not start query\n");
 
       rsp_send_error(hreq, "Could not start query");
 
@@ -673,7 +673,7 @@ rsp_reply_browse(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RSP, "Error fetching results\n");
+      DPRINTF(E_ERROR, L_RSP, "Error fetching results\n");
 
       xml_free(response);
       db_query_end(&qp);
@@ -773,7 +773,7 @@ rsp_request(struct httpd_request *hreq)
 
   if (!hreq->handler)
     {
-      DPRINTF(E_LOG, L_RSP, "Unrecognized path in RSP request: '%s'\n", hreq->uri);
+      DPRINTF(E_ERROR, L_RSP, "Unrecognized path in RSP request: '%s'\n", hreq->uri);
 
       rsp_send_error(hreq, "Server error");
       return;
