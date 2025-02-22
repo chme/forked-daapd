@@ -43,11 +43,12 @@
 
 /* Severities */
 #define E_FATAL   0
-#define E_LOG     1
-#define E_WARN    2
-#define E_INFO    3
-#define E_DBG     4
-#define E_SPAM    5
+#define E_ERROR   1
+#define E_LOG     2
+#define E_WARN    3
+#define E_INFO    4
+#define E_DBG     5
+#define E_SPAM    6
 
 
 

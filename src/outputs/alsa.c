@@ -385,7 +385,7 @@ volume_set(struct alsa_mixer *mixer, int volume)
   ret = volume_normalized_set(mixer->vol_elem, volume >= 0 && volume <= 100 ? volume/100.0 : 0.75, 0);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Failed to set ALSA volume to %d\n: %s", volume, snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Failed to set ALSA volume to %d\n: %s", volume, snd_strerror(ret));
       return -1;
     }
 
@@ -409,28 +409,28 @@ mixer_open(struct alsa_mixer *mixer, const char *mixer_device_name, const char *
   ret = snd_mixer_open(&mixer_hdl, 0);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Failed to open mixer: %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Failed to open mixer: %s\n", snd_strerror(ret));
       return -1;
     }
 
   ret = snd_mixer_attach(mixer_hdl, mixer_device_name);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Failed to attach mixer '%s': %s\n", mixer_device_name, snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Failed to attach mixer '%s': %s\n", mixer_device_name, snd_strerror(ret));
       goto out_close;
     }
 
   ret = snd_mixer_selem_register(mixer_hdl, NULL, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Failed to register mixer '%s': %s\n", mixer_device_name, snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Failed to register mixer '%s': %s\n", mixer_device_name, snd_strerror(ret));
       goto out_detach;
     }
 
   ret = snd_mixer_load(mixer_hdl);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Failed to load mixer '%s': %s\n", mixer_device_name, snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Failed to load mixer '%s': %s\n", mixer_device_name, snd_strerror(ret));
       goto out_detach;
     }
 
@@ -461,7 +461,7 @@ mixer_open(struct alsa_mixer *mixer, const char *mixer_device_name, const char *
 	vol_elem = custom;
       else
 	{
-	  DPRINTF(E_LOG, L_LAUDIO, "Failed to open configured mixer element '%s'\n", mixer_name);
+	  DPRINTF(E_ERROR, L_LAUDIO, "Failed to open configured mixer element '%s'\n", mixer_name);
 	  goto out_detach;
 	}
     }
@@ -471,7 +471,7 @@ mixer_open(struct alsa_mixer *mixer, const char *mixer_device_name, const char *
     vol_elem = master;
   else
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Failed to open PCM or Master mixer element\n");
+      DPRINTF(E_ERROR, L_LAUDIO, "Failed to open PCM or Master mixer element\n");
       goto out_detach;
     }
 
@@ -518,7 +518,7 @@ pcm_open(snd_pcm_t **pcm, const char *device_name, struct media_quality *quality
       if (ret == -EBUSY)
 	return ALSA_ERROR_DEVICE_BUSY;
 
-      DPRINTF(E_LOG, L_LAUDIO, "Could not open playback device '%s': %s\n", device_name, snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not open playback device '%s': %s\n", device_name, snd_strerror(ret));
       return ALSA_ERROR_DEVICE;
     }
 
@@ -526,49 +526,49 @@ pcm_open(snd_pcm_t **pcm, const char *device_name, struct media_quality *quality
   ret = snd_pcm_hw_params_malloc(&hw_params);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not allocate hw params: %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not allocate hw params: %s\n", snd_strerror(ret));
       goto out_fail;
     }
 
   ret = snd_pcm_hw_params_any(hdl, hw_params);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not retrieve hw params: %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not retrieve hw params: %s\n", snd_strerror(ret));
       goto out_fail;
     }
 
   ret = snd_pcm_hw_params_set_access(hdl, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not set access method: %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not set access method: %s\n", snd_strerror(ret));
       goto out_fail;
     }
 
   ret = snd_pcm_hw_params_set_format(hdl, hw_params, bps2format(quality->bits_per_sample));
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not set format (bits per sample %d): %s\n", quality->bits_per_sample, snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not set format (bits per sample %d): %s\n", quality->bits_per_sample, snd_strerror(ret));
       goto out_fail;
     }
 
   ret = snd_pcm_hw_params_set_channels(hdl, hw_params, quality->channels);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not set stereo output: %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not set stereo output: %s\n", snd_strerror(ret));
       goto out_fail;
     }
 
   ret = snd_pcm_hw_params_set_rate(hdl, hw_params, quality->sample_rate, 0);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Hardware doesn't support %u Hz: %s\n", quality->sample_rate, snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Hardware doesn't support %u Hz: %s\n", quality->sample_rate, snd_strerror(ret));
       goto out_fail;
     }
 
   ret = snd_pcm_hw_params_get_buffer_size_max(hw_params, &bufsize);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not get max buffer size: %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not get max buffer size: %s\n", snd_strerror(ret));
       goto out_fail;
     }
 
@@ -578,14 +578,14 @@ pcm_open(snd_pcm_t **pcm, const char *device_name, struct media_quality *quality
   ret = snd_pcm_hw_params_set_buffer_size_max(hdl, hw_params, &bufsize);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not set buffer size to max: %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not set buffer size to max: %s\n", snd_strerror(ret));
       goto out_fail;
     }
 
   ret = snd_pcm_hw_params(hdl, hw_params);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not set hw params in pcm_open(): %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not set hw params in pcm_open(): %s\n", snd_strerror(ret));
       goto out_fail;
     }
 
@@ -620,35 +620,35 @@ pcm_configure(snd_pcm_t *hdl)
   ret = snd_pcm_sw_params_malloc(&sw_params);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not allocate sw params: %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not allocate sw params: %s\n", snd_strerror(ret));
       goto out_fail;
     }
 
   ret = snd_pcm_sw_params_current(hdl, sw_params);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not retrieve current sw params: %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not retrieve current sw params: %s\n", snd_strerror(ret));
       goto out_fail;
     }
 
   ret = snd_pcm_sw_params_set_tstamp_type(hdl, sw_params, SND_PCM_TSTAMP_TYPE_MONOTONIC);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not set tstamp type: %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not set tstamp type: %s\n", snd_strerror(ret));
       goto out_fail;
     }
 
   ret = snd_pcm_sw_params_set_tstamp_mode(hdl, sw_params, SND_PCM_TSTAMP_ENABLE);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not set tstamp mode: %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not set tstamp mode: %s\n", snd_strerror(ret));
       goto out_fail;
     }
 
   ret = snd_pcm_sw_params(hdl, sw_params);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not set sw params: %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not set sw params: %s\n", snd_strerror(ret));
       goto out_fail;
     }
 
@@ -735,23 +735,23 @@ playback_session_add(struct alsa_session *as, struct media_quality *quality, str
   ret = pcm_open(&pb->pcm, as->devname, quality);
   if (ret == ALSA_ERROR_DEVICE_BUSY)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "ALSA device '%s' won't open due to existing session (no support for concurrent audio), truncating audio\n", as->devname);
+      DPRINTF(E_ERROR, L_LAUDIO, "ALSA device '%s' won't open due to existing session (no support for concurrent audio), truncating audio\n", as->devname);
       playback_session_remove_all(as);
       ret = pcm_open(&pb->pcm, as->devname, quality);
       if (ret == ALSA_ERROR_DEVICE_BUSY)
 	{
-	  DPRINTF(E_LOG, L_LAUDIO, "ALSA device '%s' failed: Device still busy after closing previous sessions\n", as->devname);
+	  DPRINTF(E_ERROR, L_LAUDIO, "ALSA device '%s' failed: Device still busy after closing previous sessions\n", as->devname);
 	  goto error;
 	}
     }
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Device '%s' does not support quality (%d/%d/%d), falling back to default\n", as->devname, quality->sample_rate, quality->bits_per_sample, quality->channels);
+      DPRINTF(E_ERROR, L_LAUDIO, "Device '%s' does not support quality (%d/%d/%d), falling back to default\n", as->devname, quality->sample_rate, quality->bits_per_sample, quality->channels);
       ret = pcm_open(&pb->pcm, as->devname, &alsa_fallback_quality);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_LAUDIO, "ALSA device failed setting fallback quality\n");
+	  DPRINTF(E_ERROR, L_LAUDIO, "ALSA device failed setting fallback quality\n");
 	  goto error;
 	}
 
@@ -960,7 +960,7 @@ sync_correct(struct alsa_playback_session *pb, double drift, double latency, str
 
   if (abs(pb->sync_resample_step) == ALSA_RESAMPLE_STEP_MAX)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "The sync of ALSA device cannot be corrected (drift=%f, latency=%f)\n", drift, latency);
+      DPRINTF(E_ERROR, L_LAUDIO, "The sync of ALSA device cannot be corrected (drift=%f, latency=%f)\n", drift, latency);
       pb->sync_resample_step += sign;
       return;
     }
@@ -980,7 +980,7 @@ sync_correct(struct alsa_playback_session *pb, double drift, double latency, str
       ret = outputs_quality_subscribe(&pb->quality);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_LAUDIO, "Error adjusting sample rate to %d to maintain sync\n", pb->quality.sample_rate);
+	  DPRINTF(E_ERROR, L_LAUDIO, "Error adjusting sample rate to %d to maintain sync\n", pb->quality.sample_rate);
 	  return;
 	}
     }
@@ -1020,7 +1020,7 @@ playback_drain(struct alsa_playback_session *pb)
   ret = snd_pcm_avail_delay(pb->pcm, &avail, &delay);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Error getting avail/delay: %s\n", snd_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Error getting avail/delay: %s\n", snd_strerror(ret));
       return ALSA_ERROR_SESSION;
     }
 
@@ -1061,7 +1061,7 @@ playback_write(struct alsa_playback_session *pb, struct output_buffer *obuf)
 
   if (!obuf->data[i].buffer)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Output not delivering required data quality, aborting\n");
+      DPRINTF(E_ERROR, L_LAUDIO, "Output not delivering required data quality, aborting\n");
       return -1;
     }
 
@@ -1102,7 +1102,7 @@ playback_write(struct alsa_playback_session *pb, struct output_buffer *obuf)
       return ALSA_ERROR_UNDERRUN;
     }
 
-  DPRINTF(E_LOG, L_LAUDIO, "ALSA write error: %s\n", snd_strerror(ret));
+  DPRINTF(E_ERROR, L_LAUDIO, "ALSA write error: %s\n", snd_strerror(ret));
   return ALSA_ERROR_WRITE;
 }
 
@@ -1169,14 +1169,14 @@ alsa_session_make(struct output_device *device, int callback_id)
   ret = mixer_open(&as->mixer, as->mixer_device_name, as->mixer_name);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not open mixer '%s' ('%s')\n", as->mixer_device_name, as->mixer_name);
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not open mixer '%s' ('%s')\n", as->mixer_device_name, as->mixer_name);
       goto error_free_session;
     }
 
   ret = outputs_quality_subscribe(&alsa_fallback_quality);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not subscribe to fallback audio quality\n");
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not subscribe to fallback audio quality\n");
       goto error_mixer_close;
     }
 
@@ -1393,7 +1393,7 @@ alsa_device_add(cfg_t* cfg_audio, int id)
   ae->offset_ms = cfg_getint(cfg_audio, "offset_ms");
   if (abs(ae->offset_ms) > 1000)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "The ALSA offset_ms (%d) set in the configuration is out of bounds\n", ae->offset_ms);
+      DPRINTF(E_ERROR, L_LAUDIO, "The ALSA offset_ms (%d) set in the configuration is out of bounds\n", ae->offset_ms);
       ae->offset_ms = 1000 * (ae->offset_ms/abs(ae->offset_ms));
     }
 

@@ -316,7 +316,7 @@ cache_tables_drop(sqlite3 *hdl, struct cache_db_def *db_def, int db_def_size)
   ret = sqlite3_exec(hdl, Q_VACUUM, NULL, NULL, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error vacuuming cache database: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_CACHE, "Error vacuuming cache database: %s\n", errmsg);
       sqlite3_free(errmsg);
       return -1;
     }
@@ -343,7 +343,7 @@ cache_version_check(int *have_version, sqlite3 *hdl, int want_version)
   ret = sqlite3_step(stmt);
   if (ret != SQLITE_ROW)
     {
-      DPRINTF(E_LOG, L_CACHE, "Could not step: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_CACHE, "Could not step: %s\n", sqlite3_errmsg(hdl));
       sqlite3_finalize(stmt);
       return -1;
     }
@@ -379,7 +379,7 @@ cache_pragma_set(sqlite3 *hdl)
       sqlite3_free(query);
       if (ret != SQLITE_OK)
 	{
-	  DPRINTF(E_LOG, L_CACHE, "Error setting pragma_cache_size_cache: %s\n", errmsg);
+	  DPRINTF(E_ERROR, L_CACHE, "Error setting pragma_cache_size_cache: %s\n", errmsg);
 
 	  sqlite3_free(errmsg);
 	  return -1;
@@ -395,7 +395,7 @@ cache_pragma_set(sqlite3 *hdl)
       sqlite3_free(query);
       if (ret != SQLITE_OK)
 	{
-	  DPRINTF(E_LOG, L_CACHE, "Error setting pragma_journal_mode: %s\n", errmsg);
+	  DPRINTF(E_ERROR, L_CACHE, "Error setting pragma_journal_mode: %s\n", errmsg);
 
 	  sqlite3_free(errmsg);
 	  return -1;
@@ -411,7 +411,7 @@ cache_pragma_set(sqlite3 *hdl)
       sqlite3_free(query);
       if (ret != SQLITE_OK)
 	{
-	  DPRINTF(E_LOG, L_CACHE, "Error setting pragma_synchronous: %s\n", errmsg);
+	  DPRINTF(E_ERROR, L_CACHE, "Error setting pragma_synchronous: %s\n", errmsg);
 
 	  sqlite3_free(errmsg);
 	  return -1;
@@ -426,7 +426,7 @@ cache_pragma_set(sqlite3 *hdl)
       ret = sqlite3_exec(hdl, query, NULL, NULL, &errmsg);
       if (ret != SQLITE_OK)
 	{
-	  DPRINTF(E_LOG, L_CACHE, "Error setting pragma_mmap_size: %s\n", errmsg);
+	  DPRINTF(E_ERROR, L_CACHE, "Error setting pragma_mmap_size: %s\n", errmsg);
 
 	  sqlite3_free(errmsg);
 	  return -1;
@@ -476,25 +476,25 @@ cache_open_one(sqlite3 **hdl, const char *path, const char *name, int want_versi
   ret = sqlite3_open(path, &h);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Could not open '%s': %s\n", path, sqlite3_errmsg(h));
+      DPRINTF(E_ERROR, L_CACHE, "Could not open '%s': %s\n", path, sqlite3_errmsg(h));
       goto error;
     }
 
   ret = cache_version_check(&have_version, h, want_version);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_CACHE, "Could not check cache '%s' database version\n", name);
+      DPRINTF(E_ERROR, L_CACHE, "Could not check cache '%s' database version\n", name);
       goto error;
     }
 
   if (have_version > 0 && have_version < want_version)
     {
-      DPRINTF(E_LOG, L_CACHE, "Database schema outdated, deleting cache '%s' v%d -> v%d\n", name, have_version, want_version);
+      DPRINTF(E_ERROR, L_CACHE, "Database schema outdated, deleting cache '%s' v%d -> v%d\n", name, have_version, want_version);
 
       ret = cache_tables_drop(h, db_def, db_def_size);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_CACHE, "Error deleting '%s' database tables\n", name);
+	  DPRINTF(E_ERROR, L_CACHE, "Error deleting '%s' database tables\n", name);
 	  goto error;
 	}
     }
@@ -504,7 +504,7 @@ cache_open_one(sqlite3 **hdl, const char *path, const char *name, int want_versi
       ret = cache_tables_create(h, want_version, db_def, db_def_size);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_CACHE, "Could not create cache '%s' database tables\n", name);
+	  DPRINTF(E_ERROR, L_CACHE, "Could not create cache '%s' database tables\n", name);
 	  goto error;
 	}
 
@@ -588,7 +588,7 @@ cache_daap_reply_add(sqlite3 *hdl, const char *query, struct evbuffer *evbuf)
   ret = sqlite3_prepare_v2(hdl, Q_TMPL, -1, &stmt, 0);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error preparing query for cache update: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_CACHE, "Error preparing query for cache update: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -598,7 +598,7 @@ cache_daap_reply_add(sqlite3 *hdl, const char *query, struct evbuffer *evbuf)
   ret = sqlite3_step(stmt);
   if (ret != SQLITE_DONE)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error stepping query for cache update: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_CACHE, "Error stepping query for cache update: %s\n", sqlite3_errmsg(hdl));
       sqlite3_finalize(stmt);
       return -1;
     }
@@ -606,7 +606,7 @@ cache_daap_reply_add(sqlite3 *hdl, const char *query, struct evbuffer *evbuf)
   ret = sqlite3_finalize(stmt);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error finalizing query for cache update: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_CACHE, "Error finalizing query for cache update: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -630,7 +630,7 @@ cache_daap_query_add(void *arg, int *retval)
 
   if (!cmdarg->ua)
     {
-      DPRINTF(E_LOG, L_CACHE, "Couldn't add slow query to cache, unknown user-agent\n");
+      DPRINTF(E_ERROR, L_CACHE, "Couldn't add slow query to cache, unknown user-agent\n");
 
       goto error_add;
     }
@@ -648,7 +648,7 @@ cache_daap_query_add(void *arg, int *retval)
   query = sqlite3_mprintf(Q_TMPL, cmdarg->ua, cmdarg->is_remote, cmdarg->query, cmdarg->msec, (int64_t)time(NULL));
   if (!query)
     {
-      DPRINTF(E_LOG, L_CACHE, "Out of memory making query string.\n");
+      DPRINTF(E_ERROR, L_CACHE, "Out of memory making query string.\n");
 
       goto error_add;
     }
@@ -657,7 +657,7 @@ cache_daap_query_add(void *arg, int *retval)
   sqlite3_free(query);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error adding query to query list: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_CACHE, "Error adding query to query list: %s\n", errmsg);
 
       sqlite3_free(errmsg);
       goto error_add;
@@ -672,7 +672,7 @@ cache_daap_query_add(void *arg, int *retval)
   ret = sqlite3_exec(cmdarg->hdl, Q_CLEANUP, NULL, NULL, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error cleaning up query list before update: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_CACHE, "Error cleaning up query list before update: %s\n", errmsg);
       sqlite3_free(errmsg);
       *retval = -1;
       return COMMAND_END;
@@ -718,7 +718,7 @@ cache_daap_query_get(void *arg, int *retval)
   ret = sqlite3_prepare_v2(cmdarg->hdl, Q_TMPL, -1, &stmt, 0);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error preparing query for cache update: %s\n", sqlite3_errmsg(cmdarg->hdl));
+      DPRINTF(E_ERROR, L_CACHE, "Error preparing query for cache update: %s\n", sqlite3_errmsg(cmdarg->hdl));
       free(query);
       *retval = -1;
       return COMMAND_END;
@@ -730,7 +730,7 @@ cache_daap_query_get(void *arg, int *retval)
   if (ret != SQLITE_ROW)  
     {
       if (ret != SQLITE_DONE)
-	DPRINTF(E_LOG, L_CACHE, "Error stepping query for cache update: %s\n", sqlite3_errmsg(cmdarg->hdl));
+	DPRINTF(E_ERROR, L_CACHE, "Error stepping query for cache update: %s\n", sqlite3_errmsg(cmdarg->hdl));
       goto error_get;
     }
 
@@ -738,20 +738,20 @@ cache_daap_query_get(void *arg, int *retval)
 
   if (!cmdarg->evbuf)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error: DAAP reply evbuffer is NULL\n");
+      DPRINTF(E_ERROR, L_CACHE, "Error: DAAP reply evbuffer is NULL\n");
       goto error_get;
     }
 
   ret = evbuffer_add(cmdarg->evbuf, sqlite3_column_blob(stmt, 0), datalen);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_CACHE, "Out of memory for DAAP reply evbuffer\n");
+      DPRINTF(E_ERROR, L_CACHE, "Out of memory for DAAP reply evbuffer\n");
       goto error_get;
     }
 
   ret = sqlite3_finalize(stmt);
   if (ret != SQLITE_OK)
-    DPRINTF(E_LOG, L_CACHE, "Error finalizing query for getting cache: %s\n", sqlite3_errmsg(cmdarg->hdl));
+    DPRINTF(E_ERROR, L_CACHE, "Error finalizing query for getting cache: %s\n", sqlite3_errmsg(cmdarg->hdl));
 
   DPRINTF(E_INFO, L_CACHE, "Cache hit: %s\n", query);
 
@@ -783,7 +783,7 @@ cache_daap_query_delete(sqlite3 *hdl, const int id)
   sqlite3_free(query);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error deleting query from cache: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_CACHE, "Error deleting query from cache: %s\n", errmsg);
 
       sqlite3_free(errmsg);
       return -1;
@@ -818,7 +818,7 @@ cache_daap_update_cb(int fd, short what, void *arg)
   ret = sqlite3_exec(hdl, "DELETE FROM replies;", NULL, NULL, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error clearing reply cache before update: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_CACHE, "Error clearing reply cache before update: %s\n", errmsg);
       sqlite3_free(errmsg);
       return;
     }
@@ -826,7 +826,7 @@ cache_daap_update_cb(int fd, short what, void *arg)
   ret = sqlite3_prepare_v2(hdl, "SELECT id, user_agent, is_remote, query FROM queries;", -1, &stmt, 0);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error preparing for cache update: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_CACHE, "Error preparing for cache update: %s\n", sqlite3_errmsg(hdl));
       return;
     }
 
@@ -837,7 +837,7 @@ cache_daap_update_cb(int fd, short what, void *arg)
       evbuf = daap_reply_build(query, (char *)sqlite3_column_text(stmt, 1), sqlite3_column_int(stmt, 2));
       if (!evbuf)
 	{
-	  DPRINTF(E_LOG, L_CACHE, "Error building DAAP reply for query: %s\n", query);
+	  DPRINTF(E_ERROR, L_CACHE, "Error building DAAP reply for query: %s\n", query);
 	  cache_daap_query_delete(hdl, sqlite3_column_int(stmt, 0));
 	  free(query);
 
@@ -847,7 +847,7 @@ cache_daap_update_cb(int fd, short what, void *arg)
       gzbuf = httpd_gzip_deflate(evbuf);
       if (!gzbuf)
 	{
-	  DPRINTF(E_LOG, L_CACHE, "Error gzipping DAAP reply for query: %s\n", query);
+	  DPRINTF(E_ERROR, L_CACHE, "Error gzipping DAAP reply for query: %s\n", query);
 	  cache_daap_query_delete(hdl, sqlite3_column_int(stmt, 0));
 	  free(query);
 	  evbuffer_free(evbuf);
@@ -864,7 +864,7 @@ cache_daap_update_cb(int fd, short what, void *arg)
     }
 
   if (ret != SQLITE_DONE)
-    DPRINTF(E_LOG, L_CACHE, "Could not step: %s\n", sqlite3_errmsg(hdl));
+    DPRINTF(E_ERROR, L_CACHE, "Could not step: %s\n", sqlite3_errmsg(hdl));
 
   sqlite3_finalize(stmt);
 
@@ -926,7 +926,7 @@ xcode_header_get(void *arg, int *retval)
   return COMMAND_END;
 
  error:
-  DPRINTF(E_LOG, L_CACHE, "Database error getting prepared header from cache: %s\n", sqlite3_errmsg(cmdarg->hdl));
+  DPRINTF(E_ERROR, L_CACHE, "Database error getting prepared header from cache: %s\n", sqlite3_errmsg(cmdarg->hdl));
   if (stmt)
     sqlite3_finalize(stmt);
   *retval = -1;
@@ -975,7 +975,7 @@ xcode_add_entry(sqlite3 *hdl, uint32_t id, uint32_t ts, const char *path)
   sqlite3_free(query);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error adding row to cache: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_CACHE, "Error adding row to cache: %s\n", errmsg);
       sqlite3_free(errmsg);
       return -1;
     }
@@ -999,7 +999,7 @@ xcode_del_entry(sqlite3 *hdl, uint32_t id)
   ret = sqlite3_exec(hdl, query, NULL, NULL, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error deleting row from xcode files: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_CACHE, "Error deleting row from xcode files: %s\n", errmsg);
       sqlite3_free(errmsg);
       return -1;
     }
@@ -1008,7 +1008,7 @@ xcode_del_entry(sqlite3 *hdl, uint32_t id)
   ret = sqlite3_exec(hdl, query, NULL, NULL, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error deleting rows from xcode_data: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_CACHE, "Error deleting rows from xcode_data: %s\n", errmsg);
       sqlite3_free(errmsg);
       return -1;
     }
@@ -1119,7 +1119,7 @@ xcode_sync_with_files(sqlite3 *hdl)
   return 0;
 
  error:
-  DPRINTF(E_LOG, L_CACHE, "Database error while processing xcode files table\n");
+  DPRINTF(E_ERROR, L_CACHE, "Database error while processing xcode files table\n");
   free(cachelist);
   return -1;
 }
@@ -1134,7 +1134,7 @@ xcode_header_save(sqlite3 *hdl, int file_id, const char *format, uint8_t *data, 
   ret = sqlite3_prepare_v2(hdl, Q_TMPL, -1, &stmt, 0);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error preparing xcode data for cache update: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_CACHE, "Error preparing xcode data for cache update: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -1146,7 +1146,7 @@ xcode_header_save(sqlite3 *hdl, int file_id, const char *format, uint8_t *data, 
   ret = sqlite3_step(stmt);
   if (ret != SQLITE_DONE)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error stepping xcode data for cache update: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_CACHE, "Error stepping xcode data for cache update: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -1168,7 +1168,7 @@ xcode_file_next(int *file_id, char **file_path, sqlite3 *hdl, const char *format
   ret = sqlite3_prepare_v2(hdl, query, -1, &stmt, 0);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error occured while finding next file to prepare header for\n");
+      DPRINTF(E_ERROR, L_CACHE, "Error occured while finding next file to prepare header for\n");
       return -1;
     }
 
@@ -1202,7 +1202,7 @@ xcode_worker(void *arg)
     {
       ret = transcode_prepare_header(&job->header, XCODE_MP4_ALAC, job->file_path);
       if (ret < 0)
-	DPRINTF(E_LOG, L_CACHE, "Error preparing %s header for '%s' (file id %d)\n", job->format, job->file_path, job->file_id);
+	DPRINTF(E_ERROR, L_CACHE, "Error preparing %s header for '%s' (file id %d)\n", job->format, job->file_path, job->file_id);
     }
 
   // Tell the cache thread that we are done. Only the cache thread can save the
@@ -1262,12 +1262,12 @@ cache_xcode_prepare_cb(int fd, short what, void *arg)
   if (ret < 0)
     {
       if (!is_encoding)
-	DPRINTF(E_LOG, L_CACHE, "Header generation completed\n");
+	DPRINTF(E_ERROR, L_CACHE, "Header generation completed\n");
 
       return;
     }
   else if (!is_encoding)
-    DPRINTF(E_LOG, L_CACHE, "Kicking off header generation\n");
+    DPRINTF(E_ERROR, L_CACHE, "Kicking off header generation\n");
 
   job->is_encoding = true;
   job->format = CACHE_XCODE_FORMAT_MP4;
@@ -1340,7 +1340,7 @@ cache_artwork_ping_impl(void *arg, int *retval)
   sqlite3_free(query);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Query error: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_CACHE, "Query error: %s\n", errmsg);
 
       goto error_ping;
     }
@@ -1355,7 +1355,7 @@ cache_artwork_ping_impl(void *arg, int *retval)
       sqlite3_free(query);
       if (ret != SQLITE_OK)
 	{
-	  DPRINTF(E_LOG, L_CACHE, "Query error: %s\n", errmsg);
+	  DPRINTF(E_ERROR, L_CACHE, "Query error: %s\n", errmsg);
 
 	  goto error_ping;
 	}
@@ -1400,7 +1400,7 @@ cache_artwork_delete_by_path_impl(void *arg, int *retval)
   sqlite3_free(query);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Query error: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_CACHE, "Query error: %s\n", errmsg);
 
       sqlite3_free(errmsg);
       *retval = -1;
@@ -1439,7 +1439,7 @@ cache_artwork_purge_cruft_impl(void *arg, int *retval)
   sqlite3_free(query);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Query error: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_CACHE, "Query error: %s\n", errmsg);
 
       sqlite3_free(errmsg);
       *retval = -1;
@@ -1480,7 +1480,7 @@ cache_artwork_add_impl(void *arg, int *retval)
   ret = sqlite3_prepare_v2(cmdarg->hdl, query, -1, &stmt, 0);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Could not prepare statement: %s\n", sqlite3_errmsg(cmdarg->hdl));
+      DPRINTF(E_ERROR, L_CACHE, "Could not prepare statement: %s\n", sqlite3_errmsg(cmdarg->hdl));
       *retval = -1;
       return COMMAND_END;
     }
@@ -1500,7 +1500,7 @@ cache_artwork_add_impl(void *arg, int *retval)
   ret = sqlite3_step(stmt);
   if (ret != SQLITE_DONE)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error stepping query for artwork add: %s\n", sqlite3_errmsg(cmdarg->hdl));
+      DPRINTF(E_ERROR, L_CACHE, "Error stepping query for artwork add: %s\n", sqlite3_errmsg(cmdarg->hdl));
       sqlite3_finalize(stmt);
       *retval = -1;
       return COMMAND_END;
@@ -1509,7 +1509,7 @@ cache_artwork_add_impl(void *arg, int *retval)
   ret = sqlite3_finalize(stmt);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error finalizing query for artwork add: %s\n", sqlite3_errmsg(cmdarg->hdl));
+      DPRINTF(E_ERROR, L_CACHE, "Error finalizing query for artwork add: %s\n", sqlite3_errmsg(cmdarg->hdl));
       *retval = -1;
       return COMMAND_END;
     }
@@ -1546,7 +1546,7 @@ cache_artwork_get_impl(void *arg, int *retval)
   query = sqlite3_mprintf(Q_TMPL, cmdarg->type, cmdarg->persistentid, cmdarg->max_w, cmdarg->max_h);
   if (!query)
     {
-      DPRINTF(E_LOG, L_CACHE, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_CACHE, "Out of memory for query string\n");
       *retval = -1;
       return COMMAND_END;
     }
@@ -1556,7 +1556,7 @@ cache_artwork_get_impl(void *arg, int *retval)
   ret = sqlite3_prepare_v2(cmdarg->hdl, query, -1, &stmt, 0);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_CACHE, "Could not prepare statement: %s\n", sqlite3_errmsg(cmdarg->hdl));
+      DPRINTF(E_ERROR, L_CACHE, "Could not prepare statement: %s\n", sqlite3_errmsg(cmdarg->hdl));
       ret = -1;
       goto error_get;
     }
@@ -1574,7 +1574,7 @@ cache_artwork_get_impl(void *arg, int *retval)
       else
 	{
 	  ret = -1;
-	  DPRINTF(E_LOG, L_CACHE, "Could not step: %s\n", sqlite3_errmsg(cmdarg->hdl));
+	  DPRINTF(E_ERROR, L_CACHE, "Could not step: %s\n", sqlite3_errmsg(cmdarg->hdl));
 	}
 
       goto error_get;
@@ -1584,7 +1584,7 @@ cache_artwork_get_impl(void *arg, int *retval)
   datalen = sqlite3_column_bytes(stmt, 1);
   if (!cmdarg->evbuf)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error: Artwork evbuffer is NULL\n");
+      DPRINTF(E_ERROR, L_CACHE, "Error: Artwork evbuffer is NULL\n");
       ret = -1;
       goto error_get;
     }
@@ -1592,7 +1592,7 @@ cache_artwork_get_impl(void *arg, int *retval)
   ret = evbuffer_add(cmdarg->evbuf, sqlite3_column_blob(stmt, 1), datalen);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_CACHE, "Out of memory for artwork evbuffer\n");
+      DPRINTF(E_ERROR, L_CACHE, "Out of memory for artwork evbuffer\n");
       ret = -1;
       goto error_get;
     }
@@ -1601,7 +1601,7 @@ cache_artwork_get_impl(void *arg, int *retval)
 
   ret = sqlite3_finalize(stmt);
   if (ret != SQLITE_OK)
-    DPRINTF(E_LOG, L_CACHE, "Error finalizing query for getting cache: %s\n", sqlite3_errmsg(cmdarg->hdl));
+    DPRINTF(E_ERROR, L_CACHE, "Error finalizing query for getting cache: %s\n", sqlite3_errmsg(cmdarg->hdl));
 
   DPRINTF(E_DBG, L_CACHE, "Cache hit: %s\n", query);
 
@@ -1643,7 +1643,7 @@ cache_artwork_stash_impl(void *arg, int *retval)
   cache_stash.data = malloc(cache_stash.size);
   if (!cache_stash.data)
     {
-      DPRINTF(E_LOG, L_CACHE, "Out of memory for artwork stash data\n");
+      DPRINTF(E_ERROR, L_CACHE, "Out of memory for artwork stash data\n");
       *retval = -1;
       return COMMAND_END;
     }
@@ -1651,7 +1651,7 @@ cache_artwork_stash_impl(void *arg, int *retval)
   cache_stash.path = strdup(cmdarg->path);
   if (!cache_stash.path)
     {
-      DPRINTF(E_LOG, L_CACHE, "Out of memory for artwork stash path\n");
+      DPRINTF(E_ERROR, L_CACHE, "Out of memory for artwork stash path\n");
       free(cache_stash.data);
       *retval = -1;
       return COMMAND_END;
@@ -1693,7 +1693,7 @@ cache(void *arg)
   ret = cache_open();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error: Cache create failed. Cache will be disabled.\n");
+      DPRINTF(E_ERROR, L_CACHE, "Error: Cache create failed. Cache will be disabled.\n");
       pthread_exit(NULL);
     }
 
@@ -1702,7 +1702,7 @@ cache(void *arg)
   ret = db_perthread_init();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_CACHE, "Error: DB init failed. Cache will be disabled.\n");
+      DPRINTF(E_ERROR, L_CACHE, "Error: DB init failed. Cache will be disabled.\n");
       cache_close();
 
       pthread_exit(NULL);
@@ -1723,7 +1723,7 @@ cache(void *arg)
 
   if (cache_is_initialized)
     {
-      DPRINTF(E_LOG, L_CACHE, "Cache event loop terminated ahead of time!\n");
+      DPRINTF(E_ERROR, L_CACHE, "Cache event loop terminated ahead of time!\n");
       cache_is_initialized = 0;
     }
 
@@ -1790,7 +1790,7 @@ cache_daap_add(const char *query, const char *ua, int is_remote, int msec)
   cmdarg = calloc(1, sizeof(struct cache_arg));
   if (!cmdarg)
     {
-      DPRINTF(E_LOG, L_CACHE, "Could not allocate cache_arg\n");
+      DPRINTF(E_ERROR, L_CACHE, "Could not allocate cache_arg\n");
       return;
     }
 
@@ -1868,7 +1868,7 @@ cache_artwork_ping(const char *path, time_t mtime, int del)
   cmdarg = calloc(1, sizeof(struct cache_arg));
   if (!cmdarg)
     {
-      DPRINTF(E_LOG, L_CACHE, "Could not allocate cache_arg\n");
+      DPRINTF(E_ERROR, L_CACHE, "Could not allocate cache_arg\n");
       return;
     }
 
@@ -2053,7 +2053,7 @@ cache_init(void)
   cache_daap_threshold = cfg_getint(cfg_getsec(cfg, "general"), "cache_daap_threshold");
   if (cache_daap_threshold == 0)
     {
-      DPRINTF(E_LOG, L_CACHE, "Cache threshold set to 0, disabling cache\n");
+      DPRINTF(E_ERROR, L_CACHE, "Cache threshold set to 0, disabling cache\n");
       return 0;
     }
 

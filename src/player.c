@@ -482,7 +482,7 @@ queue_item_next(uint32_t item_id)
   return queue_item;
 
  error:
-  DPRINTF(E_LOG, L_PLAYER, "Error fetching next item from queue (item-id=%" PRIu32 ", repeat=%d)\n", item_id, repeat);
+  DPRINTF(E_ERROR, L_PLAYER, "Error fetching next item from queue (item-id=%" PRIu32 ", repeat=%d)\n", item_id, repeat);
   return NULL;
 }
 
@@ -511,7 +511,7 @@ metadata_pending_add(struct input_metadata *metadata, uint64_t pos)
 
   if (i == ARRAY_SIZE(metadata_pending))
     {
-      DPRINTF(E_LOG, L_PLAYER, "Error, too many pending metadata updates\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Error, too many pending metadata updates\n");
       return -1;
     }
 
@@ -584,7 +584,7 @@ metadata_update_queue_cb(void *arg)
   queue_item = db_queue_fetch_byitemid(metadata->item_id);
   if (!queue_item)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Bug! Could not update queue metadata, the item_id is unknown (%u)\n", metadata->item_id);
+      DPRINTF(E_ERROR, L_PLAYER, "Bug! Could not update queue metadata, the item_id is unknown (%u)\n", metadata->item_id);
       input_metadata_free(metadata, 0);
       return;
     }
@@ -609,7 +609,7 @@ metadata_update_queue_cb(void *arg)
 
       ret = db_queue_item_update(queue_item);
       if (ret < 0)
-	DPRINTF(E_LOG, L_PLAYER, "Database error while updating queue with new metadata\n");
+	DPRINTF(E_ERROR, L_PLAYER, "Database error while updating queue with new metadata\n");
     }
 
   free_queue_item(queue_item, 0);
@@ -664,7 +664,7 @@ source_next_create(struct player_source *current)
 
   if (!current)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Bug! source_next_create called without a current source\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Bug! source_next_create called without a current source\n");
       return NULL;
     }
 
@@ -1212,7 +1212,7 @@ source_read(int *nbytes, int *nsamples, uint8_t *buf, int len)
   *nbytes = input_read(buf, len, &flag, &flagdata);
   if ((*nbytes < 0) || (flag == INPUT_FLAG_ERROR))
     {
-      DPRINTF(E_LOG, L_PLAYER, "Error reading source '%s' (id=%d)\n", pb_session.reading_now->path, pb_session.reading_now->id);
+      DPRINTF(E_ERROR, L_PLAYER, "Error reading source '%s' (id=%d)\n", pb_session.reading_now->path, pb_session.reading_now->id);
       event_read_error();
       return -1;
     }
@@ -1261,13 +1261,13 @@ playback_cb(int fd, short what, void *arg)
 #ifdef HAVE_TIMERFD
   ret = read(fd, &overrun, sizeof(overrun));
   if (ret <= 0)
-    DPRINTF(E_LOG, L_PLAYER, "Error reading timer\n");
+    DPRINTF(E_ERROR, L_PLAYER, "Error reading timer\n");
   else if (overrun > 0)
     overrun--;
 #else
   ret = timer_getoverrun(pb_timer);
   if (ret < 0)
-    DPRINTF(E_LOG, L_PLAYER, "Error getting timer overrun\n");
+    DPRINTF(E_ERROR, L_PLAYER, "Error getting timer overrun\n");
   else
     overrun = ret;
 #endif /* HAVE_TIMERFD */
@@ -1277,12 +1277,12 @@ playback_cb(int fd, short what, void *arg)
     {
       if (pb_write_recovery)
 	{
-	  DPRINTF(E_LOG, L_PLAYER, "Permanent output delay detected (behind=%" PRIu64 ", max=%d), aborting\n", overrun, pb_write_deficit_max);
+	  DPRINTF(E_ERROR, L_PLAYER, "Permanent output delay detected (behind=%" PRIu64 ", max=%d), aborting\n", overrun, pb_write_deficit_max);
 	  pb_abort();
 	  return;
 	}
 
-      DPRINTF(E_LOG, L_PLAYER, "Output delay detected (behind=%" PRIu64 ", max=%d), resetting all outputs\n", overrun, pb_write_deficit_max);
+      DPRINTF(E_ERROR, L_PLAYER, "Output delay detected (behind=%" PRIu64 ", max=%d), resetting all outputs\n", overrun, pb_write_deficit_max);
       pb_write_recovery = true;
       player_flush_pending = pb_suspend();
       // No devices to wait for, just set the restart cb right away. Otherwise
@@ -1316,7 +1316,7 @@ playback_cb(int fd, short what, void *arg)
       ret = source_read(&nbytes, &nsamples, pb_session.buffer, pb_session.bufsize);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_PLAYER, "Error reading from source\n");
+	  DPRINTF(E_ERROR, L_PLAYER, "Error reading from source\n");
 	  pb_session.read_deficit -= pb_session.bufsize;
 	  break;
 	}
@@ -1352,7 +1352,7 @@ playback_cb(int fd, short what, void *arg)
 
   if (pb_session.read_deficit_max && pb_session.read_deficit > pb_session.read_deficit_max)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Source is not providing sufficient data, temporarily suspending playback (deficit=%zu/%zu bytes)\n",
+      DPRINTF(E_ERROR, L_PLAYER, "Source is not providing sufficient data, temporarily suspending playback (deficit=%zu/%zu bytes)\n",
 	pb_session.read_deficit, pb_session.read_deficit_max);
 
       player_flush_pending = pb_suspend();
@@ -1477,7 +1477,7 @@ device_streaming_cb(struct output_device *device, enum output_device_state statu
 {
   if (!device)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Output device disappeared during streaming!\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Output device disappeared during streaming!\n");
     }
   else if (status == OUTPUT_STATE_FAILED)
     {
@@ -1494,7 +1494,7 @@ device_streaming_cb(struct output_device *device, enum output_device_state statu
       if (!device->resurrect)
 	goto out;
 
-      DPRINTF(E_LOG, L_PLAYER, "Attempting reconnection in %d sec to the %s device '%s'\n", PLAYER_SPEAKER_RESURRECT_TIME, device->type_name, device->name);
+      DPRINTF(E_ERROR, L_PLAYER, "Attempting reconnection in %d sec to the %s device '%s'\n", PLAYER_SPEAKER_RESURRECT_TIME, device->type_name, device->name);
 
       // TODO do this internally instead of through the worker
       worker_execute(player_speaker_resurrect, &(device->id), sizeof(device->id), PLAYER_SPEAKER_RESURRECT_TIME);
@@ -1521,12 +1521,12 @@ device_volume_cb(struct output_device *device, enum output_device_state status)
 {
   if (!device)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Output device disappeared before command completion!\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Output device disappeared before command completion!\n");
       goto out;
     }
   else if (status == OUTPUT_STATE_FAILED)
     {
-      DPRINTF(E_LOG, L_PLAYER, "The %s device '%s' failed during execution of volume command\n", device->type_name, device->name);
+      DPRINTF(E_ERROR, L_PLAYER, "The %s device '%s' failed during execution of volume command\n", device->type_name, device->name);
       goto out;
     }
 
@@ -1548,12 +1548,12 @@ device_flush_cb(struct output_device *device, enum output_device_state status)
 {
   if (!device)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Output device disappeared before flush completion!\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Output device disappeared before flush completion!\n");
       goto out;
     }
   else if (status == OUTPUT_STATE_FAILED)
     {
-      DPRINTF(E_LOG, L_PLAYER, "The %s device '%s' failed during execution of flush command\n", device->type_name, device->name);
+      DPRINTF(E_ERROR, L_PLAYER, "The %s device '%s' failed during execution of flush command\n", device->type_name, device->name);
       goto out;
     }
 
@@ -1613,7 +1613,7 @@ device_activate_cb(struct output_device *device, enum output_device_state status
 
   if (status == OUTPUT_STATE_PASSWORD)
     {
-      DPRINTF(E_LOG, L_PLAYER, "The %s device '%s' requires a valid PIN or password\n", device->type_name, device->name);
+      DPRINTF(E_ERROR, L_PLAYER, "The %s device '%s' requires a valid PIN or password\n", device->type_name, device->name);
 
       outputs_device_deselect(device);
 
@@ -1623,7 +1623,7 @@ device_activate_cb(struct output_device *device, enum output_device_state status
 
   if (status == OUTPUT_STATE_FAILED)
     {
-      DPRINTF(E_LOG, L_PLAYER, "The %s device '%s' failed to activate\n", device->type_name, device->name);
+      DPRINTF(E_ERROR, L_PLAYER, "The %s device '%s' failed to activate\n", device->type_name, device->name);
 
       outputs_device_deselect(device);
 
@@ -1672,7 +1672,7 @@ pb_timer_start(void)
   ret = event_add(pb_timer_ev, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not add playback timer\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Could not add playback timer\n");
 
       return -1;
     }
@@ -1687,7 +1687,7 @@ pb_timer_start(void)
 #endif
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not arm playback timer: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_PLAYER, "Could not arm playback timer: %s\n", strerror(errno));
 
       return -1;
     }
@@ -1712,7 +1712,7 @@ pb_timer_stop(void)
 #endif
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not disarm playback timer: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_PLAYER, "Could not disarm playback timer: %s\n", strerror(errno));
       return -1;
     }
 
@@ -1808,7 +1808,7 @@ pb_resume(void)
   ps = pb_session.source_list;
   if (!ps || ps != pb_session.playing_now)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Bug! pb_resume() called, but source list is invalid (%p, %p)\n", ps, pb_session.playing_now);
+      DPRINTF(E_ERROR, L_PLAYER, "Bug! pb_resume() called, but source list is invalid (%p, %p)\n", ps, pb_session.playing_now);
       pb_abort();
       return -1;
     }
@@ -1851,7 +1851,7 @@ pb_suspend(void)
       queue_item = db_queue_fetch_byitemid(pb_session.source_list->item_id);
       if (!queue_item)
 	{
-	  DPRINTF(E_LOG, L_PLAYER, "Error suspending playback, could not retrieve queue item currently being played\n");
+	  DPRINTF(E_ERROR, L_PLAYER, "Error suspending playback, could not retrieve queue item currently being played\n");
 	  pb_abort();
 	  return -1;
 	}
@@ -1860,7 +1860,7 @@ pb_suspend(void)
       free_queue_item(queue_item, 0);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_PLAYER, "Error suspending playback, could not start session\n");
+	  DPRINTF(E_ERROR, L_PLAYER, "Error suspending playback, could not start session\n");
 	  pb_abort();
 	  return -1;
 	}
@@ -2040,7 +2040,7 @@ playback_start_item(void *arg, int *retval)
 
   if (player_state == PLAY_STOPPED && !queue_item)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Failed to start/resume playback, no queue item given\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Failed to start/resume playback, no queue item given\n");
 
       *retval = -1;
       return COMMAND_END;
@@ -2101,7 +2101,7 @@ playback_start_item(void *arg, int *retval)
 	  if (*retval < 0)
 	    continue;
 
-	  DPRINTF(E_LOG, L_PLAYER, "Autoselected %s device '%s'\n", device->type_name, device->name);
+	  DPRINTF(E_ERROR, L_PLAYER, "Autoselected %s device '%s'\n", device->type_name, device->name);
 	  outputs_device_select(device, -1);
 	  break;
 	}
@@ -2350,7 +2350,7 @@ seek_calc_position_ms(struct db_queue_item **queue_item, int *position_ms, struc
 
       if (!seek_queue_item)
 	{
-	  DPRINTF(E_LOG, L_PLAYER, "Error fetching queue item for seek command (seek_ms=%d, seek_mode=%d)\n", seek_param->ms, seek_param->mode);
+	  DPRINTF(E_ERROR, L_PLAYER, "Error fetching queue item for seek command (seek_ms=%d, seek_mode=%d)\n", seek_param->ms, seek_param->mode);
 	  return -1;
 	}
     }
@@ -2382,7 +2382,7 @@ playback_seek_bh(void *arg, int *retval)
   ret = seek_calc_position_ms(&queue_item, &position_ms, seek_param);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Error calculating new seek position\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Error calculating new seek position\n");
       goto error;
     }
 
@@ -2390,7 +2390,7 @@ playback_seek_bh(void *arg, int *retval)
   free_queue_item(queue_item, 0);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Error seeking to %d, aborting playback\n", position_ms);
+      DPRINTF(E_ERROR, L_PLAYER, "Error seeking to %d, aborting playback\n", position_ms);
       goto error;
     }
 
@@ -2889,7 +2889,7 @@ speaker_format_set(void *arg, int *retval)
   return COMMAND_END;
 
  error:
-  DPRINTF(E_LOG, L_PLAYER, "Error setting format '%s', device unknown or format unsupported\n", media_format_to_string(param->format));
+  DPRINTF(E_ERROR, L_PLAYER, "Error setting format '%s', device unknown or format unsupported\n", media_format_to_string(param->format));
   *retval = -1;
   return COMMAND_END;
 }
@@ -3108,7 +3108,7 @@ volume_setraw_speaker(void *arg, int *retval)
   volume = outputs_device_volume_to_pct(device, vol_param->volstr); // Only converts
   if (volume < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not parse volume '%s' in update_volume() for speaker '%s'\n", vol_param->volstr, device->name);
+      DPRINTF(E_ERROR, L_PLAYER, "Could not parse volume '%s' in update_volume() for speaker '%s'\n", vol_param->volstr, device->name);
       *retval = -1;
       return COMMAND_END;
     }
@@ -3154,7 +3154,7 @@ repeat_set(void *arg, int *retval)
 	break;
 
       default:
-	DPRINTF(E_LOG, L_PLAYER, "Invalid repeat mode: %d\n", *mode);
+	DPRINTF(E_ERROR, L_PLAYER, "Invalid repeat mode: %d\n", *mode);
 	*retval = -1;
 	return COMMAND_END;
     }
@@ -3640,7 +3640,7 @@ player_volume_set(int vol)
 
   if (vol < 0 || vol > 100)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Volume (%d) for player_volume_set is out of range\n", vol);
+      DPRINTF(E_ERROR, L_PLAYER, "Volume (%d) for player_volume_set is out of range\n", vol);
       return -1;
     }
 
@@ -3659,7 +3659,7 @@ player_volume_setrel_speaker(uint64_t id, int relvol)
 
   if (relvol < 0 || relvol > 100)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Volume (%d) for player_volume_setrel_speaker is out of range\n", relvol);
+      DPRINTF(E_ERROR, L_PLAYER, "Volume (%d) for player_volume_setrel_speaker is out of range\n", relvol);
       return -1;
     }
 
@@ -3679,7 +3679,7 @@ player_volume_setabs_speaker(uint64_t id, int vol)
 
   if (vol < 0 || vol > 100)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Volume (%d) for player_volume_setabs_speaker is out of range\n", vol);
+      DPRINTF(E_ERROR, L_PLAYER, "Volume (%d) for player_volume_setabs_speaker is out of range\n", vol);
       return -1;
     }
 
@@ -3775,7 +3775,7 @@ player_device_add(void *device)
   cmdarg = calloc(1, sizeof(union player_arg));
   if (!cmdarg)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not allocate player_command\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Could not allocate player_command\n");
       return -1;
     }
 
@@ -3794,7 +3794,7 @@ player_device_remove(void *device)
   cmdarg = calloc(1, sizeof(union player_arg));
   if (!cmdarg)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not allocate player_command\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Could not allocate player_command\n");
       return -1;
     }
 
@@ -3815,7 +3815,7 @@ player_raop_verification_kickoff(char **arglist)
   cmdarg = calloc(1, sizeof(union player_arg));
   if (!cmdarg)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not allocate player_command\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Could not allocate player_command\n");
       return;
     }
 
@@ -3838,7 +3838,7 @@ player(void *arg)
   ret = db_perthread_init();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Error: DB init failed\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Error: DB init failed\n");
 
       pthread_exit(NULL);
     }
@@ -3846,13 +3846,13 @@ player(void *arg)
   event_base_dispatch(evbase_player);
 
   if (!player_exit)
-    DPRINTF(E_LOG, L_PLAYER, "Player event loop terminated ahead of time!\n");
+    DPRINTF(E_ERROR, L_PLAYER, "Player event loop terminated ahead of time!\n");
 
   for (device = outputs_list(); device; device = device->next)
     {
       ret = db_speaker_save(device);
       if (ret < 0)
-	DPRINTF(E_LOG, L_PLAYER, "Could not save state for %s device '%s'\n", device->type_name, device->name);
+	DPRINTF(E_ERROR, L_PLAYER, "Could not save state for %s device '%s'\n", device->type_name, device->name);
     }
 
   db_perthread_deinit();
@@ -3892,7 +3892,7 @@ player_init(void)
   // is less than one second.
   if (clock_getres(CLOCK_MONOTONIC, &player_timer_res) < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not get the system timer resolution.\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Could not get the system timer resolution.\n");
       goto error_history_free;
     }
 
@@ -3917,7 +3917,7 @@ player_init(void)
 #endif
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not create playback timer: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_PLAYER, "Could not create playback timer: %s\n", strerror(errno));
       goto error_history_free;
     }
 
@@ -3996,7 +3996,7 @@ player_deinit(void)
   ret = pthread_join(tid_player, NULL);
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not join player thread: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_PLAYER, "Could not join player thread: %s\n", strerror(errno));
 
       return;
     }

@@ -59,7 +59,7 @@ static uint32_t logger_last_hash;
 static char *logfilename;
 static FILE *logfile;
 static char *labels[] = { "config", "daap", "db", "httpd", "http", "main", "mdns", "misc", "rsp", "scan", "xcode", "event", "remote", "dacp", "ffmpeg", "artwork", "player", "raop", "laudio", "dmap", "dbperf", "spotify", "scrobble", "cache", "mpd", "stream", "cast", "fifo", "lib", "web", "airplay", "rcp" };
-static char *severities[] = { "FATAL", "LOG", "WARN", "INFO", "DEBUG", "SPAM" };
+static char *severities[] = { "FATAL", "ERROR", "LOG", "WARN", "INFO", "DEBUG", "SPAM" };
 static char *format_labels[] = { "default", "logfmt" };
 
 enum format {
@@ -342,7 +342,7 @@ logger_ffmpeg(void *ptr, int level, const char *fmt, va_list ap)
   int severity;
 
   if (level <= AV_LOG_FATAL)
-    severity = E_LOG;
+    severity = E_ERROR;
   else if (level <= AV_LOG_WARNING)
     severity = E_WARN;
   else if (level <= AV_LOG_VERBOSE)
@@ -365,7 +365,7 @@ logger_libevent(int severity, const char *msg)
 	break;
 
       case EVENT_LOG_ERR:
-	severity = E_LOG;
+	severity = E_ERROR;
 	break;
 
       case EVENT_LOG_WARN:
@@ -391,7 +391,7 @@ logger_alsa(const char *file, int line, const char *function, int err, const cha
   va_list ap;
 
   va_start(ap, fmt);
-  vlogger(E_LOG, L_LAUDIO, fmt, ap);
+  vlogger(E_ERROR, L_LAUDIO, fmt, ap);
   va_end(ap);
 }
 #endif /* HAVE_ALSA */
