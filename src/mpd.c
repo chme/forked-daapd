@@ -426,7 +426,7 @@ range_pos_from_arg(int *start_pos, int *end_pos, const char *range)
       ret = sscanf(range, "%d:%d", start_pos, end_pos);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_MPD, "Error splitting range argument '%s' (return code = %d)\n", range, ret);
+	  DPRINTF(E_ERROR, L_MPD, "Error splitting range argument '%s' (return code = %d)\n", range, ret);
 	  return -1;
 	}
     }
@@ -435,7 +435,7 @@ range_pos_from_arg(int *start_pos, int *end_pos, const char *range)
       ret = safe_atoi32(range, start_pos);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_MPD, "Error spitting integer argument '%s' (return code = %d)\n", range, ret);
+	  DPRINTF(E_ERROR, L_MPD, "Error spitting integer argument '%s' (return code = %d)\n", range, ret);
 	  return -1;
 	}
 
@@ -538,7 +538,7 @@ mpd_next_quoted(char **input)
       if (ch == 0)
 	{
 	  // Error handling for missing double quote at end of parameter
-	  DPRINTF(E_LOG, L_MPD, "Error missing closing double quote in argument\n");
+	  DPRINTF(E_ERROR, L_MPD, "Error missing closing double quote in argument\n");
 	  *input = src;
 	  return NULL;
 	}
@@ -706,7 +706,7 @@ mpd_add_db_media_file_info(struct evbuffer *evbuf, struct db_media_file_info *db
 
   if (safe_atou32(dbmfi->time_modified, &time_modified) != 0)
     {
-      DPRINTF(E_LOG, L_MPD, "Error converting time modified to uint32_t: %s\n", dbmfi->time_modified);
+      DPRINTF(E_ERROR, L_MPD, "Error converting time modified to uint32_t: %s\n", dbmfi->time_modified);
       return -1;
     }
 
@@ -714,7 +714,7 @@ mpd_add_db_media_file_info(struct evbuffer *evbuf, struct db_media_file_info *db
 
   if (safe_atou32(dbmfi->song_length, &songlength) != 0)
     {
-      DPRINTF(E_LOG, L_MPD, "Error converting song length to uint32_t: %s\n", dbmfi->song_length);
+      DPRINTF(E_ERROR, L_MPD, "Error converting song length to uint32_t: %s\n", dbmfi->song_length);
       return -1;
     }
 
@@ -831,7 +831,7 @@ parse_command(struct query_params *qp, char **pos, char **tagtype, struct mpd_co
   ret = args_reassemble(args_reassembled, sizeof(args_reassembled), in->argc, in->argv);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MPD, "Could not prepare '%s' for parsing\n", in->args_raw);
+      DPRINTF(E_ERROR, L_MPD, "Could not prepare '%s' for parsing\n", in->args_raw);
       return -1;
     }
 
@@ -840,7 +840,7 @@ parse_command(struct query_params *qp, char **pos, char **tagtype, struct mpd_co
   ret = mpd_lex_parse(&result, args_reassembled);
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_MPD, "Could not parse '%s': %s\n", args_reassembled, result.errmsg);
+      DPRINTF(E_ERROR, L_MPD, "Could not parse '%s': %s\n", args_reassembled, result.errmsg);
       return -1;
     }
 
@@ -2173,7 +2173,7 @@ mpd_command_listplaylistinfo(struct mpd_command_output *out, struct mpd_command_
       ret = mpd_add_db_media_file_info(out->evbuf, &dbmfi);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_MPD, "Error adding song to the evbuffer, song id: %s\n", dbmfi.id);
+	  DPRINTF(E_ERROR, L_MPD, "Error adding song to the evbuffer, song id: %s\n", dbmfi.id);
 	}
     }
 
@@ -2490,7 +2490,7 @@ mpd_command_find(struct mpd_command_output *out, struct mpd_command_input *in, s
       ret = mpd_add_db_media_file_info(out->evbuf, &dbmfi);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_MPD, "Error adding song to the evbuffer, song id: %s\n", dbmfi.id);
+	  DPRINTF(E_ERROR, L_MPD, "Error adding song to the evbuffer, song id: %s\n", dbmfi.id);
 	}
     }
 
@@ -2641,7 +2641,7 @@ mpd_add_directory(struct mpd_command_output *out, int directory_id, int listall,
     {
       if (safe_atou32(dbpli.db_timestamp, &time_modified) != 0)
 	{
-	  DPRINTF(E_LOG, L_MPD, "Error converting time modified to uint32_t: %s\n", dbpli.db_timestamp);
+	  DPRINTF(E_ERROR, L_MPD, "Error converting time modified to uint32_t: %s\n", dbpli.db_timestamp);
 	}
 
       if (listinfo)
@@ -2713,7 +2713,7 @@ mpd_add_directory(struct mpd_command_output *out, int directory_id, int listall,
 	  ret = mpd_add_db_media_file_info(out->evbuf, &dbmfi);
 	  if (ret < 0)
 	    {
-	      DPRINTF(E_LOG, L_MPD, "Error adding song to the evbuffer, song id: %s\n", dbmfi.id);
+	      DPRINTF(E_ERROR, L_MPD, "Error adding song to the evbuffer, song id: %s\n", dbmfi.id);
 	    }
 	}
       else
@@ -3031,7 +3031,7 @@ mpd_sticker_find(struct mpd_command_output *out, struct mpd_command_input *in, c
       ret = safe_atou32(dbmfi.rating, &rating);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_MPD, "Error rating=%s doesn't convert to integer, song id: %s\n",
+	  DPRINTF(E_ERROR, L_MPD, "Error rating=%s doesn't convert to integer, song id: %s\n",
 		  dbmfi.rating, dbmfi.id);
 	  continue;
 	}
@@ -3043,7 +3043,7 @@ mpd_sticker_find(struct mpd_command_output *out, struct mpd_command_input *in, c
 				(dbmfi.virtual_path + 1),
 				rating);
       if (ret < 0)
-	DPRINTF(E_LOG, L_MPD, "Error adding song to the evbuffer, song id: %s\n", dbmfi.id);
+	DPRINTF(E_ERROR, L_MPD, "Error adding song to the evbuffer, song id: %s\n", dbmfi.id);
     }
 
   db_query_end(&qp);
@@ -3296,7 +3296,7 @@ channel_outputvolume(const char *message)
   if (!ptr)
     {
       free(tmp);
-      DPRINTF(E_LOG, L_MPD, "Failed to parse output id and volume from message '%s' (expected format: \"output-id:volume\"\n", message);
+      DPRINTF(E_ERROR, L_MPD, "Failed to parse output id and volume from message '%s' (expected format: \"output-id:volume\"\n", message);
       return;
     }
 
@@ -3306,7 +3306,7 @@ channel_outputvolume(const char *message)
   if (ret < 0)
     {
       free(tmp);
-      DPRINTF(E_LOG, L_MPD, "Failed to parse output id from message: '%s'\n", message);
+      DPRINTF(E_ERROR, L_MPD, "Failed to parse output id from message: '%s'\n", message);
       return;
     }
 
@@ -3314,13 +3314,13 @@ channel_outputvolume(const char *message)
   if (ret < 0)
     {
       free(tmp);
-      DPRINTF(E_LOG, L_MPD, "Failed to parse volume from message: '%s'\n", message);
+      DPRINTF(E_ERROR, L_MPD, "Failed to parse volume from message: '%s'\n", message);
       return;
     }
 
   ret = outputvolume_set(shortid, volume);
   if (ret < 0)
-    DPRINTF(E_LOG, L_MPD, "Failed to set output volume from message: '%s'\n", message);
+    DPRINTF(E_ERROR, L_MPD, "Failed to set output volume from message: '%s'\n", message);
 
   free(tmp);
 }
@@ -3410,7 +3410,7 @@ mpd_command_sendmessage(struct mpd_command_output *out, struct mpd_command_input
   if (!channel)
     {
       // Just ignore the message, only log an error message
-      DPRINTF(E_LOG, L_MPD, "Unsupported channel '%s'\n", channelname);
+      DPRINTF(E_ERROR, L_MPD, "Unsupported channel '%s'\n", channelname);
       return 0;
     }
 
@@ -3781,7 +3781,7 @@ mpd_must_process_command_now(const char *line, struct mpd_client_ctx *client_ctx
     {
       if (evbuffer_get_length(client_ctx->cmd_list_buffer) + line_len + 1 > MPD_MAX_COMMAND_LIST_SIZE)
 	{
-	  DPRINTF(E_LOG, L_MPD, "Max command list size (%uKB) exceeded\n", (MPD_MAX_COMMAND_LIST_SIZE / 1024));
+	  DPRINTF(E_ERROR, L_MPD, "Max command list size (%uKB) exceeded\n", (MPD_MAX_COMMAND_LIST_SIZE / 1024));
 	  client_ctx->must_disconnect = true;
 	  return false;
 	}
@@ -3872,7 +3872,7 @@ mpd_process_command_line(struct evbuffer *evbuf, const char *line, int cmd_num, 
   return out.ack_error;
 
  error:
-  DPRINTF(E_LOG, L_MPD, "Error processing command '%s': %s\n", line, out.errmsg);
+  DPRINTF(E_ERROR, L_MPD, "Error processing command '%s': %s\n", line, out.errmsg);
 
   if (cmd_name)
     evbuffer_add_printf(out.evbuf, "ACK [%d@%d] {%s} %s\n", out.ack_error, cmd_num, cmd_name, out.errmsg);
@@ -3979,7 +3979,7 @@ mpd_event_cb(struct bufferevent *bev, short events, void *ctx)
 {
   if (events & BEV_EVENT_ERROR)
     {
-      DPRINTF(E_LOG, L_MPD, "Error from bufferevent: %s\n",
+      DPRINTF(E_ERROR, L_MPD, "Error from bufferevent: %s\n",
 	  evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
     }
 
@@ -4015,7 +4015,7 @@ mpd_input_filter(struct evbuffer *src, struct evbuffer *dst, ev_ssize_t lim, enu
       ret = evbuffer_add_printf(dst, "%s\n", line);
       if (ret < 0)
         {
-	  DPRINTF(E_LOG, L_MPD, "Error adding line to buffer: '%s'\n", line);
+	  DPRINTF(E_ERROR, L_MPD, "Error adding line to buffer: '%s'\n", line);
 	  free(line);
 	  return BEV_ERROR;
 	}
@@ -4087,7 +4087,7 @@ mpd_accept_error_cb(struct evconnlistener *listener, void *ctx)
   int err;
 
   err = EVUTIL_SOCKET_ERROR();
-  DPRINTF(E_LOG, L_MPD, "Error occured %d (%s) on the listener.\n", err, evutil_socket_error_to_string(err));
+  DPRINTF(E_ERROR, L_MPD, "Error occured %d (%s) on the listener.\n", err, evutil_socket_error_to_string(err));
 }
 
 static enum command_state
@@ -4155,7 +4155,7 @@ artwork_cb(struct evhttp_request *req, void *arg)
 
   if (evhttp_request_get_command(req) != EVHTTP_REQ_GET)
     {
-      DPRINTF(E_LOG, L_MPD, "Unsupported request type for artwork\n");
+      DPRINTF(E_ERROR, L_MPD, "Unsupported request type for artwork\n");
       evhttp_send_error(req, HTTP_BADMETHOD, "Method not allowed");
       return;
     }
@@ -4166,7 +4166,7 @@ artwork_cb(struct evhttp_request *req, void *arg)
   decoded = evhttp_uri_parse(uri);
   if (!decoded)
     {
-      DPRINTF(E_LOG, L_MPD, "Bad artwork request with uri '%s'\n", uri);
+      DPRINTF(E_ERROR, L_MPD, "Bad artwork request with uri '%s'\n", uri);
       evhttp_send_error(req, HTTP_BADREQUEST, 0);
       return;
     }
@@ -4174,7 +4174,7 @@ artwork_cb(struct evhttp_request *req, void *arg)
   path = evhttp_uri_get_path(decoded);
   if (!path)
     {
-      DPRINTF(E_LOG, L_MPD, "Invalid path from artwork request with uri '%s'\n", uri);
+      DPRINTF(E_ERROR, L_MPD, "Invalid path from artwork request with uri '%s'\n", uri);
       evhttp_send_error(req, HTTP_BADREQUEST, 0);
       evhttp_uri_free(decoded);
       return;
@@ -4183,7 +4183,7 @@ artwork_cb(struct evhttp_request *req, void *arg)
   decoded_path = evhttp_uridecode(path, 0, NULL);
   if (!decoded_path)
     {
-      DPRINTF(E_LOG, L_MPD, "Error decoding path from artwork request with uri '%s'\n", uri);
+      DPRINTF(E_ERROR, L_MPD, "Error decoding path from artwork request with uri '%s'\n", uri);
       evhttp_send_error(req, HTTP_BADREQUEST, 0);
       evhttp_uri_free(decoded);
       return;
@@ -4208,7 +4208,7 @@ artwork_cb(struct evhttp_request *req, void *arg)
   evbuffer = evbuffer_new();
   if (!evbuffer)
     {
-      DPRINTF(E_LOG, L_MPD, "Could not allocate an evbuffer for artwork request\n");
+      DPRINTF(E_ERROR, L_MPD, "Could not allocate an evbuffer for artwork request\n");
       evhttp_send_error(req, HTTP_INTERNAL, "Document was not found");
       evhttp_uri_free(decoded);
       free(decoded_path);
@@ -4253,7 +4253,7 @@ mpd(void *arg)
   ret = db_perthread_init();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MPD, "Error: DB init failed\n");
+      DPRINTF(E_ERROR, L_MPD, "Error: DB init failed\n");
 
       pthread_exit(NULL);
     }
@@ -4327,14 +4327,14 @@ mpd_init(void)
   mpd_sockfd = net_bind(&port, SOCK_STREAM, "mpd");
   if (mpd_sockfd < 0)
     {
-      DPRINTF(E_LOG, L_MPD, "Could not bind mpd server to port %hu\n", port);
+      DPRINTF(E_ERROR, L_MPD, "Could not bind mpd server to port %hu\n", port);
       goto bind_fail;
     }
 
   mpd_listener = evconnlistener_new(evbase_mpd, mpd_accept_conn_cb, NULL, 0, -1, mpd_sockfd);
   if (!mpd_listener)
     {
-      DPRINTF(E_LOG, L_MPD, "Could not create connection listener for mpd clients on port %d\n", port);
+      DPRINTF(E_ERROR, L_MPD, "Could not create connection listener for mpd clients on port %d\n", port);
       goto connew_fail;
     }
   evconnlistener_set_error_cb(mpd_listener, mpd_accept_error_cb);
@@ -4342,7 +4342,7 @@ mpd_init(void)
   ret = mpd_httpd_init();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MPD, "Could not initialize HTTP artwork server\n");
+      DPRINTF(E_ERROR, L_MPD, "Could not initialize HTTP artwork server\n");
       goto httpd_fail;
     }
 
@@ -4356,12 +4356,12 @@ mpd_init(void)
   /* Handle deprecated config options */
   if (0 < cfg_opt_size(cfg_getopt(cfg_getsec(cfg, "mpd"), "allow_modifying_stored_playlists")))
     {
-      DPRINTF(E_LOG, L_MPD, "Found deprecated option 'allow_modifying_stored_playlists' in section 'mpd', please update configuration file (move option to section 'library').\n");
+      DPRINTF(E_ERROR, L_MPD, "Found deprecated option 'allow_modifying_stored_playlists' in section 'mpd', please update configuration file (move option to section 'library').\n");
       allow_modifying_stored_playlists = cfg_getbool(cfg_getsec(cfg, "mpd"), "allow_modifying_stored_playlists");
     }
   if (0 < cfg_opt_size(cfg_getopt(cfg_getsec(cfg, "mpd"), "default_playlist_directory")))
     {
-      DPRINTF(E_LOG, L_MPD, "Found deprecated option 'default_playlist_directory' in section 'mpd', please update configuration file (move option to section 'library').\n");
+      DPRINTF(E_ERROR, L_MPD, "Found deprecated option 'default_playlist_directory' in section 'mpd', please update configuration file (move option to section 'library').\n");
       free(default_pl_dir);
       pl_dir = cfg_getstr(cfg_getsec(cfg, "mpd"), "default_playlist_directory");
       if (pl_dir)
@@ -4373,7 +4373,7 @@ mpd_init(void)
   ret = pthread_create(&tid_mpd, NULL, mpd, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MPD, "Could not spawn MPD thread: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_MPD, "Could not spawn MPD thread: %s\n", strerror(errno));
 
       goto thread_fail;
     }

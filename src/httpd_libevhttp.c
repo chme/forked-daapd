@@ -239,7 +239,7 @@ ws_process_notify_request(short *requested_events, const char *in, size_t len)
 
   if (jerr != json_tokener_success)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to parse incoming request: %s\n", json_tokener_error_desc(jerr));
+      DPRINTF(E_ERROR, L_WEB, "Failed to parse incoming request: %s\n", json_tokener_error_desc(jerr));
       json_tokener_free(tokener);
       return -1;
     }
@@ -524,7 +524,7 @@ httpd_request_new(httpd_backend *backend, httpd_server *server, const char *uri,
 
   if (!hreq->uri_parsed)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Unable to parse URI '%s' in request from '%s'\n", hreq->uri, hreq->peer_address);
+      DPRINTF(E_ERROR, L_HTTPD, "Unable to parse URI '%s' in request from '%s'\n", hreq->uri, hreq->peer_address);
       goto error;
     }
 

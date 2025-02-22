@@ -232,7 +232,7 @@ find_first_song_id(const char *query)
   qp.filter = dmap_query_parse_sql(query);
   if (!qp.filter)
     {
-      DPRINTF(E_LOG, L_DACP, "Improper DAAP query!\n");
+      DPRINTF(E_ERROR, L_DACP, "Improper DAAP query!\n");
 
       return -1;
     }
@@ -240,7 +240,7 @@ find_first_song_id(const char *query)
   ret = db_query_start(&qp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Could not start query\n");
+      DPRINTF(E_ERROR, L_DACP, "Could not start query\n");
 
       goto no_query_start;
     }
@@ -250,7 +250,7 @@ find_first_song_id(const char *query)
       ret = safe_atoi32(dbmfi.id, &id);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DACP, "Invalid song id in query result!\n");
+	  DPRINTF(E_ERROR, L_DACP, "Invalid song id in query result!\n");
 
 	  goto no_result;
 	}
@@ -259,7 +259,7 @@ find_first_song_id(const char *query)
     }
   else
     {
-      DPRINTF(E_LOG, L_DACP, "No song matches query (results %d): %s\n", qp.results, qp.filter);
+      DPRINTF(E_ERROR, L_DACP, "No song matches query (results %d): %s\n", qp.results, qp.filter);
 
       goto no_result;
     }
@@ -327,7 +327,7 @@ dacp_queueitem_add(const char *query, const char *queuefilter, const char *sort,
 	  ret = safe_atoi64(strchr(queuefilter, ':') + 1, &albumid);
 	  if (ret < 0)
 	    {
-	      DPRINTF(E_LOG, L_DACP, "Invalid album id in queuefilter: '%s'\n", queuefilter);
+	      DPRINTF(E_ERROR, L_DACP, "Invalid album id in queuefilter: '%s'\n", queuefilter);
 
 	      return -1;
 	    }
@@ -340,7 +340,7 @@ dacp_queueitem_add(const char *query, const char *queuefilter, const char *sort,
 	  ret = safe_atoi64(strchr(queuefilter, ':') + 1, &artistid);
 	  if (ret < 0)
 	    {
-	      DPRINTF(E_LOG, L_DACP, "Invalid artist id in queuefilter: '%s'\n", queuefilter);
+	      DPRINTF(E_ERROR, L_DACP, "Invalid artist id in queuefilter: '%s'\n", queuefilter);
 
 	      return -1;
 	    }
@@ -353,7 +353,7 @@ dacp_queueitem_add(const char *query, const char *queuefilter, const char *sort,
 	  ret = safe_atoi32(strchr(queuefilter, ':') + 1, &plid);
 	  if (ret < 0)
 	    {
-	      DPRINTF(E_LOG, L_DACP, "Invalid playlist id in queuefilter: '%s'\n", queuefilter);
+	      DPRINTF(E_ERROR, L_DACP, "Invalid playlist id in queuefilter: '%s'\n", queuefilter);
 
 	      return -1;
 	    }
@@ -366,7 +366,7 @@ dacp_queueitem_add(const char *query, const char *queuefilter, const char *sort,
 	  ret = snprintf(buf, sizeof(buf), "'daap.song%s'", queuefilter);
 	  if (ret < 0 || ret >= sizeof(buf))
 	    {
-	      DPRINTF(E_LOG, L_DACP, "Invalid genre length in queuefilter: '%s'\n", queuefilter);
+	      DPRINTF(E_ERROR, L_DACP, "Invalid genre length in queuefilter: '%s'\n", queuefilter);
 
 	      return -1;
 	    }
@@ -374,7 +374,7 @@ dacp_queueitem_add(const char *query, const char *queuefilter, const char *sort,
 	}
       else
 	{
-	  DPRINTF(E_LOG, L_DACP, "Unknown queuefilter '%s', query is '%s'\n", queuefilter, query);
+	  DPRINTF(E_ERROR, L_DACP, "Unknown queuefilter '%s', query is '%s'\n", queuefilter, query);
 
 	  // If the queuefilter is unkown, ignore it and use the query parameter instead to build the sql query
 	  id = 0;
@@ -431,7 +431,7 @@ playqueuecontents_add_source(struct evbuffer *songlist, uint32_t source_id, int 
   mfi = db_file_fetch_byid(source_id);
   if (!mfi)
     {
-      DPRINTF(E_LOG, L_DACP, "Could not fetch file id %d\n", source_id);
+      DPRINTF(E_ERROR, L_DACP, "Could not fetch file id %d\n", source_id);
       mfi = &dummy_mfi;
     }
   dmap_add_container(song, "ceQs", 16);
@@ -460,7 +460,7 @@ playqueuecontents_add_source(struct evbuffer *songlist, uint32_t source_id, int 
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Could not add song to songlist for playqueue-contents\n");
+      DPRINTF(E_ERROR, L_DACP, "Could not add song to songlist for playqueue-contents\n");
       return ret;
     }
 
@@ -543,14 +543,14 @@ speaker_get(struct player_speaker_info *speaker_info, struct httpd_request *hreq
 
   if (!remote || (safe_atou32(remote, &active_remote) < 0))
     {
-      DPRINTF(E_LOG, L_DACP, "'%s' request from '%s' has invalid Active-Remote: '%s'\n", req_name, hreq->peer_address, remote);
+      DPRINTF(E_ERROR, L_DACP, "'%s' request from '%s' has invalid Active-Remote: '%s'\n", req_name, hreq->peer_address, remote);
       return -1;
     }
 
   ret = player_speaker_get_byactiveremote(speaker_info, active_remote);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "'%s' request from '%s' has unknown Active-Remote: '%s'\n", req_name, hreq->peer_address, remote);
+      DPRINTF(E_ERROR, L_DACP, "'%s' request from '%s' has unknown Active-Remote: '%s'\n", req_name, hreq->peer_address, remote);
       return -1;
     }
 
@@ -583,14 +583,14 @@ seek_timer_cb(int fd, short what, void *arg)
   ret = player_playback_seek(seek_target, PLAYER_SEEK_POSITION);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Player failed to seek to %d ms\n", seek_target);
+      DPRINTF(E_ERROR, L_DACP, "Player failed to seek to %d ms\n", seek_target);
 
       return;
     }
 
   ret = player_playback_start();
   if (ret < 0)
-    DPRINTF(E_LOG, L_DACP, "Player returned an error for start after seek\n");
+    DPRINTF(E_ERROR, L_DACP, "Player returned an error for start after seek\n");
 }
 
 static int
@@ -606,27 +606,27 @@ dacp_request_authorize(struct httpd_request *hreq)
   param = httpd_query_value_find(hreq->query, "session-id");
   if (!param)
     {
-      DPRINTF(E_LOG, L_DACP, "No session-id specified in request\n");
+      DPRINTF(E_ERROR, L_DACP, "No session-id specified in request\n");
       goto invalid;
     }
 
   ret = safe_atoi32(param, &id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Invalid session-id specified in request: '%s'\n", param);
+      DPRINTF(E_ERROR, L_DACP, "Invalid session-id specified in request: '%s'\n", param);
       goto invalid;
     }
 
   if (!daap_session_is_valid(id))
     {
-      DPRINTF(E_LOG, L_DACP, "Session %d does not exist\n", id);
+      DPRINTF(E_ERROR, L_DACP, "Session %d does not exist\n", id);
       goto invalid;
     }
 
   return 0;
 
  invalid:
-  DPRINTF(E_LOG, L_DACP, "Unauthorized request '%s' from '%s' (is peer trusted in your config?)\n", hreq->uri, hreq->peer_address);
+  DPRINTF(E_ERROR, L_DACP, "Unauthorized request '%s' from '%s' (is peer trusted in your config?)\n", hreq->uri, hreq->peer_address);
 
   httpd_send_error(hreq, HTTP_FORBIDDEN, "Forbidden");
   return -1;
@@ -651,7 +651,7 @@ make_playstatusupdate(struct evbuffer *evbuf, int current_rev)
       queue_item = db_queue_fetch_byitemid(status.item_id);
       if (!queue_item)
 	{
-	  DPRINTF(E_LOG, L_DACP, "Could not fetch item id %d (file id %d)\n", status.item_id, status.id);
+	  DPRINTF(E_ERROR, L_DACP, "Could not fetch item id %d (file id %d)\n", status.item_id, status.id);
 
 	  queue_item = &dummy_queue_item;
 	}
@@ -742,7 +742,7 @@ update_request_remove(struct dacp_update_request **head, struct dacp_update_requ
 
       if (!p)
 	{
-	  DPRINTF(E_LOG, L_DACP, "WARNING: struct dacp_update_request not found in list; BUG!\n");
+	  DPRINTF(E_ERROR, L_DACP, "WARNING: struct dacp_update_request not found in list; BUG!\n");
 	  return;
 	}
 
@@ -917,7 +917,7 @@ dacp_propset_volume(const char *value, struct httpd_request *hreq)
   ret = safe_atoi32(value, &volume);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "dmcp.volume argument doesn't convert to integer: %s\n", value);
+      DPRINTF(E_ERROR, L_DACP, "dmcp.volume argument doesn't convert to integer: %s\n", value);
 
       return;
     }
@@ -928,7 +928,7 @@ dacp_propset_volume(const char *value, struct httpd_request *hreq)
       ret = safe_atou64(param, &id);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DACP, "Invalid speaker ID in dmcp.volume request\n");
+	  DPRINTF(E_ERROR, L_DACP, "Invalid speaker ID in dmcp.volume request\n");
 
 	  return;
 	}
@@ -943,7 +943,7 @@ dacp_propset_volume(const char *value, struct httpd_request *hreq)
       ret = safe_atou64(param, &id);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DACP, "Invalid speaker ID in dmcp.volume request\n");
+	  DPRINTF(E_ERROR, L_DACP, "Invalid speaker ID in dmcp.volume request\n");
 
 	  return;
 	}
@@ -981,7 +981,7 @@ dacp_propset_devicepreventplayback(const char *value, struct httpd_request *hreq
   else if (value[0] == '0')
     player_speaker_prevent_playback_set(speaker_info.id, false);
   else
-    DPRINTF(E_LOG, L_DACP, "Request for setting device-prevent-playback has invalid value: '%s'\n", value);
+    DPRINTF(E_ERROR, L_DACP, "Request for setting device-prevent-playback has invalid value: '%s'\n", value);
 }
 
 static void
@@ -997,7 +997,7 @@ dacp_propset_devicebusy(const char *value, struct httpd_request *hreq)
   else if (value[0] == '0')
     player_speaker_busy_set(speaker_info.id, false);
   else
-    DPRINTF(E_LOG, L_DACP, "Request for setting device-busy has invalid value: '%s'\n", value);
+    DPRINTF(E_ERROR, L_DACP, "Request for setting device-busy has invalid value: '%s'\n", value);
 }
 
 static void
@@ -1011,7 +1011,7 @@ dacp_propset_playingtime(const char *value, struct httpd_request *hreq)
   ret = safe_atoi32(value, &seek_target);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "dacp.playingtime argument doesn't convert to integer: %s\n", value);
+      DPRINTF(E_ERROR, L_DACP, "dacp.playingtime argument doesn't convert to integer: %s\n", value);
 
       return;
     }
@@ -1033,7 +1033,7 @@ dacp_propset_shufflestate(const char *value, struct httpd_request *hreq)
   ret = safe_atoi32(value, &enable);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "dacp.shufflestate argument doesn't convert to integer: %s\n", value);
+      DPRINTF(E_ERROR, L_DACP, "dacp.shufflestate argument doesn't convert to integer: %s\n", value);
 
       return;
     }
@@ -1050,7 +1050,7 @@ dacp_propset_repeatstate(const char *value, struct httpd_request *hreq)
   ret = safe_atoi32(value, &mode);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "dacp.repeatstate argument doesn't convert to integer: %s\n", value);
+      DPRINTF(E_ERROR, L_DACP, "dacp.repeatstate argument doesn't convert to integer: %s\n", value);
 
       return;
     }
@@ -1069,7 +1069,7 @@ dacp_propset_userrating(const char *value, struct httpd_request *hreq)
   ret = safe_atou32(value, &rating);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "dacp.userrating argument doesn't convert to integer: %s\n", value);
+      DPRINTF(E_ERROR, L_DACP, "dacp.userrating argument doesn't convert to integer: %s\n", value);
 
       return;
     }
@@ -1080,7 +1080,7 @@ dacp_propset_userrating(const char *value, struct httpd_request *hreq)
 
   if (!param)
     {
-      DPRINTF(E_LOG, L_DACP, "Missing item-spec/song-spec parameter in dacp.userrating query\n");
+      DPRINTF(E_ERROR, L_DACP, "Missing item-spec/song-spec parameter in dacp.userrating query\n");
 
       return;
     }
@@ -1088,7 +1088,7 @@ dacp_propset_userrating(const char *value, struct httpd_request *hreq)
   param = strchr(param, ':');
   if (!param)
     {
-      DPRINTF(E_LOG, L_DACP, "Malformed item-spec/song-spec parameter in dacp.userrating query\n");
+      DPRINTF(E_ERROR, L_DACP, "Malformed item-spec/song-spec parameter in dacp.userrating query\n");
 
       return;
     }
@@ -1102,7 +1102,7 @@ dacp_propset_userrating(const char *value, struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Couldn't convert item-spec/song-spec to an integer in dacp.userrating (%s)\n", param);
+      DPRINTF(E_ERROR, L_DACP, "Couldn't convert item-spec/song-spec to an integer in dacp.userrating (%s)\n", param);
 
       return;
     }
@@ -1168,7 +1168,7 @@ dacp_reply_cue_play(struct httpd_request *hreq)
     {
       ret = safe_atoi32(param, &clear);
       if (ret < 0)
-	DPRINTF(E_LOG, L_DACP, "Invalid clear-first value in cue request\n");
+	DPRINTF(E_ERROR, L_DACP, "Invalid clear-first value in cue request\n");
       else if (clear)
 	{
 	  player_playback_stop();
@@ -1187,7 +1187,7 @@ dacp_reply_cue_play(struct httpd_request *hreq)
       ret = dacp_queueitem_add(cuequery, NULL, sort, 0, 0);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DACP, "Could not build song queue\n");
+	  DPRINTF(E_ERROR, L_DACP, "Could not build song queue\n");
 
 	  dacp_send_error(hreq, "cacr", "Could not build song queue");
 	  return -1;
@@ -1208,7 +1208,7 @@ dacp_reply_cue_play(struct httpd_request *hreq)
     {
       ret = safe_atou32(param, &pos);
       if (ret < 0)
-	DPRINTF(E_LOG, L_DACP, "Invalid index (%s) in cue request\n", param);
+	DPRINTF(E_ERROR, L_DACP, "Invalid index (%s) in cue request\n", param);
     }
 
   /* If selection was from Up Next queue or history queue (command will be playnow), then index is relative */
@@ -1227,7 +1227,7 @@ dacp_reply_cue_play(struct httpd_request *hreq)
 	      queue_item = db_queue_fetch_byitemid(history->item_id[pos]);
 	      if (!queue_item)
 		{
-		  DPRINTF(E_LOG, L_DACP, "Could not start playback from history\n");
+		  DPRINTF(E_ERROR, L_DACP, "Could not start playback from history\n");
 
 		  dacp_send_error(hreq, "cacr", "Playback failed to start");
 		  return -1;
@@ -1235,7 +1235,7 @@ dacp_reply_cue_play(struct httpd_request *hreq)
 	    }
 	  else
 	    {
-	      DPRINTF(E_LOG, L_DACP, "Could not start playback from history\n");
+	      DPRINTF(E_ERROR, L_DACP, "Could not start playback from history\n");
 
 	      dacp_send_error(hreq, "cacr", "Playback failed to start");
 	      return -1;
@@ -1250,7 +1250,7 @@ dacp_reply_cue_play(struct httpd_request *hreq)
             queue_item = db_queue_fetch_byposrelativetoitem(pos, status.item_id, status.shuffle);
 	  if (!queue_item)
 	    {
-	      DPRINTF(E_LOG, L_DACP, "Could not fetch item from queue: pos=%d, now playing=%d\n", pos, status.item_id);
+	      DPRINTF(E_ERROR, L_DACP, "Could not fetch item from queue: pos=%d, now playing=%d\n", pos, status.item_id);
 
 	      dacp_send_error(hreq, "cacr", "Playback failed to start");
 	      return -1;
@@ -1262,7 +1262,7 @@ dacp_reply_cue_play(struct httpd_request *hreq)
       queue_item = db_queue_fetch_bypos(pos, status.shuffle);
       if (!queue_item)
 	{
-	  DPRINTF(E_LOG, L_DACP, "Could not fetch item from queue: pos=%d\n", pos);
+	  DPRINTF(E_ERROR, L_DACP, "Could not fetch item from queue: pos=%d\n", pos);
 
 	  dacp_send_error(hreq, "cacr", "Playback failed to start");
 	  return -1;
@@ -1273,7 +1273,7 @@ dacp_reply_cue_play(struct httpd_request *hreq)
   free_queue_item(queue_item, 0);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Could not start playback\n");
+      DPRINTF(E_ERROR, L_DACP, "Could not start playback\n");
 
       dacp_send_error(hreq, "cacr", "Playback failed to start");
       return -1;
@@ -1325,7 +1325,7 @@ dacp_reply_cue(struct httpd_request *hreq)
   param = httpd_query_value_find(hreq->query, "command");
   if (!param)
     {
-      DPRINTF(E_LOG, L_DACP, "No command in cue request\n");
+      DPRINTF(E_ERROR, L_DACP, "No command in cue request\n");
 
       dacp_send_error(hreq, "cacr", "No command in cue request");
       return -1;
@@ -1337,7 +1337,7 @@ dacp_reply_cue(struct httpd_request *hreq)
     return dacp_reply_cue_play(hreq);
   else
     {
-      DPRINTF(E_LOG, L_DACP, "Unknown cue command %s\n", param);
+      DPRINTF(E_ERROR, L_DACP, "Unknown cue command %s\n", param);
 
       dacp_send_error(hreq, "cacr", "Unknown command in cue request");
       return -1;
@@ -1395,14 +1395,14 @@ dacp_reply_playspec(struct httpd_request *hreq)
   param = httpd_query_value_find(hreq->query, "container-spec");
   if (!param)
     {
-      DPRINTF(E_LOG, L_DACP, "No container-spec in playspec request\n");
+      DPRINTF(E_ERROR, L_DACP, "No container-spec in playspec request\n");
       goto out_fail;
     }
 
   param = strchr(param, ':');
   if (!param)
     {
-      DPRINTF(E_LOG, L_DACP, "Malformed container-spec parameter in playspec request\n");
+      DPRINTF(E_ERROR, L_DACP, "Malformed container-spec parameter in playspec request\n");
       goto out_fail;
     }
   param++;
@@ -1414,7 +1414,7 @@ dacp_reply_playspec(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Couldn't convert container-spec to an integer in playspec (%s)\n", param);
+      DPRINTF(E_ERROR, L_DACP, "Couldn't convert container-spec to an integer in playspec (%s)\n", param);
       goto out_fail;
     }
 
@@ -1425,14 +1425,14 @@ dacp_reply_playspec(struct httpd_request *hreq)
 	plid = 0; // This is a podcast/audiobook - just play a single item, not a playlist
       else if (!(param = httpd_query_value_find(hreq->query, "container-item-spec")))
 	{
-	  DPRINTF(E_LOG, L_DACP, "No container-item-spec/item-spec in playspec request\n");
+	  DPRINTF(E_ERROR, L_DACP, "No container-item-spec/item-spec in playspec request\n");
 	  goto out_fail;
 	}
 
       param = strchr(param, ':');
       if (!param)
 	{
-	  DPRINTF(E_LOG, L_DACP, "Malformed container-item-spec/item-spec parameter in playspec request\n");
+	  DPRINTF(E_ERROR, L_DACP, "Malformed container-item-spec/item-spec parameter in playspec request\n");
 	  goto out_fail;
 	}
       param++;
@@ -1444,7 +1444,7 @@ dacp_reply_playspec(struct httpd_request *hreq)
 
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DACP, "Couldn't convert container-item-spec/item-spec to an integer in playspec (%s)\n", param);
+	  DPRINTF(E_ERROR, L_DACP, "Couldn't convert container-item-spec/item-spec to an integer in playspec (%s)\n", param);
 	  goto out_fail;
 	}
     }
@@ -1466,7 +1466,7 @@ dacp_reply_playspec(struct httpd_request *hreq)
   ret = db_queue_add_by_query(&qp, status.shuffle, status.item_id, -1, NULL, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Could not build song queue from playlist %d\n", plid);
+      DPRINTF(E_ERROR, L_DACP, "Could not build song queue from playlist %d\n", plid);
       goto out_fail;
     }
 
@@ -1488,7 +1488,7 @@ dacp_reply_playspec(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Could not start playback\n");
+      DPRINTF(E_ERROR, L_DACP, "Could not start playback\n");
       goto out_fail;
     }
 
@@ -1556,7 +1556,7 @@ dacp_reply_playpause(struct httpd_request *hreq)
       ret = player_playback_start();
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DACP, "Player returned an error for start after pause\n");
+	  DPRINTF(E_ERROR, L_DACP, "Player returned an error for start after pause\n");
 
 	  httpd_send_error(hreq, HTTP_INTERNAL, "Internal Server Error");
 	  return -1;
@@ -1581,7 +1581,7 @@ dacp_reply_nextitem(struct httpd_request *hreq)
   ret = player_playback_next();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Player returned an error for nextitem\n");
+      DPRINTF(E_ERROR, L_DACP, "Player returned an error for nextitem\n");
 
       httpd_send_error(hreq, HTTP_INTERNAL, "Internal Server Error");
       return -1;
@@ -1590,7 +1590,7 @@ dacp_reply_nextitem(struct httpd_request *hreq)
   ret = player_playback_start();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Player returned an error for start after nextitem\n");
+      DPRINTF(E_ERROR, L_DACP, "Player returned an error for start after nextitem\n");
 
       httpd_send_error(hreq, HTTP_INTERNAL, "Internal Server Error");
       return -1;
@@ -1614,7 +1614,7 @@ dacp_reply_previtem(struct httpd_request *hreq)
   ret = player_playback_prev();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Player returned an error for previtem\n");
+      DPRINTF(E_ERROR, L_DACP, "Player returned an error for previtem\n");
 
       httpd_send_error(hreq, HTTP_INTERNAL, "Internal Server Error");
       return -1;
@@ -1623,7 +1623,7 @@ dacp_reply_previtem(struct httpd_request *hreq)
   ret = player_playback_start();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Player returned an error for start after previtem\n");
+      DPRINTF(E_ERROR, L_DACP, "Player returned an error for start after previtem\n");
 
       httpd_send_error(hreq, HTTP_INTERNAL, "Internal Server Error");
       return -1;
@@ -1717,7 +1717,7 @@ dacp_reply_playqueuecontents(struct httpd_request *hreq)
     {
       ret = safe_atoi32(param, &span);
       if (ret < 0)
-	DPRINTF(E_LOG, L_DACP, "Invalid span value in playqueue-contents request\n");
+	DPRINTF(E_ERROR, L_DACP, "Invalid span value in playqueue-contents request\n");
     }
 
   CHECK_NULL(L_DACP, songlist = evbuffer_new());
@@ -1838,7 +1838,7 @@ dacp_reply_playqueuecontents(struct httpd_request *hreq)
   return 0;
 
  error:
-  DPRINTF(E_LOG, L_DACP, "Database error in dacp_reply_playqueuecontents\n");
+  DPRINTF(E_ERROR, L_DACP, "Database error in dacp_reply_playqueuecontents\n");
 
   evbuffer_free(songlist);
   dacp_send_error(hreq, "ceQR", "Database error");
@@ -1909,7 +1909,7 @@ dacp_reply_playqueueedit_add(struct httpd_request *hreq)
       ret = safe_atoi32(param, &mode);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DACP, "Invalid mode value in playqueue-edit request\n");
+	  DPRINTF(E_ERROR, L_DACP, "Invalid mode value in playqueue-edit request\n");
 
 	  dacp_send_error(hreq, "cacr", "Invalid request");
 	  return -1;
@@ -1928,7 +1928,7 @@ dacp_reply_playqueueedit_add(struct httpd_request *hreq)
   editquery = httpd_query_value_find(hreq->query, "query");
   if (!editquery)
     {
-      DPRINTF(E_LOG, L_DACP, "Could not add song queue, DACP query missing\n");
+      DPRINTF(E_ERROR, L_DACP, "Could not add song queue, DACP query missing\n");
 
       dacp_send_error(hreq, "cacr", "Invalid request");
       return -1;
@@ -1957,7 +1957,7 @@ dacp_reply_playqueueedit_add(struct httpd_request *hreq)
       ret = safe_atoi32(strchr(editquery, ':') + 1, &plid);
       if (ret < 0)
         {
-	  DPRINTF(E_LOG, L_DACP, "Invalid playlist id in request: %s\n", editquery);
+	  DPRINTF(E_ERROR, L_DACP, "Invalid playlist id in request: %s\n", editquery);
 
 	  dacp_send_error(hreq, "cacr", "Invalid request");
 	  return -1;
@@ -1969,7 +1969,7 @@ dacp_reply_playqueueedit_add(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Could not build song queue\n");
+      DPRINTF(E_ERROR, L_DACP, "Could not build song queue\n");
 
       dacp_send_error(hreq, "cacr", "Invalid request");
       return -1;
@@ -2002,7 +2002,7 @@ dacp_reply_playqueueedit_add(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Could not start playback\n");
+      DPRINTF(E_ERROR, L_DACP, "Could not start playback\n");
 
       dacp_send_error(hreq, "cacr", "Playback failed to start");
       return -1;
@@ -2037,7 +2037,7 @@ dacp_reply_playqueueedit_move(struct httpd_request *hreq)
     ret = safe_atoi32(strchr(param, ':') + 1, &src);
     if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Invalid edit-params move-from value in playqueue-edit request\n");
+      DPRINTF(E_ERROR, L_DACP, "Invalid edit-params move-from value in playqueue-edit request\n");
 
       dacp_send_error(hreq, "cacr", "Invalid request");
       return -1;
@@ -2046,7 +2046,7 @@ dacp_reply_playqueueedit_move(struct httpd_request *hreq)
     ret = safe_atoi32(strchr(param, ',') + 1, &dst);
     if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Invalid edit-params move-to value in playqueue-edit request\n");
+      DPRINTF(E_ERROR, L_DACP, "Invalid edit-params move-to value in playqueue-edit request\n");
 
       dacp_send_error(hreq, "cacr", "Invalid request");
       return -1;
@@ -2081,7 +2081,7 @@ dacp_reply_playqueueedit_remove(struct httpd_request *hreq)
     ret = safe_atoi32(param, &item_index);
     if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Invalid edit-params remove item value in playqueue-edit request\n");
+      DPRINTF(E_ERROR, L_DACP, "Invalid edit-params remove item value in playqueue-edit request\n");
 
       dacp_send_error(hreq, "cacr", "Invalid request");
       return -1;
@@ -2154,7 +2154,7 @@ dacp_reply_playqueueedit(struct httpd_request *hreq)
   param = httpd_query_value_find(hreq->query, "command");
   if (!param)
     {
-      DPRINTF(E_LOG, L_DACP, "No command in playqueue-edit request\n");
+      DPRINTF(E_ERROR, L_DACP, "No command in playqueue-edit request\n");
 
       dacp_send_error(hreq, "cmst", "Invalid request");
       return -1;
@@ -2172,7 +2172,7 @@ dacp_reply_playqueueedit(struct httpd_request *hreq)
     return dacp_reply_playqueueedit_remove(hreq);
   else
     {
-      DPRINTF(E_LOG, L_DACP, "Unknown playqueue-edit command %s\n", param);
+      DPRINTF(E_ERROR, L_DACP, "Unknown playqueue-edit command %s\n", param);
 
       dacp_send_error(hreq, "cmst", "Invalid request");
       return -1;
@@ -2194,7 +2194,7 @@ dacp_reply_playstatusupdate(struct httpd_request *hreq)
   param = httpd_query_value_find(hreq->query, "revision-number");
   if (!param)
     {
-      DPRINTF(E_LOG, L_DACP, "Missing revision-number in update request\n");
+      DPRINTF(E_ERROR, L_DACP, "Missing revision-number in update request\n");
 
       dacp_send_error(hreq, "cmst", "Invalid request");
       return -1;
@@ -2203,7 +2203,7 @@ dacp_reply_playstatusupdate(struct httpd_request *hreq)
   ret = safe_atoi32(param, &reqd_rev);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Parameter revision-number not an integer\n");
+      DPRINTF(E_ERROR, L_DACP, "Parameter revision-number not an integer\n");
 
       dacp_send_error(hreq, "cmst", "Invalid request");
       return -1;
@@ -2227,7 +2227,7 @@ dacp_reply_playstatusupdate(struct httpd_request *hreq)
   ur = update_request_new(hreq);
   if (!ur)
     {
-      DPRINTF(E_LOG, L_DACP, "Out of memory for update request\n");
+      DPRINTF(E_ERROR, L_DACP, "Out of memory for update request\n");
 
       dacp_send_error(hreq, "cmst", "Out of memory");
       return -1;
@@ -2264,28 +2264,28 @@ dacp_reply_nowplayingartwork(struct httpd_request *hreq)
   param = httpd_query_value_find(hreq->query, "mw");
   if (!param)
     {
-      DPRINTF(E_LOG, L_DACP, "Request for artwork without mw parameter\n");
+      DPRINTF(E_ERROR, L_DACP, "Request for artwork without mw parameter\n");
       goto error;
     }
 
   ret = safe_atoi32(param, &max_w);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Could not convert mw parameter to integer\n");
+      DPRINTF(E_ERROR, L_DACP, "Could not convert mw parameter to integer\n");
       goto error;
     }
 
   param = httpd_query_value_find(hreq->query, "mh");
   if (!param)
     {
-      DPRINTF(E_LOG, L_DACP, "Request for artwork without mh parameter\n");
+      DPRINTF(E_ERROR, L_DACP, "Request for artwork without mh parameter\n");
       goto error;
     }
 
   ret = safe_atoi32(param, &max_h);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Could not convert mh parameter to integer\n");
+      DPRINTF(E_ERROR, L_DACP, "Could not convert mh parameter to integer\n");
       goto error;
     }
 
@@ -2360,7 +2360,7 @@ dacp_reply_getproperty(struct httpd_request *hreq)
   propstr = strdup(param);
   if (!propstr)
     {
-      DPRINTF(E_LOG, L_DACP, "Could not duplicate properties parameter; out of memory\n");
+      DPRINTF(E_ERROR, L_DACP, "Could not duplicate properties parameter; out of memory\n");
 
       dacp_send_error(hreq, "cmgt", "Out of memory");
       return -1;
@@ -2369,7 +2369,7 @@ dacp_reply_getproperty(struct httpd_request *hreq)
   proplist = evbuffer_new();
   if (!proplist)
     {
-      DPRINTF(E_LOG, L_DACP, "Could not allocate evbuffer for properties list\n");
+      DPRINTF(E_ERROR, L_DACP, "Could not allocate evbuffer for properties list\n");
 
       dacp_send_error(hreq, "cmgt", "Out of memory");
       goto out_free_propstr;
@@ -2382,7 +2382,7 @@ dacp_reply_getproperty(struct httpd_request *hreq)
       queue_item = db_queue_fetch_byitemid(status.item_id);
       if (!queue_item)
 	{
-	  DPRINTF(E_LOG, L_DACP, "Could not fetch queue_item for item-id %d\n", status.item_id);
+	  DPRINTF(E_ERROR, L_DACP, "Could not fetch queue_item for item-id %d\n", status.item_id);
 
 	  dacp_send_error(hreq, "cmgt", "Server error");
 	  goto out_free_proplist;
@@ -2401,7 +2401,7 @@ dacp_reply_getproperty(struct httpd_request *hreq)
 	    DPRINTF(E_WARN, L_DACP, "No getter method for DACP property %s\n", prop);
 	}
       else
-	DPRINTF(E_LOG, L_DACP, "Could not find requested property '%s'\n", prop);
+	DPRINTF(E_ERROR, L_DACP, "Could not find requested property '%s'\n", prop);
 
       prop = strtok_r(NULL, ",", &ptr);
     }
@@ -2524,7 +2524,7 @@ dacp_reply_setspeakers(struct httpd_request *hreq)
   param = httpd_query_value_find(hreq->query, "speaker-id");
   if (!param)
     {
-      DPRINTF(E_LOG, L_DACP, "Missing speaker-id parameter in DACP setspeakers request\n");
+      DPRINTF(E_ERROR, L_DACP, "Missing speaker-id parameter in DACP setspeakers request\n");
 
       httpd_send_error(hreq, HTTP_BADREQUEST, "Bad Request");
       return -1;
@@ -2557,7 +2557,7 @@ dacp_reply_setspeakers(struct httpd_request *hreq)
 
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DACP, "Invalid speaker id in request: %s\n", param);
+	  DPRINTF(E_ERROR, L_DACP, "Invalid speaker id in request: %s\n", param);
 
 	  nspk--;
 	  continue;
@@ -2580,7 +2580,7 @@ dacp_reply_setspeakers(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DACP, "Speakers de/activation failed!\n");
+      DPRINTF(E_ERROR, L_DACP, "Speakers de/activation failed!\n");
 
       /* Password problem */
       if (ret == -2)
@@ -2788,7 +2788,7 @@ dacp_request(struct httpd_request *hreq)
 {
   if (!hreq->handler)
     {
-      DPRINTF(E_LOG, L_DACP, "Unrecognized path in DACP request: '%s'\n", hreq->uri);
+      DPRINTF(E_ERROR, L_DACP, "Unrecognized path in DACP request: '%s'\n", hreq->uri);
 
       httpd_send_error(hreq, HTTP_BADREQUEST, "Bad Request");
       return;

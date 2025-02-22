@@ -155,7 +155,7 @@ pulse_session_make(struct output_device *device, int callback_id)
   ret = outputs_quality_subscribe(&pulse_fallback_quality);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Could not subscribe to fallback audio quality\n");
+      DPRINTF(E_ERROR, L_LAUDIO, "Could not subscribe to fallback audio quality\n");
       return NULL;
     }
 
@@ -201,7 +201,7 @@ send_status(void *arg, int *ptr)
 	state = OUTPUT_STATE_STARTUP;
 	break;
       default:
-	DPRINTF(E_LOG, L_LAUDIO, "Bug! Unhandled state in send_status()\n");
+	DPRINTF(E_ERROR, L_LAUDIO, "Bug! Unhandled state in send_status()\n");
 	state = OUTPUT_STATE_FAILED;
     }
 
@@ -269,10 +269,10 @@ stream_state_cb(pa_stream *s, void *userdata)
       if (ps->state == PA_STREAM_FAILED)
 	{
 	  errno = pa_context_errno(pulse.context);
-          DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio stream to '%s' failed with error: %s\n", ps->devname, pa_strerror(errno));
+          DPRINTF(E_ERROR, L_LAUDIO, "Pulseaudio stream to '%s' failed with error: %s\n", ps->devname, pa_strerror(errno));
 	}
       else
-        DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio stream to '%s' aborted (%d)\n", ps->devname, ps->state);
+        DPRINTF(E_ERROR, L_LAUDIO, "Pulseaudio stream to '%s' aborted (%d)\n", ps->devname, ps->state);
 
       pulse_session_shutdown(ps);
       return;
@@ -323,7 +323,7 @@ start_cb(pa_stream *s, void *userdata)
 
   if (ps->state != PA_STREAM_READY)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Error starting Pulseaudio stream to '%s' (%d)\n", ps->devname, ps->state);
+      DPRINTF(E_ERROR, L_LAUDIO, "Error starting Pulseaudio stream to '%s' (%d)\n", ps->devname, ps->state);
       pulse_session_shutdown(ps);
       return;
     }
@@ -355,7 +355,7 @@ probe_cb(pa_stream *s, void *userdata)
 
   if (ps->state != PA_STREAM_READY)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Error probing Pulseaudio stream to '%s' (%d)\n", ps->devname, ps->state);
+      DPRINTF(E_ERROR, L_LAUDIO, "Error probing Pulseaudio stream to '%s' (%d)\n", ps->devname, ps->state);
       pulse_session_shutdown(ps);
       return;
     }
@@ -405,14 +405,14 @@ sinklist_cb(pa_context *ctx, const pa_sink_info *info, int eol, void *userdata)
 
   if (pos == -1)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Maximum number of Pulseaudio devices reached (%d), cannot add '%s'\n", PULSE_MAX_DEVICES, info->name);
+      DPRINTF(E_ERROR, L_LAUDIO, "Maximum number of Pulseaudio devices reached (%d), cannot add '%s'\n", PULSE_MAX_DEVICES, info->name);
       return;
     }
 
   device = calloc(1, sizeof(struct output_device));
   if (!device)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Out of memory for new Pulseaudio sink\n");
+      DPRINTF(E_ERROR, L_LAUDIO, "Out of memory for new Pulseaudio sink\n");
       return;
     }
 
@@ -420,13 +420,13 @@ sinklist_cb(pa_context *ctx, const pa_sink_info *info, int eol, void *userdata)
     {
       name = cfg_getstr(cfg_getsec(cfg, "audio"), "nickname");
 
-      DPRINTF(E_LOG, L_LAUDIO, "Adding Pulseaudio sink '%s' (%s) with name '%s'\n", info->description, info->name, name);
+      DPRINTF(E_ERROR, L_LAUDIO, "Adding Pulseaudio sink '%s' (%s) with name '%s'\n", info->description, info->name, name);
     }
   else
     {
       name = info->description;
 
-      DPRINTF(E_LOG, L_LAUDIO, "Adding Pulseaudio sink '%s' (%s)\n", info->description, info->name);
+      DPRINTF(E_ERROR, L_LAUDIO, "Adding Pulseaudio sink '%s' (%s)\n", info->description, info->name);
     }
 
   pulse_known_devices[pos] = info->index + 1; // Array values of 0 mean no device, so we add 1 to make sure the value is > 0
@@ -452,7 +452,7 @@ subscribe_cb(pa_context *c, pa_subscription_event_type_t t, uint32_t index, void
 
   if ((t & PA_SUBSCRIPTION_EVENT_FACILITY_MASK) != PA_SUBSCRIPTION_EVENT_SINK)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio subscribe called back with unknown event\n");
+      DPRINTF(E_ERROR, L_LAUDIO, "Pulseaudio subscribe called back with unknown event\n");
       return;
     }
 
@@ -461,13 +461,13 @@ subscribe_cb(pa_context *c, pa_subscription_event_type_t t, uint32_t index, void
       device = calloc(1, sizeof(struct output_device));
       if (!device)
 	{
-	  DPRINTF(E_LOG, L_LAUDIO, "Out of memory for temp Pulseaudio device\n");
+	  DPRINTF(E_ERROR, L_LAUDIO, "Out of memory for temp Pulseaudio device\n");
 	  return;
 	}
 
       device->id = index;
 
-      DPRINTF(E_LOG, L_LAUDIO, "Removing Pulseaudio sink with id %" PRIu32 "\n", index);
+      DPRINTF(E_ERROR, L_LAUDIO, "Removing Pulseaudio sink with id %" PRIu32 "\n", index);
 
       for (i = 0; i < PULSE_MAX_DEVICES; i++)
 	{
@@ -482,7 +482,7 @@ subscribe_cb(pa_context *c, pa_subscription_event_type_t t, uint32_t index, void
   o = pa_context_get_sink_info_by_index(c, index, sinklist_cb, NULL);
   if (!o)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio error getting sink info for id %" PRIu32 "\n", index);
+      DPRINTF(E_ERROR, L_LAUDIO, "Pulseaudio error getting sink info for id %" PRIu32 "\n", index);
       return;
     }
   pa_operation_unref(o);
@@ -504,7 +504,7 @@ context_state_cb(pa_context *c, void *userdata)
 	o = pa_context_get_sink_info_list(c, sinklist_cb, NULL);
 	if (!o)
 	  {
-	    DPRINTF(E_LOG, L_LAUDIO, "Could not list Pulseaudio sink info\n");
+	    DPRINTF(E_ERROR, L_LAUDIO, "Could not list Pulseaudio sink info\n");
 	    return;
 	  }
 	pa_operation_unref(o);
@@ -513,7 +513,7 @@ context_state_cb(pa_context *c, void *userdata)
 	o = pa_context_subscribe(c, PA_SUBSCRIPTION_MASK_SINK, NULL, NULL);
 	if (!o)
 	  {
-	    DPRINTF(E_LOG, L_LAUDIO, "Could not subscribe to Pulseaudio sink info\n");
+	    DPRINTF(E_ERROR, L_LAUDIO, "Could not subscribe to Pulseaudio sink info\n");
 	    return;
 	  }
 	pa_operation_unref(o);
@@ -522,13 +522,13 @@ context_state_cb(pa_context *c, void *userdata)
 	break;
 
       case PA_CONTEXT_FAILED:
-	DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio failed with error: %s\n", pa_strerror(pa_context_errno(c)));
+	DPRINTF(E_ERROR, L_LAUDIO, "Pulseaudio failed with error: %s\n", pa_strerror(pa_context_errno(c)));
 	pulse_session_shutdown_all(PA_STREAM_FAILED);
 	pa_threaded_mainloop_signal(pulse.mainloop, 0);
 	break;
 
       case PA_CONTEXT_TERMINATED:
-	DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio terminated\n");
+	DPRINTF(E_ERROR, L_LAUDIO, "Pulseaudio terminated\n");
 	pulse_session_shutdown_all(PA_STREAM_UNCONNECTED);
 	pa_threaded_mainloop_signal(pulse.mainloop, 0);
 	break;
@@ -590,7 +590,7 @@ stream_open(struct pulse_session *ps, struct media_quality *quality, pa_stream_n
   offset_ms = cfg_getint(cfg_getsec(cfg, "audio"), "offset_ms");
   if (abs(offset_ms) > 1000)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "The audio offset (%d) set in the configuration is out of bounds\n", offset_ms);
+      DPRINTF(E_ERROR, L_LAUDIO, "The audio offset (%d) set in the configuration is out of bounds\n", offset_ms);
       offset_ms = 1000 * (offset_ms/abs(offset_ms));
     }
 
@@ -626,7 +626,7 @@ stream_open(struct pulse_session *ps, struct media_quality *quality, pa_stream_n
  unlock_and_fail:
   ret = pa_context_errno(pulse.context);
 
-  DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio could not start '%s' using quality %d/%d/%d: %s\n",
+  DPRINTF(E_ERROR, L_LAUDIO, "Pulseaudio could not start '%s' using quality %d/%d/%d: %s\n",
     ps->devname, quality->sample_rate, quality->bits_per_sample, quality->channels, pa_strerror(ret));
 
   pa_threaded_mainloop_unlock(pulse.mainloop);
@@ -674,7 +674,7 @@ playback_restart(struct pulse_session *ps, struct output_buffer *obuf)
       ret = stream_open(ps, &ps->quality, start_cb);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio device failed setting fallback quality\n");
+	  DPRINTF(E_ERROR, L_LAUDIO, "Pulseaudio device failed setting fallback quality\n");
 	  ps->state = PA_STREAM_FAILED;
 	  pulse_session_shutdown(ps);
 	  return;
@@ -697,7 +697,7 @@ playback_write(struct pulse_session *ps, struct output_buffer *obuf)
 
   if (!obuf->data[i].buffer)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Output not delivering required data quality, aborting\n");
+      DPRINTF(E_ERROR, L_LAUDIO, "Output not delivering required data quality, aborting\n");
       ps->state = PA_STREAM_FAILED;
       pulse_session_shutdown(ps);
       return;
@@ -709,7 +709,7 @@ playback_write(struct pulse_session *ps, struct output_buffer *obuf)
   if (ret < 0)
     {
       ret = pa_context_errno(pulse.context);
-      DPRINTF(E_LOG, L_LAUDIO, "Error writing Pulseaudio stream data to '%s': %s\n", ps->devname, pa_strerror(ret));
+      DPRINTF(E_ERROR, L_LAUDIO, "Error writing Pulseaudio stream data to '%s': %s\n", ps->devname, pa_strerror(ret));
       ps->state = PA_STREAM_FAILED;
       pulse_session_shutdown(ps);
       goto unlock;
@@ -729,7 +729,7 @@ playback_resume(struct pulse_session *ps)
   o = pa_stream_cork(ps->stream, 0, NULL, NULL);
   if (!o)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio could not resume '%s': %s\n", ps->devname, pa_strerror(pa_context_errno(pulse.context)));
+      DPRINTF(E_ERROR, L_LAUDIO, "Pulseaudio could not resume '%s': %s\n", ps->devname, pa_strerror(pa_context_errno(pulse.context)));
       goto unlock;
     }
 
@@ -787,7 +787,7 @@ pulse_device_flush(struct output_device *device, int callback_id)
   o = pa_stream_cork(ps->stream, 1, NULL, NULL);
   if (!o)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio could not pause '%s': %s\n", ps->devname, pa_strerror(pa_context_errno(pulse.context)));
+      DPRINTF(E_ERROR, L_LAUDIO, "Pulseaudio could not pause '%s': %s\n", ps->devname, pa_strerror(pa_context_errno(pulse.context)));
       return -1;
     }
   pa_operation_unref(o);
@@ -795,7 +795,7 @@ pulse_device_flush(struct output_device *device, int callback_id)
   o = pa_stream_flush(ps->stream, flush_cb, ps);
   if (!o)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio could not flush '%s': %s\n", ps->devname, pa_strerror(pa_context_errno(pulse.context)));
+      DPRINTF(E_ERROR, L_LAUDIO, "Pulseaudio could not flush '%s': %s\n", ps->devname, pa_strerror(pa_context_errno(pulse.context)));
       return -1;
     }
   pa_operation_unref(o);
@@ -866,7 +866,7 @@ pulse_device_volume_set(struct output_device *device, int callback_id)
   o = pa_context_set_sink_input_volume(pulse.context, idx, &cvol, volume_cb, ps);
   if (!o)
     {
-      DPRINTF(E_LOG, L_LAUDIO, "Pulseaudio could not set volume: %s\n", pa_strerror(pa_context_errno(pulse.context)));
+      DPRINTF(E_ERROR, L_LAUDIO, "Pulseaudio could not set volume: %s\n", pa_strerror(pa_context_errno(pulse.context)));
       pa_threaded_mainloop_unlock(pulse.mainloop);
       return 0;
     }
@@ -975,7 +975,7 @@ pulse_init(void)
 
  fail:
   if (ret)
-    DPRINTF(E_LOG, L_LAUDIO, "Error initializing Pulseaudio: %s\n", pa_strerror(ret));
+    DPRINTF(E_ERROR, L_LAUDIO, "Error initializing Pulseaudio: %s\n", pa_strerror(ret));
 
   pulse_free();
   return -1;

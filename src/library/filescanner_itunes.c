@@ -371,7 +371,7 @@ mfi_id_find(const char *path)
   ret = db_snprintf(filter, sizeof(filter), "f.fname = '%q' COLLATE NOCASE", filename_from_path(path));
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Location in iTunes XML is too long: '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "Location in iTunes XML is too long: '%s'\n", path);
       return -1;
     }
 
@@ -421,7 +421,7 @@ mfi_id_find(const char *path)
 
   if (!winner)
     {
-      DPRINTF(E_LOG, L_SCAN, "No file matches iTunes XML entry '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "No file matches iTunes XML entry '%s'\n", path);
       return -1;
     }
 
@@ -452,13 +452,13 @@ process_track_file(plist_t trk)
   ret = get_dictval_string_from_key(trk, "Location", &location);
   if ((ret < 0) || !location)
     {
-      DPRINTF(E_LOG, L_SCAN, "Track type File with no Location\n");
+      DPRINTF(E_ERROR, L_SCAN, "Track type File with no Location\n");
       return -1;
     }
 
   if (strncmp(location, "file://", strlen("file://")) != 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Track type File, but Location does not start with 'file://': '%s'\n", location);
+      DPRINTF(E_ERROR, L_SCAN, "Track type File, but Location does not start with 'file://': '%s'\n", location);
       free(location);
       return -1;
     }
@@ -482,7 +482,7 @@ process_track_file(plist_t trk)
   mfi = db_file_fetch_byid(mfi_id);
   if (!mfi)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not retrieve file info for file id %d\n", mfi_id);
+      DPRINTF(E_ERROR, L_SCAN, "Could not retrieve file info for file id %d\n", mfi_id);
 
       return mfi_id;
     }
@@ -657,7 +657,7 @@ process_tracks(struct itml_to_db_map **id_map, plist_t tracks)
 	mfi_id = process_track_file(trk);
       else
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Unknown track type: '%s'\n", str);
+	  DPRINTF(E_ERROR, L_SCAN, "Unknown track type: '%s'\n", str);
 
 	  free(str);
 	  plist_dict_next_item(tracks, iter, NULL, &trk);
@@ -669,7 +669,7 @@ process_tracks(struct itml_to_db_map **id_map, plist_t tracks)
       ntracks++;
       if (ntracks % 200 == 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Processed %d tracks...\n", ntracks);
+	  DPRINTF(E_ERROR, L_SCAN, "Processed %d tracks...\n", ntracks);
 	  db_transaction_end();
 	  db_transaction_begin();
 	}
@@ -682,7 +682,7 @@ process_tracks(struct itml_to_db_map **id_map, plist_t tracks)
 
       ret = id_map_add(id_map, trk_id, mfi_id);
       if (ret < 0)
-	DPRINTF(E_LOG, L_SCAN, "Out of memory for itml -> db mapping\n");
+	DPRINTF(E_ERROR, L_SCAN, "Out of memory for itml -> db mapping\n");
 
       nloaded++;
 
@@ -740,7 +740,7 @@ process_pl_items(plist_t items, int pl_id, const char *name, struct itml_to_db_m
       ntracks++;
       if (ntracks % 200 == 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Processed %d tracks from playlist '%s'...\n", ntracks, name);
+	  DPRINTF(E_ERROR, L_SCAN, "Processed %d tracks from playlist '%s'...\n", ntracks, name);
 	  db_transaction_end();
 	  db_transaction_begin();
 	}
@@ -844,7 +844,7 @@ process_pls(plist_t playlists, const char *file, struct itml_to_db_map **id_map)
       ret = library_playlist_save(&pli);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Error adding iTunes playlist '%s' (%s)\n", name, file);
+	  DPRINTF(E_ERROR, L_SCAN, "Error adding iTunes playlist '%s' (%s)\n", name, file);
 
 	  free_pli(&pli, 1);
 	  free(name);
@@ -876,7 +876,7 @@ itml_is_modified(const char *path, time_t mtime)
       // is equal to the newly updated db_timestamp)
       if (mtime && (pli->db_timestamp > mtime))
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Unchanged iTunes XML found, not processing '%s'\n", path);
+	  DPRINTF(E_ERROR, L_SCAN, "Unchanged iTunes XML found, not processing '%s'\n", path);
 
 	  // TODO Protect the radio stations from purge after scan
 	  db_pl_ping_bymatch(path, 0);
@@ -884,14 +884,14 @@ itml_is_modified(const char *path, time_t mtime)
 	  return false;
 	}
 
-      DPRINTF(E_LOG, L_SCAN, "Modified iTunes XML found, processing '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "Modified iTunes XML found, processing '%s'\n", path);
 
       // Clear out everything, we will recreate
       db_pl_delete_bypath(path);
     }
   else
     {
-      DPRINTF(E_LOG, L_SCAN, "New iTunes XML found, processing: '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "New iTunes XML found, processing: '%s'\n", path);
 
       CHECK_NULL(L_SCAN, pli = calloc(1, sizeof(struct playlist_info)));
     }
@@ -904,7 +904,7 @@ itml_is_modified(const char *path, time_t mtime)
   ret = library_playlist_save(pli);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error adding iTunes XML meta playlist '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "Error adding iTunes XML meta playlist '%s'\n", path);
       free_pli(pli, 0);
       return false;
     }
@@ -936,21 +936,21 @@ scan_itunes_itml(const char *path, time_t mtime, int dir_id)
   fd = open(path, O_RDONLY);
   if (fd < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not open iTunes library '%s': %s\n", path, strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Could not open iTunes library '%s': %s\n", path, strerror(errno));
       goto error;
     }
 
   ret = fstat(fd, &sb);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not stat iTunes library '%s': %s\n", path, strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Could not stat iTunes library '%s': %s\n", path, strerror(errno));
       goto error;
     }
 
   itml_xml = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
   if (itml_xml == MAP_FAILED)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not map iTunes library '%s': %s\n", path, strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Could not map iTunes library '%s': %s\n", path, strerror(errno));
       goto error;
     }
 
@@ -958,20 +958,20 @@ scan_itunes_itml(const char *path, time_t mtime, int dir_id)
 
   ret = munmap(itml_xml, sb.st_size);
   if (ret < 0)
-    DPRINTF(E_LOG, L_SCAN, "Could not unmap iTunes library '%s': %s\n", path, strerror(errno));
+    DPRINTF(E_ERROR, L_SCAN, "Could not unmap iTunes library '%s': %s\n", path, strerror(errno));
 
   close(fd);
   fd = -1;
 
   if (!itml)
     {
-      DPRINTF(E_LOG, L_SCAN, "iTunes XML playlist '%s' failed to parse\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "iTunes XML playlist '%s' failed to parse\n", path);
       goto error;
     }
 
   if (plist_get_node_type(itml) != PLIST_DICT)
     {
-      DPRINTF(E_LOG, L_SCAN, "Malformed iTunes XML playlist '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "Malformed iTunes XML playlist '%s'\n", path);
       goto error;
     }
 
@@ -979,7 +979,7 @@ scan_itunes_itml(const char *path, time_t mtime, int dir_id)
   ret = check_meta(itml);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Missing meta elements in iTunes XML playlist '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "Missing meta elements in iTunes XML playlist '%s'\n", path);
       goto error;
     }
 
@@ -987,31 +987,31 @@ scan_itunes_itml(const char *path, time_t mtime, int dir_id)
   ret = get_dictval_dict_from_key(itml, "Tracks", &node);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not find Tracks dict in '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "Could not find Tracks dict in '%s'\n", path);
       goto error;
     }
 
   id_map = calloc(ID_MAP_SIZE, sizeof(struct itml_to_db_map *));
   if (!id_map)
     {
-      DPRINTF(E_LOG, L_SCAN, "iTunes library parser could not allocate ID map\n");
+      DPRINTF(E_ERROR, L_SCAN, "iTunes library parser could not allocate ID map\n");
       goto error;
     }
 
   ret = process_tracks(id_map, node);
   if (ret <= 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "No tracks loaded from iTunes XML '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "No tracks loaded from iTunes XML '%s'\n", path);
       goto error;
     }
 
-  DPRINTF(E_LOG, L_SCAN, "Loaded %d tracks from iTunes XML '%s'\n", ret, path);
+  DPRINTF(E_ERROR, L_SCAN, "Loaded %d tracks from iTunes XML '%s'\n", ret, path);
 
   /* Playlists */
   ret = get_dictval_array_from_key(itml, "Playlists", &node);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not find Playlists dict in '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "Could not find Playlists dict in '%s'\n", path);
       goto error;
     }
 

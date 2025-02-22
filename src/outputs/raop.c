@@ -439,7 +439,7 @@ alac_encode_no_xcode(struct evbuffer *evbuf, uint8_t *rawbuf, size_t rawbuf_size
 
   if (len > sizeof(dst))
     {
-      DPRINTF(E_LOG, L_RAOP, "Bug! Invalid input to ALAC encoder, destination buffer would overflow\n");
+      DPRINTF(E_ERROR, L_RAOP, "Bug! Invalid input to ALAC encoder, destination buffer would overflow\n");
       return -1;
     }
 
@@ -458,7 +458,7 @@ alac_encode_xcode(struct evbuffer *evbuf, struct encode_ctx *encode_ctx, uint8_t
   frame = transcode_frame_new(rawbuf, rawbuf_size, nsamples, quality);
   if (!frame)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not convert raw PCM to frame (bufsize=%zu)\n", rawbuf_size);
+      DPRINTF(E_ERROR, L_RAOP, "Could not convert raw PCM to frame (bufsize=%zu)\n", rawbuf_size);
       return -1;
     }
 
@@ -466,7 +466,7 @@ alac_encode_xcode(struct evbuffer *evbuf, struct encode_ctx *encode_ctx, uint8_t
   transcode_frame_free(frame);
   if (len < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not ALAC encode frame\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not ALAC encode frame\n");
       return -1;
     }
 
@@ -512,7 +512,7 @@ timing_get_clock_ntp(struct ntp_stamp *ns)
   ret = clock_gettime(CLOCK_MONOTONIC, &ts);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Couldn't get clock: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_RAOP, "Couldn't get clock: %s\n", strerror(errno));
 
       return -1;
     }
@@ -543,7 +543,7 @@ raop_crypt_mgf1(uint8_t *mask, size_t l, const uint8_t *z, const size_t zlen, co
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not open hash: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not open hash: %s\n", ebuf);
 
       return -1;
     }
@@ -609,7 +609,7 @@ raop_crypt_add_oaep_padding(uint8_t *em, const size_t emlen, const uint8_t *m, c
    */
   if (mlen > (emlen_max - (2 * hlen) - 1))
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not add OAEP padding: message too long\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not add OAEP padding: message too long\n");
 
       return -1;
     }
@@ -631,7 +631,7 @@ raop_crypt_add_oaep_padding(uint8_t *em, const size_t emlen, const uint8_t *m, c
 
   if (!db || !db_mask || !seed_mask)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not allocate memory for OAEP padding\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not allocate memory for OAEP padding\n");
 
       if (db)
 	free(db);
@@ -667,7 +667,7 @@ raop_crypt_add_oaep_padding(uint8_t *em, const size_t emlen, const uint8_t *m, c
   seed = gcry_random_bytes(hlen, GCRY_STRONG_RANDOM);
   if (!seed)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not allocate memory for OAEP seed\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not allocate memory for OAEP seed\n");
 
       ret = -1;
       goto out_free_alloced;
@@ -753,7 +753,7 @@ raop_crypt_encrypt_aes_key_base64(void)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not read RAOP RSA pubkey: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not read RAOP RSA pubkey: %s\n", ebuf);
 
       return NULL;
     }
@@ -763,7 +763,7 @@ raop_crypt_encrypt_aes_key_base64(void)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not read RAOP RSA exponent: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not read RAOP RSA exponent: %s\n", ebuf);
 
       goto out_free_mpi_pubkey;
     }
@@ -777,7 +777,7 @@ raop_crypt_encrypt_aes_key_base64(void)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not convert input data: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not convert input data: %s\n", ebuf);
 
       goto out_free_mpi_exp;
     }
@@ -787,7 +787,7 @@ raop_crypt_encrypt_aes_key_base64(void)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not build RSA params S-exp: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not build RSA params S-exp: %s\n", ebuf);
 
       goto out_free_mpi_input;
     }
@@ -797,7 +797,7 @@ raop_crypt_encrypt_aes_key_base64(void)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not build data S-exp: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not build data S-exp: %s\n", ebuf);
 
       goto out_free_sexp_params;
     }
@@ -807,7 +807,7 @@ raop_crypt_encrypt_aes_key_base64(void)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not encrypt data: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not encrypt data: %s\n", ebuf);
 
       goto out_free_sexp_input;
     }
@@ -816,7 +816,7 @@ raop_crypt_encrypt_aes_key_base64(void)
   sexp_token_a = gcry_sexp_find_token(sexp_encrypted, "a", 0);
   if (!sexp_token_a)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not find token 'a' in result S-exp\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not find token 'a' in result S-exp\n");
 
       goto out_free_sexp_encrypted;
     }
@@ -824,7 +824,7 @@ raop_crypt_encrypt_aes_key_base64(void)
   mpi_output = gcry_sexp_nth_mpi(sexp_token_a, 1, GCRYMPI_FMT_USG);
   if (!mpi_output)
     {
-      DPRINTF(E_LOG, L_RAOP, "Cannot extract MPI from result\n");
+      DPRINTF(E_ERROR, L_RAOP, "Cannot extract MPI from result\n");
 
       goto out_free_sexp_token_a;
     }
@@ -834,7 +834,7 @@ raop_crypt_encrypt_aes_key_base64(void)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not copy encrypted data: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not copy encrypted data: %s\n", ebuf);
 
       goto out_free_mpi_output;
     }
@@ -890,7 +890,7 @@ raop_add_auth(struct raop_session *rs, struct evrtsp_request *req, const char *m
 
   if (!rs->password)
     {
-      DPRINTF(E_LOG, L_RAOP, "Authentication required but no password found for device '%s'\n", rs->devname);
+      DPRINTF(E_ERROR, L_RAOP, "Authentication required but no password found for device '%s'\n", rs->devname);
 
       return -2;
     }
@@ -910,7 +910,7 @@ raop_add_auth(struct raop_session *rs, struct evrtsp_request *req, const char *m
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not open MD5: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not open MD5: %s\n", ebuf);
 
       return -1;
     }
@@ -930,7 +930,7 @@ raop_add_auth(struct raop_session *rs, struct evrtsp_request *req, const char *m
   hash_bytes = gcry_md_read(hd, GCRY_MD_MD5);
   if (!hash_bytes)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not read MD5 hash\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not read MD5 hash\n");
 
       return -1;
     }
@@ -949,7 +949,7 @@ raop_add_auth(struct raop_session *rs, struct evrtsp_request *req, const char *m
   hash_bytes = gcry_md_read(hd, GCRY_MD_MD5);
   if (!hash_bytes)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not read MD5 hash\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not read MD5 hash\n");
 
       return -1;
     }
@@ -970,7 +970,7 @@ raop_add_auth(struct raop_session *rs, struct evrtsp_request *req, const char *m
   hash_bytes = gcry_md_read(hd, GCRY_MD_MD5);
   if (!hash_bytes)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not read MD5 hash\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not read MD5 hash\n");
 
       return -1;
     }
@@ -985,7 +985,7 @@ raop_add_auth(struct raop_session *rs, struct evrtsp_request *req, const char *m
 		 username, rs->realm, rs->nonce, uri, ha1);
   if ((ret < 0) || (ret >= sizeof(auth)))
     {
-      DPRINTF(E_LOG, L_RAOP, "Authorization value header exceeds buffer size\n");
+      DPRINTF(E_ERROR, L_RAOP, "Authorization value header exceeds buffer size\n");
 
       return -1;
     }
@@ -1022,7 +1022,7 @@ raop_parse_auth(struct raop_session *rs, struct evrtsp_request *req)
   param = evrtsp_find_header(req->input_headers, "WWW-Authenticate");
   if (!param)
     {
-      DPRINTF(E_LOG, L_RAOP, "WWW-Authenticate header not found\n");
+      DPRINTF(E_ERROR, L_RAOP, "WWW-Authenticate header not found\n");
       goto error;
     }
 
@@ -1030,21 +1030,21 @@ raop_parse_auth(struct raop_session *rs, struct evrtsp_request *req)
 
   if (strncmp(param, "Digest ", strlen("Digest ")) != 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Unsupported authentication method: %s\n", param);
+      DPRINTF(E_ERROR, L_RAOP, "Unsupported authentication method: %s\n", param);
       goto error;
     }
 
   auth = strdup(param);
   if (!auth)
     {
-      DPRINTF(E_LOG, L_RAOP, "Out of memory for WWW-Authenticate header copy\n");
+      DPRINTF(E_ERROR, L_RAOP, "Out of memory for WWW-Authenticate header copy\n");
       goto error;
     }
 
   token = strchr(auth, ' ');
   if (!token)
     {
-      DPRINTF(E_LOG, L_RAOP, "Unexpected WWW-Authenticate auth\n");
+      DPRINTF(E_ERROR, L_RAOP, "Unexpected WWW-Authenticate auth\n");
       goto error;
     }
 
@@ -1075,7 +1075,7 @@ raop_parse_auth(struct raop_session *rs, struct evrtsp_request *req)
 
   if (!rs->realm || !rs->nonce)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not find realm/nonce in WWW-Authenticate header\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not find realm/nonce in WWW-Authenticate header\n");
 
       if (rs->realm)
 	{
@@ -1127,7 +1127,7 @@ raop_add_headers(struct raop_session *rs, struct evrtsp_request *req, enum evrts
   ret = raop_add_auth(rs, req, method, url);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not add Authorization header\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not add Authorization header\n");
 
       if (ret == -2)
 	rs->state = RAOP_STATE_PASSWORD;
@@ -1213,7 +1213,7 @@ raop_make_sdp(struct raop_session *rs, struct evrtsp_request *req, char *address
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Out of memory for SDP payload\n");
+      DPRINTF(E_ERROR, L_RAOP, "Out of memory for SDP payload\n");
       return -1;
     }
 
@@ -1266,7 +1266,7 @@ raop_send_req_teardown(struct raop_session *rs, evrtsp_req_cb cb, const char *lo
   req = evrtsp_request_new(cb, rs);
   if (!req)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not create RTSP request for TEARDOWN\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not create RTSP request for TEARDOWN\n");
 
       return -1;
     }
@@ -1281,7 +1281,7 @@ raop_send_req_teardown(struct raop_session *rs, evrtsp_req_cb cb, const char *lo
   ret = evrtsp_make_request(rs->ctrl, req, EVRTSP_REQ_TEARDOWN, rs->session_url);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not make TEARDOWN request to '%s'\n", rs->devname);
+      DPRINTF(E_ERROR, L_RAOP, "Could not make TEARDOWN request to '%s'\n", rs->devname);
 
       return -1;
     }
@@ -1306,7 +1306,7 @@ raop_send_req_flush(struct raop_session *rs, evrtsp_req_cb cb, const char *log_c
   req = evrtsp_request_new(cb, rs);
   if (!req)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not create RTSP request for FLUSH\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not create RTSP request for FLUSH\n");
 
       return -1;
     }
@@ -1322,7 +1322,7 @@ raop_send_req_flush(struct raop_session *rs, evrtsp_req_cb cb, const char *log_c
   ret = snprintf(buf, sizeof(buf), "seq=%" PRIu16 ";rtptime=%u", rms->rtp_session->seqnum, rms->rtp_session->pos);
   if ((ret < 0) || (ret >= sizeof(buf)))
     {
-      DPRINTF(E_LOG, L_RAOP, "RTP-Info too big for buffer in FLUSH request\n");
+      DPRINTF(E_ERROR, L_RAOP, "RTP-Info too big for buffer in FLUSH request\n");
 
       evrtsp_request_free(req);
       return -1;
@@ -1332,7 +1332,7 @@ raop_send_req_flush(struct raop_session *rs, evrtsp_req_cb cb, const char *log_c
   ret = evrtsp_make_request(rs->ctrl, req, EVRTSP_REQ_FLUSH, rs->session_url);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not make FLUSH request to '%s'\n", rs->devname);
+      DPRINTF(E_ERROR, L_RAOP, "Could not make FLUSH request to '%s'\n", rs->devname);
 
       return -1;
     }
@@ -1355,7 +1355,7 @@ raop_send_req_set_parameter(struct raop_session *rs, struct evbuffer *evbuf, cha
   req = evrtsp_request_new(cb, rs);
   if (!req)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not create RTSP request for SET_PARAMETER\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not create RTSP request for SET_PARAMETER\n");
 
       return -1;
     }
@@ -1363,7 +1363,7 @@ raop_send_req_set_parameter(struct raop_session *rs, struct evbuffer *evbuf, cha
   ret = evbuffer_add_buffer(req->output_buffer, evbuf);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Out of memory for SET_PARAMETER payload\n");
+      DPRINTF(E_ERROR, L_RAOP, "Out of memory for SET_PARAMETER payload\n");
 
       evrtsp_request_free(req);
       return -1;
@@ -1384,7 +1384,7 @@ raop_send_req_set_parameter(struct raop_session *rs, struct evbuffer *evbuf, cha
   ret = evrtsp_make_request(rs->ctrl, req, EVRTSP_REQ_SET_PARAMETER, rs->session_url);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not make SET_PARAMETER request to '%s'\n", rs->devname);
+      DPRINTF(E_ERROR, L_RAOP, "Could not make SET_PARAMETER request to '%s'\n", rs->devname);
 
       return -1;
     }
@@ -1409,7 +1409,7 @@ raop_send_req_record(struct raop_session *rs, evrtsp_req_cb cb, const char *log_
   req = evrtsp_request_new(cb, rs);
   if (!req)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not create RTSP request for RECORD\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not create RTSP request for RECORD\n");
 
       return -1;
     }
@@ -1427,7 +1427,7 @@ raop_send_req_record(struct raop_session *rs, evrtsp_req_cb cb, const char *log_
   ret = snprintf(buf, sizeof(buf), "seq=%" PRIu16 ";rtptime=%u", rms->rtp_session->seqnum, rms->rtp_session->pos);
   if ((ret < 0) || (ret >= sizeof(buf)))
     {
-      DPRINTF(E_LOG, L_RAOP, "RTP-Info too big for buffer in RECORD request\n");
+      DPRINTF(E_ERROR, L_RAOP, "RTP-Info too big for buffer in RECORD request\n");
 
       evrtsp_request_free(req);
       return -1;
@@ -1439,7 +1439,7 @@ raop_send_req_record(struct raop_session *rs, evrtsp_req_cb cb, const char *log_
   ret = evrtsp_make_request(rs->ctrl, req, EVRTSP_REQ_RECORD, rs->session_url);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not make RECORD request to '%s'\n", rs->devname);
+      DPRINTF(E_ERROR, L_RAOP, "Could not make RECORD request to '%s'\n", rs->devname);
 
       return -1;
     }
@@ -1461,7 +1461,7 @@ raop_send_req_setup(struct raop_session *rs, evrtsp_req_cb cb, const char *log_c
   req = evrtsp_request_new(cb, rs);
   if (!req)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not create RTSP request for SETUP\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not create RTSP request for SETUP\n");
 
       return -1;
     }
@@ -1478,7 +1478,7 @@ raop_send_req_setup(struct raop_session *rs, evrtsp_req_cb cb, const char *log_c
 		 rs->control_svc->port, rs->timing_svc->port);
   if ((ret < 0) || (ret >= sizeof(hdr)))
     {
-      DPRINTF(E_LOG, L_RAOP, "Transport header exceeds buffer length\n");
+      DPRINTF(E_ERROR, L_RAOP, "Transport header exceeds buffer length\n");
 
       evrtsp_request_free(req);
       return -1;
@@ -1489,7 +1489,7 @@ raop_send_req_setup(struct raop_session *rs, evrtsp_req_cb cb, const char *log_c
   ret = evrtsp_make_request(rs->ctrl, req, EVRTSP_REQ_SETUP, rs->session_url);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not make SETUP request to '%s'\n", rs->devname);
+      DPRINTF(E_ERROR, L_RAOP, "Could not make SETUP request to '%s'\n", rs->devname);
 
       return -1;
     }
@@ -1519,7 +1519,7 @@ raop_send_req_announce(struct raop_session *rs, evrtsp_req_cb cb, const char *lo
   evrtsp_connection_get_local_address(rs->ctrl, &address, &port, &family);
   if (!address || (port == 0))
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not determine local address\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not determine local address\n");
 
       if (address)
 	free(address);
@@ -1539,7 +1539,7 @@ raop_send_req_announce(struct raop_session *rs, evrtsp_req_cb cb, const char *lo
   req = evrtsp_request_new(cb, rs);
   if (!req)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not create RTSP request for ANNOUNCE\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not create RTSP request for ANNOUNCE\n");
 
       free(address);
       return -1;
@@ -1554,7 +1554,7 @@ raop_send_req_announce(struct raop_session *rs, evrtsp_req_cb cb, const char *lo
     ret = snprintf(rs->session_url, sizeof(rs->session_url), "rtsp://[%s]/%u", address, session_id);
   if ((ret < 0) || (ret >= sizeof(rs->session_url)))
     {
-      DPRINTF(E_LOG, L_RAOP, "Session URL length exceeds 127 characters\n");
+      DPRINTF(E_ERROR, L_RAOP, "Session URL length exceeds 127 characters\n");
 
       free(address);
       goto cleanup_req;
@@ -1565,7 +1565,7 @@ raop_send_req_announce(struct raop_session *rs, evrtsp_req_cb cb, const char *lo
   free(address);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not generate SDP payload for ANNOUNCE\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not generate SDP payload for ANNOUNCE\n");
 
       goto cleanup_req;
     }
@@ -1586,7 +1586,7 @@ raop_send_req_announce(struct raop_session *rs, evrtsp_req_cb cb, const char *lo
       challenge_b64 = b64_encode(challenge, sizeof(challenge));
       if (!challenge_b64)
 	{
-	  DPRINTF(E_LOG, L_RAOP, "Couldn't encode challenge\n");
+	  DPRINTF(E_ERROR, L_RAOP, "Couldn't encode challenge\n");
 
 	  goto cleanup_req;
 	}
@@ -1604,7 +1604,7 @@ raop_send_req_announce(struct raop_session *rs, evrtsp_req_cb cb, const char *lo
   ret = evrtsp_make_request(rs->ctrl, req, EVRTSP_REQ_ANNOUNCE, rs->session_url);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not make ANNOUNCE request to '%s'\n", rs->devname);
+      DPRINTF(E_ERROR, L_RAOP, "Could not make ANNOUNCE request to '%s'\n", rs->devname);
 
       return -1;
     }
@@ -1653,7 +1653,7 @@ raop_send_req_auth_setup(struct raop_session *rs, evrtsp_req_cb cb, const char *
   req = evrtsp_request_new(cb, rs);
   if (!req)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not create RTSP request for auth-setup\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not create RTSP request for auth-setup\n");
       return -1;
     }
 
@@ -1674,7 +1674,7 @@ raop_send_req_auth_setup(struct raop_session *rs, evrtsp_req_cb cb, const char *
   ret = evrtsp_make_request(rs->ctrl, req, EVRTSP_REQ_POST, "/auth-setup");
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not make auth-setup request to '%s'\n", rs->devname);
+      DPRINTF(E_ERROR, L_RAOP, "Could not make auth-setup request to '%s'\n", rs->devname);
       return -1;
     }
 
@@ -1696,7 +1696,7 @@ raop_send_req_options(struct raop_session *rs, evrtsp_req_cb cb, const char *log
   req = evrtsp_request_new(cb, rs);
   if (!req)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not create RTSP request for OPTIONS\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not create RTSP request for OPTIONS\n");
       return -1;
     }
 
@@ -1710,7 +1710,7 @@ raop_send_req_options(struct raop_session *rs, evrtsp_req_cb cb, const char *log
   ret = evrtsp_make_request(rs->ctrl, req, EVRTSP_REQ_OPTIONS, "*");
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not make OPTIONS request to '%s'\n", rs->devname);
+      DPRINTF(E_ERROR, L_RAOP, "Could not make OPTIONS request to '%s'\n", rs->devname);
       return -1;
     }
 
@@ -1732,7 +1732,7 @@ raop_send_req_pin_start(struct raop_session *rs, evrtsp_req_cb cb, const char *l
   req = evrtsp_request_new(cb, rs);
   if (!req)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not create RTSP request to '%s' for pair-pin-start\n", rs->devname);
+      DPRINTF(E_ERROR, L_RAOP, "Could not create RTSP request to '%s' for pair-pin-start\n", rs->devname);
       return -1;
     }
 
@@ -1743,12 +1743,12 @@ raop_send_req_pin_start(struct raop_session *rs, evrtsp_req_cb cb, const char *l
       return -1;
     }
 
-  DPRINTF(E_LOG, L_RAOP, "Starting device verification for '%s', go to the web interface and enter PIN\n", rs->devname);
+  DPRINTF(E_ERROR, L_RAOP, "Starting device verification for '%s', go to the web interface and enter PIN\n", rs->devname);
 
   ret = evrtsp_make_request(rs->ctrl, req, EVRTSP_REQ_POST, "/pair-pin-start");
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not make pair-pin-start request\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not make pair-pin-start request\n");
       return -1;
     }
 
@@ -1790,11 +1790,11 @@ raop_status(struct raop_session *rs)
 	state = OUTPUT_STATE_STREAMING;
 	break;
       case RAOP_STATE_TEARDOWN:
-	DPRINTF(E_LOG, L_RAOP, "Bug! raop_status() called with transitional state (TEARDOWN)\n");
+	DPRINTF(E_ERROR, L_RAOP, "Bug! raop_status() called with transitional state (TEARDOWN)\n");
 	state = OUTPUT_STATE_STOPPED;
 	break;
       default:
-	DPRINTF(E_LOG, L_RAOP, "Bug! Unhandled state in raop_status(): %d\n", rs->state);
+	DPRINTF(E_ERROR, L_RAOP, "Bug! Unhandled state in raop_status(): %d\n", rs->state);
 	state = OUTPUT_STATE_FAILED;
     }
 
@@ -1869,7 +1869,7 @@ master_session_make(struct media_quality *quality, bool encrypt)
   ret = outputs_quality_subscribe(quality);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not subscribe to required audio quality (%d/%d/%d)\n", quality->sample_rate, quality->bits_per_sample, quality->channels);
+      DPRINTF(E_ERROR, L_RAOP, "Could not subscribe to required audio quality (%d/%d/%d)\n", quality->sample_rate, quality->bits_per_sample, quality->channels);
       return NULL;
     }
 
@@ -1886,7 +1886,7 @@ master_session_make(struct media_quality *quality, bool encrypt)
   encode_args.src_ctx = transcode_decode_setup_raw(XCODE_PCM16, quality);
   if (!encode_args.src_ctx)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not create decoding context\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not create decoding context\n");
       goto error;
     }
 
@@ -1894,7 +1894,7 @@ master_session_make(struct media_quality *quality, bool encrypt)
   transcode_decode_cleanup(&encode_args.src_ctx);
   if (!rms->encode_ctx)
     {
-      DPRINTF(E_LOG, L_RAOP, "Will not be able to stream AirPlay 2, ffmpeg has no ALAC encoder\n");
+      DPRINTF(E_ERROR, L_RAOP, "Will not be able to stream AirPlay 2, ffmpeg has no ALAC encoder\n");
       goto error;
     }
 
@@ -1999,7 +1999,7 @@ raop_rtsp_close_cb(struct evrtsp_connection *evcon, void *arg)
 {
   struct raop_session *rs = arg;
 
-  DPRINTF(E_LOG, L_RAOP, "Device '%s' closed RTSP connection\n", rs->devname);
+  DPRINTF(E_ERROR, L_RAOP, "Device '%s' closed RTSP connection\n", rs->devname);
 
   deferred_session_failure(rs);
 }
@@ -2012,9 +2012,9 @@ session_teardown_cb(struct evrtsp_request *req, void *arg)
   rs->reqs_in_flight--;
 
   if (!req)
-    DPRINTF(E_LOG, L_RAOP, "TEARDOWN request failed in session shutdown\n");
+    DPRINTF(E_ERROR, L_RAOP, "TEARDOWN request failed in session shutdown\n");
   else if (req->response_code != RTSP_OK)
-    DPRINTF(E_LOG, L_RAOP, "TEARDOWN request failed in session shutdown: %d %s\n", req->response_code, req->response_code_line);
+    DPRINTF(E_ERROR, L_RAOP, "TEARDOWN request failed in session shutdown: %d %s\n", req->response_code, req->response_code_line);
 
   rs->state = RAOP_STATE_STOPPED;
 
@@ -2031,7 +2031,7 @@ session_teardown(struct raop_session *rs, const char *log_caller)
   ret = raop_send_req_teardown(rs, session_teardown_cb, log_caller);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "%s: TEARDOWN request failed!\n", log_caller);
+      DPRINTF(E_ERROR, L_RAOP, "%s: TEARDOWN request failed!\n", log_caller);
       deferred_session_failure(rs);
     }
 
@@ -2102,7 +2102,7 @@ session_connection_setup(struct raop_session *rs, struct output_device *rd, int 
 	    rs->naddr.sin6.sin6_scope_id = if_nametoindex(intf);
 	    if (rs->naddr.sin6.sin6_scope_id == 0)
 	      {
-		DPRINTF(E_LOG, L_RAOP, "Could not find interface %s\n", intf);
+		DPRINTF(E_ERROR, L_RAOP, "Could not find interface %s\n", intf);
 
 		ret = -1;
 		break;
@@ -2117,14 +2117,14 @@ session_connection_setup(struct raop_session *rs, struct output_device *rd, int 
 
   if (ret <= 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Device '%s' has invalid address (%s) for %s\n", rd->name, address, (family == AF_INET) ? "ipv4" : "ipv6");
+      DPRINTF(E_ERROR, L_RAOP, "Device '%s' has invalid address (%s) for %s\n", rd->name, address, (family == AF_INET) ? "ipv4" : "ipv6");
       return -1;
     }
 
   rs->ctrl = evrtsp_connection_new(address, port);
   if (!rs->ctrl)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not create control connection to '%s' (%s)\n", rd->name, address);
+      DPRINTF(E_ERROR, L_RAOP, "Could not create control connection to '%s' (%s)\n", rd->name, address);
       return -1;
     }
 
@@ -2242,7 +2242,7 @@ session_make(struct output_device *rd, int callback_id, bool only_probe)
   rs->master_session = master_session_make(&rd->quality, rs->encrypt);
   if (!rs->master_session)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not attach a master session for device '%s'\n", rd->name);
+      DPRINTF(E_ERROR, L_RAOP, "Could not attach a master session for device '%s'\n", rd->name);
       goto error;
     }
 
@@ -2301,7 +2301,7 @@ raop_metadata_prepare(struct output_metadata *metadata)
   queue_item = db_queue_fetch_byitemid(metadata->item_id);
   if (!queue_item)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not fetch queue item\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not fetch queue item\n");
       return NULL;
     }
 
@@ -2325,7 +2325,7 @@ raop_metadata_prepare(struct output_metadata *metadata)
   free_queue_item(queue_item, 0);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not encode file metadata; metadata will not be sent\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not encode file metadata; metadata will not be sent\n");
       raop_metadata_free(rmd);
       return NULL;
     }
@@ -2417,13 +2417,13 @@ raop_metadata_send_progress(struct raop_session *rs, struct evbuffer *evbuf, str
   ret = evbuffer_add_printf(evbuf, "progress: %u/%u/%u\r\n", display, pos, end);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not build progress string for sending\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not build progress string for sending\n");
       return -1;
     }
 
   ret = raop_send_req_set_parameter(rs, evbuf, "text/parameters", NULL, raop_cb_metadata, "send_progress");
   if (ret < 0)
-    DPRINTF(E_LOG, L_RAOP, "Could not send SET_PARAMETER progress request to '%s'\n", rs->devname);
+    DPRINTF(E_ERROR, L_RAOP, "Could not send SET_PARAMETER progress request to '%s'\n", rs->devname);
 
   return ret;
 }
@@ -2447,7 +2447,7 @@ raop_metadata_send_artwork(struct raop_session *rs, struct evbuffer *evbuf, stru
 	break;
 
       default:
-	DPRINTF(E_LOG, L_RAOP, "Unsupported artwork format %d\n", rmd->artwork_fmt);
+	DPRINTF(E_ERROR, L_RAOP, "Unsupported artwork format %d\n", rmd->artwork_fmt);
 	return -1;
     }
 
@@ -2457,13 +2457,13 @@ raop_metadata_send_artwork(struct raop_session *rs, struct evbuffer *evbuf, stru
   ret = evbuffer_add(evbuf, buf, len);
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not copy artwork for sending\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not copy artwork for sending\n");
       return -1;
     }
 
   ret = raop_send_req_set_parameter(rs, evbuf, ctype, rtptime, raop_cb_metadata, "send_artwork");
   if (ret < 0)
-    DPRINTF(E_LOG, L_RAOP, "Could not send SET_PARAMETER artwork request to '%s'\n", rs->devname);
+    DPRINTF(E_ERROR, L_RAOP, "Could not send SET_PARAMETER artwork request to '%s'\n", rs->devname);
 
   return ret;
 }
@@ -2481,13 +2481,13 @@ raop_metadata_send_text(struct raop_session *rs, struct evbuffer *evbuf, struct 
   ret = evbuffer_add(evbuf, buf, len);
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not copy metadata for sending\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not copy metadata for sending\n");
       return -1;
     }
 
   ret = raop_send_req_set_parameter(rs, evbuf, "application/x-dmap-tagged", rtptime, raop_cb_metadata, "send_text");
   if (ret < 0)
-    DPRINTF(E_LOG, L_RAOP, "Could not send SET_PARAMETER metadata request to '%s'\n", rs->devname);
+    DPRINTF(E_ERROR, L_RAOP, "Could not send SET_PARAMETER metadata request to '%s'\n", rs->devname);
 
   return ret;
 }
@@ -2509,7 +2509,7 @@ raop_metadata_send_generic(struct raop_session *rs, struct output_metadata *meta
   ret = snprintf(rtptime, sizeof(rtptime), "rtptime=%u", start);
   if ((ret < 0) || (ret >= sizeof(rtptime)))
     {
-      DPRINTF(E_LOG, L_RAOP, "RTP-Info too big for buffer while sending metadata\n");
+      DPRINTF(E_ERROR, L_RAOP, "RTP-Info too big for buffer while sending metadata\n");
       return -1;
     }
 
@@ -2623,7 +2623,7 @@ raop_volume_to_pct(struct output_device *device, const char *volstr)
 
   if ((raop_volume == 0.0 && volstr[0] != '0') || raop_volume > 0.0)
     {
-      DPRINTF(E_LOG, L_RAOP, "RAOP device volume is invalid: '%s'\n", volstr);
+      DPRINTF(E_ERROR, L_RAOP, "RAOP device volume is invalid: '%s'\n", volstr);
       return -1;
     }
 
@@ -2648,7 +2648,7 @@ raop_set_volume_internal(struct raop_session *rs, int volume, evrtsp_req_cb cb)
   device = outputs_device_get(rs->device_id);
   if (!device)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not set volume, device with id %" PRIu64 " not in out list\n", rs->device_id);
+      DPRINTF(E_ERROR, L_RAOP, "Could not set volume, device with id %" PRIu64 " not in out list\n", rs->device_id);
 
       return -1;
     }
@@ -2656,7 +2656,7 @@ raop_set_volume_internal(struct raop_session *rs, int volume, evrtsp_req_cb cb)
   evbuf = evbuffer_new();
   if (!evbuf)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not allocate evbuffer for volume payload\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not allocate evbuffer for volume payload\n");
 
       return -1;
     }
@@ -2668,7 +2668,7 @@ raop_set_volume_internal(struct raop_session *rs, int volume, evrtsp_req_cb cb)
   ret = evbuffer_add_printf(evbuf, "volume: -%d.%06d\r\n", -(int)raop_volume, -(int)(1000000.0 * (raop_volume - (int)raop_volume)));
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Out of memory for SET_PARAMETER payload (volume)\n");
+      DPRINTF(E_ERROR, L_RAOP, "Out of memory for SET_PARAMETER payload (volume)\n");
 
       evbuffer_free(evbuf);
       return -1;
@@ -2676,7 +2676,7 @@ raop_set_volume_internal(struct raop_session *rs, int volume, evrtsp_req_cb cb)
 
   ret = raop_send_req_set_parameter(rs, evbuf, "text/parameters", NULL, cb, "volume_internal");
   if (ret < 0)
-    DPRINTF(E_LOG, L_RAOP, "Could not send SET_PARAMETER request for volume to '%s'\n", rs->devname);
+    DPRINTF(E_ERROR, L_RAOP, "Could not send SET_PARAMETER request for volume to '%s'\n", rs->devname);
 
   evbuffer_free(evbuf);
 
@@ -2698,7 +2698,7 @@ raop_cb_set_volume(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "SET_PARAMETER request to '%s' failed for stream volume: %d %s\n", rs->devname, req->response_code, req->response_code_line);
+      DPRINTF(E_ERROR, L_RAOP, "SET_PARAMETER request to '%s' failed for stream volume: %d %s\n", rs->devname, req->response_code, req->response_code_line);
 
       goto error;
     }
@@ -2755,7 +2755,7 @@ raop_cb_flush(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "FLUSH request to '%s' failed: %d %s\n", rs->devname, req->response_code, req->response_code_line);
+      DPRINTF(E_ERROR, L_RAOP, "FLUSH request to '%s' failed: %d %s\n", rs->devname, req->response_code, req->response_code_line);
 
       goto error;
     }
@@ -2814,7 +2814,7 @@ packet_encrypt(struct rtp_packet *pkt)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not reset AES cipher: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not reset AES cipher: %s\n", ebuf);
       return -1;
     }
 
@@ -2823,7 +2823,7 @@ packet_encrypt(struct rtp_packet *pkt)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not set AES IV: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not set AES IV: %s\n", ebuf);
       return -1;
     }
 
@@ -2832,7 +2832,7 @@ packet_encrypt(struct rtp_packet *pkt)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not encrypt payload: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not encrypt payload: %s\n", ebuf);
       return -1;
     }
 
@@ -2850,7 +2850,7 @@ packet_send(struct raop_session *rs, struct rtp_packet *pkt)
   ret = send(rs->server_fd, pkt->data, pkt->data_len, 0);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Send error for '%s': %s\n", rs->devname, strerror(errno));
+      DPRINTF(E_ERROR, L_RAOP, "Send error for '%s': %s\n", rs->devname, strerror(errno));
 
       // Can't free it right away, it would make the ->next in the calling
       // master_session and session loops invalid
@@ -2898,7 +2898,7 @@ control_packet_send(struct raop_session *rs, struct rtp_packet *pkt)
 
   ret = sendto(rs->control_svc->fd, pkt->data, pkt->data_len, 0, &rs->naddr.sa, addrlen);
   if (ret < 0)
-    DPRINTF(E_LOG, L_RAOP, "Could not send playback sync to device '%s': %s\n", rs->devname, strerror(errno));
+    DPRINTF(E_ERROR, L_RAOP, "Could not send playback sync to device '%s': %s\n", rs->devname, strerror(errno));
 }
 
 static void
@@ -3078,14 +3078,14 @@ service_start(struct raop_service *svc, event_callback_fn cb, unsigned short por
   svc->fd = net_bind(&port, SOCK_DGRAM, log_service_name);
   if (svc->fd < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not start '%s' service\n", log_service_name);
+      DPRINTF(E_ERROR, L_RAOP, "Could not start '%s' service\n", log_service_name);
       goto error;
     }
 
   svc->ev = event_new(evbase_player, svc->fd, EV_READ | EV_PERSIST, cb, svc);
   if (!svc->ev)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not create event for '%s' service\n", log_service_name);
+      DPRINTF(E_ERROR, L_RAOP, "Could not create event for '%s' service\n", log_service_name);
       goto error;
     }
 
@@ -3117,7 +3117,7 @@ timing_svc_cb(int fd, short what, void *arg)
   ret = timing_get_clock_ntp(&recv_stamp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Couldn't get receive timestamp\n");
+      DPRINTF(E_ERROR, L_RAOP, "Couldn't get receive timestamp\n");
       return;
     }
 
@@ -3125,7 +3125,7 @@ timing_svc_cb(int fd, short what, void *arg)
   ret = recvfrom(svc->fd, req, sizeof(req), 0, &peer_addr.sa, &peer_addrlen);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Error reading timing request: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_RAOP, "Error reading timing request: %s\n", strerror(errno));
       return;
     }
 
@@ -3161,7 +3161,7 @@ timing_svc_cb(int fd, short what, void *arg)
   ret = timing_get_clock_ntp(&xmit_stamp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Couldn't get transmit timestamp, falling back to receive timestamp\n");
+      DPRINTF(E_ERROR, L_RAOP, "Couldn't get transmit timestamp, falling back to receive timestamp\n");
 
       /* Still better than failing altogether
        * recv/xmit are close enough that it shouldn't matter much
@@ -3180,7 +3180,7 @@ timing_svc_cb(int fd, short what, void *arg)
   ret = sendto(svc->fd, res, sizeof(res), 0, &peer_addr.sa, peer_addrlen);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not send timing reply: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_RAOP, "Could not send timing reply: %s\n", strerror(errno));
       return;
     }
 }
@@ -3203,7 +3203,7 @@ control_svc_cb(int fd, short what, void *arg)
   ret = recvfrom(svc->fd, req, sizeof(req), 0, &peer_addr.sa, &peer_addrlen);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Error reading control request: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_RAOP, "Error reading control request: %s\n", strerror(errno));
       return;
     }
 
@@ -3313,7 +3313,7 @@ raop_cb_pin_start(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "Request for starting PIN verification failed: %d %s\n", req->response_code, req->response_code_line);
+      DPRINTF(E_ERROR, L_RAOP, "Request for starting PIN verification failed: %d %s\n", req->response_code, req->response_code_line);
 
       goto error;
     }
@@ -3341,7 +3341,7 @@ raop_cb_startup_volume(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "SET_PARAMETER request failed for startup volume: %d %s\n", req->response_code, req->response_code_line);
+      DPRINTF(E_ERROR, L_RAOP, "SET_PARAMETER request failed for startup volume: %d %s\n", req->response_code, req->response_code_line);
 
       goto cleanup;
     }
@@ -3386,7 +3386,7 @@ raop_cb_startup_record(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "RECORD request failed in session startup: %d %s\n", req->response_code, req->response_code_line);
+      DPRINTF(E_ERROR, L_RAOP, "RECORD request failed in session startup: %d %s\n", req->response_code, req->response_code_line);
 
       goto cleanup;
     }
@@ -3431,7 +3431,7 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "SETUP request failed in session startup: %d %s\n", req->response_code, req->response_code_line);
+      DPRINTF(E_ERROR, L_RAOP, "SETUP request failed in session startup: %d %s\n", req->response_code, req->response_code_line);
 
       goto cleanup;
     }
@@ -3444,7 +3444,7 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
   param = evrtsp_find_header(req->input_headers, "Session");
   if (!param)
     {
-      DPRINTF(E_LOG, L_RAOP, "Missing Session header in SETUP reply\n");
+      DPRINTF(E_ERROR, L_RAOP, "Missing Session header in SETUP reply\n");
 
       goto cleanup;
     }
@@ -3455,7 +3455,7 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
   param = evrtsp_find_header(req->input_headers, "Transport");
   if (!param)
     {
-      DPRINTF(E_LOG, L_RAOP, "Missing Transport header in SETUP reply\n");
+      DPRINTF(E_ERROR, L_RAOP, "Missing Transport header in SETUP reply\n");
 
       goto cleanup;
     }
@@ -3463,7 +3463,7 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
   /* Check transport is really UDP, AirTunes v2 streaming */
   if (strncmp(param, "RTP/AVP/UDP;", strlen("RTP/AVP/UDP;")) != 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "ApEx replied with unsupported Transport: %s\n", param);
+      DPRINTF(E_ERROR, L_RAOP, "ApEx replied with unsupported Transport: %s\n", param);
 
       goto cleanup;
     }
@@ -3471,7 +3471,7 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
   transport = strdup(param);
   if (!transport)
     {
-      DPRINTF(E_LOG, L_RAOP, "Out of memory for Transport header copy\n");
+      DPRINTF(E_ERROR, L_RAOP, "Out of memory for Transport header copy\n");
 
       goto cleanup;
     }
@@ -3479,7 +3479,7 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
   token = strchr(transport, ';');
   if (!token)
     {
-      DPRINTF(E_LOG, L_RAOP, "Missing semicolon in Transport header: %s\n", transport);
+      DPRINTF(E_ERROR, L_RAOP, "Missing semicolon in Transport header: %s\n", transport);
 
       free(transport);
       goto cleanup;
@@ -3501,7 +3501,7 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
 	  ret = safe_atoi32(token, &tmp);
 	  if (ret < 0)
 	    {
-	      DPRINTF(E_LOG, L_RAOP, "Could not read server_port\n");
+	      DPRINTF(E_ERROR, L_RAOP, "Could not read server_port\n");
 
 	      break;
 	    }
@@ -3517,7 +3517,7 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
 	  ret = safe_atoi32(token, &tmp);
 	  if (ret < 0)
 	    {
-	      DPRINTF(E_LOG, L_RAOP, "Could not read control_port\n");
+	      DPRINTF(E_ERROR, L_RAOP, "Could not read control_port\n");
 
 	      break;
 	    }
@@ -3533,7 +3533,7 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
 	  ret = safe_atoi32(token, &tmp);
 	  if (ret < 0)
 	    {
-	      DPRINTF(E_LOG, L_RAOP, "Could not read timing_port\n");
+	      DPRINTF(E_ERROR, L_RAOP, "Could not read timing_port\n");
 
 	      break;
 	    }
@@ -3548,8 +3548,8 @@ raop_cb_startup_setup(struct evrtsp_request *req, void *arg)
 
   if ((rs->server_port == 0) || (rs->control_port == 0))
     {
-      DPRINTF(E_LOG, L_RAOP, "Transport header lacked some port numbers in SETUP reply\n");
-      DPRINTF(E_LOG, L_RAOP, "Transport header was: %s\n", param);
+      DPRINTF(E_ERROR, L_RAOP, "Transport header lacked some port numbers in SETUP reply\n");
+      DPRINTF(E_ERROR, L_RAOP, "Transport header was: %s\n", param);
 
       goto cleanup;
     }
@@ -3582,7 +3582,7 @@ raop_cb_startup_announce(struct evrtsp_request *req, void *arg)
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "ANNOUNCE request failed in session startup: %d %s\n", req->response_code, req->response_code_line);
+      DPRINTF(E_ERROR, L_RAOP, "ANNOUNCE request failed in session startup: %d %s\n", req->response_code, req->response_code_line);
 
       goto cleanup;
     }
@@ -3641,14 +3641,14 @@ raop_cb_startup_options(struct evrtsp_request *req, void *arg)
 
   if (!req || !req->response_code)
     {
-      DPRINTF(E_LOG, L_RAOP, "No response from '%s' (%s) to OPTIONS request\n", rs->devname, rs->address);
+      DPRINTF(E_ERROR, L_RAOP, "No response from '%s' (%s) to OPTIONS request\n", rs->devname, rs->address);
 
       goto cleanup;
     }
 
   if ((req->response_code != RTSP_OK) && (req->response_code != RTSP_UNAUTHORIZED) && (req->response_code != RTSP_FORBIDDEN))
     {
-      DPRINTF(E_LOG, L_RAOP, "OPTIONS request failed '%s' (%s): %d %s\n", rs->devname, rs->address, req->response_code, req->response_code_line);
+      DPRINTF(E_ERROR, L_RAOP, "OPTIONS request failed '%s' (%s): %d %s\n", rs->devname, rs->address, req->response_code, req->response_code_line);
 
       goto cleanup;
     }
@@ -3661,7 +3661,7 @@ raop_cb_startup_options(struct evrtsp_request *req, void *arg)
     {
       if (rs->req_has_auth)
 	{
-	  DPRINTF(E_LOG, L_RAOP, "Bad password for device '%s' (%s)\n", rs->devname, rs->address);
+	  DPRINTF(E_ERROR, L_RAOP, "Bad password for device '%s' (%s)\n", rs->devname, rs->address);
 
 	  rs->state = RAOP_STATE_PASSWORD;
 	  goto cleanup;
@@ -3674,7 +3674,7 @@ raop_cb_startup_options(struct evrtsp_request *req, void *arg)
       ret = raop_send_req_options(rs, raop_cb_startup_options, "startup_options");
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_RAOP, "Could not re-run OPTIONS request with authentication for '%s' (%s)\n", rs->devname, rs->address);
+	  DPRINTF(E_ERROR, L_RAOP, "Could not re-run OPTIONS request with authentication for '%s' (%s)\n", rs->devname, rs->address);
 	  goto cleanup;
 	}
 
@@ -3692,7 +3692,7 @@ raop_cb_startup_options(struct evrtsp_request *req, void *arg)
       ret = raop_send_req_pin_start(rs, raop_cb_pin_start, "startup_options");
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_RAOP, "Could not request PIN from '%s' (%s) for device verification\n", rs->devname, rs->address);
+	  DPRINTF(E_ERROR, L_RAOP, "Could not request PIN from '%s' (%s) for device verification\n", rs->devname, rs->address);
 	  goto cleanup;
 	}
 
@@ -3755,13 +3755,13 @@ raop_pair_response_process(int step, struct evrtsp_request *req, struct raop_ses
 
   if (!req)
     {
-      DPRINTF(E_LOG, L_RAOP, "Verification step %d to '%s' failed, empty callback\n", step, rs->devname);
+      DPRINTF(E_ERROR, L_RAOP, "Verification step %d to '%s' failed, empty callback\n", step, rs->devname);
       return -1;
     }
 
   if (req->response_code != RTSP_OK)
     {
-      DPRINTF(E_LOG, L_RAOP, "Verification step %d to '%s' failed with error code %d: %s\n", step, rs->devname, req->response_code, req->response_code_line);
+      DPRINTF(E_ERROR, L_RAOP, "Verification step %d to '%s' failed with error code %d: %s\n", step, rs->devname, req->response_code, req->response_code_line);
       return -1;
     }
 
@@ -3795,7 +3795,7 @@ raop_pair_response_process(int step, struct evrtsp_request *req, struct raop_ses
     }
 
   if (ret < 0)
-    DPRINTF(E_LOG, L_RAOP, "Verification step %d response from '%s' error: %s\n", step, rs->devname, errmsg);
+    DPRINTF(E_ERROR, L_RAOP, "Verification step %d response from '%s' error: %s\n", step, rs->devname, errmsg);
 
   return ret;
 }
@@ -3850,14 +3850,14 @@ raop_pair_request_send(int step, struct raop_session *rs, void (*cb)(struct evrt
 
   if (!body)
     {
-      DPRINTF(E_LOG, L_RAOP, "Verification step %d request error: %s\n", step, errmsg);
+      DPRINTF(E_ERROR, L_RAOP, "Verification step %d request error: %s\n", step, errmsg);
       return -1;
     }
 
   req = evrtsp_request_new(cb, rs);
   if (!req)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not create RTSP request for verification step %d\n", step);
+      DPRINTF(E_ERROR, L_RAOP, "Could not create RTSP request for verification step %d\n", step);
       return -1;
     }
 
@@ -3878,7 +3878,7 @@ raop_pair_request_send(int step, struct raop_session *rs, void (*cb)(struct evrt
   ret = evrtsp_make_request(rs->ctrl, req, EVRTSP_REQ_POST, url);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Verification request step %d to '%s' failed\n", step, rs->devname);
+      DPRINTF(E_ERROR, L_RAOP, "Verification request step %d to '%s' failed\n", step, rs->devname);
       return -1;
     }
 
@@ -3971,7 +3971,7 @@ raop_pair_verify(struct raop_session *rs)
   rs->pair_verify_ctx = pair_verify_new(PAIR_CLIENT_FRUIT, device->auth_key, NULL, NULL, NULL);
   if (!rs->pair_verify_ctx)
     {
-      DPRINTF(E_LOG, L_RAOP, "Verification authorization key invalid, resetting\n");
+      DPRINTF(E_ERROR, L_RAOP, "Verification authorization key invalid, resetting\n");
 
       free(device->auth_key);
       device->auth_key = NULL;
@@ -4005,11 +4005,11 @@ raop_cb_pair_setup_step3(struct evrtsp_request *req, void *arg)
   ret = pair_setup_result(&authorization_key, NULL, rs->pair_setup_ctx);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Verification setup result error: %s\n", pair_setup_errmsg(rs->pair_setup_ctx));
+      DPRINTF(E_ERROR, L_RAOP, "Verification setup result error: %s\n", pair_setup_errmsg(rs->pair_setup_ctx));
       goto out;
     }
 
-  DPRINTF(E_LOG, L_RAOP, "Verification setup stage complete, saving authorization key\n");
+  DPRINTF(E_ERROR, L_RAOP, "Verification setup stage complete, saving authorization key\n");
 
   device = outputs_device_get(rs->device_id);
   if (!device)
@@ -4088,7 +4088,7 @@ raop_pair_setup(struct raop_session *rs, const char *pin)
   rs->pair_setup_ctx = pair_setup_new(PAIR_CLIENT_FRUIT, pin, NULL, NULL, NULL);
   if (!rs->pair_setup_ctx)
     {
-      DPRINTF(E_LOG, L_RAOP, "Out of memory for verification setup context\n");
+      DPRINTF(E_ERROR, L_RAOP, "Out of memory for verification setup context\n");
       return -1;
     }
 
@@ -4120,7 +4120,7 @@ raop_device_authorize(struct output_device *device, const char *pin, int callbac
   ret = raop_pair_setup(rs, pin);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not send verification setup request to '%s' (address %s)\n", device->name, rs->address);
+      DPRINTF(E_ERROR, L_RAOP, "Could not send verification setup request to '%s' (address %s)\n", device->name, rs->address);
       session_cleanup(rs);
       return -1;
     }
@@ -4182,7 +4182,7 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
   ret = safe_hextou64(name, &id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not extract AirPlay device ID ('%s')\n", name);
+      DPRINTF(E_ERROR, L_RAOP, "Could not extract AirPlay device ID ('%s')\n", name);
 
       return;
     }
@@ -4190,7 +4190,7 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
   device_name = strchr(name, '@');
   if (!device_name)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not extract AirPlay device name ('%s')\n", name);
+      DPRINTF(E_ERROR, L_RAOP, "Could not extract AirPlay device name ('%s')\n", name);
 
       return;
     }
@@ -4201,7 +4201,7 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
   devcfg = cfg_gettsec(cfg, "airplay", device_name);
   if (devcfg && cfg_getbool(devcfg, "exclude"))
     {
-      DPRINTF(E_LOG, L_RAOP, "Excluding AirPlay device '%s' as set in config\n", device_name);
+      DPRINTF(E_ERROR, L_RAOP, "Excluding AirPlay device '%s' as set in config\n", device_name);
 
       return;
     }
@@ -4257,21 +4257,21 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
   p = keyval_get(txt, "tp");
   if (!p)
     {
-      DPRINTF(E_LOG, L_RAOP, "AirPlay '%s': no tp field in TXT record!\n", device_name);
+      DPRINTF(E_ERROR, L_RAOP, "AirPlay '%s': no tp field in TXT record!\n", device_name);
 
       goto free_rd;
     }
 
   if (*p == '\0')
     {
-      DPRINTF(E_LOG, L_RAOP, "AirPlay '%s': tp has no value\n", device_name);
+      DPRINTF(E_ERROR, L_RAOP, "AirPlay '%s': tp has no value\n", device_name);
 
       goto free_rd;
     }
 
   if (!strstr(p, "UDP"))
     {
-      DPRINTF(E_LOG, L_RAOP, "AirPlay '%s': device does not support AirTunes v2 (tp=%s), discarding\n", device_name, p);
+      DPRINTF(E_ERROR, L_RAOP, "AirPlay '%s': device does not support AirTunes v2 (tp=%s), discarding\n", device_name, p);
 
       goto free_rd;
     }
@@ -4285,7 +4285,7 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
     }
   else if (*p == '\0')
     {
-      DPRINTF(E_LOG, L_RAOP, "AirPlay '%s': pw has no value\n", device_name);
+      DPRINTF(E_ERROR, L_RAOP, "AirPlay '%s': pw has no value\n", device_name);
 
       goto free_rd;
     }
@@ -4296,13 +4296,13 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
 
   if (rd->has_password)
     {
-      DPRINTF(E_LOG, L_RAOP, "AirPlay device '%s' is password-protected\n", device_name);
+      DPRINTF(E_ERROR, L_RAOP, "AirPlay device '%s' is password-protected\n", device_name);
 
       if (devcfg)
 	password = cfg_getstr(devcfg, "password");
 
       if (!password)
-	DPRINTF(E_LOG, L_RAOP, "No password given in config for AirPlay device '%s'\n", device_name);
+	DPRINTF(E_ERROR, L_RAOP, "No password given in config for AirPlay device '%s'\n", device_name);
     }
 
   rd->password = password;
@@ -4332,13 +4332,13 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
     rd->quality.channels = RAOP_QUALITY_CHANNELS_DEFAULT;
 
   if (!quality_is_equal(&rd->quality, &raop_quality_default))
-    DPRINTF(E_LOG, L_RAOP, "Device '%s' requested non-default audio quality (%d/%d/%d)\n", rd->name, rd->quality.sample_rate, rd->quality.bits_per_sample, rd->quality.channels);
+    DPRINTF(E_ERROR, L_RAOP, "Device '%s' requested non-default audio quality (%d/%d/%d)\n", rd->name, rd->quality.sample_rate, rd->quality.bits_per_sample, rd->quality.channels);
 
   // Max volume
   rd->max_volume = devcfg ? cfg_getint(devcfg, "max_volume") : RAOP_CONFIG_MAX_VOLUME;
   if ((rd->max_volume < 1) || (rd->max_volume > RAOP_CONFIG_MAX_VOLUME))
     {
-      DPRINTF(E_LOG, L_RAOP, "Config has bad max_volume (%d) for device '%s', using default instead\n", rd->max_volume, device_name);
+      DPRINTF(E_ERROR, L_RAOP, "Config has bad max_volume (%d) for device '%s', using default instead\n", rd->max_volume, device_name);
       rd->max_volume = RAOP_CONFIG_MAX_VOLUME;
     }
 
@@ -4359,7 +4359,7 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
   else if (strncmp(p, "AudioAccessory", strlen("AudioAccessory")) == 0)
     re->devtype = RAOP_DEV_HOMEPOD;
   else if (*p == '\0')
-    DPRINTF(E_LOG, L_RAOP, "AirPlay device '%s': am has no value\n", device_name);
+    DPRINTF(E_ERROR, L_RAOP, "AirPlay device '%s': am has no value\n", device_name);
 
   // If the user didn't set any reconnect setting we enable for Apple TV and
   // HomePods due to https://github.com/owntone/owntone-server/issues/734
@@ -4427,7 +4427,7 @@ raop_device_cb(const char *name, const char *type, const char *domain, const cha
 	break;
 
       default:
-	DPRINTF(E_LOG, L_RAOP, "Error: AirPlay device '%s' has neither ipv4 og ipv6 address\n", device_name);
+	DPRINTF(E_ERROR, L_RAOP, "Error: AirPlay device '%s' has neither ipv4 og ipv6 address\n", device_name);
 	goto free_rd;
     }
 
@@ -4612,7 +4612,7 @@ raop_init(void)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not open AES cipher: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not open AES cipher: %s\n", ebuf);
 
       return -1;
     }
@@ -4622,7 +4622,7 @@ raop_init(void)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_RAOP, "Could not set AES key: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_RAOP, "Could not set AES key: %s\n", ebuf);
 
       goto out_close_cipher;
     }
@@ -4631,7 +4631,7 @@ raop_init(void)
   raop_aes_key_b64 = raop_crypt_encrypt_aes_key_base64();
   if (!raop_aes_key_b64)
     {
-      DPRINTF(E_LOG, L_RAOP, "Couldn't encrypt and encode AES session key\n");
+      DPRINTF(E_ERROR, L_RAOP, "Couldn't encrypt and encode AES session key\n");
 
       goto out_close_cipher;
     }
@@ -4639,7 +4639,7 @@ raop_init(void)
   raop_aes_iv_b64 = b64_encode(raop_aes_iv, sizeof(raop_aes_iv));
   if (!raop_aes_iv_b64)
     {
-      DPRINTF(E_LOG, L_RAOP, "Couldn't encode AES IV\n");
+      DPRINTF(E_ERROR, L_RAOP, "Couldn't encode AES IV\n");
 
       goto out_free_b64_key;
     }
@@ -4659,7 +4659,7 @@ raop_init(void)
   ret = service_start(&raop_timing_svc, timing_svc_cb, timing_port, "RAOP timing");
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "AirPlay time synchronization failed to start\n");
+      DPRINTF(E_ERROR, L_RAOP, "AirPlay time synchronization failed to start\n");
 
       goto out_free_timer;
     }
@@ -4668,7 +4668,7 @@ raop_init(void)
   ret = service_start(&raop_control_svc, control_svc_cb, control_port, "RAOP control");
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "AirPlay playback control failed to start\n");
+      DPRINTF(E_ERROR, L_RAOP, "AirPlay playback control failed to start\n");
 
       goto out_stop_timing;
     }
@@ -4678,7 +4678,7 @@ raop_init(void)
   ret = mdns_browse("_raop._tcp", raop_device_cb, MDNS_CONNECTION_TEST);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RAOP, "Could not add mDNS browser for AirPlay devices\n");
+      DPRINTF(E_ERROR, L_RAOP, "Could not add mDNS browser for AirPlay devices\n");
 
       goto out_stop_control;
     }
