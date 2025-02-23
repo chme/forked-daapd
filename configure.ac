@@ -330,12 +330,41 @@ dnl MPD support
 OWNTONE_ARG_DISABLE([MPD client protocol support], [mpd], [MPD])
 AM_CONDITIONAL([COND_MPD], [[test "x$enable_mpd" = "xyes"]])
 
+AC_PATH_PROG([NPM], [[npm]])
+
 dnl Include default webinterface
 OWNTONE_ARG_DISABLE([include default web interface], [webinterface], [WEBINTERFACE],
-	[AS_IF([[test "x$with_libwebsockets" = "xno"]],
-		[AC_MSG_ERROR([[Web interface requires libwebsockets >= 2.0.2 (or use --disable-webinterface)]])])
-	])
+	[AS_IF(
+		[[test "x$with_libwebsockets" = "xno"]],
+			[AC_MSG_ERROR([[Web interface requires libwebsockets >= 2.0.2 (or use --disable-webinterface)]])],
+		[[test -z "$NPM"]],
+			[AS_IF([[test -f "$srcdir/web-src/htdocs/index.html"]],
+				[AM_MISSING_PROG([NPM], [[npm]])
+				AC_MSG_NOTICE([[
+npm not found, but a prebuilt web interface is present.
+If you modify any web interface source files, you will need to install npm.
+				]])],
+				[AC_MSG_ERROR([[npm required, please install it.]])])
+			]
+	)])
 AM_CONDITIONAL([COND_WEBINTERFACE], [[test "x$enable_webinterface" = "xyes"]])
+
+dnl Use prebuilt webinterface even if npm is available
+AC_ARG_WITH([prebuilt-webinterface],
+	[AS_HELP_STRING([--with-prebuilt-webinterface],
+		[Use prebuilt webinterface even if npm is available (default=no)]
+	)],
+	[AS_IF([[test -f "$srcdir/web-src/htdocs/index.html"]],
+		[[with_prebuilt_webinterface=yes]],
+		[AC_MSG_ERROR([[No prebuilt web interface found.]])]
+	)],
+	[[with_prebuilt_webinterface=]])
+if test "x$with_prebuilt_webinterface" = "xyes"; then
+    BUILD_WEBINTERFACE=
+else
+    BUILD_WEBINTERFACE=true
+fi
+AC_SUBST([BUILD_WEBINTERFACE])
 
 dnl Creating and defining users and groups
 OWNTONE_ARG_ENABLE([having 'make install' add user/group and 'make uninstall' delete], [install_user], [INSTALL_USER],
@@ -387,9 +416,9 @@ AC_CONFIG_SUBDIRS([
 ])
 
 AC_CONFIG_FILES([
+	web-src/Makefile
 	src/Makefile
 	sqlext/Makefile
-	htdocs/Makefile
 	Makefile
 	owntone.spec
 ])
