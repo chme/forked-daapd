@@ -447,7 +447,7 @@ artwork_read_byurl(struct evbuffer *evbuf, const char *url)
   len = strlen(url);
   if ((len < 14) || (len > PATH_MAX)) // Can't be shorter than http://a/1.jpg
     {
-      DPRINTF(E_LOG, L_ART, "Artwork request URL is invalid (len=%zu): '%s'\n", len, url);
+      DPRINTF(E_ERROR, L_ART, "Artwork request URL is invalid (len=%zu): '%s'\n", len, url);
       goto out;
     }
 
@@ -470,7 +470,7 @@ artwork_read_byurl(struct evbuffer *evbuf, const char *url)
     }
   else if (client.response_code != HTTP_OK)
     {
-      DPRINTF(E_LOG, L_ART, "Request to '%s' failed with code %d\n", url, client.response_code);
+      DPRINTF(E_ERROR, L_ART, "Request to '%s' failed with code %d\n", url, client.response_code);
       goto out;
     }
 
@@ -480,7 +480,7 @@ artwork_read_byurl(struct evbuffer *evbuf, const char *url)
   else if (content_type && strcasecmp(content_type, "image/png") == 0)
     format = ART_FMT_PNG;
   else
-    DPRINTF(E_LOG, L_ART, "Artwork from '%s' has no known content type\n", url);
+    DPRINTF(E_ERROR, L_ART, "Artwork from '%s' has no known content type\n", url);
 
  out:
   keyval_clear(kv);
@@ -522,7 +522,7 @@ artwork_read_bypath(struct evbuffer *evbuf, char *path)
   ret = evbuffer_expand(evbuf, sb.st_size);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_ART, "Out of memory for artwork\n");
+      DPRINTF(E_ERROR, L_ART, "Out of memory for artwork\n");
 
       goto out_fail;
     }
@@ -634,7 +634,7 @@ artwork_get(struct evbuffer *evbuf, char *path, struct evbuffer *in_buf, bool is
       ret = evbuffer_add_buffer_reference(xcode_buf, in_buf);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_ART, "Could not copy/ref raw image for rescaling (ret=%d)\n", ret);
+	  DPRINTF(E_ERROR, L_ART, "Could not copy/ref raw image for rescaling (ret=%d)\n", ret);
 	  ret = ART_E_ERROR;
 	  goto out;
 	}
@@ -671,7 +671,7 @@ artwork_get(struct evbuffer *evbuf, char *path, struct evbuffer *in_buf, bool is
       if (path)
 	DPRINTF(E_DBG, L_ART, "File '%s' has no PNG or JPEG artwork\n", path);
       else
-	DPRINTF(E_LOG, L_ART, "Artwork data provided to artwork_get() is not PNG or JPEG\n");
+	DPRINTF(E_ERROR, L_ART, "Artwork data provided to artwork_get() is not PNG or JPEG\n");
 
       ret = ART_E_ERROR;
       goto out;
@@ -687,7 +687,7 @@ artwork_get(struct evbuffer *evbuf, char *path, struct evbuffer *in_buf, bool is
       if (path)
 	DPRINTF(E_DBG, L_ART, "File '%s' has unknown artwork dimensions\n", path);
       else
-	DPRINTF(E_LOG, L_ART, "Artwork data provided to artwork_get() has unknown dimensions\n");
+	DPRINTF(E_ERROR, L_ART, "Artwork data provided to artwork_get() has unknown dimensions\n");
 
       ret = ART_E_ERROR;
       goto out;
@@ -787,7 +787,7 @@ dir_image_find(char *out_path, size_t len, const char *dir)
   ret = snprintf(path, sizeof(path), "%s", dir);
   if ((ret < 0) || (ret >= sizeof(path)))
     {
-      DPRINTF(E_LOG, L_ART, "Artwork path exceeds PATH_MAX (%s)\n", dir);
+      DPRINTF(E_ERROR, L_ART, "Artwork path exceeds PATH_MAX (%s)\n", dir);
       return -1;
     }
 
@@ -808,7 +808,7 @@ dir_image_find(char *out_path, size_t len, const char *dir)
 	  ret = snprintf(path + path_len, sizeof(path) - path_len, "/%s.%s", cfg_getnstr(lib, "artwork_basenames", i), cover_extension[j]);
 	  if ((ret < 0) || (ret >= sizeof(path) - path_len))
 	    {
-	      DPRINTF(E_LOG, L_ART, "Artwork path will exceed PATH_MAX (%s/%s)\n", dir, cfg_getnstr(lib, "artwork_basenames", i));
+	      DPRINTF(E_ERROR, L_ART, "Artwork path will exceed PATH_MAX (%s/%s)\n", dir, cfg_getnstr(lib, "artwork_basenames", i));
 	      continue;
 	    }
 
@@ -852,21 +852,21 @@ parent_dir_image_find(char *out_path, size_t len, const char *dir)
   ret = snprintf(path, sizeof(path), "%s", dir);
   if ((ret < 0) || (ret >= sizeof(path)))
     {
-      DPRINTF(E_LOG, L_ART, "Artwork path exceeds PATH_MAX (%s)\n", dir);
+      DPRINTF(E_ERROR, L_ART, "Artwork path exceeds PATH_MAX (%s)\n", dir);
       return -1;
     }
 
   ptr = strrchr(path, '/');
   if ((!ptr) || (strlen(ptr) <= 1))
     {
-      DPRINTF(E_LOG, L_ART, "Could not find parent dir name (%s)\n", path);
+      DPRINTF(E_ERROR, L_ART, "Could not find parent dir name (%s)\n", path);
       return -1;
     }
 
   ret = snprintf(parentdir, sizeof(parentdir), "%s", ptr + 1);
   if ((ret < 0) || (ret >= sizeof(parentdir)))
     {
-      DPRINTF(E_LOG, L_ART, "Impossible error occured in parent_dir_image_find(), cause was: %s\n", ptr + 1);
+      DPRINTF(E_ERROR, L_ART, "Impossible error occured in parent_dir_image_find(), cause was: %s\n", ptr + 1);
       return -1;
     }
 
@@ -878,7 +878,7 @@ parent_dir_image_find(char *out_path, size_t len, const char *dir)
       ret = snprintf(path + path_len, sizeof(path) - path_len, "/%s.%s", parentdir, cover_extension[i]);
       if ((ret < 0) || (ret >= sizeof(path) - path_len))
         {
-	  DPRINTF(E_LOG, L_ART, "Artwork path will exceed PATH_MAX (%s)\n", parentdir);
+	  DPRINTF(E_ERROR, L_ART, "Artwork path will exceed PATH_MAX (%s)\n", parentdir);
 	  continue;
 	}
 
@@ -1199,7 +1199,7 @@ online_source_search_url_make(char *url, size_t url_size, const struct online_so
       ret = keyval_add(&query, src->query_parts[i].key, param);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_ART, "keyval_add() failed in online_source_request_url_make()\n");
+	  DPRINTF(E_ERROR, L_ART, "keyval_add() failed in online_source_request_url_make()\n");
 	  goto error;
 	}
     }
@@ -1373,9 +1373,9 @@ online_source_artwork_url_get(const char *search_url, const struct online_source
   else if (ret == ONLINE_SOURCE_PARSE_INVALID)
     DPRINTF(E_WARN, L_ART, "Response from source '%s' was in an unexpected format\n", src->name);
   else if (ret == ONLINE_SOURCE_PARSE_NO_PARSER)
-    DPRINTF(E_LOG, L_ART, "Bug! Cannot parse response from source '%s', parser missing\n", src->name);
+    DPRINTF(E_ERROR, L_ART, "Bug! Cannot parse response from source '%s', parser missing\n", src->name);
   else if (ret != ONLINE_SOURCE_PARSE_OK)
-    DPRINTF(E_LOG, L_ART, "Bug! Cannot parse response from source '%s', unknown error\n", src->name);
+    DPRINTF(E_ERROR, L_ART, "Bug! Cannot parse response from source '%s', unknown error\n", src->name);
 
   if (ret != ONLINE_SOURCE_PARSE_OK)
     goto error;
@@ -1475,7 +1475,7 @@ source_group_dir_get(struct artwork_ctx *ctx)
   ret = db_query_start(&qp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_ART, "Could not start Q_GROUP_DIRS query\n");
+      DPRINTF(E_ERROR, L_ART, "Could not start Q_GROUP_DIRS query\n");
       return ART_E_ERROR;
     }
 
@@ -1497,7 +1497,7 @@ source_group_dir_get(struct artwork_ctx *ctx)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_ART, "Error fetching Q_GROUP_DIRS results\n");
+      DPRINTF(E_ERROR, L_ART, "Error fetching Q_GROUP_DIRS results\n");
       return ART_E_ERROR;
     }
 
@@ -1541,7 +1541,7 @@ source_item_embedded_get(struct artwork_ctx *ctx)
 
   if (safe_atoi32(ctx->dbmfi->artwork, &artwork) < 0)
     {
-      DPRINTF(E_LOG, L_ART, "Error converting dbmfi artwork to number for '%s'\n", ctx->dbmfi->path);
+      DPRINTF(E_ERROR, L_ART, "Error converting dbmfi artwork to number for '%s'\n", ctx->dbmfi->path);
       return ART_E_ERROR;
     }
 
@@ -1569,7 +1569,7 @@ source_item_own_get(struct artwork_ctx *ctx)
   ret = snprintf(path, sizeof(path), "%s", ctx->dbmfi->path);
   if ((ret < 0) || (ret >= sizeof(path)))
     {
-      DPRINTF(E_LOG, L_ART, "Artwork path exceeds PATH_MAX (%s)\n", ctx->dbmfi->path);
+      DPRINTF(E_ERROR, L_ART, "Artwork path exceeds PATH_MAX (%s)\n", ctx->dbmfi->path);
       return ART_E_ERROR;
     }
 
@@ -1586,7 +1586,7 @@ source_item_own_get(struct artwork_ctx *ctx)
       ret = snprintf(path + len, sizeof(path) - len, ".%s", cover_extension[i]);
       if ((ret < 0) || (ret >= sizeof(path) - len))
 	{
-	  DPRINTF(E_LOG, L_ART, "Artwork path will exceed PATH_MAX (%s)\n", ctx->dbmfi->path);
+	  DPRINTF(E_ERROR, L_ART, "Artwork path will exceed PATH_MAX (%s)\n", ctx->dbmfi->path);
 	  continue;
 	}
 
@@ -1804,7 +1804,7 @@ source_item_ownpl_get(struct artwork_ctx *ctx)
   ret = db_snprintf(filter, sizeof(filter), "filepath = '%q'", ctx->dbmfi->path);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_ART, "Artwork path is too long: '%s'\n", ctx->dbmfi->path);
+      DPRINTF(E_ERROR, L_ART, "Artwork path is too long: '%s'\n", ctx->dbmfi->path);
       return ART_E_ERROR;
     }
 
@@ -1815,7 +1815,7 @@ source_item_ownpl_get(struct artwork_ctx *ctx)
   ret = db_query_start(&qp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_ART, "Could not start ownpl query\n");
+      DPRINTF(E_ERROR, L_ART, "Could not start ownpl query\n");
       return ART_E_ERROR;
     }
 
@@ -1865,7 +1865,7 @@ process_items(struct artwork_ctx *ctx, int item_mode)
   ret = db_query_start(&ctx->qp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_ART, "Could not start query (type=%d)\n", ctx->qp.type);
+      DPRINTF(E_ERROR, L_ART, "Could not start query (type=%d)\n", ctx->qp.type);
       ctx->cache = NEVER;
       return -1;
     }
@@ -1885,7 +1885,7 @@ process_items(struct artwork_ctx *ctx, int item_mode)
             (ctx->data_kind > 30);
       if (ret)
 	{
-	  DPRINTF(E_LOG, L_ART, "Error converting dbmfi id, data_kind or media_kind to number for '%s'\n", dbmfi.path);
+	  DPRINTF(E_ERROR, L_ART, "Error converting dbmfi id, data_kind or media_kind to number for '%s'\n", dbmfi.path);
 	  continue;
 	}
 
@@ -1922,7 +1922,7 @@ process_items(struct artwork_ctx *ctx, int item_mode)
 	    }
 	  else if (ret == ART_E_ERROR)
 	    {
-	      DPRINTF(E_LOG, L_ART, "Source '%s' returned an error for '%s'\n", artwork_item_source[i].name, dbmfi.title);
+	      DPRINTF(E_ERROR, L_ART, "Source '%s' returned an error for '%s'\n", artwork_item_source[i].name, dbmfi.title);
 	      ctx->cache = NEVER;
 	    }
 	}
@@ -1930,7 +1930,7 @@ process_items(struct artwork_ctx *ctx, int item_mode)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_ART, "Error fetching results\n");
+      DPRINTF(E_ERROR, L_ART, "Error fetching results\n");
       ctx->cache = NEVER;
     }
 
@@ -1950,7 +1950,7 @@ process_group(struct artwork_ctx *ctx)
 
   if (!ctx->persistentid)
     {
-      DPRINTF(E_LOG, L_ART, "Bug! No persistentid in call to process_group()\n");
+      DPRINTF(E_ERROR, L_ART, "Bug! No persistentid in call to process_group()\n");
       ctx->cache = NEVER;
       return -1;
     }
@@ -1959,7 +1959,7 @@ process_group(struct artwork_ctx *ctx)
   ret = db_query_start(&ctx->qp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_ART, "Could not start query to check if group is valid (persistentid = %" PRIi64 ")\n", ctx->qp.persistentid);
+      DPRINTF(E_ERROR, L_ART, "Could not start query to check if group is valid (persistentid = %" PRIi64 ")\n", ctx->qp.persistentid);
       goto invalid_group;
     }
 
@@ -1994,7 +1994,7 @@ process_group(struct artwork_ctx *ctx)
 	}
       else if (ret == ART_E_ERROR)
 	{
-	  DPRINTF(E_LOG, L_ART, "Source '%s' returned an error for group %" PRIi64 "\n", artwork_group_source[i].name, ctx->persistentid);
+	  DPRINTF(E_ERROR, L_ART, "Source '%s' returned an error for group %" PRIi64 "\n", artwork_group_source[i].name, ctx->persistentid);
 	  ctx->cache = NEVER;
 	}
     }
@@ -2032,7 +2032,7 @@ artwork_get_item(struct evbuffer *evbuf, int id, int max_w, int max_h, int forma
   ret = db_snprintf(filter, sizeof(filter), "id = %d", id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_ART, "Could not build filter for file id %d; no artwork will be sent\n", id);
+      DPRINTF(E_ERROR, L_ART, "Could not build filter for file id %d; no artwork will be sent\n", id);
       return -1;
     }
 
@@ -2081,7 +2081,7 @@ artwork_get_group(struct evbuffer *evbuf, int id, int max_w, int max_h, int form
   ret = db_group_persistentid_byid(id, &ctx.persistentid);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_ART, "Error fetching persistent id for group id %d\n", id);
+      DPRINTF(E_ERROR, L_ART, "Error fetching persistent id for group id %d\n", id);
       return -1;
     }
 

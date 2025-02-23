@@ -611,7 +611,7 @@ cast_msg_send(struct cast_session *cs, enum cast_msg_types type, cast_reply_cb r
 
   if ((cast_msg[type].flags & USE_TRANSPORT_ID) && !cs->transport_id)
     {
-      DPRINTF(E_LOG, L_CAST, "Error, didn't get transportId for message (type %d) to '%s'\n", type, cs->devname);
+      DPRINTF(E_ERROR, L_CAST, "Error, didn't get transportId for message (type %d) to '%s'\n", type, cs->devname);
       return -1;
     }
 
@@ -650,7 +650,7 @@ cast_msg_send(struct cast_session *cs, enum cast_msg_types type, cast_reply_cb r
   len = extensions__core_api__cast_channel__cast_message__get_packed_size(&msg);
   if (len <= 0 || len >= sizeof(buf) - 4)
     {
-      DPRINTF(E_LOG, L_CAST, "Could not send message (type %d), invalid length: %zu\n", type, len);
+      DPRINTF(E_ERROR, L_CAST, "Could not send message (type %d), invalid length: %zu\n", type, len);
       return -1;
     }
 
@@ -664,12 +664,12 @@ cast_msg_send(struct cast_session *cs, enum cast_msg_types type, cast_reply_cb r
   ret = gnutls_record_send(cs->tls_session, buf, len + 4);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_CAST, "Could not send message, TLS error\n");
+      DPRINTF(E_ERROR, L_CAST, "Could not send message, TLS error\n");
       return -1;
     }
   else if (ret != len + 4)
     {
-      DPRINTF(E_LOG, L_CAST, "BUG! Message partially sent, and we are not able to send the rest\n");
+      DPRINTF(E_ERROR, L_CAST, "BUG! Message partially sent, and we are not able to send the rest\n");
       return -1;
     }
 
@@ -691,7 +691,7 @@ cast_msg_parse(struct cast_msg_payload *payload, char *s)
   haystack = json_tokener_parse(s);
   if (!haystack)
     {
-      DPRINTF(E_LOG, L_CAST, "JSON parser returned an error\n");
+      DPRINTF(E_ERROR, L_CAST, "JSON parser returned an error\n");
       return NULL;
     }
 
@@ -770,7 +770,7 @@ cast_msg_parse_free(void *haystack)
   json_object_put((json_object *)haystack);
 #else
   if (json_object_put((json_object *)haystack) != 1)
-    DPRINTF(E_LOG, L_CAST, "Memleak: JSON parser did not free object\n");
+    DPRINTF(E_ERROR, L_CAST, "Memleak: JSON parser did not free object\n");
 #endif
 }
 
@@ -796,7 +796,7 @@ cast_msg_process(struct cast_session *cs, const uint8_t *data, size_t len)
   reply = extensions__core_api__cast_channel__cast_message__unpack(NULL, len, data);
   if (!reply)
     {
-      DPRINTF(E_LOG, L_CAST, "Could not unpack message!\n");
+      DPRINTF(E_ERROR, L_CAST, "Could not unpack message!\n");
       return;
     }
 
@@ -842,7 +842,7 @@ cast_msg_process(struct cast_session *cs, const uint8_t *data, size_t len)
       unknown_session_id = payload.session_id && (strcmp(payload.session_id, cs->session_id) != 0);
       if (unknown_session_id)
 	{
-	  DPRINTF(E_LOG, L_CAST, "Our session '%s' on '%s' was lost to session '%s'\n", cs->session_id, cs->devname, payload.session_id);
+	  DPRINTF(E_ERROR, L_CAST, "Our session '%s' on '%s' was lost to session '%s'\n", cs->session_id, cs->devname, payload.session_id);
 
 	  // Downgrade state, we don't have the receiver app any more
 	  cs->state = CAST_STATE_CONNECTED;
@@ -917,7 +917,7 @@ payload_encode(struct evbuffer *evbuf, uint8_t *rawbuf, size_t rawbuf_size, int 
   frame = transcode_frame_new(rawbuf, rawbuf_size, nsamples, quality);
   if (!frame)
     {
-      DPRINTF(E_LOG, L_CAST, "Could not convert raw PCM to frame (bufsize=%zu)\n", rawbuf_size);
+      DPRINTF(E_ERROR, L_CAST, "Could not convert raw PCM to frame (bufsize=%zu)\n", rawbuf_size);
       return -1;
     }
 
@@ -925,7 +925,7 @@ payload_encode(struct evbuffer *evbuf, uint8_t *rawbuf, size_t rawbuf_size, int 
   transcode_frame_free(frame);
   if (len < 0)
     {
-      DPRINTF(E_LOG, L_CAST, "Could not Opus encode frame\n");
+      DPRINTF(E_ERROR, L_CAST, "Could not Opus encode frame\n");
       return -1;
     }
 
@@ -1023,7 +1023,7 @@ packet_send(struct cast_session *cs, uint16_t seqnum)
   ret = send(cs->udp_fd, pkt->data, pkt->data_len, 0);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_CAST, "Send error for '%s': %s\n", cs->devname, strerror(errno));
+      DPRINTF(E_ERROR, L_CAST, "Send error for '%s': %s\n", cs->devname, strerror(errno));
       return -1;
     }
   else if (ret != pkt->data_len)
@@ -1132,7 +1132,7 @@ cast_status(struct cast_session *cs)
 	state = OUTPUT_STATE_STREAMING;
 	break;
       default:
-	DPRINTF(E_LOG, L_CAST, "Bug! Unhandled state in cast_status()\n");
+	DPRINTF(E_ERROR, L_CAST, "Bug! Unhandled state in cast_status()\n");
 	state = OUTPUT_STATE_FAILED;
     }
 
@@ -1343,9 +1343,9 @@ static void
 cast_cb_stop(struct cast_session *cs, struct cast_msg_payload *payload)
 {
   if (!payload)
-    DPRINTF(E_LOG, L_CAST, "No RECEIVER_STATUS reply to our STOP - will continue anyway\n");
+    DPRINTF(E_ERROR, L_CAST, "No RECEIVER_STATUS reply to our STOP - will continue anyway\n");
   else if (payload->type != RECEIVER_STATUS)
-    DPRINTF(E_LOG, L_CAST, "No RECEIVER_STATUS reply to our STOP (got type: %d) - will continue anyway\n", payload->type);
+    DPRINTF(E_ERROR, L_CAST, "No RECEIVER_STATUS reply to our STOP (got type: %d) - will continue anyway\n", payload->type);
 
   cs->state = CAST_STATE_CONNECTED;
 
@@ -1373,17 +1373,17 @@ cast_cb_startup_offer(struct cast_session *cs, struct cast_msg_payload *payload)
 
   if (!payload)
     {
-      DPRINTF(E_LOG, L_CAST, "No reply from '%s' to our OFFER request\n", cs->devname);
+      DPRINTF(E_ERROR, L_CAST, "No reply from '%s' to our OFFER request\n", cs->devname);
       goto error;
     }
   else if (payload->type != ANSWER)
     {
-      DPRINTF(E_LOG, L_CAST, "The device '%s' did not give us an ANSWER to our OFFER\n", cs->devname);
+      DPRINTF(E_ERROR, L_CAST, "The device '%s' did not give us an ANSWER to our OFFER\n", cs->devname);
       goto error;
     }
   else if (!payload->udp_port || strcmp(payload->result, "ok") != 0)
     {
-      DPRINTF(E_LOG, L_CAST, "Missing UDP port (or unexpected result '%s') in ANSWER - aborting\n", payload->result);
+      DPRINTF(E_ERROR, L_CAST, "Missing UDP port (or unexpected result '%s') in ANSWER - aborting\n", payload->result);
       goto error;
     }
 
@@ -1398,7 +1398,7 @@ cast_cb_startup_offer(struct cast_session *cs, struct cast_msg_payload *payload)
   cs->rtcp_ev = event_new(evbase_player, cs->udp_fd, EV_READ | EV_PERSIST, cast_rtcp_cb, cs);
   if (!cs->rtcp_ev)
     {
-      DPRINTF(E_LOG, L_CAST, "Out of memory for UDP read event\n");
+      DPRINTF(E_ERROR, L_CAST, "Out of memory for UDP read event\n");
       goto error;
     }
 
@@ -1426,12 +1426,12 @@ cast_cb_startup_get_capabilities(struct cast_session *cs, struct cast_msg_payloa
 
   if (!payload)
     {
-      DPRINTF(E_LOG, L_CAST, "No reply to our GET_CAPABILITIES - aborting\n");
+      DPRINTF(E_ERROR, L_CAST, "No reply to our GET_CAPABILITIES - aborting\n");
       goto error;
     }
   else if (payload->type != CAPABILITIES_RESPONSE)
     {
-      DPRINTF(E_LOG, L_CAST, "No CAPABILITIES_RESPONSE reply to our GET_CAPABILITIES (got type: %d) - aborting\n", payload->type);
+      DPRINTF(E_ERROR, L_CAST, "No CAPABILITIES_RESPONSE reply to our GET_CAPABILITIES (got type: %d) - aborting\n", payload->type);
       goto error;
     }
 
@@ -1453,12 +1453,12 @@ cast_cb_startup_media(struct cast_session *cs, struct cast_msg_payload *payload)
 
   if (!payload)
     {
-      DPRINTF(E_LOG, L_CAST, "No MEDIA_STATUS reply to our GET_STATUS - aborting\n");
+      DPRINTF(E_ERROR, L_CAST, "No MEDIA_STATUS reply to our GET_STATUS - aborting\n");
       goto error;
     }
   else if (payload->type != MEDIA_STATUS)
     {
-      DPRINTF(E_LOG, L_CAST, "No MEDIA_STATUS reply to our GET_STATUS (got type: %d) - aborting\n", payload->type);
+      DPRINTF(E_ERROR, L_CAST, "No MEDIA_STATUS reply to our GET_STATUS (got type: %d) - aborting\n", payload->type);
       goto error;
     }
 
@@ -1487,7 +1487,7 @@ cast_cb_startup_launch(struct cast_session *cs, struct cast_msg_payload *payload
   // GET_STATUS to see if we are good to go anyway.
   if (!payload && !cs->retry)
     {
-      DPRINTF(E_LOG, L_CAST, "No RECEIVER_STATUS reply to our LAUNCH - trying GET_STATUS instead\n");
+      DPRINTF(E_ERROR, L_CAST, "No RECEIVER_STATUS reply to our LAUNCH - trying GET_STATUS instead\n");
       cs->retry++;
       ret = cast_msg_send(cs, GET_STATUS, cast_cb_startup_launch);
       if (ret != 0)
@@ -1498,7 +1498,7 @@ cast_cb_startup_launch(struct cast_session *cs, struct cast_msg_payload *payload
 
   if (!payload)
     {
-      DPRINTF(E_LOG, L_CAST, "No RECEIVER_STATUS reply to our LAUNCH - aborting\n");
+      DPRINTF(E_ERROR, L_CAST, "No RECEIVER_STATUS reply to our LAUNCH - aborting\n");
       goto error;
     }
 
@@ -1514,24 +1514,24 @@ cast_cb_startup_launch(struct cast_session *cs, struct cast_msg_payload *payload
     }
   else if (payload->type == LAUNCH_ERROR)
     {
-      DPRINTF(E_LOG, L_CAST, "Device '%s' could not launch app id '%s' nor '%s' - aborting\n", cs->devname, CAST_APP_ID, CAST_APP_ID_OLD);
+      DPRINTF(E_ERROR, L_CAST, "Device '%s' could not launch app id '%s' nor '%s' - aborting\n", cs->devname, CAST_APP_ID, CAST_APP_ID_OLD);
       goto error;
     }
 
   if (payload->type != RECEIVER_STATUS)
     {
-      DPRINTF(E_LOG, L_CAST, "No RECEIVER_STATUS reply to our LAUNCH (got type: %d) - aborting\n", payload->type);
+      DPRINTF(E_ERROR, L_CAST, "No RECEIVER_STATUS reply to our LAUNCH (got type: %d) - aborting\n", payload->type);
       goto error;
     }
 
   if (!payload->transport_id || !payload->session_id)
     {
-      DPRINTF(E_LOG, L_CAST, "Missing session id or transport id in RECEIVER_STATUS - aborting\n");
+      DPRINTF(E_ERROR, L_CAST, "Missing session id or transport id in RECEIVER_STATUS - aborting\n");
       goto error;
     }
 
   if (cs->session_id || cs->transport_id)
-    DPRINTF(E_LOG, L_CAST, "Bug! Memleaking...\n");
+    DPRINTF(E_ERROR, L_CAST, "Bug! Memleaking...\n");
 
   cs->session_id = strdup(payload->session_id);
   cs->transport_id = strdup(payload->transport_id);
@@ -1560,12 +1560,12 @@ cast_cb_startup_connect(struct cast_session *cs, struct cast_msg_payload *payloa
 
   if (!payload)
     {
-      DPRINTF(E_LOG, L_CAST, "No RECEIVER_STATUS reply to our GET_STATUS - aborting\n");
+      DPRINTF(E_ERROR, L_CAST, "No RECEIVER_STATUS reply to our GET_STATUS - aborting\n");
       goto error;
     }
   else if (payload->type != RECEIVER_STATUS)
     {
-      DPRINTF(E_LOG, L_CAST, "No RECEIVER_STATUS reply to our GET_STATUS (got type: %d) - aborting\n", payload->type);
+      DPRINTF(E_ERROR, L_CAST, "No RECEIVER_STATUS reply to our GET_STATUS (got type: %d) - aborting\n", payload->type);
       goto error;
     }
 
@@ -1587,12 +1587,12 @@ cast_cb_probe(struct cast_session *cs, struct cast_msg_payload *payload)
 {
   if (!payload)
     {
-      DPRINTF(E_LOG, L_CAST, "No RECEIVER_STATUS reply to our GET_STATUS - aborting\n");
+      DPRINTF(E_ERROR, L_CAST, "No RECEIVER_STATUS reply to our GET_STATUS - aborting\n");
       goto error;
     }
   else if (payload->type != RECEIVER_STATUS)
     {
-      DPRINTF(E_LOG, L_CAST, "No RECEIVER_STATUS reply to our GET_STATUS (got type: %d) - aborting\n", payload->type);
+      DPRINTF(E_ERROR, L_CAST, "No RECEIVER_STATUS reply to our GET_STATUS (got type: %d) - aborting\n", payload->type);
       goto error;
     }
 
@@ -1619,9 +1619,9 @@ static void
 cast_cb_presentation(struct cast_session *cs, struct cast_msg_payload *payload)
 {
   if (!payload)
-    DPRINTF(E_LOG, L_CAST, "No reply to PRESENTATION request from '%s' - will continue\n", cs->devname);
+    DPRINTF(E_ERROR, L_CAST, "No reply to PRESENTATION request from '%s' - will continue\n", cs->devname);
   else if (payload->type != MEDIA_STATUS)
-    DPRINTF(E_LOG, L_CAST, "Unexpected reply to PRESENTATION request from '%s' - will continue\n", cs->devname);
+    DPRINTF(E_ERROR, L_CAST, "Unexpected reply to PRESENTATION request from '%s' - will continue\n", cs->devname);
 }
 */
 
@@ -1654,7 +1654,7 @@ cast_listen_cb(int fd, short what, void *arg)
 
   if (what == EV_TIMEOUT)
     {
-      DPRINTF(E_LOG, L_CAST, "No heartbeat from '%s', shutting down\n", cs->devname);
+      DPRINTF(E_ERROR, L_CAST, "No heartbeat from '%s', shutting down\n", cs->devname);
       goto fail;
     }
 
@@ -1672,7 +1672,7 @@ cast_listen_cb(int fd, short what, void *arg)
   len = be32toh(be);
   if ((len == 0) || (len > MAX_BUF))
     {
-      DPRINTF(E_LOG, L_CAST, "Bad length of incoming message, aborting (len=%zu, size=%d)\n", len, MAX_BUF);
+      DPRINTF(E_ERROR, L_CAST, "Bad length of incoming message, aborting (len=%zu, size=%d)\n", len, MAX_BUF);
       goto fail;
     }
 
@@ -1707,7 +1707,7 @@ cast_listen_cb(int fd, short what, void *arg)
  no_read:
   if ((ret != GNUTLS_E_INTERRUPTED) && (ret != GNUTLS_E_AGAIN))
     {
-      DPRINTF(E_LOG, L_CAST, "Session error: %s\n", gnutls_strerror(ret));
+      DPRINTF(E_ERROR, L_CAST, "Session error: %s\n", gnutls_strerror(ret));
       goto fail;
     }
 
@@ -1731,7 +1731,7 @@ cast_reply_timeout_cb(int fd, short what, void *arg)
   cs = (struct cast_session *)arg;
   i = cs->request_id % CALLBACK_REGISTER_SIZE;
 
-  DPRINTF(E_LOG, L_CAST, "Request %d timed out, will run empty callback\n", i);
+  DPRINTF(E_ERROR, L_CAST, "Request %d timed out, will run empty callback\n", i);
 
   if (cs->callback_register[i])
     {
@@ -1759,7 +1759,7 @@ cast_device_cb(const char *name, const char *type, const char *domain, const cha
   devcfg = cfg_gettsec(cfg, "chromecast", name);
   if (devcfg && cfg_getbool(devcfg, "exclude"))
     {
-      DPRINTF(E_LOG, L_CAST, "Excluding Chromecast device '%s' as set in config\n", name);
+      DPRINTF(E_ERROR, L_CAST, "Excluding Chromecast device '%s' as set in config\n", name);
       return;
     }
   if (devcfg && cfg_getstr(devcfg, "nickname"))
@@ -1770,7 +1770,7 @@ cast_device_cb(const char *name, const char *type, const char *domain, const cha
   device = calloc(1, sizeof(struct output_device));
   if (!device)
     {
-      DPRINTF(E_LOG, L_CAST, "Out of memory for new Chromecast device\n");
+      DPRINTF(E_ERROR, L_CAST, "Out of memory for new Chromecast device\n");
       return;
     }
 
@@ -1803,7 +1803,7 @@ cast_device_cb(const char *name, const char *type, const char *domain, const cha
   device->max_volume = devcfg ? cfg_getint(devcfg, "max_volume") : CAST_CONFIG_MAX_VOLUME;
   if ((device->max_volume < 1) || (device->max_volume > CAST_CONFIG_MAX_VOLUME))
     {
-      DPRINTF(E_LOG, L_CAST, "Config has bad max_volume (%d) for device '%s', using default instead\n", device->max_volume, name);
+      DPRINTF(E_ERROR, L_CAST, "Config has bad max_volume (%d) for device '%s', using default instead\n", device->max_volume, name);
       device->max_volume = CAST_CONFIG_MAX_VOLUME;
     }
 
@@ -1844,7 +1844,7 @@ master_session_make(struct media_quality *quality)
   ret = outputs_quality_subscribe(quality);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_CAST, "Could not subscribe to required audio quality (%d/%d/%d)\n", quality->sample_rate, quality->bits_per_sample, quality->channels);
+      DPRINTF(E_ERROR, L_CAST, "Could not subscribe to required audio quality (%d/%d/%d)\n", quality->sample_rate, quality->bits_per_sample, quality->channels);
       return NULL;
     }
 
@@ -1917,7 +1917,7 @@ cast_session_make(struct output_device *device, int family, int callback_id)
   cs->master_session = master_session_make(&cast_quality_default);
   if (!cs->master_session)
     {
-      DPRINTF(E_LOG, L_CAST, "Could not attach a master session for device '%s'\n", device->name);
+      DPRINTF(E_ERROR, L_CAST, "Could not attach a master session for device '%s'\n", device->name);
       goto out_free_session;
     }
 
@@ -1928,14 +1928,14 @@ cast_session_make(struct output_device *device, int family, int callback_id)
        ((ret = gnutls_priority_set_direct(cs->tls_session, "PERFORMANCE", &err)) != GNUTLS_E_SUCCESS) ||
        ((ret = gnutls_credentials_set(cs->tls_session, GNUTLS_CRD_CERTIFICATE, tls_credentials)) != GNUTLS_E_SUCCESS) )
     {
-      DPRINTF(E_LOG, L_CAST, "Could not initialize GNUTLS session: %s\n", gnutls_strerror(ret));
+      DPRINTF(E_ERROR, L_CAST, "Could not initialize GNUTLS session: %s\n", gnutls_strerror(ret));
       goto out_free_master_session;
     }
 
   cs->server_fd = net_connect(address, port, SOCK_STREAM, "Chomecast control");
   if (cs->server_fd < 0)
     {
-      DPRINTF(E_LOG, L_CAST, "Could not connect to %s\n", device->name);
+      DPRINTF(E_ERROR, L_CAST, "Could not connect to %s\n", device->name);
       goto out_deinit_gnutls;
     }
 
@@ -1944,7 +1944,7 @@ cast_session_make(struct output_device *device, int family, int callback_id)
   offset_ms = chromecast ? cfg_getint(chromecast, "offset_ms") : 0;
   if (abs(offset_ms) > CAST_OFFSET_MAX)
     {
-      DPRINTF(E_LOG, L_CAST, "Ignoring invalid configuration of Chromecast offset (%d ms)\n", offset_ms);
+      DPRINTF(E_ERROR, L_CAST, "Ignoring invalid configuration of Chromecast offset (%d ms)\n", offset_ms);
       offset_ms = 0;
     }
 
@@ -1958,14 +1958,14 @@ cast_session_make(struct output_device *device, int family, int callback_id)
   cs->ev = event_new(evbase_player, cs->server_fd, EV_READ | EV_PERSIST, cast_listen_cb, cs);
   if (!cs->ev)
     {
-      DPRINTF(E_LOG, L_CAST, "Out of memory for listener event\n");
+      DPRINTF(E_ERROR, L_CAST, "Out of memory for listener event\n");
       goto out_close_connection;
     }
 
   cs->reply_timeout = evtimer_new(evbase_player, cast_reply_timeout_cb, cs);
   if (!cs->reply_timeout)
     {
-      DPRINTF(E_LOG, L_CAST, "Out of memory for reply_timeout\n");
+      DPRINTF(E_ERROR, L_CAST, "Out of memory for reply_timeout\n");
       goto out_close_connection;
     }
 
@@ -1973,7 +1973,7 @@ cast_session_make(struct output_device *device, int family, int callback_id)
   ret = gnutls_handshake(cs->tls_session);
   if (ret != GNUTLS_E_SUCCESS)
     {
-      DPRINTF(E_LOG, L_CAST, "Could not attach TLS to TCP connection: %s\n", gnutls_strerror(ret));
+      DPRINTF(E_ERROR, L_CAST, "Could not attach TLS to TCP connection: %s\n", gnutls_strerror(ret));
       goto out_free_ev;
     }
 
@@ -2032,7 +2032,7 @@ cast_session_shutdown(struct cast_session *cs, enum cast_state wanted_state)
     }
   else if (cs->state < wanted_state)
     {
-      DPRINTF(E_LOG, L_CAST, "Bug! Shutdown request got wanted_state (%d) that is higher than current state (%d)\n", wanted_state, cs->state);
+      DPRINTF(E_ERROR, L_CAST, "Bug! Shutdown request got wanted_state (%d) that is higher than current state (%d)\n", wanted_state, cs->state);
       return;
     }
 
@@ -2072,7 +2072,7 @@ cast_session_shutdown(struct cast_session *cs, enum cast_state wanted_state)
 	break;
 
       default:
-	DPRINTF(E_LOG, L_CAST, "Bug! Shutdown doesn't know how to handle current state\n");
+	DPRINTF(E_ERROR, L_CAST, "Bug! Shutdown doesn't know how to handle current state\n");
 	ret = -1;
     }
 
@@ -2136,7 +2136,7 @@ cast_device_start_generic(struct output_device *device, int callback_id, cast_re
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_CAST, "Could not send CONNECT or GET_STATUS request on IPv4 (start)\n");
+      DPRINTF(E_ERROR, L_CAST, "Could not send CONNECT or GET_STATUS request on IPv4 (start)\n");
       cast_session_cleanup(cs);
       return -1;
     }
@@ -2232,7 +2232,7 @@ cast_write(struct output_buffer *obuf)
 
   if (!obuf->data[i].buffer)
     {
-      DPRINTF(E_LOG, L_CAST, "Bug! Output not delivering required data quality\n");
+      DPRINTF(E_ERROR, L_CAST, "Bug! Output not delivering required data quality\n");
       return;
     }
 
@@ -2301,7 +2301,7 @@ cast_metadata_prepare(struct output_metadata *metadata)
   queue_item = db_queue_fetch_byitemid(metadata->item_id);
   if (!queue_item)
     {
-      DPRINTF(E_LOG, L_CAST, "Could not fetch queue item\n");
+      DPRINTF(E_ERROR, L_CAST, "Could not fetch queue item\n");
       return NULL;
     }
 
@@ -2372,7 +2372,7 @@ cast_init(void)
     {
       if (cast_msg[i].type != i)
 	{
-	  DPRINTF(E_LOG, L_CAST, "BUG! Cast messages and types are misaligned (type %d!=%d). Could not initialize.\n", cast_msg[i].type, i);
+	  DPRINTF(E_ERROR, L_CAST, "BUG! Cast messages and types are misaligned (type %d!=%d). Could not initialize.\n", cast_msg[i].type, i);
 	  return -1;
 	}
     }
@@ -2383,14 +2383,14 @@ cast_init(void)
 //     || ((ret = gnutls_certificate_set_x509_trust_file(tls_credentials, CAFILE, GNUTLS_X509_FMT_PEM)) < 0)
      )
     {
-      DPRINTF(E_LOG, L_CAST, "Could not initialize GNUTLS: %s\n", gnutls_strerror(ret));
+      DPRINTF(E_ERROR, L_CAST, "Could not initialize GNUTLS: %s\n", gnutls_strerror(ret));
       return -1;
     }
 
   encode_args.src_ctx = transcode_decode_setup_raw(XCODE_PCM16, &cast_quality_default);
   if (!encode_args.src_ctx)
     {
-      DPRINTF(E_LOG, L_CAST, "Could not create decoding context\n");
+      DPRINTF(E_ERROR, L_CAST, "Could not create decoding context\n");
       goto out_tls_deinit;
     }
 
@@ -2398,14 +2398,14 @@ cast_init(void)
   transcode_decode_cleanup(&encode_args.src_ctx);
   if (!cast_encode_ctx)
     {
-      DPRINTF(E_LOG, L_CAST, "Will not be able to stream Chromecast, libav does not support Opus encoding\n");
+      DPRINTF(E_ERROR, L_CAST, "Will not be able to stream Chromecast, libav does not support Opus encoding\n");
       goto out_tls_deinit;
     }
 
   ret = mdns_browse("_googlecast._tcp", cast_device_cb, 0);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_CAST, "Could not add mDNS browser for Chromecast devices\n");
+      DPRINTF(E_ERROR, L_CAST, "Could not add mDNS browser for Chromecast devices\n");
       goto out_encode_ctx_free;
     }
 

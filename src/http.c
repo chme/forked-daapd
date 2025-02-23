@@ -100,7 +100,7 @@ curl_request_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
   ret = evbuffer_add(ctx->input_body, ptr, realsize);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_HTTP, "Error adding reply from %s to input buffer\n", ctx->url);
+      DPRINTF(E_ERROR, L_HTTP, "Error adding reply from %s to input buffer\n", ctx->url);
       return 0;
     }
 
@@ -130,7 +130,7 @@ http_client_request(struct http_client_ctx *ctx, struct http_client_session *ses
     }
   if (!curl)
     {
-      DPRINTF(E_LOG, L_HTTP, "Error: Could not get curl handle\n");
+      DPRINTF(E_ERROR, L_HTTP, "Error: Could not get curl handle\n");
       return -1;
     }
 
@@ -295,7 +295,7 @@ http_stream_setup(char **stream, const char *url)
   rc = curl_url_set(url_handle, CURLUPART_URL, url, 0);
   if (rc != 0)
     {
-      DPRINTF(E_LOG, L_HTTP, "Couldn't parse internet playlist: '%s'\n", url);
+      DPRINTF(E_ERROR, L_HTTP, "Couldn't parse internet playlist: '%s'\n", url);
       curl_url_cleanup(url_handle);
       return -1;
     }
@@ -303,7 +303,7 @@ http_stream_setup(char **stream, const char *url)
   rc = curl_url_get(url_handle, CURLUPART_PATH, &path, 0);
   if (rc != 0)
     {
-      DPRINTF(E_LOG, L_HTTP, "Couldn't find internet playlist path: '%s'\n", url);
+      DPRINTF(E_ERROR, L_HTTP, "Couldn't find internet playlist path: '%s'\n", url);
       curl_url_cleanup(url_handle);
       return -1;
     }
@@ -342,7 +342,7 @@ http_stream_setup(char **stream, const char *url)
   ret = http_client_request(&ctx, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_HTTP, "Couldn't fetch internet playlist: %s\n", url);
+      DPRINTF(E_ERROR, L_HTTP, "Couldn't fetch internet playlist: %s\n", url);
 
       evbuffer_free(evbuf);
       return -1;
@@ -416,7 +416,7 @@ http_stream_setup(char **stream, const char *url)
 
   if (n != -1)
     {
-      DPRINTF(E_LOG, L_HTTP, "Couldn't find stream in internet playlist: %s\n", url);
+      DPRINTF(E_ERROR, L_HTTP, "Couldn't find stream in internet playlist: %s\n", url);
 
       return -1;
     }

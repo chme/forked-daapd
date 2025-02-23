@@ -125,14 +125,14 @@ apple_rss_feedurl_get(const char *rss_url)
   ptr = strrchr(rss_url, '/');
   if (!ptr)
     {
-      DPRINTF(E_LOG, L_LIB, "Could not parse Apple Podcast RSS ID from '%s'\n", rss_url);
+      DPRINTF(E_ERROR, L_LIB, "Could not parse Apple Podcast RSS ID from '%s'\n", rss_url);
       return NULL;
     }
 
   ret = sscanf(ptr, "/id%u", &podcast_id);
   if (ret != 1)
     {
-      DPRINTF(E_LOG, L_LIB, "Could not parse Apple Podcast RSS ID from '%s'\n", rss_url);
+      DPRINTF(E_ERROR, L_LIB, "Could not parse Apple Podcast RSS ID from '%s'\n", rss_url);
       return NULL;
     }
 
@@ -154,7 +154,7 @@ apple_rss_feedurl_get(const char *rss_url)
   evbuffer_free(evbuf);
   if (!jresponse)
     {
-      DPRINTF(E_LOG, L_LIB, "Could not parse RSS Apple response, podcast id %u\n", podcast_id);
+      DPRINTF(E_ERROR, L_LIB, "Could not parse RSS Apple response, podcast id %u\n", podcast_id);
       return NULL;
     }
 
@@ -181,7 +181,7 @@ apple_rss_feedurl_get(const char *rss_url)
   jfeedurl = JPARSE_SELECT(jresponse, "results", "feedUrl");
   if (!jfeedurl || json_object_get_type(jfeedurl) != json_type_string)
     {
-      DPRINTF(E_LOG, L_LIB, "Could not find RSS feedUrl in response from Apple, podcast id %u\n", podcast_id);
+      DPRINTF(E_ERROR, L_LIB, "Could not find RSS feedUrl in response from Apple, podcast id %u\n", podcast_id);
       jparse_free(jresponse);
       return NULL;
     }
@@ -227,7 +227,7 @@ playlist_fetch(bool *is_new, const char *path)
   return pli;
 
  error:
-  DPRINTF(E_LOG, L_SCAN, "Error adding playlist for RSS feed '%s'\n", path);
+  DPRINTF(E_ERROR, L_SCAN, "Error adding playlist for RSS feed '%s'\n", path);
   free_pli(pli, 0);
   return NULL;
 }
@@ -258,7 +258,7 @@ rss_xml_get(const char *url)
   ret = http_client_request(&ctx, NULL);
   if (ret < 0 || ctx.response_code != HTTP_OK)
     {
-      DPRINTF(E_LOG, L_LIB, "Failed to fetch RSS from '%s' (return %d, error code %d)\n", ctx.url, ret, ctx.response_code);
+      DPRINTF(E_ERROR, L_LIB, "Failed to fetch RSS from '%s' (return %d, error code %d)\n", ctx.url, ret, ctx.response_code);
       goto cleanup;
     }
 
@@ -269,7 +269,7 @@ rss_xml_get(const char *url)
   xml = xml_from_string(raw);
   if (!xml)
     {
-      DPRINTF(E_LOG, L_LIB, "Failed to parse RSS XML from '%s'\n", ctx.url);
+      DPRINTF(E_ERROR, L_LIB, "Failed to parse RSS XML from '%s'\n", ctx.url);
       goto cleanup;
     }
 
@@ -285,14 +285,14 @@ feed_metadata_from_xml(const char **feed_title, const char **feed_author, const 
   xml_node *channel = xml_get_node(xml, "rss/channel");
   if (!channel)
     {
-      DPRINTF(E_LOG, L_LIB, "Invalid RSS/xml, missing 'channel' node\n");
+      DPRINTF(E_ERROR, L_LIB, "Invalid RSS/xml, missing 'channel' node\n");
       return -1;
     }
 
   *feed_title = xml_get_val(channel, "title");
   if (!*feed_title)
     {
-      DPRINTF(E_LOG, L_LIB, "Invalid RSS/xml, missing 'title' node\n");
+      DPRINTF(E_ERROR, L_LIB, "Invalid RSS/xml, missing 'title' node\n");
       return -1;
     }
 
@@ -377,14 +377,14 @@ rss_save(struct playlist_info *pli, int *count, enum rss_scan_type scan_type)
   xml = rss_xml_get(pli->path);
   if (!xml)
     {
-      DPRINTF(E_LOG, L_LIB, "Could not get RSS/xml from '%s' (id %d)\n", pli->path, pli->id);
+      DPRINTF(E_ERROR, L_LIB, "Could not get RSS/xml from '%s' (id %d)\n", pli->path, pli->id);
       return -1;
     }
 
   ret = feed_metadata_from_xml(&feed_title, &feed_author, &feed_artwork, xml);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LIB, "Invalid RSS/xml received from '%s' (id %d)\n", pli->path, pli->id);
+      DPRINTF(E_ERROR, L_LIB, "Invalid RSS/xml received from '%s' (id %d)\n", pli->path, pli->id);
       xml_free(xml);
       return -1;
     }
@@ -521,7 +521,7 @@ rss_scan_all(enum rss_scan_type scan_type)
   ret = db_query_start(&qp);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_LIB, "Failed to find current RSS feeds from db\n");
+      DPRINTF(E_ERROR, L_LIB, "Failed to find current RSS feeds from db\n");
       free(qp.filter);
       return;
     }

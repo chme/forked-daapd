@@ -130,7 +130,7 @@ daemonize(bool background, char *pidfile)
       fp = fopen(pidfile, "w");
       if (!fp)
 	{
-	  DPRINTF(E_LOG, L_MAIN, "Error opening pidfile (%s): %s\n", pidfile, strerror(errno));
+	  DPRINTF(E_ERROR, L_MAIN, "Error opening pidfile (%s): %s\n", pidfile, strerror(errno));
 
 	  return -1;
 	}
@@ -138,7 +138,7 @@ daemonize(bool background, char *pidfile)
       fd = open("/dev/null", O_RDWR, 0);
       if (fd < 0)
 	{
-	  DPRINTF(E_LOG, L_MAIN, "Error opening /dev/null: %s\n", strerror(errno));
+	  DPRINTF(E_ERROR, L_MAIN, "Error opening /dev/null: %s\n", strerror(errno));
 
 	  fclose(fp);
 	  return -1;
@@ -373,7 +373,7 @@ signal_signalfd_cb(int fd, short event, void *arg)
       switch (info.ssi_signo)
 	{
 	  case SIGCHLD:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGCHLD\n");
+	    DPRINTF(E_ERROR, L_MAIN, "Got SIGCHLD\n");
 
 	    while (waitpid(-1, &status, WNOHANG) > 0)
 	      /* Nothing. */ ;
@@ -381,13 +381,13 @@ signal_signalfd_cb(int fd, short event, void *arg)
 
 	  case SIGINT:
 	  case SIGTERM:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGTERM or SIGINT\n");
+	    DPRINTF(E_ERROR, L_MAIN, "Got SIGTERM or SIGINT\n");
 
 	    main_exit = 1;
 	    break;
 
 	  case SIGHUP:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGHUP\n");
+	    DPRINTF(E_ERROR, L_MAIN, "Got SIGHUP\n");
 
 	    if (!main_exit)
 	      logger_reinit();
@@ -418,7 +418,7 @@ signal_kqueue_cb(int fd, short event, void *arg)
       switch (ke.ident)
 	{
 	  case SIGCHLD:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGCHLD\n");
+	    DPRINTF(E_ERROR, L_MAIN, "Got SIGCHLD\n");
 
 	    while (waitpid(-1, &status, WNOHANG) > 0)
 	      /* Nothing. */ ;
@@ -426,13 +426,13 @@ signal_kqueue_cb(int fd, short event, void *arg)
 
 	  case SIGINT:
 	  case SIGTERM:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGTERM or SIGINT\n");
+	    DPRINTF(E_ERROR, L_MAIN, "Got SIGTERM or SIGINT\n");
 
 	    main_exit = 1;
 	    break;
 
 	  case SIGHUP:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGHUP\n");
+	    DPRINTF(E_ERROR, L_MAIN, "Got SIGHUP\n");
 
 	    if (!main_exit)
 	      logger_reinit();
@@ -495,6 +495,7 @@ main(int argc, char **argv)
   int loglevel = -1;
   char *logdomains = NULL;
   char *logfile = NULL;
+  char *logformat = NULL;
   char *ffid = NULL;
   char *pidfile = PIDFILE;
   char *webroot = WEB_ROOT;
@@ -510,26 +511,26 @@ main(int argc, char **argv)
   int i;
   int ret;
 
-  struct option option_map[] =
-    {
-      { "ffid",         1, NULL, 'b' },
-      { "debug",        1, NULL, 'd' },
-      { "logdomains",   1, NULL, 'D' },
-      { "foreground",   0, NULL, 'f' },
-      { "config",       1, NULL, 'c' },
-      { "pidfile",      1, NULL, 'P' },
-      { "version",      0, NULL, 'v' },
-      { "webroot",      1, NULL, 'w' },
-      { "sqliteext",    1, NULL, 's' },
-      { "testrun",      0, NULL, 't' }, // Used for CI, not documented to user
+  struct option option_map[] = {
+    { "ffid",          1, NULL, 'b' },
+    { "debug",         1, NULL, 'd' },
+    { "logdomains",    1, NULL, 'D' },
+    { "foreground",    0, NULL, 'f' },
+    { "config",        1, NULL, 'c' },
+    { "pidfile",       1, NULL, 'P' },
+    { "version",       0, NULL, 'v' },
+    { "webroot",       1, NULL, 'w' },
+    { "sqliteext",     1, NULL, 's' },
+    { "testrun",       0, NULL, 't' }, // Used for CI, not documented to user
 
-      { "mdns-no-rsp",  0, NULL, 512 },
-      { "mdns-no-daap", 0, NULL, 513 },
-      { "mdns-no-cname",0, NULL, 514 },
-      { "mdns-no-web",  0, NULL, 515 },
+    { "mdns-no-rsp",   0, NULL, 512 },
+    { "mdns-no-daap",  0, NULL, 513 },
+    { "mdns-no-cname", 0, NULL, 514 },
+    { "mdns-no-web",   0, NULL, 515 },
+    { "logformat",     1, NULL, 516 },
 
-      { NULL,           0, NULL, 0 }
-    };
+    { NULL,            0, NULL, 0   }
+  };
 
   while ((option = getopt_long(argc, argv, "D:d:c:P:ftb:vw:s:", option_map, NULL)) != -1)
     {
@@ -549,6 +550,10 @@ main(int argc, char **argv)
 
 	  case 515:
 	    mdns_no_web = true;
+	    break;
+
+	  case 516:
+	    logformat = optarg;
 	    break;
 
 	  case 't':
@@ -603,7 +608,7 @@ main(int argc, char **argv)
 	}
     }
 
-  ret = logger_init(NULL, NULL, (loglevel < 0) ? E_LOG : loglevel);
+  ret = logger_init(NULL, NULL, (loglevel < 0) ? E_LOG : loglevel, NULL);
   if (ret != 0)
     {
       fprintf(stderr, "Could not initialize log facility\n");
@@ -625,10 +630,11 @@ main(int argc, char **argv)
   /* Reinit log facility with configfile values */
   if (loglevel < 0)
     loglevel = cfg_getint(cfg_getsec(cfg, "general"), "loglevel");
-
+  if (!logformat)
+    logformat = cfg_getstr(cfg_getsec(cfg, "general"), "logformat");
   logfile = cfg_getstr(cfg_getsec(cfg, "general"), "logfile");
 
-  ret = logger_init(logfile, logdomains, loglevel);
+  ret = logger_init(logfile, logdomains, loglevel, logformat);
   if (ret != 0)
     {
       fprintf(stderr, "Could not reinitialize log facility with config file settings\n");
@@ -715,7 +721,7 @@ main(int argc, char **argv)
   ret = pthread_sigmask(SIG_BLOCK, &sigs, NULL);
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_MAIN, "Error setting signal set\n");
+      DPRINTF(E_ERROR, L_MAIN, "Error setting signal set\n");
 
       ret = EXIT_FAILURE;
       goto signal_block_fail;
@@ -725,7 +731,7 @@ main(int argc, char **argv)
   ret = daemonize(background, pidfile);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MAIN, "Could not initialize server\n");
+      DPRINTF(E_ERROR, L_MAIN, "Could not initialize server\n");
 
       ret = EXIT_FAILURE;
       goto daemon_fail;
@@ -747,7 +753,7 @@ main(int argc, char **argv)
     }
 
   /* Initialize the database before starting */
-  DPRINTF(E_INFO, L_MAIN, "Initializing database\n");
+  DPRINTF(E_LOG, L_MAIN, "Initializing database\n");
   ret = db_init(sqlite_extension_path);
   if (ret < 0)
     {
@@ -976,12 +982,12 @@ main(int argc, char **argv)
     {
       ret = seteuid(0);
       if (ret < 0)
-	DPRINTF(E_LOG, L_MAIN, "seteuid() failed: %s\n", strerror(errno));
+	DPRINTF(E_ERROR, L_MAIN, "seteuid() failed: %s\n", strerror(errno));
       else
 	{
 	  ret = unlink(pidfile);
 	  if (ret < 0)
-	    DPRINTF(E_LOG, L_MAIN, "Could not unlink PID file %s: %s\n", pidfile, strerror(errno));
+	    DPRINTF(E_ERROR, L_MAIN, "Could not unlink PID file %s: %s\n", pidfile, strerror(errno));
 	}
     }
 

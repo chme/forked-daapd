@@ -84,7 +84,7 @@ param_sign(struct keyval *kv)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_SCROBBLE, "lastfm: Could not open MD5: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_SCROBBLE, "lastfm: Could not open MD5: %s\n", ebuf);
       return -1;
     }
 
@@ -99,7 +99,7 @@ param_sign(struct keyval *kv)
   hash_bytes = gcry_md_read(md_hdl, GCRY_MD_MD5);
   if (!hash_bytes)
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lastfm: Could not read MD5 hash\n");
+      DPRINTF(E_ERROR, L_SCROBBLE, "lastfm: Could not read MD5 hash\n");
       return -1;
     }
 
@@ -163,21 +163,21 @@ response_process(struct http_client_ctx *ctx, char **errmsg)
   body = (char *)evbuffer_pullup(ctx->input_body, -1);
   if (!body || (strlen(body) == 0))
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lastfm: Empty response\n");
+      DPRINTF(E_ERROR, L_SCROBBLE, "lastfm: Empty response\n");
       return -1;
     }
 
   tree = xml_from_string(body);
   if (!tree)
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lastfm: Failed to parse LastFM response:\n%s\n", body);
+      DPRINTF(E_ERROR, L_SCROBBLE, "lastfm: Failed to parse LastFM response:\n%s\n", body);
       return -1;
     }
 
   error = xml_get_val(tree, "lfm/error");
   if (error)
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lastfm: Request to LastFM failed: %s\n", error);
+      DPRINTF(E_ERROR, L_SCROBBLE, "lastfm: Request to LastFM failed: %s\n", error);
       DPRINTF(E_DBG, L_SCROBBLE, "lastfm: LastFM response:\n%s\n", body);
 
       if (errmsg)
@@ -201,7 +201,7 @@ response_process(struct http_client_ctx *ctx, char **errmsg)
   sk = atrim(xml_get_val(tree, "lfm/session/key"));
   if (!sk)
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lastfm: Session key not found\n");
+      DPRINTF(E_ERROR, L_SCROBBLE, "lastfm: Session key not found\n");
       xml_free(tree);
       return -1;
     }
@@ -240,7 +240,7 @@ request_post(const char *url, struct keyval *kv, char **errmsg)
   ret = param_sign(kv);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lastfm: Aborting request, param_sign failed\n");
+      DPRINTF(E_ERROR, L_SCROBBLE, "lastfm: Aborting request, param_sign failed\n");
       return -1;
     }
 
@@ -249,7 +249,7 @@ request_post(const char *url, struct keyval *kv, char **errmsg)
   request_body = http_form_urlencode(kv);
   if (!request_body)
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lastfm: Aborting request, http_form_urlencode failed\n");
+      DPRINTF(E_ERROR, L_SCROBBLE, "lastfm: Aborting request, http_form_urlencode failed\n");
       return -1;
     }
 
@@ -283,7 +283,7 @@ scrobble(int id)
   mfi = db_file_fetch_byid(id);
   if (!mfi)
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lastfm: Scrobble failed, track id %d is unknown\n", id);
+      DPRINTF(E_ERROR, L_SCROBBLE, "lastfm: Scrobble failed, track id %d is unknown\n", id);
       return -1;
     }
 
@@ -369,7 +369,7 @@ lastfm_login_user(const char *user, const char *password, char **errmsg)
   struct keyval *kv;
   int ret;
 
-  DPRINTF(E_LOG, L_SCROBBLE, "lastfm: LastFM credentials file OK, logging in with username %s\n", user);
+  DPRINTF(E_ERROR, L_SCROBBLE, "lastfm: LastFM credentials file OK, logging in with username %s\n", user);
 
   // Stop active scrobbling session
   stop_scrobbling();
