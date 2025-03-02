@@ -835,21 +835,21 @@ file_copy(const char *dst, const char *src)
   fd_src = open(src, O_RDONLY);
   if (fd_src < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error opening source '%s' for copy: %s\n", src, strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Error opening source '%s' for copy: %s\n", src, strerror(errno));
       goto error;
     }
 
   fd_dst = open(dst, O_WRONLY);
   if (fd_src < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error opening destination '%s' for copy: %s\n", dst, strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Error opening destination '%s' for copy: %s\n", dst, strerror(errno));
       goto error;
     }
 
   ret = fast_copy(fd_dst, fd_src);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error copying '%s' to file '%s': %s\n", src, dst, strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Error copying '%s' to file '%s': %s\n", src, dst, strerror(errno));
       goto error;
     }
 
@@ -882,28 +882,28 @@ file_copy_to_tmp(char *dst, size_t dst_size, const char *src)
   fd_src = open(src, O_RDWR);
   if (fd_src < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error opening '%s' for metadata update: %s\n", src, strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Error opening '%s' for metadata update: %s\n", src, strerror(errno));
       goto error;
     }
 
   ret = snprintf(dst, dst_size, "/tmp/owntone.tmpXXXXXX%s", ext);
   if (ret < 0 || ret >= dst_size)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error creating tmp file name\n");
+      DPRINTF(E_ERROR, L_SCAN, "Error creating tmp file name\n");
       goto error;
     }
 
   fd_dst = mkstemps(dst, strlen(ext));
   if (fd_dst < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error creating tmp file '%s' for metadata update: %s\n", dst, strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Error creating tmp file '%s' for metadata update: %s\n", dst, strerror(errno));
       goto error;
     }
 
   ret = fast_copy(fd_dst, fd_src);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error copying '%s' to tmp file '%s': %s\n", src, dst, strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Error copying '%s' to tmp file '%s': %s\n", src, dst, strerror(errno));
       goto error;
     }
 
@@ -943,7 +943,7 @@ file_write_rating(const char *dst, const char *src, const char *rating)
   ret = avformat_open_input(&in_fmt_ctx, src, NULL, NULL);
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error opening tmpfile '%s' for rating metadata update: %s\n", src, av_err2str(ret));
+      DPRINTF(E_ERROR, L_SCAN, "Error opening tmpfile '%s' for rating metadata update: %s\n", src, av_err2str(ret));
       goto error;
     }
 
@@ -952,21 +952,21 @@ file_write_rating(const char *dst, const char *src, const char *rating)
   ret = avformat_find_stream_info(in_fmt_ctx, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error reading input stream information from '%s': %s\n", in_fmt_ctx->url, av_err2str(ret));
+      DPRINTF(E_ERROR, L_SCAN, "Error reading input stream information from '%s': %s\n", in_fmt_ctx->url, av_err2str(ret));
       goto error;
     }
 
   out_fmt = av_guess_format(in_fmt_ctx->iformat->name, in_fmt_ctx->url, in_fmt_ctx->iformat->mime_type);
   if (out_fmt == NULL)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not determine output format from '%s'\n", in_fmt_ctx->url);
+      DPRINTF(E_ERROR, L_SCAN, "Could not determine output format from '%s'\n", in_fmt_ctx->url);
       goto error;
     }
 
   ret = avformat_alloc_output_context2(&out_fmt_ctx, out_fmt, NULL, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not create output context '%s' - %s\n", in_fmt_ctx->url, av_err2str(ret));
+      DPRINTF(E_ERROR, L_SCAN, "Could not create output context '%s' - %s\n", in_fmt_ctx->url, av_err2str(ret));
       goto error;
     }
 
@@ -987,14 +987,14 @@ file_write_rating(const char *dst, const char *src, const char *rating)
       out_stream = avformat_new_stream(out_fmt_ctx, NULL);
       if (!out_stream)
         {
-	  DPRINTF(E_LOG, L_SCAN, "Error allocating output stream for '%s'\n", in_fmt_ctx->url);
+	  DPRINTF(E_ERROR, L_SCAN, "Error allocating output stream for '%s'\n", in_fmt_ctx->url);
 	  goto error;
         }
 
       ret = avcodec_parameters_copy(out_stream->codecpar, in_stream->codecpar);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Error copying codec parameters from '%s': %s\n", in_fmt_ctx->url, av_err2str(ret));
+	  DPRINTF(E_ERROR, L_SCAN, "Error copying codec parameters from '%s': %s\n", in_fmt_ctx->url, av_err2str(ret));
 	  goto error;
 	}
 
@@ -1011,14 +1011,14 @@ file_write_rating(const char *dst, const char *src, const char *rating)
   ret = avio_open(&out_fmt_ctx->pb, dst, AVIO_FLAG_WRITE);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not open output rating file '%s': %s\n", dst, av_err2str(ret));
+      DPRINTF(E_ERROR, L_SCAN, "Could not open output rating file '%s': %s\n", dst, av_err2str(ret));
       goto error;
     }
 
   ret = avformat_write_header(out_fmt_ctx, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Error occurred when writing output header to '%s': %s\n", dst, av_err2str(ret));
+      DPRINTF(E_ERROR, L_SCAN, "Error occurred when writing output header to '%s': %s\n", dst, av_err2str(ret));
       goto error;
     }
 
@@ -1030,7 +1030,7 @@ file_write_rating(const char *dst, const char *src, const char *rating)
 	  if (ret == AVERROR_EOF)
 	    break;
 
-	  DPRINTF(E_LOG, L_SCAN, "Error reading '%s': %s\n", in_fmt_ctx->url, av_err2str(ret));
+	  DPRINTF(E_ERROR, L_SCAN, "Error reading '%s': %s\n", in_fmt_ctx->url, av_err2str(ret));
 	  restore_src = true;
 	  goto error;
 	}
@@ -1055,7 +1055,7 @@ file_write_rating(const char *dst, const char *src, const char *rating)
       av_packet_unref(&pkt);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Error muxing pkt for rating '%s': %s\n", in_fmt_ctx->url, av_err2str(ret));
+	  DPRINTF(E_ERROR, L_SCAN, "Error muxing pkt for rating '%s': %s\n", in_fmt_ctx->url, av_err2str(ret));
 	  restore_src = true;
 	  goto error;
 	}
@@ -1090,7 +1090,7 @@ file_rating_matches(const char *path, const char *rating)
   ret = avformat_open_input(&in_fmt_ctx, path, NULL, NULL);
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Failed to open library file for rating metadata update '%s' - %s\n", path, av_err2str(ret));
+      DPRINTF(E_ERROR, L_SCAN, "Failed to open library file for rating metadata update '%s' - %s\n", path, av_err2str(ret));
       return true; // Return true so called aborts
     }
 

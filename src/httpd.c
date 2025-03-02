@@ -270,7 +270,7 @@ modules_handlers_set(struct httpd_uri_map *uri_map)
       uri->preg = calloc(1, sizeof(regex_t));
       if (!uri->preg)
 	{
-	  DPRINTF(E_LOG, L_HTTPD, "Error setting URI handler, out of memory");
+	  DPRINTF(E_ERROR, L_HTTPD, "Error setting URI handler, out of memory");
 	  goto error;
 	}
 
@@ -278,7 +278,7 @@ modules_handlers_set(struct httpd_uri_map *uri_map)
       if (ret != 0)
 	{
 	  regerror(ret, uri->preg, buf, sizeof(buf));
-	  DPRINTF(E_LOG, L_HTTPD, "Error setting URI handler, regexp error: %s\n", buf);
+	  DPRINTF(E_ERROR, L_HTTPD, "Error setting URI handler, regexp error: %s\n", buf);
 	  goto error;
 	}
     }
@@ -509,7 +509,7 @@ serve_file(struct httpd_request *hreq)
   ret = snprintf(path, sizeof(path), "%s%s", webroot_directory, hreq->path);
   if ((ret < 0) || (ret >= sizeof(path)))
     {
-      DPRINTF(E_LOG, L_HTTPD, "Request exceeds PATH_MAX: %s\n", hreq->uri);
+      DPRINTF(E_ERROR, L_HTTPD, "Request exceeds PATH_MAX: %s\n", hreq->uri);
 
       httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
       return;
@@ -517,7 +517,7 @@ serve_file(struct httpd_request *hreq)
 
   if (!realpath(path, deref))
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not dereference %s: %s\n", path, strerror(errno));
+      DPRINTF(E_ERROR, L_HTTPD, "Could not dereference %s: %s\n", path, strerror(errno));
 
       httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
       return;
@@ -525,7 +525,7 @@ serve_file(struct httpd_request *hreq)
 
   if (strlen(deref) >= PATH_MAX)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Dereferenced path exceeds PATH_MAX: %s\n", path);
+      DPRINTF(E_ERROR, L_HTTPD, "Dereferenced path exceeds PATH_MAX: %s\n", path);
 
       httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
       return;
@@ -547,7 +547,7 @@ serve_file(struct httpd_request *hreq)
 
       if (!realpath(path, deref))
         {
-          DPRINTF(E_LOG, L_HTTPD, "Could not dereference %s: %s\n", path, strerror(errno));
+          DPRINTF(E_ERROR, L_HTTPD, "Could not dereference %s: %s\n", path, strerror(errno));
 
           httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
           return;
@@ -555,7 +555,7 @@ serve_file(struct httpd_request *hreq)
 
       if (strlen(deref) >= PATH_MAX)
         {
-          DPRINTF(E_LOG, L_HTTPD, "Dereferenced path exceeds PATH_MAX: %s\n", path);
+          DPRINTF(E_ERROR, L_HTTPD, "Dereferenced path exceeds PATH_MAX: %s\n", path);
 
           httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
 
@@ -565,7 +565,7 @@ serve_file(struct httpd_request *hreq)
       ret = stat(deref, &sb);
       if (ret < 0)
         {
-	  DPRINTF(E_LOG, L_HTTPD, "Could not stat() %s: %s\n", path, strerror(errno));
+	  DPRINTF(E_ERROR, L_HTTPD, "Could not stat() %s: %s\n", path, strerror(errno));
 	  httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
 	  return;
 	}
@@ -589,7 +589,7 @@ serve_file(struct httpd_request *hreq)
   fd = open(deref, O_RDONLY);
   if (fd < 0)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not open %s: %s\n", deref, strerror(errno));
+      DPRINTF(E_ERROR, L_HTTPD, "Could not open %s: %s\n", deref, strerror(errno));
 
       httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
       return;
@@ -598,7 +598,7 @@ serve_file(struct httpd_request *hreq)
   ret = evbuffer_expand(hreq->out_body, sb.st_size);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Out of memory for htdocs-file\n");
+      DPRINTF(E_ERROR, L_HTTPD, "Out of memory for htdocs-file\n");
       goto out_fail;
     }
 
@@ -607,7 +607,7 @@ serve_file(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not read file into evbuffer\n");
+      DPRINTF(E_ERROR, L_HTTPD, "Could not read file into evbuffer\n");
       goto out_fail;
     }
 
@@ -689,7 +689,7 @@ stream_new(struct media_file_info *mfi, struct httpd_request *hreq, event_callba
   st->ev = event_new(hreq->evbase, -1, EV_PERSIST, stream_cb, st);
   if (!st->ev)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not create event for streaming\n");
+      DPRINTF(E_ERROR, L_HTTPD, "Could not create event for streaming\n");
 
       httpd_send_error(hreq, HTTP_SERVUNAVAIL, "Internal Server Error");
       goto error;
@@ -802,7 +802,7 @@ stream_new_raw(struct media_file_info *mfi, struct httpd_request *hreq, int64_t 
   st->fd = open(mfi->path, O_RDONLY);
   if (st->fd < 0)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not open %s: %s\n", mfi->path, strerror(errno));
+      DPRINTF(E_ERROR, L_HTTPD, "Could not open %s: %s\n", mfi->path, strerror(errno));
 
       httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
       goto error;
@@ -811,7 +811,7 @@ stream_new_raw(struct media_file_info *mfi, struct httpd_request *hreq, int64_t 
   ret = stat(mfi->path, &sb);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not stat() %s: %s\n", mfi->path, strerror(errno));
+      DPRINTF(E_ERROR, L_HTTPD, "Could not stat() %s: %s\n", mfi->path, strerror(errno));
 
       httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
       goto error;
@@ -830,7 +830,7 @@ stream_new_raw(struct media_file_info *mfi, struct httpd_request *hreq, int64_t 
   pos = lseek(st->fd, offset, SEEK_SET);
   if (pos == (off_t) -1)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not seek into %s: %s\n", mfi->path, strerror(errno));
+      DPRINTF(E_ERROR, L_HTTPD, "Could not seek into %s: %s\n", mfi->path, strerror(errno));
 
       httpd_send_error(hreq, HTTP_BADREQUEST, "Bad Request");
       goto error;
@@ -856,7 +856,7 @@ stream_chunk_xcode_cb(int fd, short event, void *arg)
       if (xcoded == 0)
 	DPRINTF(E_INFO, L_HTTPD, "Done streaming transcoded file id %d\n", st->id);
       else
-	DPRINTF(E_LOG, L_HTTPD, "Transcoding error, file id %d\n", st->id);
+	DPRINTF(E_ERROR, L_HTTPD, "Transcoding error, file id %d\n", st->id);
 
       stream_end(st);
       return;
@@ -920,7 +920,7 @@ stream_chunk_raw_cb(int fd, short event, void *arg)
       if (ret == 0)
 	DPRINTF(E_INFO, L_HTTPD, "Done streaming file id %d\n", st->id);
       else
-	DPRINTF(E_LOG, L_HTTPD, "Streaming error, file id %d\n", st->id);
+	DPRINTF(E_ERROR, L_HTTPD, "Streaming error, file id %d\n", st->id);
 
       stream_end(st);
       return;
@@ -1062,7 +1062,7 @@ httpd_stream_file(struct httpd_request *hreq, int id)
       ret = safe_atoi64(param + strlen("bytes="), &offset);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_HTTPD, "Invalid start offset, will stream whole file (%s)\n", param);
+	  DPRINTF(E_ERROR, L_HTTPD, "Invalid start offset, will stream whole file (%s)\n", param);
 	  offset = 0;
 	}
       /* End offset, if any */
@@ -1074,13 +1074,13 @@ httpd_stream_file(struct httpd_request *hreq, int id)
 	      ret = safe_atoi64(param_end + 1, &end_offset);
 	      if (ret < 0)
 		{
-		  DPRINTF(E_LOG, L_HTTPD, "Invalid end offset, will stream to end of file (%s)\n", param);
+		  DPRINTF(E_ERROR, L_HTTPD, "Invalid end offset, will stream to end of file (%s)\n", param);
 		  end_offset = 0;
 		}
 
 	      if (end_offset < offset)
 		{
-		  DPRINTF(E_LOG, L_HTTPD, "End offset < start offset, will stream to end of file (%" PRIi64 " < %" PRIi64 ")\n", end_offset, offset);
+		  DPRINTF(E_ERROR, L_HTTPD, "End offset < start offset, will stream to end of file (%" PRIi64 " < %" PRIi64 ")\n", end_offset, offset);
 		  end_offset = 0;
 		}
 	    }
@@ -1090,7 +1090,7 @@ httpd_stream_file(struct httpd_request *hreq, int id)
   mfi = db_file_fetch_byid(id);
   if (!mfi)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Item %d not found\n", id);
+      DPRINTF(E_ERROR, L_HTTPD, "Item %d not found\n", id);
 
       httpd_send_error(hreq, HTTP_NOTFOUND, "Not Found");
       goto error;
@@ -1098,7 +1098,7 @@ httpd_stream_file(struct httpd_request *hreq, int id)
 
   if (mfi->data_kind != DATA_KIND_FILE)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not serve '%s' to client, not a file\n", mfi->path);
+      DPRINTF(E_ERROR, L_HTTPD, "Could not serve '%s' to client, not a file\n", mfi->path);
 
       httpd_send_error(hreq, HTTP_INTERNAL, "Cannot stream non-file content");
       goto error;
@@ -1108,7 +1108,7 @@ httpd_stream_file(struct httpd_request *hreq, int id)
   profile = transcode_needed(hreq->user_agent, param, mfi->codectype);
   if (profile == XCODE_UNKNOWN)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not serve '%s' to client, unable to determine output format\n", mfi->path);
+      DPRINTF(E_ERROR, L_HTTPD, "Could not serve '%s' to client, unable to determine output format\n", mfi->path);
 
       httpd_send_error(hreq, HTTP_INTERNAL, "Cannot stream, unable to determine output format");
       goto error;
@@ -1149,7 +1149,7 @@ httpd_stream_file(struct httpd_request *hreq, int id)
 	  // Front Row and others expect video/<type>
 	  ret = snprintf(buf, sizeof(buf), "video/%s", mfi->type);
 	  if ((ret < 0) || (ret >= sizeof(buf)))
-	    DPRINTF(E_LOG, L_HTTPD, "Content-Type too large for buffer, dropping\n");
+	    DPRINTF(E_ERROR, L_HTTPD, "Content-Type too large for buffer, dropping\n");
 	  else
 	    {
 	      httpd_header_remove(hreq->out_headers, "Content-Type");
@@ -1163,7 +1163,7 @@ httpd_stream_file(struct httpd_request *hreq, int id)
 	{
 	  ret = snprintf(buf, sizeof(buf), "audio/%s", mfi->type);
 	  if ((ret < 0) || (ret >= sizeof(buf)))
-	    DPRINTF(E_LOG, L_HTTPD, "Content-Type too large for buffer, dropping\n");
+	    DPRINTF(E_ERROR, L_HTTPD, "Content-Type too large for buffer, dropping\n");
 	  else
 	    httpd_header_add(hreq->out_headers, "Content-Type", buf);
 	}
@@ -1178,7 +1178,7 @@ httpd_stream_file(struct httpd_request *hreq, int id)
 	{
 	  ret = snprintf(buf, sizeof(buf), "%" PRIi64, (int64_t)st->size);
 	  if ((ret < 0) || (ret >= sizeof(buf)))
-	    DPRINTF(E_LOG, L_HTTPD, "Content-Length too large for buffer, dropping\n");
+	    DPRINTF(E_ERROR, L_HTTPD, "Content-Length too large for buffer, dropping\n");
 	  else
 	    httpd_header_add(hreq->out_headers, "Content-Length", buf);
 	}
@@ -1192,13 +1192,13 @@ httpd_stream_file(struct httpd_request *hreq, int id)
       ret = snprintf(buf, sizeof(buf), "bytes %" PRIi64 "-%" PRIi64 "/%" PRIi64,
 		     offset, (end_offset) ? end_offset : (int64_t)st->size, (int64_t)st->size);
       if ((ret < 0) || (ret >= sizeof(buf)))
-	DPRINTF(E_LOG, L_HTTPD, "Content-Range too large for buffer, dropping\n");
+	DPRINTF(E_ERROR, L_HTTPD, "Content-Range too large for buffer, dropping\n");
       else
 	httpd_header_add(hreq->out_headers, "Content-Range", buf);
 
       ret = snprintf(buf, sizeof(buf), "%" PRIi64, ((end_offset) ? end_offset + 1 : (int64_t)st->size) - offset);
       if ((ret < 0) || (ret >= sizeof(buf)))
-	DPRINTF(E_LOG, L_HTTPD, "Content-Length too large for buffer, dropping\n");
+	DPRINTF(E_ERROR, L_HTTPD, "Content-Length too large for buffer, dropping\n");
       else
 	httpd_header_add(hreq->out_headers, "Content-Length", buf);
 
@@ -1281,7 +1281,7 @@ httpd_gzip_deflate(struct evbuffer *in)
   ret = deflateInit2(&strm, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 + 16, 8, Z_DEFAULT_STRATEGY);
   if (ret != Z_OK)
     {
-      DPRINTF(E_LOG, L_HTTPD, "zlib setup failed: %s\n", zError(ret));
+      DPRINTF(E_ERROR, L_HTTPD, "zlib setup failed: %s\n", zError(ret));
       return NULL;
     }
 
@@ -1291,7 +1291,7 @@ httpd_gzip_deflate(struct evbuffer *in)
   out = evbuffer_new();
   if (!out)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not allocate evbuffer for gzipped reply\n");
+      DPRINTF(E_ERROR, L_HTTPD, "Could not allocate evbuffer for gzipped reply\n");
       goto out_deflate_end;
     }
 
@@ -1301,7 +1301,7 @@ httpd_gzip_deflate(struct evbuffer *in)
   ret = evbuffer_reserve_space(out, strm.avail_in + 512, iovec, 1);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not reserve memory for gzipped reply\n");
+      DPRINTF(E_ERROR, L_HTTPD, "Could not reserve memory for gzipped reply\n");
       goto out_evbuf_free;
     }
 
@@ -1421,7 +1421,7 @@ httpd_request_is_authorized(struct httpd_request *hreq)
   passwd = cfg_getstr(cfg_getsec(cfg, "general"), "admin_password");
   if (!passwd)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Web interface request to '%s' denied: No password set in the config\n", hreq->uri);
+      DPRINTF(E_ERROR, L_HTTPD, "Web interface request to '%s' denied: No password set in the config\n", hreq->uri);
 
       httpd_send_error(hreq, HTTP_FORBIDDEN, "Forbidden");
       return false;
@@ -1432,7 +1432,7 @@ httpd_request_is_authorized(struct httpd_request *hreq)
   ret = httpd_basic_auth(hreq, "admin", passwd, PACKAGE " web interface");
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Web interface request to '%s' denied: Incorrect password\n", hreq->uri);
+      DPRINTF(E_ERROR, L_HTTPD, "Web interface request to '%s' denied: Incorrect password\n", hreq->uri);
 
       // httpd_basic_auth has sent a reply
       return false;
@@ -1462,7 +1462,7 @@ httpd_basic_auth(struct httpd_request *hreq, const char *user, const char *passw
 
   if (strncmp(auth, "Basic ", strlen("Basic ")) != 0)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Bad Authentication header\n");
+      DPRINTF(E_ERROR, L_HTTPD, "Bad Authentication header\n");
 
       goto need_auth;
     }
@@ -1472,7 +1472,7 @@ httpd_basic_auth(struct httpd_request *hreq, const char *user, const char *passw
   ret = basic_auth_cred_extract(&authuser, &authpwd, auth);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Malformed Authentication header\n");
+      DPRINTF(E_ERROR, L_HTTPD, "Malformed Authentication header\n");
 
       goto need_auth;
     }
@@ -1481,7 +1481,7 @@ httpd_basic_auth(struct httpd_request *hreq, const char *user, const char *passw
     {
       if (strcmp(user, authuser) != 0)
 	{
-	  DPRINTF(E_LOG, L_HTTPD, "Username mismatch\n");
+	  DPRINTF(E_ERROR, L_HTTPD, "Username mismatch\n");
 
 	  free(authuser);
 	  free(authpwd);
@@ -1491,7 +1491,7 @@ httpd_basic_auth(struct httpd_request *hreq, const char *user, const char *passw
 
   if (strcmp(passwd, authpwd) != 0)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Bad password\n");
+      DPRINTF(E_ERROR, L_HTTPD, "Bad password\n");
 
       free(authuser);
       free(authpwd);
@@ -1572,17 +1572,17 @@ httpd_init(const char *webroot)
   ret = stat(webroot, &sb);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not stat() web root directory '%s': %s\n", webroot, strerror(errno));
+      DPRINTF(E_ERROR, L_HTTPD, "Could not stat() web root directory '%s': %s\n", webroot, strerror(errno));
       return -1;
     }
   if (!S_ISDIR(sb.st_mode))
     {
-      DPRINTF(E_LOG, L_HTTPD, "Web root directory '%s' is not a directory\n", webroot);
+      DPRINTF(E_ERROR, L_HTTPD, "Web root directory '%s' is not a directory\n", webroot);
       return -1;
     }
   if (!realpath(webroot, webroot_directory))
     {
-      DPRINTF(E_LOG, L_HTTPD, "Web root directory '%s' could not be dereferenced: %s\n", webroot, strerror(errno));
+      DPRINTF(E_ERROR, L_HTTPD, "Web root directory '%s' could not be dereferenced: %s\n", webroot, strerror(errno));
       return -1;
     }
 
@@ -1621,14 +1621,14 @@ httpd_init(const char *webroot)
   httpd_threadpool = evthr_pool_wexit_new(THREADPOOL_NTHREADS, thread_init_cb, thread_exit_cb, NULL);
   if (!httpd_threadpool)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not create httpd thread pool\n");
+      DPRINTF(E_ERROR, L_HTTPD, "Could not create httpd thread pool\n");
       goto error;
     }
 
   ret = evthr_pool_start(httpd_threadpool);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_HTTPD, "Could not spawn worker threads\n");
+      DPRINTF(E_ERROR, L_HTTPD, "Could not spawn worker threads\n");
       goto error;
     }
 

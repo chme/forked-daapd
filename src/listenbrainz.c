@@ -92,7 +92,7 @@ submit_listens(struct media_file_info *mfi)
   // Process response
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Failed to scrobble '%s' by '%s'\n", mfi->title, mfi->artist);
+      DPRINTF(E_ERROR, L_SCROBBLE, "lbrainz: Failed to scrobble '%s' by '%s'\n", mfi->title, mfi->artist);
       goto out;
     }
 
@@ -103,7 +103,7 @@ submit_listens(struct media_file_info *mfi)
     }
   else if (ctx.response_code == 401)
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Failed to scrobble '%s' by '%s', unauthorized, disable scrobbling\n", mfi->title,
+      DPRINTF(E_ERROR, L_SCROBBLE, "lbrainz: Failed to scrobble '%s' by '%s', unauthorized, disable scrobbling\n", mfi->title,
           mfi->artist);
       listenbrainz_disabled = true;
     }
@@ -120,7 +120,7 @@ submit_listens(struct media_file_info *mfi)
     }
   else
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Failed to scrobble '%s' by '%s', response code: %d\n", mfi->title, mfi->artist,
+      DPRINTF(E_ERROR, L_SCROBBLE, "lbrainz: Failed to scrobble '%s' by '%s', response code: %d\n", mfi->title, mfi->artist,
           ctx.response_code);
     }
 
@@ -167,13 +167,13 @@ validate_token(struct listenbrainz_status *status)
   response_body = (char *)evbuffer_pullup(ctx.input_body, -1);
   if (!response_body || (strlen(response_body) == 0))
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Request for '%s' failed, response was empty\n", ctx.url);
+      DPRINTF(E_ERROR, L_SCROBBLE, "lbrainz: Request for '%s' failed, response was empty\n", ctx.url);
       goto out;
     }
 
   json_response = json_tokener_parse(response_body);
   if (!json_response)
-    DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: JSON parser returned an error for '%s'\n", ctx.url);
+    DPRINTF(E_ERROR, L_SCROBBLE, "lbrainz: JSON parser returned an error for '%s'\n", ctx.url);
 
   status->user_name = safe_strdup(jparse_str_from_obj(json_response, "user_name"));
   status->token_valid = jparse_bool_from_obj(json_response, "valid");
@@ -209,7 +209,7 @@ listenbrainz_scrobble(int mfi_id)
   mfi = db_file_fetch_byid(mfi_id);
   if (!mfi)
     {
-      DPRINTF(E_LOG, L_SCROBBLE, "lbrainz: Scrobble failed, track id %d is unknown\n", mfi_id);
+      DPRINTF(E_ERROR, L_SCROBBLE, "lbrainz: Scrobble failed, track id %d is unknown\n", mfi_id);
       return -1;
     }
 

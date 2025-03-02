@@ -116,7 +116,7 @@ process_notify_request(short *requested_events, void *in, size_t len)
 
   if (jerr != json_tokener_success)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to parse incoming request: %s\n", json_tokener_error_desc(jerr));
+      DPRINTF(E_ERROR, L_WEB, "Failed to parse incoming request: %s\n", json_tokener_error_desc(jerr));
       json_tokener_free(tokener);
       return -1;
     }
@@ -294,7 +294,7 @@ callback_notify(struct lws *wsi, enum lws_callback_reasons reason, void *user, v
         sizeof(struct per_vhost_data));
       if (!vhd)
       {
-        DPRINTF(E_LOG, L_WEB, "Failed to allocate websocket per-vhoststorage\n");
+        DPRINTF(E_ERROR, L_WEB, "Failed to allocate websocket per-vhoststorage\n");
         return 1;
       }
       break;
@@ -443,7 +443,7 @@ logger_libwebsockets(int level, const char *line)
   switch (level)
     {
       case LLL_ERR:
-        severity = E_LOG;
+        severity = E_ERROR;
         break;
 
       case LLL_WARN:
@@ -481,7 +481,7 @@ websocket_init(void)
 #ifdef HAVE_LIBEVENT22
       DPRINTF(E_DBG, L_WEB, "Libwebsocket disabled, using libevent websocket instead. To enable it, set websocket_port in config to a valid port number.\n");
 #else
-      DPRINTF(E_LOG, L_WEB, "Websocket disabled. To enable it, set websocket_port in config to a valid port number.\n");
+      DPRINTF(E_ERROR, L_WEB, "Websocket disabled. To enable it, set websocket_port in config to a valid port number.\n");
 #endif
       return 0;
     }
@@ -512,14 +512,14 @@ websocket_init(void)
   websocket_context = lws_create_context(&info);
   if (websocket_context == NULL)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to create websocket context\n");
+      DPRINTF(E_ERROR, L_WEB, "Failed to create websocket context\n");
       return -1;
     }
 
   ret = mutex_init(&websocket_write_event_lock);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to initialize mutex: %s\n", strerror(ret));
+      DPRINTF(E_ERROR, L_WEB, "Failed to initialize mutex: %s\n", strerror(ret));
       lws_context_destroy(websocket_context);
       return -1;
     }
@@ -527,7 +527,7 @@ websocket_init(void)
   ret = pthread_create(&tid_websocket, NULL, websocket, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Could not spawn websocket thread (%d): %s\n", ret, strerror(ret));
+      DPRINTF(E_ERROR, L_WEB, "Could not spawn websocket thread (%d): %s\n", ret, strerror(ret));
       pthread_mutex_destroy(&websocket_write_event_lock);
       lws_context_destroy(websocket_context);
       return -1;
@@ -553,7 +553,7 @@ websocket_deinit(void)
   lws_cancel_service(websocket_context);
   ret = pthread_join(tid_websocket, NULL);
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "Error joining websocket thread (%d): %s\n", ret, strerror(ret));
+    DPRINTF(E_ERROR, L_WEB, "Error joining websocket thread (%d): %s\n", ret, strerror(ret));
 
   lws_context_destroy(websocket_context);
   pthread_mutex_destroy(&websocket_write_event_lock);

@@ -291,7 +291,7 @@ logger_confuse(cfg_t *config, const char *format, va_list args)
   else
     snprintf(fmt, sizeof(fmt), "%s\n", format);
 
-  DVPRINTF(E_LOG, L_CONF, fmt, args);
+  DVPRINTF(E_ERROR, L_CONF, fmt, args);
 }
 
 static int
@@ -299,6 +299,8 @@ cb_loglevel(cfg_t *config, cfg_opt_t *opt, const char *value, void *result)
 {
   if (strcasecmp(value, "fatal") == 0)
     *(long int *)result = E_FATAL;
+  else if (strcasecmp(value, "error") == 0)
+    *(long int *)result = E_ERROR;
   else if (strcasecmp(value, "log") == 0)
     *(long int *)result = E_LOG;
   else if (strcasecmp(value, "warning") == 0)

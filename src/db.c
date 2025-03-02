@@ -677,7 +677,7 @@ db_escape_string(const char *str)
   escaped = sqlite3_mprintf("%q", str);
   if (!escaped)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for escaped string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for escaped string\n");
 
       return NULL;
     }
@@ -1404,7 +1404,7 @@ bind_generic(sqlite3_stmt *stmt, void *data, const struct col_type_map *map, siz
 	    break;
 
 	  default:
-	    DPRINTF(E_LOG, L_DB, "BUG: Unknown type %d in column map\n", map[i].type);
+	    DPRINTF(E_ERROR, L_DB, "BUG: Unknown type %d in column map\n", map[i].type);
 	    return -1;
 	}
 
@@ -1499,7 +1499,7 @@ db_blocking_step(sqlite3_stmt *stmt)
       ret = db_wait_unlock();
       if (ret != SQLITE_OK)
 	{
-	  DPRINTF(E_LOG, L_DB, "Database deadlocked!\n");
+	  DPRINTF(E_ERROR, L_DB, "Database deadlocked!\n");
 	  break;
 	}
 
@@ -1519,7 +1519,7 @@ db_blocking_prepare_v2(const char *query, int len, sqlite3_stmt **stmt, const ch
       ret = db_wait_unlock();
       if (ret != SQLITE_OK)
 	{
-	  DPRINTF(E_LOG, L_DB, "Database deadlocked!\n");
+	  DPRINTF(E_ERROR, L_DB, "Database deadlocked!\n");
 	  break;
 	}
     }
@@ -1550,7 +1550,7 @@ db_statement_run(sqlite3_stmt *stmt, short update_events)
 
   if (ret != SQLITE_DONE)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
     }
 
   sqlite3_reset(stmt);
@@ -1615,7 +1615,7 @@ db_pragma_optimize(void)
   ret = db_exec(query, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "ANALYZE failed: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_DB, "ANALYZE failed: %s\n", errmsg);
 
       sqlite3_free(errmsg);
     }
@@ -1642,7 +1642,7 @@ db_set_cfg_names(void)
       title = cfg_getstr(lib, cfg_item[i]);
       if (!title)
 	{
-	  DPRINTF(E_LOG, L_DB, "Internal error, unknown config item '%s'\n", cfg_item[i]);
+	  DPRINTF(E_ERROR, L_DB, "Internal error, unknown config item '%s'\n", cfg_item[i]);
 
 	  continue;
 	}
@@ -1650,7 +1650,7 @@ db_set_cfg_names(void)
       query = sqlite3_mprintf(Q_TMPL, title, PL_SPECIAL, special_id[i]);
       if (!query)
 	{
-	  DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+	  DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
 	  return;
 	}
@@ -1658,7 +1658,7 @@ db_set_cfg_names(void)
       ret = db_exec(query, &errmsg);
       if (ret != SQLITE_OK)
 	{
-	  DPRINTF(E_LOG, L_DB, "Error setting playlist title, query %s, error: %s\n", query, errmsg);
+	  DPRINTF(E_ERROR, L_DB, "Error setting playlist title, query %s, error: %s\n", query, errmsg);
 
 	  sqlite3_free(errmsg);
 	}
@@ -1702,7 +1702,7 @@ db_purge_cruft(time_t ref)
       query = sqlite3_mprintf(queries_tmpl[i], PL_SPECIAL, (int64_t)ref);
       if (!query)
 	{
-	  DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+	  DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 	  db_transaction_end();
 	  return;
 	}
@@ -1717,7 +1717,7 @@ db_purge_cruft(time_t ref)
   query = sqlite3_mprintf(Q_TMPL, DIR_MAX, (int64_t)ref);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       db_transaction_end();
       return;
     }
@@ -1755,7 +1755,7 @@ db_purge_cruft_bysource(time_t ref, enum scan_kind scan_kind)
       query = sqlite3_mprintf(queries_tmpl[i], PL_SPECIAL, (int64_t)ref, scan_kind);
       if (!query)
 	{
-	  DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+	  DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 	  db_transaction_end();
 	  return;
 	}
@@ -1770,7 +1770,7 @@ db_purge_cruft_bysource(time_t ref, enum scan_kind scan_kind)
   query = sqlite3_mprintf(Q_TMPL, DIR_MAX, (int64_t)ref, scan_kind);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       db_transaction_end();
       return;
     }
@@ -1810,7 +1810,7 @@ db_purge_all(void)
       ret = db_exec(queries[i], &errmsg);
       if (ret != SQLITE_OK)
 	{
-	  DPRINTF(E_LOG, L_DB, "Purge query %d error: %s\n", i, errmsg);
+	  DPRINTF(E_ERROR, L_DB, "Purge query %d error: %s\n", i, errmsg);
 
 	  sqlite3_free(errmsg);
 	}
@@ -1822,7 +1822,7 @@ db_purge_all(void)
   query = sqlite3_mprintf(Q_TMPL_PL, PL_SPECIAL);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       return;
     }
 
@@ -1831,7 +1831,7 @@ db_purge_all(void)
   ret = db_exec(query, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Purge query '%s' error: %s\n", query, errmsg);
+      DPRINTF(E_ERROR, L_DB, "Purge query '%s' error: %s\n", query, errmsg);
 
       sqlite3_free(errmsg);
     }
@@ -1844,7 +1844,7 @@ db_purge_all(void)
   query = sqlite3_mprintf(Q_TMPL_DIR, DIR_MAX);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       return;
     }
 
@@ -1853,7 +1853,7 @@ db_purge_all(void)
   ret = db_exec(query, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Purge query '%s' error: %s\n", query, errmsg);
+      DPRINTF(E_ERROR, L_DB, "Purge query '%s' error: %s\n", query, errmsg);
 
       sqlite3_free(errmsg);
     }
@@ -1877,7 +1877,7 @@ db_get_one_int(const char *query)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -1887,7 +1887,7 @@ db_get_one_int(const char *query)
       if (ret == SQLITE_DONE)
 	DPRINTF(E_INFO, L_DB, "No matching row found for query: %s\n", query);
       else
-	DPRINTF(E_LOG, L_DB, "Could not step: %s (%s)\n", sqlite3_errmsg(hdl), query);
+	DPRINTF(E_ERROR, L_DB, "Could not step: %s (%s)\n", sqlite3_errmsg(hdl), query);
 
       sqlite3_finalize(stmt);
       return -1;
@@ -1919,7 +1919,7 @@ db_transaction_begin(void)
   ret = db_exec(query, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "SQL error running '%s': %s\n", query, errmsg);
+      DPRINTF(E_ERROR, L_DB, "SQL error running '%s': %s\n", query, errmsg);
 
       sqlite3_free(errmsg);
     }
@@ -1937,7 +1937,7 @@ db_transaction_end(void)
   ret = db_exec(query, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "SQL error running '%s': %s\n", query, errmsg);
+      DPRINTF(E_ERROR, L_DB, "SQL error running '%s': %s\n", query, errmsg);
 
       sqlite3_free(errmsg);
     }
@@ -1955,7 +1955,7 @@ db_transaction_rollback(void)
   ret = db_exec(query, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "SQL error running '%s': %s\n", query, errmsg);
+      DPRINTF(E_ERROR, L_DB, "SQL error running '%s': %s\n", query, errmsg);
 
       sqlite3_free(errmsg);
     }
@@ -2047,7 +2047,7 @@ db_build_query_clause(struct query_params *qp)
   return qc;
 
  error:
-  DPRINTF(E_LOG, L_DB, "Error building query clause\n");
+  DPRINTF(E_ERROR, L_DB, "Error building query clause\n");
   db_free_query_clause(qc);
   return NULL;
 }
@@ -2057,14 +2057,14 @@ db_build_query_check(struct query_params *qp, char *count, char *query)
 {
   if (!count || !query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       goto failed;
     }
 
   qp->results = db_get_one_int(count);
   if (qp->results < 0)
     {
-      DPRINTF(E_LOG, L_DB, "No results for count\n");
+      DPRINTF(E_ERROR, L_DB, "No results for count\n");
       goto failed;
     }
 
@@ -2120,7 +2120,7 @@ db_build_query_find_pls(struct query_params *qp, struct query_clause *qc)
 {
   if (!qp->filter)
     {
-      DPRINTF(E_LOG, L_DB, "Bug! Playlist find called without search criteria\n");
+      DPRINTF(E_ERROR, L_DB, "Bug! Playlist find called without search criteria\n");
       return NULL;
     }
 
@@ -2206,7 +2206,7 @@ db_build_query_plitems(struct query_params *qp, struct query_clause *qc)
 
   if (qp->id <= 0)
     {
-      DPRINTF(E_LOG, L_DB, "No playlist id specified in playlist items query\n");
+      DPRINTF(E_ERROR, L_DB, "No playlist id specified in playlist items query\n");
       return NULL;
     }
 
@@ -2228,7 +2228,7 @@ db_build_query_plitems(struct query_params *qp, struct query_clause *qc)
 	break;
 
       default:
-	DPRINTF(E_LOG, L_DB, "Unknown playlist type %d in playlist items query\n", pli->type);
+	DPRINTF(E_ERROR, L_DB, "Unknown playlist type %d in playlist items query\n", pli->type);
 	query = NULL;
 	break;
     }
@@ -2299,7 +2299,7 @@ db_build_query_group_items(struct query_params *qp, struct query_clause *qc)
 	break;
 
       default:
-	DPRINTF(E_LOG, L_DB, "Unsupported group type %d for group id %" PRIi64 "\n", gt, qp->persistentid);
+	DPRINTF(E_ERROR, L_DB, "Unsupported group type %d for group id %" PRIi64 "\n", gt, qp->persistentid);
 	return NULL;
     }
 
@@ -2332,7 +2332,7 @@ db_build_query_group_dirs(struct query_params *qp, struct query_clause *qc)
 	break;
 
       default:
-	DPRINTF(E_LOG, L_DB, "Unsupported group type %d for group id %" PRIi64 "\n", gt, qp->persistentid);
+	DPRINTF(E_ERROR, L_DB, "Unsupported group type %d for group id %" PRIi64 "\n", gt, qp->persistentid);
 	return NULL;
     }
 
@@ -2370,7 +2370,7 @@ db_build_query_count_items(struct query_params *qp, struct query_clause *qc)
 
   query = sqlite3_mprintf("SELECT COUNT(*), SUM(song_length), COUNT(DISTINCT songartistid), COUNT(DISTINCT songalbumid), SUM(file_size) FROM files f %s;", qc->where);
   if (!query)
-    DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+    DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
   return query;
 }
@@ -2439,7 +2439,7 @@ db_query_start(struct query_params *qp)
 
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Could not create query, unknown type %d\n", qp->type);
+      DPRINTF(E_ERROR, L_DB, "Could not create query, unknown type %d\n", qp->type);
       return -1;
     }
 
@@ -2448,7 +2448,7 @@ db_query_start(struct query_params *qp)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_free(query);
       return -1;
@@ -2487,7 +2487,7 @@ db_query_run(char *query, int free, short update_events)
 
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return -1;
     }
@@ -2499,7 +2499,7 @@ db_query_run(char *query, int free, short update_events)
 
   ret = db_exec(query, &errmsg);
   if (ret != SQLITE_OK)
-    DPRINTF(E_LOG, L_DB, "Error '%s' while runnning '%s'\n", errmsg, query);
+    DPRINTF(E_ERROR, L_DB, "Error '%s' while runnning '%s'\n", errmsg, query);
   else
     changes = sqlite3_changes(hdl);
 
@@ -2526,7 +2526,7 @@ db_query_fetch(void *item, struct query_params *qp, const ssize_t cols_map[], in
 
   if (!qp->stmt)
     {
-      DPRINTF(E_LOG, L_DB, "Query not started!\n");
+      DPRINTF(E_ERROR, L_DB, "Query not started!\n");
       return -1;
     }
 
@@ -2538,7 +2538,7 @@ db_query_fetch(void *item, struct query_params *qp, const ssize_t cols_map[], in
     }
   else if (ret != SQLITE_ROW)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -2547,7 +2547,7 @@ db_query_fetch(void *item, struct query_params *qp, const ssize_t cols_map[], in
   // We allow more cols in db than in map because the db may be a future schema
   if (ncols < size)
     {
-      DPRINTF(E_LOG, L_DB, "BUG: database has fewer columns (%d) than column map (%u)\n", ncols, size);
+      DPRINTF(E_ERROR, L_DB, "BUG: database has fewer columns (%d) than column map (%u)\n", ncols, size);
       return -1;
     }
 
@@ -2570,13 +2570,13 @@ db_query_fetch_file(struct db_media_file_info *dbmfi, struct query_params *qp)
 
   if ((qp->type != Q_ITEMS) && (qp->type != Q_PLITEMS) && (qp->type != Q_GROUP_ITEMS))
     {
-      DPRINTF(E_LOG, L_DB, "Not an items, playlist or group items query!\n");
+      DPRINTF(E_ERROR, L_DB, "Not an items, playlist or group items query!\n");
       return -1;
     }
 
   ret = db_query_fetch(dbmfi, qp, dbmfi_cols_map, ARRAY_SIZE(dbmfi_cols_map));
   if (ret < 0) {
-      DPRINTF(E_LOG, L_DB, "Failed to fetch db_media_file_info\n");
+      DPRINTF(E_ERROR, L_DB, "Failed to fetch db_media_file_info\n");
   }
   return ret;
 }
@@ -2596,13 +2596,13 @@ db_query_fetch_pl(struct db_playlist_info *dbpli, struct query_params *qp)
 
   if (!qp->stmt)
     {
-      DPRINTF(E_LOG, L_DB, "Query not started!\n");
+      DPRINTF(E_ERROR, L_DB, "Query not started!\n");
       return -1;
     }
 
   if ((qp->type != Q_PL) && (qp->type != Q_FIND_PL))
     {
-      DPRINTF(E_LOG, L_DB, "Not a playlist query!\n");
+      DPRINTF(E_ERROR, L_DB, "Not a playlist query!\n");
       return -1;
     }
 
@@ -2615,7 +2615,7 @@ db_query_fetch_pl(struct db_playlist_info *dbpli, struct query_params *qp)
     }
   else if (ret != SQLITE_ROW)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));	
+      DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));	
       return -1;
     }
 
@@ -2624,7 +2624,7 @@ db_query_fetch_pl(struct db_playlist_info *dbpli, struct query_params *qp)
   // We allow more cols in db than in map because the db may be a future schema
   if (ncols < ARRAY_SIZE(dbpli_cols_map))
     {
-      DPRINTF(E_LOG, L_DB, "BUG: database has fewer columns (%d) than dbpli column map (%u)\n", ncols, ARRAY_SIZE(dbpli_cols_map));
+      DPRINTF(E_ERROR, L_DB, "BUG: database has fewer columns (%d) than dbpli column map (%u)\n", ncols, ARRAY_SIZE(dbpli_cols_map));
       return -1;
     }
 
@@ -2657,13 +2657,13 @@ db_query_fetch_group(struct db_group_info *dbgri, struct query_params *qp)
 
   if ((qp->type != Q_GROUP_ALBUMS) && (qp->type != Q_GROUP_ARTISTS))
     {
-      DPRINTF(E_LOG, L_DB, "Not a groups query!\n");
+      DPRINTF(E_ERROR, L_DB, "Not a groups query!\n");
       return -1;
     }
 
   ret = db_query_fetch(dbgri, qp, dbgri_cols_map, ARRAY_SIZE(dbgri_cols_map));
   if (ret < 0) {
-      DPRINTF(E_LOG, L_DB, "Failed to fetch db_group_info\n");
+      DPRINTF(E_ERROR, L_DB, "Failed to fetch db_group_info\n");
   }
   return ret;
 }
@@ -2677,13 +2677,13 @@ db_query_fetch_browse(struct db_browse_info *dbbi, struct query_params *qp)
 
   if (!(qp->type & Q_F_BROWSE))
     {
-      DPRINTF(E_LOG, L_DB, "Not a browse query!\n");
+      DPRINTF(E_ERROR, L_DB, "Not a browse query!\n");
       return -1;
     }
 
   ret = db_query_fetch(dbbi, qp, dbbi_cols_map, ARRAY_SIZE(dbbi_cols_map));
   if (ret < 0) {
-      DPRINTF(E_LOG, L_DB, "Failed to fetch db_browse_info\n");
+      DPRINTF(E_ERROR, L_DB, "Failed to fetch db_browse_info\n");
   }
   return ret;
 }
@@ -2697,13 +2697,13 @@ db_query_fetch_count(struct filecount_info *fci, struct query_params *qp)
 
   if (!qp->stmt)
     {
-      DPRINTF(E_LOG, L_DB, "Query not started!\n");
+      DPRINTF(E_ERROR, L_DB, "Query not started!\n");
       return -1;
     }
 
   if (qp->type != Q_COUNT_ITEMS)
     {
-      DPRINTF(E_LOG, L_DB, "Not a count query!\n");
+      DPRINTF(E_ERROR, L_DB, "Not a count query!\n");
       return -1;
     }
 
@@ -2715,7 +2715,7 @@ db_query_fetch_count(struct filecount_info *fci, struct query_params *qp)
     }
   else if (ret != SQLITE_ROW)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -2762,7 +2762,7 @@ db_query_fetch_string(char **string, struct query_params *qp)
 
   if (!qp->stmt)
     {
-      DPRINTF(E_LOG, L_DB, "Query not started!\n");
+      DPRINTF(E_ERROR, L_DB, "Query not started!\n");
       return -1;
     }
 
@@ -2775,7 +2775,7 @@ db_query_fetch_string(char **string, struct query_params *qp)
     }
   else if (ret != SQLITE_ROW)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));	
+      DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));	
       return -1;
     }
 
@@ -2793,13 +2793,13 @@ db_query_fetch_string_sort(char **string, char **sortstring, struct query_params
 
   if (!qp->stmt)
     {
-      DPRINTF(E_LOG, L_DB, "Query not started!\n");
+      DPRINTF(E_ERROR, L_DB, "Query not started!\n");
       return -1;
     }
 
   if (!(qp->type & Q_F_BROWSE))
     {
-      DPRINTF(E_LOG, L_DB, "Not a browse query!\n");
+      DPRINTF(E_ERROR, L_DB, "Not a browse query!\n");
       return -1;
     }
 
@@ -2812,7 +2812,7 @@ db_query_fetch_string_sort(char **string, char **sortstring, struct query_params
     }
   else if (ret != SQLITE_ROW)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -2842,7 +2842,7 @@ db_files_get_count(uint32_t *nitems, uint32_t *nstreams, const char *filter)
 
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       goto error;
     }
 
@@ -2851,7 +2851,7 @@ db_files_get_count(uint32_t *nitems, uint32_t *nstreams, const char *filter)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
       goto error;
     }
 
@@ -2861,7 +2861,7 @@ db_files_get_count(uint32_t *nitems, uint32_t *nstreams, const char *filter)
       if (ret == SQLITE_DONE)
 	DPRINTF(E_INFO, L_DB, "No matching row found for query: %s\n", query);
       else
-	DPRINTF(E_LOG, L_DB, "Could not step: %s (%s)\n", sqlite3_errmsg(hdl), query);
+	DPRINTF(E_ERROR, L_DB, "Could not step: %s (%s)\n", sqlite3_errmsg(hdl), query);
 
       goto error;
     }
@@ -2922,7 +2922,7 @@ db_file_inc_playcount_byfilter(const char *filter)
 
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return;
     }
@@ -2990,7 +2990,7 @@ db_file_inc_skipcount(int id)
     query = sqlite3_mprintf(Q_TMPL, (int64_t)time(NULL), id);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return;
     }
@@ -3012,7 +3012,7 @@ db_file_reset_playskip_count(int id)
   query = sqlite3_mprintf(Q_TMPL, id);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return;
     }
@@ -3074,7 +3074,7 @@ db_file_path_byid(int id)
   query = sqlite3_mprintf(Q_TMPL, id);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return NULL;
     }
@@ -3084,7 +3084,7 @@ db_file_path_byid(int id)
   ret = db_blocking_prepare_v2(query, strlen(query) + 1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_free(query);
       return NULL;
@@ -3096,7 +3096,7 @@ db_file_path_byid(int id)
       if (ret == SQLITE_DONE)
 	DPRINTF(E_DBG, L_DB, "No results\n");
       else
-	DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+	DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_finalize(stmt);
       sqlite3_free(query);
@@ -3134,7 +3134,7 @@ db_file_id_byquery(const char *query)
   ret = db_blocking_prepare_v2(query, strlen(query) + 1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       return 0;
     }
@@ -3145,7 +3145,7 @@ db_file_id_byquery(const char *query)
       if (ret == SQLITE_DONE)
 	DPRINTF(E_DBG, L_DB, "No results\n");
       else
-	DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+	DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_finalize(stmt);
       return 0;
@@ -3173,7 +3173,7 @@ db_file_id_exists(int id)
   query = sqlite3_mprintf(Q_TMPL, id);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return 0;
     }
@@ -3197,7 +3197,7 @@ db_file_id_bypath(const char *path)
   query = sqlite3_mprintf(Q_TMPL, path);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return 0;
     }
@@ -3221,7 +3221,7 @@ db_file_id_byfile(const char *filename)
   query = sqlite3_mprintf(Q_TMPL, filename);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return 0;
     }
@@ -3245,7 +3245,7 @@ db_file_id_byurl(const char *url)
   query = sqlite3_mprintf(Q_TMPL, url);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return 0;
     }
@@ -3269,7 +3269,7 @@ db_file_id_byvirtualpath(const char *virtual_path)
   query = sqlite3_mprintf(Q_TMPL, virtual_path);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return 0;
     }
@@ -3293,7 +3293,7 @@ db_file_id_byvirtualpath_match(const char *virtual_path)
   query = sqlite3_mprintf(Q_TMPL, virtual_path);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return 0;
     }
@@ -3324,14 +3324,14 @@ db_file_fetch_byquery(char *query)
   mfi = calloc(1, sizeof(struct media_file_info));
   if (!mfi)
     {
-      DPRINTF(E_LOG, L_DB, "Could not allocate struct media_file_info, out of memory\n");
+      DPRINTF(E_ERROR, L_DB, "Could not allocate struct media_file_info, out of memory\n");
       return NULL;
     }
 
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       free(mfi);
       return NULL;
@@ -3344,7 +3344,7 @@ db_file_fetch_byquery(char *query)
       if (ret == SQLITE_DONE)
 	DPRINTF(E_DBG, L_DB, "No results\n");
       else
-	DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+	DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_finalize(stmt);
       free(mfi);
@@ -3356,7 +3356,7 @@ db_file_fetch_byquery(char *query)
   // We allow more cols in db than in map because the db may be a future schema
   if (ncols < ARRAY_SIZE(mfi_cols_map))
     {
-      DPRINTF(E_LOG, L_DB, "BUG: database has fewer columns (%d) than mfi column map (%u)\n", ncols, ARRAY_SIZE(mfi_cols_map));
+      DPRINTF(E_ERROR, L_DB, "BUG: database has fewer columns (%d) than mfi column map (%u)\n", ncols, ARRAY_SIZE(mfi_cols_map));
 
       sqlite3_finalize(stmt);
       free(mfi);
@@ -3388,7 +3388,7 @@ db_file_fetch_byid(int id)
   query = sqlite3_mprintf(Q_TMPL, id);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return NULL;
     }
@@ -3412,7 +3412,7 @@ db_file_fetch_byvirtualpath(const char *virtual_path)
   query = sqlite3_mprintf(Q_TMPL, virtual_path);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return NULL;
     }
@@ -3499,7 +3499,7 @@ db_file_seek_update(int id, uint32_t seek)
   query = sqlite3_mprintf(Q_TMPL, seek, id);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return;
     }
@@ -3667,7 +3667,7 @@ db_pl_id_bypath(const char *path)
   query = sqlite3_mprintf(Q_TMPL, path);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return -1;
     }
@@ -3698,14 +3698,14 @@ db_pl_fetch_byquery(const char *query)
   pli = calloc(1, sizeof(struct playlist_info));
   if (!pli)
     {
-      DPRINTF(E_LOG, L_DB, "Could not allocate struct playlist_info, out of memory\n");
+      DPRINTF(E_ERROR, L_DB, "Could not allocate struct playlist_info, out of memory\n");
       return NULL;
     }
 
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       free(pli);
       return NULL;
@@ -3717,7 +3717,7 @@ db_pl_fetch_byquery(const char *query)
       if (ret == SQLITE_DONE)
 	DPRINTF(E_DBG, L_DB, "No results\n");
       else
-	DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+	DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_finalize(stmt);
       free(pli);
@@ -3728,7 +3728,7 @@ db_pl_fetch_byquery(const char *query)
 
   if (ncols < ARRAY_SIZE(pli_cols_map))
     {
-      DPRINTF(E_LOG, L_DB, "BUG: database has fewer columns (%d) than pli column map (%u)\n", ncols, ARRAY_SIZE(pli_cols_map));
+      DPRINTF(E_ERROR, L_DB, "BUG: database has fewer columns (%d) than pli column map (%u)\n", ncols, ARRAY_SIZE(pli_cols_map));
 
       sqlite3_finalize(stmt);
       free(pli);
@@ -3766,7 +3766,7 @@ db_pl_fetch_bypath(const char *path)
   query = sqlite3_mprintf(Q_PL_SELECT " WHERE f.path = '%q' GROUP BY f.id;", path);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return NULL;
     }
@@ -3787,7 +3787,7 @@ db_pl_fetch_byvirtualpath(const char *virtual_path)
   query = sqlite3_mprintf(Q_PL_SELECT " WHERE f.virtual_path = '%q' GROUP BY f.id;", virtual_path);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return NULL;
     }
@@ -3808,7 +3808,7 @@ db_pl_fetch_byid(int id)
   query = sqlite3_mprintf(Q_PL_SELECT " WHERE f.id = %d GROUP BY f.id;", id);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return NULL;
     }
@@ -3829,7 +3829,7 @@ db_pl_fetch_bytitlepath(const char *title, const char *path)
   query = sqlite3_mprintf(Q_PL_SELECT " WHERE f.title = '%q' AND f.path = '%q' GROUP BY f.id;", title, path);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return NULL;
     }
@@ -3864,7 +3864,7 @@ db_pl_add(struct playlist_info *pli)
   ret = (int)sqlite3_last_insert_rowid(hdl);
   if (ret == 0)
     {
-      DPRINTF(E_LOG, L_DB, "Successful playlist insert but no last_insert_rowid!\n");
+      DPRINTF(E_ERROR, L_DB, "Successful playlist insert but no last_insert_rowid!\n");
       return -1;
     }
 
@@ -4119,7 +4119,7 @@ db_group_type_bypersistentid(int64_t persistentid)
   query = sqlite3_mprintf(Q_TMPL, persistentid);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return 0;
     }
@@ -4129,7 +4129,7 @@ db_group_type_bypersistentid(int64_t persistentid)
   ret = db_blocking_prepare_v2(query, strlen(query) + 1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_free(query);
       return 0;
@@ -4141,7 +4141,7 @@ db_group_type_bypersistentid(int64_t persistentid)
       if (ret == SQLITE_DONE)
 	DPRINTF(E_DBG, L_DB, "No results\n");
       else
-	DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+	DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_finalize(stmt);
       sqlite3_free(query);
@@ -4174,7 +4174,7 @@ db_group_persistentid_byid(int id, int64_t *persistentid)
   query = sqlite3_mprintf(Q_TMPL, id);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return -1;
     }
@@ -4184,7 +4184,7 @@ db_group_persistentid_byid(int id, int64_t *persistentid)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_free(query);
       return -1;
@@ -4196,7 +4196,7 @@ db_group_persistentid_byid(int id, int64_t *persistentid)
       if (ret == SQLITE_DONE)
 	DPRINTF(E_DBG, L_DB, "No results\n");
       else
-	DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+	DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_finalize(stmt);
       sqlite3_free(query);
@@ -4230,7 +4230,7 @@ db_directory_id_byvirtualpath(const char *virtual_path)
   query = sqlite3_mprintf(Q_TMPL, virtual_path);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return 0;
     }
@@ -4254,7 +4254,7 @@ db_directory_id_bypath(const char *path)
   query = sqlite3_mprintf(Q_TMPL, path);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return 0;
     }
@@ -4282,7 +4282,7 @@ db_directory_enum_start(struct directory_enum *de)
 
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return -1;
     }
@@ -4292,7 +4292,7 @@ db_directory_enum_start(struct directory_enum *de)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_free(query);
       return -1;
@@ -4316,7 +4316,7 @@ db_directory_enum_fetch(struct directory_enum *de, struct directory_info *di)
 
   if (!de->stmt)
     {
-      DPRINTF(E_LOG, L_DB, "Directory enum not started!\n");
+      DPRINTF(E_ERROR, L_DB, "Directory enum not started!\n");
       return -1;
     }
 
@@ -4328,7 +4328,7 @@ db_directory_enum_fetch(struct directory_enum *de, struct directory_info *di)
     }
   else if (ret != SQLITE_ROW)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -4369,14 +4369,14 @@ db_directory_add(struct directory_info *di, int *id)
       /* Since sqlite removes the trailing space, so these
        * directories will be found as new in perpetuity.
        */
-      DPRINTF(E_LOG, L_DB, "Directory name ends with space: '%s'\n", di->virtual_path);
+      DPRINTF(E_ERROR, L_DB, "Directory name ends with space: '%s'\n", di->virtual_path);
     }
 
   query = sqlite3_mprintf(QADD_TMPL, di->virtual_path, di->db_timestamp, di->disabled, di->parent_id, di->path, di->scan_kind);
 
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       return -1;
     }
 
@@ -4385,7 +4385,7 @@ db_directory_add(struct directory_info *di, int *id)
   ret = db_exec(query, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Query error: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_DB, "Query error: %s\n", errmsg);
 
       sqlite3_free(errmsg);
       sqlite3_free(query);
@@ -4397,7 +4397,7 @@ db_directory_add(struct directory_info *di, int *id)
   *id = (int)sqlite3_last_insert_rowid(hdl);
   if (*id == 0)
     {
-      DPRINTF(E_LOG, L_DB, "Successful insert but no last_insert_rowid!\n");
+      DPRINTF(E_ERROR, L_DB, "Successful insert but no last_insert_rowid!\n");
       return -1;
     }
 
@@ -4422,7 +4422,7 @@ db_directory_update(struct directory_info *di)
 
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       return -1;
     }
 
@@ -4431,7 +4431,7 @@ db_directory_update(struct directory_info *di)
   ret = db_exec(query, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Query error: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_DB, "Query error: %s\n", errmsg);
 
       sqlite3_free(errmsg);
       sqlite3_free(query);
@@ -4551,7 +4551,7 @@ db_pairing_fetch_byguid(struct pairing_info *pi)
   query = sqlite3_mprintf(Q_TMPL, pi->guid);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       return -1;
     }
 
@@ -4560,7 +4560,7 @@ db_pairing_fetch_byguid(struct pairing_info *pi)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -4570,7 +4570,7 @@ db_pairing_fetch_byguid(struct pairing_info *pi)
       if (ret == SQLITE_DONE)
 	DPRINTF(E_INFO, L_DB, "Pairing GUID %s not found\n", pi->guid);
       else
-	DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+	DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_finalize(stmt);
       sqlite3_free(query);
@@ -4621,7 +4621,7 @@ db_spotify_purge(void)
   query = sqlite3_mprintf(Q_TMPL, INOTIFY_FAKE_COOKIE, INOTIFY_FAKE_COOKIE);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       return;
     }
   ret = db_query_run(query, 1, LISTENER_DATABASE);
@@ -4725,7 +4725,7 @@ admin_get(void *value, const char *key, short type)
   ret = db_blocking_prepare_v2(query, strlen(query) + 1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_free(query);
       return -1;
@@ -4737,7 +4737,7 @@ admin_get(void *value, const char *key, short type)
       if (ret == SQLITE_DONE)
 	DPRINTF(E_DBG, L_DB, "No results\n");
       else
-	DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+	DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_finalize(stmt);
       sqlite3_free(query);
@@ -4813,7 +4813,7 @@ db_speaker_get(struct output_device *device, uint64_t id)
   query = sqlite3_mprintf(Q_TMPL, id);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       return -1;
     }
 
@@ -4822,7 +4822,7 @@ db_speaker_get(struct output_device *device, uint64_t id)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
       ret = -1;
       goto out;
     }
@@ -4831,7 +4831,7 @@ db_speaker_get(struct output_device *device, uint64_t id)
   if (ret != SQLITE_ROW)
     {
       if (ret != SQLITE_DONE)
-	DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+	DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
       sqlite3_finalize(stmt);
       ret = -1;
       goto out;
@@ -4937,7 +4937,7 @@ queue_item_add(struct db_queue_item *qi)
   ret = (int)sqlite3_last_insert_rowid(hdl);
   if (ret == 0)
     {
-      DPRINTF(E_LOG, L_DB, "Successful queue item insert but no last_insert_rowid!\n");
+      DPRINTF(E_ERROR, L_DB, "Successful queue item insert but no last_insert_rowid!\n");
       return -1;
     }
 
@@ -4971,7 +4971,7 @@ queue_item_add_from_file(struct db_media_file_info *dbmfi, int pos, int shuffle_
   ret = (int)sqlite3_last_insert_rowid(hdl);
   if (ret == 0)
     {
-      DPRINTF(E_LOG, L_DB, "Successful queue item insert but no last_insert_rowid!\n");
+      DPRINTF(E_ERROR, L_DB, "Successful queue item insert but no last_insert_rowid!\n");
       return -1;
     }
 
@@ -5311,7 +5311,7 @@ queue_enum_start(struct query_params *qp)
 
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return -1;
     }
@@ -5321,7 +5321,7 @@ queue_enum_start(struct query_params *qp)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_free(query);
       return -1;
@@ -5346,7 +5346,7 @@ queue_enum_fetch(struct query_params *qp, struct db_queue_item *qi, int must_str
 
   if (!qp->stmt)
     {
-      DPRINTF(E_LOG, L_DB, "Queue enum not started!\n");
+      DPRINTF(E_ERROR, L_DB, "Queue enum not started!\n");
       return -1;
     }
 
@@ -5358,7 +5358,7 @@ queue_enum_fetch(struct query_params *qp, struct db_queue_item *qi, int must_str
     }
   else if (ret != SQLITE_ROW)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -5453,7 +5453,7 @@ db_queue_fetch_byitemid(uint32_t item_id)
   qi = calloc(1, sizeof(struct db_queue_item));
   if (!qi)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for queue_item\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for queue_item\n");
       return NULL;
     }
 
@@ -5464,7 +5464,7 @@ db_queue_fetch_byitemid(uint32_t item_id)
   if (ret < 0)
     {
       free_queue_item(qi, 0);
-      DPRINTF(E_LOG, L_DB, "Error fetching queue item by item id\n");
+      DPRINTF(E_ERROR, L_DB, "Error fetching queue item by item id\n");
       return NULL;
     }
   else if (qi->id == 0)
@@ -5488,7 +5488,7 @@ db_queue_fetch_byfileid(uint32_t file_id)
   qi = calloc(1, sizeof(struct db_queue_item));
   if (!qi)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for queue_item\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for queue_item\n");
       return NULL;
     }
 
@@ -5502,7 +5502,7 @@ db_queue_fetch_byfileid(uint32_t file_id)
       sqlite3_free(qp.filter);
       db_transaction_end();
       free_queue_item(qi, 0);
-      DPRINTF(E_LOG, L_DB, "Error fetching queue item by file id\n");
+      DPRINTF(E_ERROR, L_DB, "Error fetching queue item by file id\n");
       return NULL;
     }
 
@@ -5514,7 +5514,7 @@ db_queue_fetch_byfileid(uint32_t file_id)
   if (ret < 0)
     {
       free_queue_item(qi, 0);
-      DPRINTF(E_LOG, L_DB, "Error fetching queue item by file id\n");
+      DPRINTF(E_ERROR, L_DB, "Error fetching queue item by file id\n");
       return NULL;
     }
   else if (qi->id == 0)
@@ -5561,7 +5561,7 @@ db_queue_fetch_bypos(uint32_t pos, char shuffle)
   qi = calloc(1, sizeof(struct db_queue_item));
   if (!qi)
     {
-      DPRINTF(E_LOG, L_MAIN, "Out of memory for queue_item\n");
+      DPRINTF(E_ERROR, L_MAIN, "Out of memory for queue_item\n");
       return NULL;
     }
 
@@ -5572,7 +5572,7 @@ db_queue_fetch_bypos(uint32_t pos, char shuffle)
   if (ret < 0)
     {
       free_queue_item(qi, 0);
-      DPRINTF(E_LOG, L_DB, "Error fetching queue item by pos id\n");
+      DPRINTF(E_ERROR, L_DB, "Error fetching queue item by pos id\n");
       return NULL;
     }
   else if (qi->id == 0)
@@ -5606,7 +5606,7 @@ queue_fetch_byposrelativetoitem(int pos, uint32_t item_id, char shuffle, struct 
   ret = queue_fetch_bypos(pos_absolute, shuffle, qi, with_metadata);
 
   if (ret < 0)
-    DPRINTF(E_LOG, L_DB, "Error fetching item by pos: pos (%d) relative to item with id (%d)\n", pos, item_id);
+    DPRINTF(E_ERROR, L_DB, "Error fetching item by pos: pos (%d) relative to item with id (%d)\n", pos, item_id);
   else
     DPRINTF(E_DBG, L_DB, "Fetch by pos: fetched item (id=%d, pos=%d, file-id=%d)\n", qi->id, qi->pos, qi->file_id);
 
@@ -5624,7 +5624,7 @@ db_queue_fetch_byposrelativetoitem(int pos, uint32_t item_id, char shuffle)
   qi = calloc(1, sizeof(struct db_queue_item));
   if (!qi)
     {
-      DPRINTF(E_LOG, L_MAIN, "Out of memory for queue_item\n");
+      DPRINTF(E_ERROR, L_MAIN, "Out of memory for queue_item\n");
       return NULL;
     }
 
@@ -5637,7 +5637,7 @@ db_queue_fetch_byposrelativetoitem(int pos, uint32_t item_id, char shuffle)
   if (ret < 0)
     {
       free_queue_item(qi, 0);
-      DPRINTF(E_LOG, L_DB, "Error fetching queue item by pos relative to item id\n");
+      DPRINTF(E_ERROR, L_DB, "Error fetching queue item by pos relative to item id\n");
       return NULL;
     }
   else if (qi->id == 0)
@@ -5697,7 +5697,7 @@ queue_fix_pos(enum sort_type sort, int queue_version)
 	  ret = db_query_run(query, 1, 0);
 	  if (ret < 0)
 	    {
-	      DPRINTF(E_LOG, L_DB, "Failed to update item with item-id: %d\n", queue_item.id);
+	      DPRINTF(E_ERROR, L_DB, "Failed to update item with item-id: %d\n", queue_item.id);
 	      break;
 	    }
 	}
@@ -6226,7 +6226,7 @@ queue_reshuffle(uint32_t item_id, int queue_version)
       ret = db_query_run(query, 1, 0);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DB, "Failed to delete item with item-id: %d\n", queue_item.id);
+	  DPRINTF(E_ERROR, L_DB, "Failed to delete item with item-id: %d\n", queue_item.id);
 	  break;
 	}
 
@@ -6384,7 +6384,7 @@ db_watch_get_byquery(struct watch_info *wi, char *query)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -6400,7 +6400,7 @@ db_watch_get_byquery(struct watch_info *wi, char *query)
 
   if (ncols < ARRAY_SIZE(wi_cols_map))
     {
-      DPRINTF(E_LOG, L_DB, "BUG: database has fewer columns (%d) than wi column map (%u)\n", ncols, ARRAY_SIZE(wi_cols_map));
+      DPRINTF(E_ERROR, L_DB, "BUG: database has fewer columns (%d) than wi column map (%u)\n", ncols, ARRAY_SIZE(wi_cols_map));
 
       sqlite3_finalize(stmt);
       sqlite3_free(query);
@@ -6438,7 +6438,7 @@ db_watch_get_bywd(struct watch_info *wi, int wd)
   query = sqlite3_mprintf(Q_TMPL, wd);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       return -1;
     }
 
@@ -6455,7 +6455,7 @@ db_watch_get_bypath(struct watch_info *wi, const char *path)
   query = sqlite3_mprintf(Q_TMPL, path);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       return -1;
     }
 
@@ -6527,7 +6527,7 @@ db_watch_cookie_known(uint32_t cookie)
   query = sqlite3_mprintf(Q_TMPL, (int64_t)cookie);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return 0;
     }
@@ -6558,13 +6558,13 @@ db_watch_enum_start(struct watch_enum *we)
     query = sqlite3_mprintf(Q_COOKIE_TMPL, we->cookie);
   else
     {
-      DPRINTF(E_LOG, L_DB, "Could not start enum, no parameter given\n");
+      DPRINTF(E_ERROR, L_DB, "Could not start enum, no parameter given\n");
       return -1;
     }
 
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return -1;
     }
@@ -6574,7 +6574,7 @@ db_watch_enum_start(struct watch_enum *we)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_free(query);
       return -1;
@@ -6609,7 +6609,7 @@ db_watch_enum_fetchwd(struct watch_enum *we, uint32_t *wd)
 
   if (!we->stmt)
     {
-      DPRINTF(E_LOG, L_DB, "Watch enum not started!\n");
+      DPRINTF(E_ERROR, L_DB, "Watch enum not started!\n");
       return -1;
     }
 
@@ -6621,7 +6621,7 @@ db_watch_enum_fetchwd(struct watch_enum *we, uint32_t *wd)
     }
   else if (ret != SQLITE_ROW)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));	
+      DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));	
       return -1;
     }
 
@@ -6651,7 +6651,7 @@ db_xprofile(unsigned int trace_type, void *notused, void *ptr, void *ptr_data)
   ms = *((int64_t *) ptr_data) / 1000000;
 
   if (ms > 1000)
-    log_level = E_LOG;
+    log_level = E_ERROR;
   else if (ms > 500)
     log_level = E_WARN;
   else if (ms > 10)
@@ -6724,7 +6724,7 @@ db_pragma_get_cache_size()
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
       return 0;
     }
 
@@ -6736,7 +6736,7 @@ db_pragma_get_cache_size()
     }
   else if (ret != SQLITE_ROW)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -6760,7 +6760,7 @@ db_pragma_set_cache_size(int pages)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_free(query);
       return 0;
@@ -6787,7 +6787,7 @@ db_pragma_set_journal_mode(char *mode)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_free(query);
       return NULL;
@@ -6802,7 +6802,7 @@ db_pragma_set_journal_mode(char *mode)
     }
   else if (ret != SQLITE_ROW)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
       sqlite3_free(query);
       return NULL;
     }
@@ -6826,7 +6826,7 @@ db_pragma_get_synchronous()
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
       return 0;
     }
 
@@ -6838,7 +6838,7 @@ db_pragma_get_synchronous()
     }
   else if (ret != SQLITE_ROW)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -6862,7 +6862,7 @@ db_pragma_set_synchronous(int synchronous)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_free(query);
       return 0;
@@ -6886,7 +6886,7 @@ db_pragma_get_mmap_size()
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
       return 0;
     }
 
@@ -6898,7 +6898,7 @@ db_pragma_get_mmap_size()
     }
   else if (ret != SQLITE_ROW)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not step: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -6922,7 +6922,7 @@ db_pragma_set_mmap_size(int mmap_size)
   ret = db_blocking_prepare_v2(query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
 
       sqlite3_free(query);
       return 0;
@@ -6947,7 +6947,7 @@ db_open(void)
   ret = sqlite3_open(db_path, &hdl);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not open '%s': %s\n", db_path, sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not open '%s': %s\n", db_path, sqlite3_errmsg(hdl));
 
       sqlite3_close(hdl);
       return -1;
@@ -6956,7 +6956,7 @@ db_open(void)
   ret = sqlite3_enable_load_extension(hdl, 1);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not enable extension loading\n");
+      DPRINTF(E_ERROR, L_DB, "Could not enable extension loading\n");
 
       sqlite3_close(hdl);
       return -1;
@@ -6965,7 +6965,7 @@ db_open(void)
   ret = sqlite3_load_extension(hdl, db_sqlite_ext_path, NULL, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not load SQLite extension: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_DB, "Could not load SQLite extension: %s\n", errmsg);
 
       sqlite3_free(errmsg);
       sqlite3_close(hdl);
@@ -6975,7 +6975,7 @@ db_open(void)
   ret = sqlite3_enable_load_extension(hdl, 0);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not disable extension loading\n");
+      DPRINTF(E_ERROR, L_DB, "Could not disable extension loading\n");
 
       sqlite3_close(hdl);
       return -1;
@@ -7160,19 +7160,19 @@ db_backup(void)
   backup_path = cfg_getstr(cfg_getsec(cfg, "general"), "db_backup_path");
   if (!backup_path)
     {
-      DPRINTF(E_LOG, L_DB, "Backup not enabled, 'db_backup_path' is unset\n");
+      DPRINTF(E_ERROR, L_DB, "Backup not enabled, 'db_backup_path' is unset\n");
       return -2;
     }
 
   if (realpath(db_path, resolved_dbp) == NULL || realpath(backup_path, resolved_bp) == NULL)
     {
-      DPRINTF(E_LOG, L_DB, "Failed to resolve real path of db/backup path: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_DB, "Failed to resolve real path of db/backup path: %s\n", strerror(errno));
       return -1;
     }
 
   if (strcmp(resolved_bp, resolved_dbp) == 0)
     {
-      DPRINTF(E_LOG, L_DB, "Backup path same as main db path, ignoring\n");
+      DPRINTF(E_ERROR, L_DB, "Backup path same as main db path, ignoring\n");
       return -2;
     }
 
@@ -7217,7 +7217,7 @@ db_perthread_init(void)
   ret = db_statements_prepare();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statements\n");
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statements\n");
 
       sqlite3_close(hdl);
       return -1;
@@ -7286,7 +7286,7 @@ db_check_version(void)
       ret = sqlite3_exec(hdl, "BEGIN TRANSACTION;", NULL, NULL, &errmsg);
       if (ret != SQLITE_OK)
 	{
-	  DPRINTF(E_LOG, L_DB, "DB error while running 'BEGIN TRANSACTION': %s\n",  errmsg);
+	  DPRINTF(E_ERROR, L_DB, "DB error while running 'BEGIN TRANSACTION': %s\n",  errmsg);
 
 	  sqlite3_free(errmsg);
 	  return -1;
@@ -7296,11 +7296,11 @@ db_check_version(void)
       ret = db_upgrade(hdl, db_ver);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DB, "Database upgrade errored out, rolling back changes ...\n");
+	  DPRINTF(E_ERROR, L_DB, "Database upgrade errored out, rolling back changes ...\n");
 	  ret = sqlite3_exec(hdl, "ROLLBACK TRANSACTION;", NULL, NULL, &errmsg);
 	  if (ret != SQLITE_OK)
 	    {
-	      DPRINTF(E_LOG, L_DB, "DB error while running 'ROLLBACK TRANSACTION': %s\n",  errmsg);
+	      DPRINTF(E_ERROR, L_DB, "DB error while running 'ROLLBACK TRANSACTION': %s\n",  errmsg);
 
 	      sqlite3_free(errmsg);
 	    }
@@ -7311,11 +7311,11 @@ db_check_version(void)
       ret = db_init_indices(hdl);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DB, "Database upgrade errored out, rolling back changes ...\n");
+	  DPRINTF(E_ERROR, L_DB, "Database upgrade errored out, rolling back changes ...\n");
 	  ret = sqlite3_exec(hdl, "ROLLBACK TRANSACTION;", NULL, NULL, &errmsg);
 	  if (ret != SQLITE_OK)
 	    {
-	      DPRINTF(E_LOG, L_DB, "DB error while running 'ROLLBACK TRANSACTION': %s\n",  errmsg);
+	      DPRINTF(E_ERROR, L_DB, "DB error while running 'ROLLBACK TRANSACTION': %s\n",  errmsg);
 
 	      sqlite3_free(errmsg);
 	    }
@@ -7326,11 +7326,11 @@ db_check_version(void)
       ret = db_init_triggers(hdl);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_DB, "Database upgrade errored out, rolling back changes ...\n");
+	  DPRINTF(E_ERROR, L_DB, "Database upgrade errored out, rolling back changes ...\n");
 	  ret = sqlite3_exec(hdl, "ROLLBACK TRANSACTION;", NULL, NULL, &errmsg);
 	  if (ret != SQLITE_OK)
 	    {
-	      DPRINTF(E_LOG, L_DB, "DB error while running 'ROLLBACK TRANSACTION': %s\n",  errmsg);
+	      DPRINTF(E_ERROR, L_DB, "DB error while running 'ROLLBACK TRANSACTION': %s\n",  errmsg);
 
 	      sqlite3_free(errmsg);
 	    }
@@ -7341,7 +7341,7 @@ db_check_version(void)
       ret = sqlite3_exec(hdl, "COMMIT TRANSACTION;", NULL, NULL, &errmsg);
       if (ret != SQLITE_OK)
 	{
-	  DPRINTF(E_LOG, L_DB, "DB error while running 'COMMIT TRANSACTION': %s\n", errmsg);
+	  DPRINTF(E_ERROR, L_DB, "DB error while running 'COMMIT TRANSACTION': %s\n", errmsg);
 
 	  sqlite3_free(errmsg);
 	  return -1;
@@ -7363,7 +7363,7 @@ db_check_version(void)
       ret = sqlite3_exec(hdl, Q_VACUUM, NULL, NULL, &errmsg);
       if (ret != SQLITE_OK)
 	{
-	  DPRINTF(E_LOG, L_DB, "Could not VACUUM database: %s\n", errmsg);
+	  DPRINTF(E_ERROR, L_DB, "Could not VACUUM database: %s\n", errmsg);
 
 	  sqlite3_free(errmsg);
 	  return -1;
@@ -7437,7 +7437,7 @@ db_init(char *sqlite_ext_path)
     }
   else if (ret > 0)
     {
-      DPRINTF(E_LOG, L_DB, "Could not check database version, trying DB init\n");
+      DPRINTF(E_ERROR, L_DB, "Could not check database version, trying DB init\n");
 
       ret = db_init_tables(hdl);
       if (ret < 0)

@@ -460,7 +460,7 @@ request_access_tokens(struct keyval *kv, const char **err)
   access_token = jparse_str_from_obj(haystack, "access_token");
   if (!access_token)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Could not find access token in reply: %s\n", body);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Could not find access token in reply: %s\n", body);
 
       *err = "Could not find access token in Spotify reply (see log)";
       ret = -1;
@@ -512,7 +512,7 @@ request_endpoint(const char *uri)
   credentials_get_auth_header(bearer_token, sizeof(bearer_token));
   if (keyval_add(ctx->output_headers, "Authorization", bearer_token) < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Add bearer_token to keyval failed for request '%s'\n", uri);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Add bearer_token to keyval failed for request '%s'\n", uri);
       goto out;
     }
 
@@ -521,7 +521,7 @@ request_endpoint(const char *uri)
   ret = session_http_request(ctx);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Request for '%s' failed\n", uri);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Request for '%s' failed\n", uri);
       goto out;
     }
 
@@ -531,7 +531,7 @@ request_endpoint(const char *uri)
   response_body = (char *) evbuffer_pullup(ctx->input_body, -1);
   if (!response_body || (strlen(response_body) == 0))
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Request for '%s' failed, response was empty\n", uri);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Request for '%s' failed, response was empty\n", uri);
       goto out;
     }
 
@@ -539,7 +539,7 @@ request_endpoint(const char *uri)
 
   json_response = json_tokener_parse(response_body);
   if (!json_response)
-    DPRINTF(E_LOG, L_SPOTIFY, "JSON parser returned an error for '%s'\n", uri);
+    DPRINTF(E_ERROR, L_SPOTIFY, "JSON parser returned an error for '%s'\n", uri);
   else
     DPRINTF(E_DBG, L_SPOTIFY, "Got JSON response for request to '%s'\n", uri);
 
@@ -646,14 +646,14 @@ token_refresh(void)
           (keyval_add(&kv, "refresh_token", refresh_token) == 0) );
   if (!ret)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Add parameters to keyval failed");
+      DPRINTF(E_ERROR, L_SPOTIFY, "Add parameters to keyval failed");
       goto error;
     }
 
   ret = request_access_tokens(&kv, &err);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error requesting access token: %s", err);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Error requesting access token: %s", err);
       goto error;
     }
 
@@ -752,7 +752,7 @@ request_pagingobject_endpoint(const char *href, paging_item_cb item_cb, paging_r
 
       if (!response)
 	{
-	  DPRINTF(E_LOG, L_SPOTIFY, "Unexpected JSON: no response for paging endpoint (API endpoint: '%s')\n", next_href);
+	  DPRINTF(E_ERROR, L_SPOTIFY, "Unexpected JSON: no response for paging endpoint (API endpoint: '%s')\n", next_href);
 
 	  if (post_request_cb)
 	    post_request_cb(arg);
@@ -775,7 +775,7 @@ request_pagingobject_endpoint(const char *href, paging_item_cb item_cb, paging_r
 	      item = json_object_array_get_idx(items, i);
 	      if (!item)
 	        {
-		  DPRINTF(E_LOG, L_SPOTIFY, "Unexpected JSON: no item at index %d in '%s' (API endpoint: '%s')\n",
+		  DPRINTF(E_ERROR, L_SPOTIFY, "Unexpected JSON: no item at index %d in '%s' (API endpoint: '%s')\n",
 			  i, json_object_to_json_string(items), href);
 		  continue;
 		}
@@ -783,7 +783,7 @@ request_pagingobject_endpoint(const char *href, paging_item_cb item_cb, paging_r
 	      ret = item_cb(item, (i + offset), total, request_type, arg);
 	      if (ret < 0)
 		{
-		  DPRINTF(E_LOG, L_SPOTIFY, "Couldn't add item at index %d '%s' (API endpoint: '%s')\n",
+		  DPRINTF(E_ERROR, L_SPOTIFY, "Couldn't add item at index %d '%s' (API endpoint: '%s')\n",
 			  i, json_object_to_json_string(item), href);
 		}
 	    }
@@ -1046,7 +1046,7 @@ get_playlist_tracks_endpoint_uri(const char *uri)
   ret = get_id_from_uri(uri, &id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error extracting owner and id from playlist uri '%s'\n", uri);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Error extracting owner and id from playlist uri '%s'\n", uri);
       goto out;
     }
 
@@ -1067,7 +1067,7 @@ get_album_endpoint_uri(const char *uri)
   ret = get_id_from_uri(uri, &id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error extracting id from uri '%s'\n", uri);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Error extracting id from uri '%s'\n", uri);
       goto out;
     }
 
@@ -1088,7 +1088,7 @@ get_album_tracks_endpoint_uri(const char *uri)
   ret = get_id_from_uri(uri, &id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error extracting id from uri '%s'\n", uri);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Error extracting id from uri '%s'\n", uri);
       goto out;
     }
 
@@ -1109,7 +1109,7 @@ get_track_endpoint_uri(const char *uri)
   ret = get_id_from_uri(uri, &id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error extracting id from track uri '%s'\n", uri);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Error extracting id from track uri '%s'\n", uri);
       goto out;
     }
 
@@ -1130,7 +1130,7 @@ get_artist_albums_endpoint_uri(const char *uri)
   ret = get_id_from_uri(uri, &id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error extracting id from uri '%s'\n", uri);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Error extracting id from uri '%s'\n", uri);
       goto out;
     }
 
@@ -1151,7 +1151,7 @@ get_episode_endpoint_uri(const char *uri)
   ret = get_id_from_uri(uri, &id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error extracting id from track uri '%s'\n", uri);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Error extracting id from track uri '%s'\n", uri);
       goto out;
     }
 
@@ -1301,7 +1301,7 @@ queue_add_album_tracks(json_object *item, int index, int total, enum spotify_req
 
   if (!track.uri || !track.is_playable)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
+      DPRINTF(E_INFO, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
       return -1;
     }
 
@@ -1412,7 +1412,7 @@ queue_add_playlist_tracks(json_object *item, int index, int total, enum spotify_
 
   if (!(item && json_object_object_get_ex(item, "track", &jsontrack)))
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Unexpected JSON: missing 'track' in JSON object at index %d\n", index);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Unexpected JSON: missing 'track' in JSON object at index %d\n", index);
       return -1;
     }
 
@@ -1422,7 +1422,7 @@ queue_add_playlist_tracks(json_object *item, int index, int total, enum spotify_
 
   if (!track.uri || !track.is_playable)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
+      DPRINTF(E_INFO, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
       return -1;
     }
 
@@ -1480,25 +1480,25 @@ prepare_directories(const char *artist, const char *album)
   ret = snprintf(virtual_path, sizeof(virtual_path), "/spotify:/%s", artist);
   if ((ret < 0) || (ret >= sizeof(virtual_path)))
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Virtual path exceeds PATH_MAX (/spotify:/%s)\n", artist);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Virtual path exceeds PATH_MAX (/spotify:/%s)\n", artist);
       return -1;
     }
   dir_id = library_directory_save(virtual_path, NULL, 0, DIR_SPOTIFY, SCAN_KIND_SPOTIFY);
   if (dir_id <= 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Could not add or update directory '%s'\n", virtual_path);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Could not add or update directory '%s'\n", virtual_path);
       return -1;
     }
   ret = snprintf(virtual_path, sizeof(virtual_path), "/spotify:/%s/%s", artist, album);
   if ((ret < 0) || (ret >= sizeof(virtual_path)))
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Virtual path exceeds PATH_MAX (/spotify:/%s/%s)\n", artist, album);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Virtual path exceeds PATH_MAX (/spotify:/%s/%s)\n", artist, album);
       return -1;
     }
   dir_id = library_directory_save(virtual_path, NULL, 0, dir_id, SCAN_KIND_SPOTIFY);
   if (dir_id <= 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Could not add or update directory '%s'\n", virtual_path);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Could not add or update directory '%s'\n", virtual_path);
       return -1;
     }
 
@@ -1576,7 +1576,7 @@ track_add(struct spotify_track *track, struct spotify_album *album, const char *
 
   if (!track->uri || !track->is_playable)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n",
+      DPRINTF(E_INFO, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n",
 	      track->artist, track->name, track->uri, track->restrictions);
       return -1;
     }
@@ -1644,17 +1644,17 @@ saved_album_add(json_object *item, int index, int total, enum spotify_request_ty
 
   if (!json_object_object_get_ex(item, "album", &jsonalbum))
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Unexpected JSON: Item %d is missing the 'album' field\n", index);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Unexpected JSON: Item %d is missing the 'album' field\n", index);
       return -1;
     }
   if (!json_object_object_get_ex(jsonalbum, "tracks", &needle))
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Unexpected JSON: Item %d is missing the 'tracks' field'\n", index);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Unexpected JSON: Item %d is missing the 'tracks' field'\n", index);
       return -1;
     }
   if (jparse_array_from_obj(needle, "items", &jsontracks) < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Unexpected JSON: Item %d has an empty 'tracks' array\n", index);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Unexpected JSON: Item %d has an empty 'tracks' array\n", index);
       return -1;
     }
 
@@ -1742,7 +1742,7 @@ saved_show_add(json_object *item, int index, int total, enum spotify_request_typ
 
   if (!json_object_object_get_ex(item, "show", &jsonshow))
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Unexpected JSON: Item %d is missing the 'show' field\n", index);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Unexpected JSON: Item %d is missing the 'show' field\n", index);
       return -1;
     }
 
@@ -1796,7 +1796,7 @@ saved_playlist_tracks_add(json_object *item, int index, int total, enum spotify_
 
   if (!(item && json_object_object_get_ex(item, "track", &jsontrack)))
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Unexpected JSON: missing 'track' in JSON object at index %d\n", index);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Unexpected JSON: missing 'track' in JSON object at index %d\n", index);
       return -1;
     }
 
@@ -1806,7 +1806,7 @@ saved_playlist_tracks_add(json_object *item, int index, int total, enum spotify_
 
   if (!track.uri || !track.is_playable)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
+      DPRINTF(E_INFO, L_SPOTIFY, "Track not available for playback: '%s' - '%s' (%s) (restrictions: %s)\n", track.artist, track.name, track.uri, track.restrictions);
       return 0;
     }
 
@@ -1887,7 +1887,7 @@ saved_playlist_add(json_object *item, int index, int total, enum spotify_request
   if (pl_id > 0)
     scan_playlist_tracks(playlist.tracks_href, &pli, request_type);
   else
-    DPRINTF(E_LOG, L_SPOTIFY, "Error adding playlist: '%s' (%s) \n", playlist.name, playlist.uri);
+    DPRINTF(E_ERROR, L_SPOTIFY, "Error adding playlist: '%s' (%s) \n", playlist.name, playlist.uri);
 
   free_pli(&pli, 1);
 
@@ -1937,7 +1937,7 @@ create_base_playlist(void)
   spotify_base_plid = playlist_add_or_update(&pli);
   if (spotify_base_plid < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error adding base playlist\n");
+      DPRINTF(E_ERROR, L_SPOTIFY, "Error adding base playlist\n");
       spotify_base_plid = 0;
     }
 
@@ -2033,7 +2033,7 @@ spotifywebapi_library_initscan(void)
   ret = spotify_relogin();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Spotify playback library could not log in. In order to use Spotify, "
+      DPRINTF(E_ERROR, L_SPOTIFY, "Spotify playback library could not log in. In order to use Spotify, "
 	"provide valid credentials by visiting http://owntone.local:3689\n");
 
       db_spotify_purge();
@@ -2157,7 +2157,7 @@ spotifywebapi_oauth_uri_get(const char *redirect_uri)
 	  (keyval_add(&kv, "show_dialog", "false") == 0) );
   if (!ret)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Cannot display Spotify oath interface (error adding parameters to keyval)\n");
+      DPRINTF(E_ERROR, L_SPOTIFY, "Cannot display Spotify oath interface (error adding parameters to keyval)\n");
       goto out_clear_kv;
     }
 

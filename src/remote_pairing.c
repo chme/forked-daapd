@@ -97,13 +97,13 @@ itunes_pairing_hash(char *paircode, char *pin)
 
   if (strlen(paircode) != 16)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Paircode length != 16, cannot compute pairing hash\n");
+      DPRINTF(E_ERROR, L_REMOTE, "Paircode length != 16, cannot compute pairing hash\n");
       return NULL;
     }
 
   if (strlen(pin) != 4)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Pin length != 4, cannot compute pairing hash\n");
+      DPRINTF(E_ERROR, L_REMOTE, "Pin length != 4, cannot compute pairing hash\n");
       return NULL;
     }
 
@@ -111,7 +111,7 @@ itunes_pairing_hash(char *paircode, char *pin)
   if (gc_err != GPG_ERR_NO_ERROR)
     {
       gpg_strerror_r(gc_err, ebuf, sizeof(ebuf));
-      DPRINTF(E_LOG, L_REMOTE, "Could not open MD5: %s\n", ebuf);
+      DPRINTF(E_ERROR, L_REMOTE, "Could not open MD5: %s\n", ebuf);
 
       return NULL;
     }
@@ -129,7 +129,7 @@ itunes_pairing_hash(char *paircode, char *pin)
   hash_bytes = gcry_md_read(hd, GCRY_MD_MD5);
   if (!hash_bytes)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Could not read MD5 hash\n");
+      DPRINTF(E_ERROR, L_REMOTE, "Could not read MD5 hash\n");
 
       return NULL;
     }
@@ -169,7 +169,7 @@ unlink_remote(struct remote_info *ri)
   if (ri == remote_info)
     remote_info = NULL;
   else
-    DPRINTF(E_LOG, L_REMOTE, "WARNING: struct remote_info not found in list; BUG!\n");
+    DPRINTF(E_ERROR, L_REMOTE, "WARNING: struct remote_info not found in list; BUG!\n");
 }
 
 static void
@@ -285,7 +285,7 @@ add_remote_mdns_data(const char *id, int family, const char *address, int port, 
 	break;
 
       default:
-	DPRINTF(E_LOG, L_REMOTE, "Unknown address family %d\n", family);
+	DPRINTF(E_ERROR, L_REMOTE, "Unknown address family %d\n", family);
 
 	check_addr = NULL;
 	break;
@@ -293,7 +293,7 @@ add_remote_mdns_data(const char *id, int family, const char *address, int port, 
 
   if (!remote_info->pi.remote_id || !check_addr)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Out of memory for remote pairing data\n");
+      DPRINTF(E_ERROR, L_REMOTE, "Out of memory for remote pairing data\n");
 
       remove_remote(remote_info);
       return -1;
@@ -310,7 +310,7 @@ add_remote_pin_data(const char *pin)
 {
   if (!remote_info)
     {
-      DPRINTF(E_LOG, L_REMOTE, "No remote known from mDNS, ignoring\n");
+      DPRINTF(E_ERROR, L_REMOTE, "No remote known from mDNS, ignoring\n");
 
       return REMOTE_ERROR;
     }
@@ -341,7 +341,7 @@ pairing_request_cb(struct evhttp_request *req, void *arg)
 
   if (!req)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Empty pairing request callback\n");
+      DPRINTF(E_ERROR, L_REMOTE, "Empty pairing request callback\n");
 
       ret = REMOTE_ERROR;
       goto cleanup;
@@ -353,16 +353,16 @@ pairing_request_cb(struct evhttp_request *req, void *arg)
       if (ri->v6_address)
 	{
 	  if (response_code != 0)
-	    DPRINTF(E_LOG, L_REMOTE, "Pairing failed with '%s' ([%s]:%d), HTTP response code %d\n", ri->pi.name, ri->v6_address, ri->v6_port, response_code);
+	    DPRINTF(E_ERROR, L_REMOTE, "Pairing failed with '%s' ([%s]:%d), HTTP response code %d\n", ri->pi.name, ri->v6_address, ri->v6_port, response_code);
 	  else
-	    DPRINTF(E_LOG, L_REMOTE, "Pairing failed with '%s' ([%s]:%d), no reply from Remote\n", ri->pi.name, ri->v6_address, ri->v6_port);
+	    DPRINTF(E_ERROR, L_REMOTE, "Pairing failed with '%s' ([%s]:%d), no reply from Remote\n", ri->pi.name, ri->v6_address, ri->v6_port);
 	}
       else
 	{
 	  if (response_code != 0)
-	    DPRINTF(E_LOG, L_REMOTE, "Pairing failed with '%s' (%s:%d), HTTP response code %d\n", ri->pi.name, ri->v4_address, ri->v4_port, response_code);
+	    DPRINTF(E_ERROR, L_REMOTE, "Pairing failed with '%s' (%s:%d), HTTP response code %d\n", ri->pi.name, ri->v4_address, ri->v4_port, response_code);
 	  else
-	    DPRINTF(E_LOG, L_REMOTE, "Pairing failed with '%s' (%s:%d), no reply from Remote\n", ri->pi.name, ri->v4_address, ri->v4_port);
+	    DPRINTF(E_ERROR, L_REMOTE, "Pairing failed with '%s' (%s:%d), no reply from Remote\n", ri->pi.name, ri->v4_address, ri->v4_port);
 	}
 
       ret = REMOTE_INVALID_PIN;
@@ -374,7 +374,7 @@ pairing_request_cb(struct evhttp_request *req, void *arg)
   buflen = evbuffer_get_length(input_buffer);
   if (buflen < 8)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Remote %s/%s: pairing response too short\n", ri->pi.remote_id, ri->pi.name);
+      DPRINTF(E_ERROR, L_REMOTE, "Remote %s/%s: pairing response too short\n", ri->pi.remote_id, ri->pi.name);
 
       ret = REMOTE_ERROR;
       goto cleanup;
@@ -384,7 +384,7 @@ pairing_request_cb(struct evhttp_request *req, void *arg)
 
   if ((response[0] != 'c') || (response[1] != 'm') || (response[2] != 'p') || (response[3] != 'a'))
     {
-      DPRINTF(E_LOG, L_REMOTE, "Remote %s/%s: unknown pairing response, expected cmpa\n", ri->pi.remote_id, ri->pi.name);
+      DPRINTF(E_ERROR, L_REMOTE, "Remote %s/%s: unknown pairing response, expected cmpa\n", ri->pi.remote_id, ri->pi.name);
 
       ret = REMOTE_ERROR;
       goto cleanup;
@@ -393,7 +393,7 @@ pairing_request_cb(struct evhttp_request *req, void *arg)
   len = (response[4] << 24) | (response[5] << 16) | (response[6] << 8) | (response[7]);
   if (buflen < 8 + len)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Remote %s/%s: pairing response truncated (got %d expected %d)\n",
+      DPRINTF(E_ERROR, L_REMOTE, "Remote %s/%s: pairing response truncated (got %d expected %d)\n",
 	      ri->pi.remote_id, ri->pi.name, buflen, len + 8);
 
       ret = REMOTE_ERROR;
@@ -417,7 +417,7 @@ pairing_request_cb(struct evhttp_request *req, void *arg)
 
   if (len < 8)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Remote %s/%s: cmpg truncated in pairing response\n", ri->pi.remote_id, ri->pi.name);
+      DPRINTF(E_ERROR, L_REMOTE, "Remote %s/%s: cmpg truncated in pairing response\n", ri->pi.remote_id, ri->pi.name);
 
       ret = REMOTE_ERROR;
       goto cleanup;
@@ -428,12 +428,12 @@ pairing_request_cb(struct evhttp_request *req, void *arg)
 
   ri->pi.guid = strdup(guid);
 
-  DPRINTF(E_LOG, L_REMOTE, "Pairing succeeded with Remote '%s' (id %s), GUID: %s\n", ri->pi.name, ri->pi.remote_id, guid);
+  DPRINTF(E_ERROR, L_REMOTE, "Pairing succeeded with Remote '%s' (id %s), GUID: %s\n", ri->pi.name, ri->pi.remote_id, guid);
 
   ret = db_pairing_add(&ri->pi);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Failed to register pairing!\n");
+      DPRINTF(E_ERROR, L_REMOTE, "Failed to register pairing!\n");
 
       ret = REMOTE_ERROR;
       goto cleanup;
@@ -482,7 +482,7 @@ send_pairing_request(struct remote_info *ri, char *req_uri, int family)
   evcon = evhttp_connection_base_new(evbase_main, NULL, address, port);
   if (!evcon)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Could not create connection for pairing with %s\n", ri->pi.name);
+      DPRINTF(E_ERROR, L_REMOTE, "Could not create connection for pairing with %s\n", ri->pi.name);
 
       return -1;
     }
@@ -526,7 +526,7 @@ do_pairing(struct remote_info *ri)
   pairing_hash = itunes_pairing_hash(ri->paircode, ri->pin);
   if (!pairing_hash)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Could not compute pairing hash!\n");
+      DPRINTF(E_ERROR, L_REMOTE, "Could not compute pairing hash!\n");
 
       goto hash_fail;
     }
@@ -606,14 +606,14 @@ touch_remote_cb(const char *name, const char *type, const char *domain, const ch
       p = keyval_get(txt, "DvNm");
       if (!p)
 	{
-	  DPRINTF(E_LOG, L_REMOTE, "Remote %s: no DvNm in TXT record!\n", name);
+	  DPRINTF(E_ERROR, L_REMOTE, "Remote %s: no DvNm in TXT record!\n", name);
 
 	  return;
 	}
 
       if (*p == '\0')
 	{
-	  DPRINTF(E_LOG, L_REMOTE, "Remote %s: DvNm has no value\n", name);
+	  DPRINTF(E_ERROR, L_REMOTE, "Remote %s: DvNm has no value\n", name);
 
 	  return;
 	}
@@ -621,7 +621,7 @@ touch_remote_cb(const char *name, const char *type, const char *domain, const ch
       devname = strdup(p);
       if (!devname)
 	{
-	  DPRINTF(E_LOG, L_REMOTE, "Out of memory for device name\n");
+	  DPRINTF(E_ERROR, L_REMOTE, "Out of memory for device name\n");
 
 	  return;
 	}
@@ -630,7 +630,7 @@ touch_remote_cb(const char *name, const char *type, const char *domain, const ch
       p = keyval_get(txt, "Pair");
       if (!p)
 	{
-	  DPRINTF(E_LOG, L_REMOTE, "Remote %s: no Pair in TXT record!\n", name);
+	  DPRINTF(E_ERROR, L_REMOTE, "Remote %s: no Pair in TXT record!\n", name);
 
 	  free(devname);
 	  return;
@@ -638,7 +638,7 @@ touch_remote_cb(const char *name, const char *type, const char *domain, const ch
 
       if (*p == '\0')
 	{
-	  DPRINTF(E_LOG, L_REMOTE, "Remote %s: Pair has no value\n", name);
+	  DPRINTF(E_ERROR, L_REMOTE, "Remote %s: Pair has no value\n", name);
 
 	  free(devname);
 	  return;
@@ -647,13 +647,13 @@ touch_remote_cb(const char *name, const char *type, const char *domain, const ch
       paircode = strdup(p);
       if (!paircode)
 	{
-	  DPRINTF(E_LOG, L_REMOTE, "Out of memory for paircode\n");
+	  DPRINTF(E_ERROR, L_REMOTE, "Out of memory for paircode\n");
 
 	  free(devname);
 	  return;
 	}
 
-      DPRINTF(E_LOG, L_REMOTE, "Discovered remote '%s' (id %s) at %s:%d, paircode %s\n", devname, name, address, port, paircode);
+      DPRINTF(E_ERROR, L_REMOTE, "Discovered remote '%s' (id %s) at %s:%d, paircode %s\n", devname, name, address, port, paircode);
 
       /* Add the data to the list, adding the remote to the list if needed */
       CHECK_ERR(L_REMOTE, pthread_mutex_lock(&remote_lck));
@@ -740,13 +740,13 @@ remote_pairing_kickoff(char **arglist)
   ret = strlen(arglist[0]);
   if (ret != 4)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Kickoff pairing failed, first line did not contain a 4-digit pin (got %d)\n", ret);
+      DPRINTF(E_ERROR, L_REMOTE, "Kickoff pairing failed, first line did not contain a 4-digit pin (got %d)\n", ret);
       return;
     }
 
   cmdarg = strdup(arglist[0]);
 
-  DPRINTF(E_LOG, L_REMOTE, "Kickoff pairing with pin '%s'\n", arglist[0]);
+  DPRINTF(E_ERROR, L_REMOTE, "Kickoff pairing with pin '%s'\n", arglist[0]);
 
   commands_exec_async(cmdbase, pairing_pair, cmdarg);
 }
@@ -760,7 +760,7 @@ remote_pairing_pair(const char *pin)
   ret = strlen(pin);
   if (ret != 4)
     {
-      DPRINTF(E_LOG, L_REMOTE, "Pairing failed, not a 4-digit pin (got %d)\n", ret);
+      DPRINTF(E_ERROR, L_REMOTE, "Pairing failed, not a 4-digit pin (got %d)\n", ret);
       return REMOTE_INVALID_PIN;
     }
 

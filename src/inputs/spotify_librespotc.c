@@ -117,7 +117,7 @@ postlogin(struct global_ctx *ctx)
   ret = librespotc_credentials_get(&credentials, ctx->session);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error getting Spotify credentials: %s\n", librespotc_last_errmsg());
+      DPRINTF(E_ERROR, L_SPOTIFY, "Error getting Spotify credentials: %s\n", librespotc_last_errmsg());
       return -1;
     }
 
@@ -159,7 +159,7 @@ login_stored_cred(struct global_ctx *ctx, const char *username, const char *db_s
   ctx->session = librespotc_login_stored_cred(username, stored_cred, stored_cred_len);
   if (!ctx->session)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error logging into Spotify: %s\n", librespotc_last_errmsg());
+      DPRINTF(E_ERROR, L_SPOTIFY, "Error logging into Spotify: %s\n", librespotc_last_errmsg());
       goto error;
     }
 
@@ -283,7 +283,7 @@ initialize(struct global_ctx *ctx)
   ret = librespotc_init(&sysinfo, &callbacks);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error initializing Spotify: %s\n", librespotc_last_errmsg());
+      DPRINTF(E_ERROR, L_SPOTIFY, "Error initializing Spotify: %s\n", librespotc_last_errmsg());
       goto error;
     }
 
@@ -449,14 +449,14 @@ setup(struct input_source *source)
   fd = librespotc_open(source->path, ctx->session);
   if (fd < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error opening source: %s\n", librespotc_last_errmsg());
+      DPRINTF(E_ERROR, L_SPOTIFY, "Error opening source: %s\n", librespotc_last_errmsg());
       goto error;
     }
 
   ret = librespotc_metadata_get(&metadata, fd);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Error getting track metadata: %s\n", librespotc_last_errmsg());
+      DPRINTF(E_ERROR, L_SPOTIFY, "Error getting track metadata: %s\n", librespotc_last_errmsg());
       goto error;
     }
 
@@ -474,7 +474,7 @@ setup(struct input_source *source)
   probe_bytes = fd_read(NULL, download->read_buf, fd);
   if (probe_bytes < SPOTIFY_PROBE_SIZE_MIN)
     {
-      DPRINTF(E_LOG, L_SPOTIFY, "Not enough audio data for ffmpeg probing (%d)\n", probe_bytes);
+      DPRINTF(E_ERROR, L_SPOTIFY, "Not enough audio data for ffmpeg probing (%d)\n", probe_bytes);
       goto error;
     }
 

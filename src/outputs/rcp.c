@@ -409,7 +409,7 @@ rcp_state_verify(struct rcp_session *s, const char *resp)
        */
       if (strcmp(resp, "QueueAndPlayOne: ParameterError\r\n") == 0)
 	{
-	  DPRINTF(E_LOG, L_RCP, "Failed to start stream, remote unable to reach '%s' from '%s' at %s\n", s->stream_url, s->devname, s->address);
+	  DPRINTF(E_ERROR, L_RCP, "Failed to start stream, remote unable to reach '%s' from '%s' at %s\n", s->stream_url, s->devname, s->address);
 	  return 1;
 	}
 
@@ -691,7 +691,7 @@ rcp_send(struct rcp_session* s, enum rcp_state next_state, const char *arg)
 //    DPRINTF(E_DBG, L_RCP, "Device %" PRIu64 " state %d send '%s%s%s'\n", s->device->id, s->state, (char*)(iov[0].iov_base), (char*)(iov[1].iov_base), (char*)(iov[2].iov_base));
 
     if (s->sock <= 0) {
-	DPRINTF(E_LOG, L_RCP, "Ignoring send request on %s, state = %d\n", s->address, s->state);
+	DPRINTF(E_ERROR, L_RCP, "Ignoring send request on %s, state = %d\n", s->address, s->state);
 	return -1;
     }
 
@@ -740,7 +740,7 @@ rcp_recv(struct rcp_session *s)
 //  DPRINTF(E_DBG,  L_RCP, "Device %" PRIu64 " state %d recv'd %zd bytes '%s'\n", s->device->id, s->state, recvd, s->respptr);
   if (recvd <= 0)
     {
-      DPRINTF(E_LOG,  L_RCP, "Failed to read response from '%s' - %s\n", s->devname, strerror(recvd == 0 ? ECONNRESET : errno));
+      DPRINTF(E_ERROR,  L_RCP, "Failed to read response from '%s' - %s\n", s->devname, strerror(recvd == 0 ? ECONNRESET : errno));
       s->state = RCP_STATE_DISCONNECTED;
       return -1;
     }
@@ -841,7 +841,7 @@ rcp_reply_shutdown_timeout_cb(int fd, short what, void *arg)
       return;
     }
 
-  DPRINTF(E_LOG, L_RCP, "No response from '%s' (state %d), forcing shutting down\n", s->devname, s->state);
+  DPRINTF(E_ERROR, L_RCP, "No response from '%s' (state %d), forcing shutting down\n", s->devname, s->state);
   rcp_session_shutdown(s, RCP_STATE_DISCONNECTED);
 }
 
@@ -906,7 +906,7 @@ rcp_listen_cb(int fd, short what, void *arg)
 
   if (what == EV_TIMEOUT)
     {
-      DPRINTF(E_LOG, L_RCP, "Unexpected timeout event on '%s', shutting down\n", s->devname);
+      DPRINTF(E_ERROR, L_RCP, "Unexpected timeout event on '%s', shutting down\n", s->devname);
       goto fail;
     }
 
@@ -918,7 +918,7 @@ rcp_listen_cb(int fd, short what, void *arg)
   ret = rcp_recv(s);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RCP, "Failed to recv/construct response from '%s'\n", s->devname);
+      DPRINTF(E_ERROR, L_RCP, "Failed to recv/construct response from '%s'\n", s->devname);
       goto fail;
     }
 
@@ -960,7 +960,7 @@ rcp_reply_timeout_cb(int fd, short what, void *arg)
 
   if (what == EV_TIMEOUT && s->state != RCP_STATE_STREAMING)
     {
-      DPRINTF(E_LOG, L_RCP, "Slow response from '%s' (state %d), shutting down\n", s->devname, s->state);
+      DPRINTF(E_ERROR, L_RCP, "Slow response from '%s' (state %d), shutting down\n", s->devname, s->state);
 
       s->state = RCP_STATE_FAILED;
       rcp_session_shutdown(s, RCP_STATE_FAILED);
@@ -1006,14 +1006,14 @@ rcp_session_make(struct output_device *device, int callback_id)
   s->sock = net_connect(device->v4_address, device->v4_port, SOCK_STREAM, "RCP control");
   if (s->sock < 0)
     {
-      DPRINTF(E_LOG, L_RCP, "Could not connect to %s\n", device->name);
+      DPRINTF(E_ERROR, L_RCP, "Could not connect to %s\n", device->name);
       goto out_free_session;
     }
 
   ret = getsockname(s->sock, (struct sockaddr*)&ss, &socklen);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RCP, "Could not determine client's connected address %s\n", device->name);
+      DPRINTF(E_ERROR, L_RCP, "Could not determine client's connected address %s\n", device->name);
       goto out_close_connection;
     }
 
@@ -1021,7 +1021,7 @@ rcp_session_make(struct output_device *device, int callback_id)
   addr = evutil_inet_ntop(ss.ss_family, inaddr, addrbuf, sizeof(addrbuf));
   if (!addr)
     {
-      DPRINTF(E_LOG, L_RCP, "Could not determine client's connected address %s\n", device->name);
+      DPRINTF(E_ERROR, L_RCP, "Could not determine client's connected address %s\n", device->name);
       goto out_close_connection;
     }
 
@@ -1031,14 +1031,14 @@ rcp_session_make(struct output_device *device, int callback_id)
   s->ev = event_new(evbase_player, s->sock, EV_READ | EV_PERSIST, rcp_listen_cb, s);
   if (!s->ev)
     {
-      DPRINTF(E_LOG, L_RCP, "Out of memory for listener event\n");
+      DPRINTF(E_ERROR, L_RCP, "Out of memory for listener event\n");
       goto out_close_connection;
     }
 
   s->reply_timeout = evtimer_new(evbase_player, rcp_reply_timeout_cb, s);
   if (!s->reply_timeout)
     {
-      DPRINTF(E_LOG, L_RCP, "Out of memory for reply_timeout\n");
+      DPRINTF(E_ERROR, L_RCP, "Out of memory for reply_timeout\n");
       goto out_free_ev;
     }
 
@@ -1337,14 +1337,14 @@ rcp_init(void)
   cfg_rcp = cfg_gettsec(cfg, "rcp", "*");
   if (cfg_rcp && cfg_getbool(cfg_rcp, "exclude"))
     {
-      DPRINTF(E_LOG, L_RCP, "Excluding all RCP/SoundBridges\n");
+      DPRINTF(E_ERROR, L_RCP, "Excluding all RCP/SoundBridges\n");
       return 0;
     }
 
   ret = mdns_browse("_roku-rcp._tcp", rcp_mdns_device_cb, 0);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_RCP, "Could not add mDNS browser for RCP/SoundBridge devices\n");
+      DPRINTF(E_ERROR, L_RCP, "Could not add mDNS browser for RCP/SoundBridge devices\n");
       return -1;
     }
 

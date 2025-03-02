@@ -130,7 +130,7 @@ daemonize(bool background, char *pidfile)
       fp = fopen(pidfile, "w");
       if (!fp)
 	{
-	  DPRINTF(E_LOG, L_MAIN, "Error opening pidfile (%s): %s\n", pidfile, strerror(errno));
+	  DPRINTF(E_ERROR, L_MAIN, "Error opening pidfile (%s): %s\n", pidfile, strerror(errno));
 
 	  return -1;
 	}
@@ -138,7 +138,7 @@ daemonize(bool background, char *pidfile)
       fd = open("/dev/null", O_RDWR, 0);
       if (fd < 0)
 	{
-	  DPRINTF(E_LOG, L_MAIN, "Error opening /dev/null: %s\n", strerror(errno));
+	  DPRINTF(E_ERROR, L_MAIN, "Error opening /dev/null: %s\n", strerror(errno));
 
 	  fclose(fp);
 	  return -1;
@@ -373,7 +373,7 @@ signal_signalfd_cb(int fd, short event, void *arg)
       switch (info.ssi_signo)
 	{
 	  case SIGCHLD:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGCHLD\n");
+	    DPRINTF(E_ERROR, L_MAIN, "Got SIGCHLD\n");
 
 	    while (waitpid(-1, &status, WNOHANG) > 0)
 	      /* Nothing. */ ;
@@ -381,13 +381,13 @@ signal_signalfd_cb(int fd, short event, void *arg)
 
 	  case SIGINT:
 	  case SIGTERM:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGTERM or SIGINT\n");
+	    DPRINTF(E_ERROR, L_MAIN, "Got SIGTERM or SIGINT\n");
 
 	    main_exit = 1;
 	    break;
 
 	  case SIGHUP:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGHUP\n");
+	    DPRINTF(E_ERROR, L_MAIN, "Got SIGHUP\n");
 
 	    if (!main_exit)
 	      logger_reinit();
@@ -418,7 +418,7 @@ signal_kqueue_cb(int fd, short event, void *arg)
       switch (ke.ident)
 	{
 	  case SIGCHLD:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGCHLD\n");
+	    DPRINTF(E_ERROR, L_MAIN, "Got SIGCHLD\n");
 
 	    while (waitpid(-1, &status, WNOHANG) > 0)
 	      /* Nothing. */ ;
@@ -426,13 +426,13 @@ signal_kqueue_cb(int fd, short event, void *arg)
 
 	  case SIGINT:
 	  case SIGTERM:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGTERM or SIGINT\n");
+	    DPRINTF(E_ERROR, L_MAIN, "Got SIGTERM or SIGINT\n");
 
 	    main_exit = 1;
 	    break;
 
 	  case SIGHUP:
-	    DPRINTF(E_LOG, L_MAIN, "Got SIGHUP\n");
+	    DPRINTF(E_ERROR, L_MAIN, "Got SIGHUP\n");
 
 	    if (!main_exit)
 	      logger_reinit();
@@ -721,7 +721,7 @@ main(int argc, char **argv)
   ret = pthread_sigmask(SIG_BLOCK, &sigs, NULL);
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_MAIN, "Error setting signal set\n");
+      DPRINTF(E_ERROR, L_MAIN, "Error setting signal set\n");
 
       ret = EXIT_FAILURE;
       goto signal_block_fail;
@@ -731,7 +731,7 @@ main(int argc, char **argv)
   ret = daemonize(background, pidfile);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_MAIN, "Could not initialize server\n");
+      DPRINTF(E_ERROR, L_MAIN, "Could not initialize server\n");
 
       ret = EXIT_FAILURE;
       goto daemon_fail;
@@ -753,7 +753,7 @@ main(int argc, char **argv)
     }
 
   /* Initialize the database before starting */
-  DPRINTF(E_INFO, L_MAIN, "Initializing database\n");
+  DPRINTF(E_LOG, L_MAIN, "Initializing database\n");
   ret = db_init(sqlite_extension_path);
   if (ret < 0)
     {
@@ -982,12 +982,12 @@ main(int argc, char **argv)
     {
       ret = seteuid(0);
       if (ret < 0)
-	DPRINTF(E_LOG, L_MAIN, "seteuid() failed: %s\n", strerror(errno));
+	DPRINTF(E_ERROR, L_MAIN, "seteuid() failed: %s\n", strerror(errno));
       else
 	{
 	  ret = unlink(pidfile);
 	  if (ret < 0)
-	    DPRINTF(E_LOG, L_MAIN, "Could not unlink PID file %s: %s\n", pidfile, strerror(errno));
+	    DPRINTF(E_ERROR, L_MAIN, "Could not unlink PID file %s: %s\n", pidfile, strerror(errno));
 	}
     }
 

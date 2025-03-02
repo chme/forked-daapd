@@ -58,7 +58,7 @@ db_drop_from_master(sqlite3 *hdl, const char *type, const char *prefix)
   ret = sqlite3_prepare_v2(hdl, query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement '%s': %s\n", query, sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement '%s': %s\n", query, sqlite3_errmsg(hdl));
       sqlite3_free(query);
       return -1;
     }
@@ -74,7 +74,7 @@ db_drop_from_master(sqlite3 *hdl, const char *type, const char *prefix)
 
   if (ret != SQLITE_DONE)
     {
-      DPRINTF(E_LOG, L_DB, "Could not step '%s': %s\n", query, sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not step '%s': %s\n", query, sqlite3_errmsg(hdl));
       sqlite3_free(query);
       ret = -1;
       goto out;
@@ -91,7 +91,7 @@ db_drop_from_master(sqlite3 *hdl, const char *type, const char *prefix)
       ret = sqlite3_exec(hdl, query, NULL, NULL, &errmsg);
       if (ret != SQLITE_OK)
 	{
-	  DPRINTF(E_LOG, L_DB, "DB error while running '%s': %s\n", query, errmsg);
+	  DPRINTF(E_ERROR, L_DB, "DB error while running '%s': %s\n", query, errmsg);
 
 	  sqlite3_free(errmsg);
 	  sqlite3_free(query);
@@ -176,7 +176,7 @@ db_table_upgrade(sqlite3 *hdl, const char *name, const char *newtablequery)
   char *errmsg;
   int ret;
 
-  DPRINTF(E_LOG, L_DB, "Upgrading %s table...\n", name);
+  DPRINTF(E_ERROR, L_DB, "Upgrading %s table...\n", name);
 
   // Step 1: Skipped, no foreign key constraints
   // Step 2: Skipped, we are already in a transaction
@@ -250,12 +250,12 @@ db_table_upgrade(sqlite3 *hdl, const char *name, const char *newtablequery)
   // Step 11: Skipped, our caller takes care of COMMIT
   // Step 12: Skipped, no foreign key constraints
 
-  DPRINTF(E_LOG, L_DB, "Upgrade of %s table complete!\n", name);
+  DPRINTF(E_ERROR, L_DB, "Upgrade of %s table complete!\n", name);
 
   return 0;
 
  error:
-  DPRINTF(E_LOG, L_DB, "DB error %d running query '%s': %s\n", ret, query, errmsg);
+  DPRINTF(E_ERROR, L_DB, "DB error %d running query '%s': %s\n", ret, query, errmsg);
   sqlite3_free(query);
   sqlite3_free(errmsg);
 
@@ -397,7 +397,7 @@ db_upgrade_v19_directory_id(sqlite3 *hdl, char *virtual_path)
   query = sqlite3_mprintf("SELECT d.id FROM directories d WHERE d.disabled = 0 AND d.virtual_path = '%q';", virtual_path);
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
 
       return -1;
     }
@@ -405,7 +405,7 @@ db_upgrade_v19_directory_id(sqlite3 *hdl, char *virtual_path)
   ret = sqlite3_prepare_v2(hdl, query, -1, &stmt, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_DB, "Error preparing query '%s'\n", query);
+      DPRINTF(E_ERROR, L_DB, "Error preparing query '%s'\n", query);
       sqlite3_free(query);
 
       return -1;
@@ -419,7 +419,7 @@ db_upgrade_v19_directory_id(sqlite3 *hdl, char *virtual_path)
     id = 0; // Not found
   else
     {
-      DPRINTF(E_LOG, L_DB, "Error stepping query '%s'\n", query);
+      DPRINTF(E_ERROR, L_DB, "Error stepping query '%s'\n", query);
       sqlite3_free(query);
       sqlite3_finalize(stmt);
 
@@ -446,14 +446,14 @@ db_upgrade_v19_insert_directory(sqlite3 *hdl, char *virtual_path, int parent_id)
 
   if (!query)
     {
-      DPRINTF(E_LOG, L_DB, "Out of memory for query string\n");
+      DPRINTF(E_ERROR, L_DB, "Out of memory for query string\n");
       return -1;
     }
 
   ret = sqlite3_exec(hdl, query, NULL, NULL, &errmsg);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Query error: %s\n", errmsg);
+      DPRINTF(E_ERROR, L_DB, "Query error: %s\n", errmsg);
 
       sqlite3_free(errmsg);
       sqlite3_free(query);
@@ -490,7 +490,7 @@ db_upgrade_v19_insert_parent_directories(sqlite3 *hdl, char *virtual_path)
 
       if (dir_id < 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Select of directory failed '%s'\n", buf);
+	  DPRINTF(E_ERROR, L_SCAN, "Select of directory failed '%s'\n", buf);
 
 	  return -1;
 	}
@@ -499,7 +499,7 @@ db_upgrade_v19_insert_parent_directories(sqlite3 *hdl, char *virtual_path)
 	  dir_id = db_upgrade_v19_insert_directory(hdl, buf, parent_id);
 	  if (dir_id < 0)
 	    {
-	      DPRINTF(E_LOG, L_SCAN, "Insert of directory failed '%s'\n", buf);
+	      DPRINTF(E_ERROR, L_SCAN, "Insert of directory failed '%s'\n", buf);
 
 	      return -1;
 	    }
@@ -531,7 +531,7 @@ db_upgrade_v19(sqlite3 *hdl)
   ret = sqlite3_prepare_v2(hdl, query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -543,7 +543,7 @@ db_upgrade_v19(sqlite3 *hdl)
       dir_id = db_upgrade_v19_insert_parent_directories(hdl, virtual_path);
       if (dir_id < 0)
 	{
-	  DPRINTF(E_LOG, L_DB, "Error processing parent directories for file: %s\n", virtual_path);
+	  DPRINTF(E_ERROR, L_DB, "Error processing parent directories for file: %s\n", virtual_path);
 	}
       else
 	{
@@ -551,7 +551,7 @@ db_upgrade_v19(sqlite3 *hdl)
 	  ret = sqlite3_exec(hdl, uquery, NULL, NULL, &errmsg);
 	  if (ret != SQLITE_OK)
 	    {
-	      DPRINTF(E_LOG, L_DB, "Error updating files: %s\n", errmsg);
+	      DPRINTF(E_ERROR, L_DB, "Error updating files: %s\n", errmsg);
 	    }
 
 	  sqlite3_free(uquery);
@@ -569,7 +569,7 @@ db_upgrade_v19(sqlite3 *hdl)
   ret = sqlite3_prepare_v2(hdl, query, -1, &stmt, NULL);
   if (ret != SQLITE_OK)
     {
-      DPRINTF(E_LOG, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
+      DPRINTF(E_ERROR, L_DB, "Could not prepare statement: %s\n", sqlite3_errmsg(hdl));
       return -1;
     }
 
@@ -581,7 +581,7 @@ db_upgrade_v19(sqlite3 *hdl)
       dir_id = db_upgrade_v19_insert_parent_directories(hdl, virtual_path);
       if (dir_id < 0)
 	{
-	  DPRINTF(E_LOG, L_DB, "Error processing parent directories for file: %s\n", virtual_path);
+	  DPRINTF(E_ERROR, L_DB, "Error processing parent directories for file: %s\n", virtual_path);
 	}
       else
 	{
@@ -589,7 +589,7 @@ db_upgrade_v19(sqlite3 *hdl)
 	  ret = sqlite3_exec(hdl, uquery, NULL, NULL, &errmsg);
 	  if (ret != SQLITE_OK)
 	    {
-	      DPRINTF(E_LOG, L_DB, "Error updating files: %s\n", errmsg);
+	      DPRINTF(E_ERROR, L_DB, "Error updating files: %s\n", errmsg);
 	    }
 
 	  sqlite3_free(uquery);

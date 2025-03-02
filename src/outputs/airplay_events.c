@@ -143,14 +143,14 @@ client_add(const char *name, int fd, const uint8_t *key, size_t key_len)
   client->listener = event_new(evbase, fd, EV_READ | EV_PERSIST, incoming_cb, client);
   if (!client->listener)
     {
-      DPRINTF(E_LOG, L_AIRPLAY, "Could not listen for AirPlay events from '%s', invalid fd or out of memory\n", name);
+      DPRINTF(E_ERROR, L_AIRPLAY, "Could not listen for AirPlay events from '%s', invalid fd or out of memory\n", name);
       goto error;
     }
 
   client->cipher_ctx = pair_cipher_new(PAIR_CLIENT_HOMEKIT_NORMAL, 1, key, key_len);
   if (!client->cipher_ctx)
     {
-      DPRINTF(E_LOG, L_AIRPLAY, "Could not listen for AirPlay events from '%s': Could not create ciphering context\n", name);
+      DPRINTF(E_ERROR, L_AIRPLAY, "Could not listen for AirPlay events from '%s': Could not create ciphering context\n", name);
       goto error;
     }
 
@@ -514,7 +514,7 @@ airplay_events_init(void)
   ret = pthread_create(&thread_id, NULL, airplay_events, NULL);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_AIRPLAY, "Could not spawn AirPlay events thread: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_AIRPLAY, "Could not spawn AirPlay events thread: %s\n", strerror(errno));
 
       goto error;
     }
@@ -539,7 +539,7 @@ airplay_events_deinit(void)
   ret = pthread_join(thread_id, NULL);
   if (ret != 0)
     {
-      DPRINTF(E_LOG, L_AIRPLAY, "Could not join AirPlay events thread: %s\n", strerror(errno));
+      DPRINTF(E_ERROR, L_AIRPLAY, "Could not join AirPlay events thread: %s\n", strerror(errno));
       return;
     }
 

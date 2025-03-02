@@ -179,7 +179,7 @@ callback_add(struct output_device *device, output_status_cb cb)
 
   if (callback_id == ARRAY_SIZE(outputs_cb_register))
     {
-      DPRINTF(E_LOG, L_PLAYER, "Output callback queue is full! (size is %d)\n", OUTPUTS_MAX_CALLBACKS);
+      DPRINTF(E_ERROR, L_PLAYER, "Output callback queue is full! (size is %d)\n", OUTPUTS_MAX_CALLBACKS);
       return -1;
     }
 
@@ -288,7 +288,7 @@ encoding_reset(struct media_quality *quality)
   profile = quality_to_xcode(quality);
   if  (profile == XCODE_UNKNOWN)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not create subscription decoding context, invalid quality (%d/%d/%d)\n",
+      DPRINTF(E_ERROR, L_PLAYER, "Could not create subscription decoding context, invalid quality (%d/%d/%d)\n",
 	quality->sample_rate, quality->bits_per_sample, quality->channels);
       return -1;
     }
@@ -296,7 +296,7 @@ encoding_reset(struct media_quality *quality)
   encode_args.src_ctx = transcode_decode_setup_raw(profile, quality);
   if (!encode_args.src_ctx)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Could not create subscription decoding context (profile %d)\n", profile);
+      DPRINTF(E_ERROR, L_PLAYER, "Could not create subscription decoding context (profile %d)\n", profile);
       return -1;
     }
 
@@ -314,7 +314,7 @@ encoding_reset(struct media_quality *quality)
       if (encode_args.profile != XCODE_UNKNOWN)
 	subscription->encode_ctx = transcode_encode_setup(encode_args);
       else
-	DPRINTF(E_LOG, L_PLAYER, "Could not setup resampling to %d/%d/%d for output\n",
+	DPRINTF(E_ERROR, L_PLAYER, "Could not setup resampling to %d/%d/%d for output\n",
 	  subscription->quality.sample_rate, subscription->quality.bits_per_sample, subscription->quality.channels);
     }
 
@@ -665,7 +665,7 @@ outputs_quality_subscribe(struct media_quality *quality)
 
   if (i >= (ARRAY_SIZE(output_quality_subscriptions) - 1))
     {
-      DPRINTF(E_LOG, L_PLAYER, "Bug! The number of different quality levels requested by outputs is too high\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Bug! The number of different quality levels requested by outputs is too high\n");
       return -1;
     }
 
@@ -695,7 +695,7 @@ outputs_quality_unsubscribe(struct media_quality *quality)
 
   if (output_quality_subscriptions[i].count == 0)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Bug! Unsubscription request for a quality level that there is no subscription for\n");
+      DPRINTF(E_ERROR, L_PLAYER, "Bug! Unsubscription request for a quality level that there is no subscription for\n");
       return;
     }
 
@@ -725,7 +725,7 @@ outputs_cb(int callback_id, uint64_t device_id, enum output_device_state state)
 
   if (!(callback_id < ARRAY_SIZE(outputs_cb_register)) || !outputs_cb_register[callback_id].cb)
     {
-      DPRINTF(E_LOG, L_PLAYER, "Bug! Output backend called us with an illegal callback id (%d)\n", callback_id);
+      DPRINTF(E_ERROR, L_PLAYER, "Bug! Output backend called us with an illegal callback id (%d)\n", callback_id);
       return;
     }
 
@@ -881,7 +881,7 @@ outputs_device_remove(struct output_device *remove)
   // Save device volume
   ret = db_speaker_save(remove);
   if (ret < 0)
-    DPRINTF(E_LOG, L_PLAYER, "Could not save state for %s device '%s'\n", remove->type_name, remove->name);
+    DPRINTF(E_ERROR, L_PLAYER, "Could not save state for %s device '%s'\n", remove->type_name, remove->name);
 
   DPRINTF(E_INFO, L_PLAYER, "Removing %s device '%s'\n", remove->type_name, remove->name);
 
@@ -1075,10 +1075,10 @@ outputs_device_free(struct output_device *device)
     return;
 
   if (outputs[device->type]->disabled)
-    DPRINTF(E_LOG, L_PLAYER, "BUG! Freeing device from a disabled output?\n");
+    DPRINTF(E_ERROR, L_PLAYER, "BUG! Freeing device from a disabled output?\n");
 
   if (device->session)
-    DPRINTF(E_LOG, L_PLAYER, "BUG! Freeing device with active session?\n");
+    DPRINTF(E_ERROR, L_PLAYER, "BUG! Freeing device with active session?\n");
 
   if (outputs[device->type]->device_free_extra)
     outputs[device->type]->device_free_extra(device);

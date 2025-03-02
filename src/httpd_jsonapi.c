@@ -141,7 +141,7 @@ safe_json_add_time_from_string(json_object *obj, const char *key, const char *va
 
   if (safe_atou32(value, &tmp) != 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error converting timestamp to uint32_t: %s\n", value);
+      DPRINTF(E_ERROR, L_WEB, "Error converting timestamp to uint32_t: %s\n", value);
       return;
     }
 
@@ -151,7 +151,7 @@ safe_json_add_time_from_string(json_object *obj, const char *key, const char *va
   timestamp = tmp;
   if (gmtime_r(&timestamp, &tm) == NULL)
     {
-      DPRINTF(E_LOG, L_WEB, "Error converting timestamp to gmtime: %s\n", value);
+      DPRINTF(E_ERROR, L_WEB, "Error converting timestamp to gmtime: %s\n", value);
       return;
     }
 
@@ -173,7 +173,7 @@ safe_json_add_date_from_string(json_object *obj, const char *key, const char *va
 
   if (safe_atoi64(value, &tmp) != 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error converting timestamp to int64_t: %s\n", value);
+      DPRINTF(E_ERROR, L_WEB, "Error converting timestamp to int64_t: %s\n", value);
       return;
     }
 
@@ -183,7 +183,7 @@ safe_json_add_date_from_string(json_object *obj, const char *key, const char *va
   timestamp = tmp;
   if (localtime_r(&timestamp, &tm) == NULL)
     {
-      DPRINTF(E_LOG, L_WEB, "Error converting timestamp to localtime: %s\n", value);
+      DPRINTF(E_ERROR, L_WEB, "Error converting timestamp to localtime: %s\n", value);
       return;
     }
 
@@ -769,14 +769,14 @@ query_params_limit_set(struct query_params *query_params, struct httpd_request *
 
       if (safe_atoi32(param, &query_params->limit) < 0)
         {
-	  DPRINTF(E_LOG, L_WEB, "Invalid value for query parameter 'limit' (%s)\n", param);
+	  DPRINTF(E_ERROR, L_WEB, "Invalid value for query parameter 'limit' (%s)\n", param);
 	  return -1;
 	}
 
       param = httpd_query_value_find(hreq->query, "offset");
       if (param && safe_atoi32(param, &query_params->offset) < 0)
         {
-	  DPRINTF(E_LOG, L_WEB, "Invalid value for query parameter 'offset' (%s)\n", param);
+	  DPRINTF(E_ERROR, L_WEB, "Invalid value for query parameter 'offset' (%s)\n", param);
 	  return -1;
 	}
     }
@@ -855,7 +855,7 @@ jsonapi_reply_config(struct httpd_request *hreq)
 	}
       else
 	{
-	  DPRINTF(E_LOG, L_WEB, "Skipping library directory %s, could not dereference: %s\n", path, strerror(errno));
+	  DPRINTF(E_ERROR, L_WEB, "Skipping library directory %s, could not dereference: %s\n", path, strerror(errno));
 	}
     }
   json_object_object_add(jreply, "directories", directories);
@@ -909,7 +909,7 @@ option_get_json(struct settings_option *option)
     }
   else
     {
-      DPRINTF(E_LOG, L_WEB, "Option '%s' has unknown type %d\n", optionname, option->type);
+      DPRINTF(E_ERROR, L_WEB, "Option '%s' has unknown type %d\n", optionname, option->type);
       jparse_free(json_option);
       return NULL;
     }
@@ -992,7 +992,7 @@ jsonapi_reply_settings_category_get(struct httpd_request *hreq)
   category = settings_category_get(categoryname);
   if (!category)
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid category name '%s' given\n", categoryname);
+      DPRINTF(E_ERROR, L_WEB, "Invalid category name '%s' given\n", categoryname);
       return HTTP_NOTFOUND;
     }
 
@@ -1000,7 +1000,7 @@ jsonapi_reply_settings_category_get(struct httpd_request *hreq)
 
   if (!jreply)
     {
-      DPRINTF(E_LOG, L_WEB, "Error getting value for category '%s'\n", categoryname);
+      DPRINTF(E_ERROR, L_WEB, "Error getting value for category '%s'\n", categoryname);
       return HTTP_INTERNAL;
     }
 
@@ -1027,14 +1027,14 @@ jsonapi_reply_settings_option_get(struct httpd_request *hreq)
   category = settings_category_get(categoryname);
   if (!category)
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid category name '%s' given\n", categoryname);
+      DPRINTF(E_ERROR, L_WEB, "Invalid category name '%s' given\n", categoryname);
       return HTTP_NOTFOUND;
     }
 
   option = settings_option_get(category, optionname);
   if (!option)
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid option name '%s' given\n", optionname);
+      DPRINTF(E_ERROR, L_WEB, "Invalid option name '%s' given\n", optionname);
       return HTTP_NOTFOUND;
     }
 
@@ -1042,7 +1042,7 @@ jsonapi_reply_settings_option_get(struct httpd_request *hreq)
 
   if (!jreply)
     {
-      DPRINTF(E_LOG, L_WEB, "Error getting value for option '%s'\n", optionname);
+      DPRINTF(E_ERROR, L_WEB, "Error getting value for option '%s'\n", optionname);
       return HTTP_INTERNAL;
     }
 
@@ -1073,7 +1073,7 @@ jsonapi_reply_settings_option_put(struct httpd_request *hreq)
   category = settings_category_get(categoryname);
   if (!category)
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid category name '%s' given\n", categoryname);
+      DPRINTF(E_ERROR, L_WEB, "Invalid category name '%s' given\n", categoryname);
       return HTTP_NOTFOUND;
     }
 
@@ -1081,14 +1081,14 @@ jsonapi_reply_settings_option_put(struct httpd_request *hreq)
 
   if (!option)
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid option name '%s' given\n", optionname);
+      DPRINTF(E_ERROR, L_WEB, "Invalid option name '%s' given\n", optionname);
       return HTTP_NOTFOUND;
     }
 
   request = jparse_obj_from_evbuffer(hreq->in_body);
   if (!request)
     {
-      DPRINTF(E_LOG, L_WEB, "Missing request body for setting option '%s' (type %d)\n", optionname, option->type);
+      DPRINTF(E_ERROR, L_WEB, "Missing request body for setting option '%s' (type %d)\n", optionname, option->type);
       return HTTP_BADREQUEST;
     }
 
@@ -1109,13 +1109,13 @@ jsonapi_reply_settings_option_put(struct httpd_request *hreq)
     }
   else
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid value given for option '%s' (type %d): '%s'\n", optionname, option->type, json_object_to_json_string(request));
+      DPRINTF(E_ERROR, L_WEB, "Invalid value given for option '%s' (type %d): '%s'\n", optionname, option->type, json_object_to_json_string(request));
       return HTTP_BADREQUEST;
     }
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error changing setting '%s' (type %d) to '%s'\n", optionname, option->type, json_object_to_json_string(request));
+      DPRINTF(E_ERROR, L_WEB, "Error changing setting '%s' (type %d) to '%s'\n", optionname, option->type, json_object_to_json_string(request));
       return HTTP_INTERNAL;
     }
 
@@ -1139,21 +1139,21 @@ jsonapi_reply_settings_option_delete(struct httpd_request *hreq)
   category = settings_category_get(categoryname);
   if (!category)
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid category name '%s' given\n", categoryname);
+      DPRINTF(E_ERROR, L_WEB, "Invalid category name '%s' given\n", categoryname);
       return HTTP_NOTFOUND;
     }
 
   option = settings_option_get(category, optionname);
   if (!option)
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid option name '%s' given\n", optionname);
+      DPRINTF(E_ERROR, L_WEB, "Invalid option name '%s' given\n", optionname);
       return HTTP_NOTFOUND;
     }
 
   ret = settings_option_delete(option);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error deleting option '%s'\n", optionname);
+      DPRINTF(E_ERROR, L_WEB, "Error deleting option '%s'\n", optionname);
       return HTTP_INTERNAL;
     }
 
@@ -1202,7 +1202,7 @@ jsonapi_reply_library(struct httpd_request *hreq)
     }
   else
     {
-      DPRINTF(E_LOG, L_WEB, "library: failed to get file count info\n");
+      DPRINTF(E_ERROR, L_WEB, "library: failed to get file count info\n");
     }
 
   ret = db_admin_get(&s, DB_ADMIN_START_TIME);
@@ -1299,7 +1299,7 @@ jsonapi_reply_spotify(struct httpd_request *hreq)
   oauth_uri = spotifywebapi_oauth_uri_get(redirect_uri);
   if (!oauth_uri)
     {
-      DPRINTF(E_LOG, L_WEB, "Cannot display Spotify oauth interface (http_form_uriencode() failed)\n");
+      DPRINTF(E_ERROR, L_WEB, "Cannot display Spotify oauth interface (http_form_uriencode() failed)\n");
       jparse_free(jreply);
       return HTTP_INTERNAL;
     }
@@ -1388,7 +1388,7 @@ jsonapi_reply_lastfm_login(struct httpd_request *hreq)
   request = jparse_obj_from_evbuffer(hreq->in_body);
   if (!request)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to parse incoming request\n");
+      DPRINTF(E_ERROR, L_WEB, "Failed to parse incoming request\n");
       return HTTP_BADREQUEST;
     }
 
@@ -1417,7 +1417,7 @@ jsonapi_reply_lastfm_login(struct httpd_request *hreq)
     }
   else
     {
-      DPRINTF(E_LOG, L_WEB, "No user or password in LastFM login post request\n");
+      DPRINTF(E_ERROR, L_WEB, "No user or password in LastFM login post request\n");
 
       json_object_object_add(jreply, "success", json_object_new_boolean(false));
       errors = json_object_new_object();
@@ -1433,7 +1433,7 @@ jsonapi_reply_lastfm_login(struct httpd_request *hreq)
   jparse_free(jreply);
 
 #else
-  DPRINTF(E_LOG, L_WEB, "Received LastFM login request but was not compiled with enable-lastfm\n");
+  DPRINTF(E_ERROR, L_WEB, "Received LastFM login request but was not compiled with enable-lastfm\n");
 #endif
 
   return HTTP_OK;
@@ -1484,7 +1484,7 @@ jsonapi_reply_listenbrainz_token_add(struct httpd_request *hreq)
   request = jparse_obj_from_evbuffer(hreq->in_body);
   if (!request)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to parse incoming request\n");
+      DPRINTF(E_ERROR, L_WEB, "Failed to parse incoming request\n");
       return HTTP_BADREQUEST;
     }
 
@@ -1496,7 +1496,7 @@ jsonapi_reply_listenbrainz_token_add(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to set ListenBrainz token\n");
+      DPRINTF(E_ERROR, L_WEB, "Failed to set ListenBrainz token\n");
       return HTTP_INTERNAL;
     }
 
@@ -1512,7 +1512,7 @@ jsonapi_reply_listenbrainz_token_delete(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to delete ListenBrainz token\n");
+      DPRINTF(E_ERROR, L_WEB, "Failed to delete ListenBrainz token\n");
       return HTTP_INTERNAL;
     }
 
@@ -1538,7 +1538,7 @@ jsonapi_reply_pairing_pair(struct httpd_request *hreq)
   request = jparse_obj_from_evbuffer(hreq->in_body);
   if (!request)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to parse incoming request\n");
+      DPRINTF(E_ERROR, L_WEB, "Failed to parse incoming request\n");
       return HTTP_BADREQUEST;
     }
 
@@ -1551,7 +1551,7 @@ jsonapi_reply_pairing_pair(struct httpd_request *hreq)
     }
   else
     {
-      DPRINTF(E_LOG, L_WEB, "Missing pin in request body: %s\n", json_object_to_json_string(request));
+      DPRINTF(E_ERROR, L_WEB, "Missing pin in request body: %s\n", json_object_to_json_string(request));
       ret = REMOTE_INVALID_PIN;
     }
 
@@ -1668,7 +1668,7 @@ jsonapi_reply_outputs_get_byid(struct httpd_request *hreq)
   ret = safe_atou64(hreq->path_parts[2], &output_id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "No valid output id given to outputs endpoint '%s'\n", hreq->path);
+      DPRINTF(E_ERROR, L_WEB, "No valid output id given to outputs endpoint '%s'\n", hreq->path);
 
       return HTTP_BADREQUEST;
     }
@@ -1677,7 +1677,7 @@ jsonapi_reply_outputs_get_byid(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "No output found for '%s'\n", hreq->path);
+      DPRINTF(E_ERROR, L_WEB, "No output found for '%s'\n", hreq->path);
 
       return HTTP_BADREQUEST;
     }
@@ -1707,7 +1707,7 @@ jsonapi_reply_outputs_put_byid(struct httpd_request *hreq)
   ret = safe_atou64(hreq->path_parts[2], &output_id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "No valid output id given to outputs endpoint '%s'\n", hreq->path);
+      DPRINTF(E_ERROR, L_WEB, "No valid output id given to outputs endpoint '%s'\n", hreq->path);
 
       return HTTP_BADREQUEST;
     }
@@ -1715,7 +1715,7 @@ jsonapi_reply_outputs_put_byid(struct httpd_request *hreq)
   request = jparse_obj_from_evbuffer(hreq->in_body);
   if (!request)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to parse incoming request\n");
+      DPRINTF(E_ERROR, L_WEB, "Failed to parse incoming request\n");
 
       return HTTP_BADREQUEST;
     }
@@ -1772,7 +1772,7 @@ jsonapi_reply_outputs_toggle_byid(struct httpd_request *hreq)
   ret = safe_atou64(hreq->path_parts[2], &output_id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "No valid output id given to outputs endpoint '%s'\n", hreq->path);
+      DPRINTF(E_ERROR, L_WEB, "No valid output id given to outputs endpoint '%s'\n", hreq->path);
 
       return HTTP_BADREQUEST;
     }
@@ -1780,7 +1780,7 @@ jsonapi_reply_outputs_toggle_byid(struct httpd_request *hreq)
   ret = player_speaker_get_byid(&spk, output_id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "No output found for the given output id, toggle failed for '%s'\n", hreq->path);
+      DPRINTF(E_ERROR, L_WEB, "No output found for the given output id, toggle failed for '%s'\n", hreq->path);
       return HTTP_BADREQUEST;
     }
 
@@ -1827,7 +1827,7 @@ jsonapi_reply_verification(struct httpd_request *hreq)
   request = jparse_obj_from_evbuffer(hreq->in_body);
   if (!request)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to parse incoming request\n");
+      DPRINTF(E_ERROR, L_WEB, "Failed to parse incoming request\n");
       return HTTP_BADREQUEST;
     }
 
@@ -1837,7 +1837,7 @@ jsonapi_reply_verification(struct httpd_request *hreq)
   if (message)
     player_raop_verification_kickoff((char **)&message);
   else
-    DPRINTF(E_LOG, L_WEB, "Missing pin in request body: %s\n", json_object_to_json_string(request));
+    DPRINTF(E_ERROR, L_WEB, "Missing pin in request body: %s\n", json_object_to_json_string(request));
 
   jparse_free(request);
 
@@ -1856,7 +1856,7 @@ jsonapi_reply_outputs_set(struct httpd_request *hreq)
   request = jparse_obj_from_evbuffer(hreq->in_body);
   if (!request)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to parse incoming request\n");
+      DPRINTF(E_ERROR, L_WEB, "Failed to parse incoming request\n");
       return HTTP_BADREQUEST;
     }
 
@@ -1877,7 +1877,7 @@ jsonapi_reply_outputs_set(struct httpd_request *hreq)
 	  ret = safe_atou64(json_object_get_string(output_id), &ids[i + 1]);
 	  if (ret < 0)
 	    {
-	      DPRINTF(E_LOG, L_WEB, "Failed to convert output id: %s\n", json_object_to_json_string(request));
+	      DPRINTF(E_ERROR, L_WEB, "Failed to convert output id: %s\n", json_object_to_json_string(request));
 	      break;
 	    }
 	}
@@ -1888,7 +1888,7 @@ jsonapi_reply_outputs_set(struct httpd_request *hreq)
       free(ids);
     }
   else
-    DPRINTF(E_LOG, L_WEB, "Missing outputs in request body: %s\n", json_object_to_json_string(request));
+    DPRINTF(E_ERROR, L_WEB, "Missing outputs in request body: %s\n", json_object_to_json_string(request));
 
   jparse_free(request);
 
@@ -1905,7 +1905,7 @@ play_item_with_id(const char *param)
   ret = safe_atou32(param, &item_id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "No valid item id given '%s'\n", param);
+      DPRINTF(E_ERROR, L_WEB, "No valid item id given '%s'\n", param);
 
       return HTTP_BADREQUEST;
     }
@@ -1913,7 +1913,7 @@ play_item_with_id(const char *param)
   queue_item = db_queue_fetch_byitemid(item_id);
   if (!queue_item)
     {
-      DPRINTF(E_LOG, L_WEB, "No queue item with item id '%d'\n", item_id);
+      DPRINTF(E_ERROR, L_WEB, "No queue item with item id '%d'\n", item_id);
 
       return HTTP_BADREQUEST;
     }
@@ -1924,7 +1924,7 @@ play_item_with_id(const char *param)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to start playback from item with id '%d'\n", item_id);
+      DPRINTF(E_ERROR, L_WEB, "Failed to start playback from item with id '%d'\n", item_id);
 
       return HTTP_INTERNAL;
     }
@@ -1943,7 +1943,7 @@ play_item_at_position(const char *param)
   ret = safe_atou32(param, &position);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "No valid position given '%s'\n", param);
+      DPRINTF(E_ERROR, L_WEB, "No valid position given '%s'\n", param);
 
       return HTTP_BADREQUEST;
     }
@@ -1953,7 +1953,7 @@ play_item_at_position(const char *param)
   queue_item = db_queue_fetch_bypos(position, status.shuffle);
   if (!queue_item)
     {
-      DPRINTF(E_LOG, L_WEB, "No queue item at position '%d'\n", position);
+      DPRINTF(E_ERROR, L_WEB, "No queue item at position '%d'\n", position);
 
       return HTTP_BADREQUEST;
     }
@@ -1964,7 +1964,7 @@ play_item_at_position(const char *param)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to start playback from position '%d'\n", position);
+      DPRINTF(E_ERROR, L_WEB, "Failed to start playback from position '%d'\n", position);
 
       return HTTP_INTERNAL;
     }
@@ -1990,7 +1990,7 @@ jsonapi_reply_player_play(struct httpd_request *hreq)
   ret = player_playback_start();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error starting playback.\n");
+      DPRINTF(E_ERROR, L_WEB, "Error starting playback.\n");
       return HTTP_INTERNAL;
     }
 
@@ -2005,7 +2005,7 @@ jsonapi_reply_player_pause(struct httpd_request *hreq)
   ret = player_playback_pause();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error pausing playback.\n");
+      DPRINTF(E_ERROR, L_WEB, "Error pausing playback.\n");
       return HTTP_INTERNAL;
     }
 
@@ -2020,7 +2020,7 @@ jsonapi_reply_player_stop(struct httpd_request *hreq)
   ret = player_playback_stop();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error stopping playback.\n");
+      DPRINTF(E_ERROR, L_WEB, "Error stopping playback.\n");
       return HTTP_INTERNAL;
     }
 
@@ -2047,7 +2047,7 @@ jsonapi_reply_player_toggle(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error toggling playback state.\n");
+      DPRINTF(E_ERROR, L_WEB, "Error toggling playback state.\n");
       return HTTP_INTERNAL;
     }
 
@@ -2071,7 +2071,7 @@ jsonapi_reply_player_next(struct httpd_request *hreq)
   ret = player_playback_start();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error starting playback after switching to next item.\n");
+      DPRINTF(E_ERROR, L_WEB, "Error starting playback after switching to next item.\n");
       return HTTP_INTERNAL;
     }
 
@@ -2086,14 +2086,14 @@ jsonapi_reply_player_previous(struct httpd_request *hreq)
   ret = player_playback_prev();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error switching to previous item.\n");
+      DPRINTF(E_ERROR, L_WEB, "Error switching to previous item.\n");
       return HTTP_INTERNAL;
     }
 
   ret = player_playback_start();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error starting playback after switching to previous item.\n");
+      DPRINTF(E_ERROR, L_WEB, "Error starting playback after switching to previous item.\n");
       return HTTP_INTERNAL;
     }
 
@@ -2133,7 +2133,7 @@ jsonapi_reply_player_seek(struct httpd_request *hreq)
 
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error seeking (position_ms=%s, seek_ms=%s).\n",
+      DPRINTF(E_ERROR, L_WEB, "Error seeking (position_ms=%s, seek_ms=%s).\n",
 	      (param_pos ? param_pos : ""), (param_seek ? param_seek : ""));
       return HTTP_INTERNAL;
     }
@@ -2141,7 +2141,7 @@ jsonapi_reply_player_seek(struct httpd_request *hreq)
   ret = player_playback_start();
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error starting playback after seeking (position_ms=%s, seek_ms=%s).\n",
+      DPRINTF(E_ERROR, L_WEB, "Error starting playback after seeking (position_ms=%s, seek_ms=%s).\n",
 	      (param_pos ? param_pos : ""), (param_seek ? param_seek : ""));
       return HTTP_INTERNAL;
     }
@@ -2333,7 +2333,7 @@ queue_tracks_add_byuris(const char *param, char shuffle, uint32_t item_id, int p
   uri = strtok_r(uris, ",", &ptr);
   if (!uri)
     {
-      DPRINTF(E_LOG, L_WEB, "Empty query parameter 'uris'\n");
+      DPRINTF(E_ERROR, L_WEB, "Empty query parameter 'uris'\n");
       goto error;
     }
 
@@ -2342,7 +2342,7 @@ queue_tracks_add_byuris(const char *param, char shuffle, uint32_t item_id, int p
       ret = library_queue_item_add(uri, pos, shuffle, item_id, &count, &new);
       if (ret != LIBRARY_OK)
 	{
-	  DPRINTF(E_LOG, L_WEB, "Invalid uri '%s'\n", uri);
+	  DPRINTF(E_ERROR, L_WEB, "Invalid uri '%s'\n", uri);
 	  goto error;
 	}
 
@@ -2456,7 +2456,7 @@ jsonapi_reply_queue_tracks_add(struct httpd_request *hreq)
     {
       if (safe_atoi32(param_pos, &pos) < 0)
         {
-	  DPRINTF(E_LOG, L_WEB, "Invalid position parameter '%s'\n", param_pos);
+	  DPRINTF(E_ERROR, L_WEB, "Invalid position parameter '%s'\n", param_pos);
 
 	  return HTTP_BADREQUEST;
 	}
@@ -2471,7 +2471,7 @@ jsonapi_reply_queue_tracks_add(struct httpd_request *hreq)
 
   if (!param_uris && !param_expression)
     {
-      DPRINTF(E_LOG, L_WEB, "Missing query parameter 'uris' or 'expression'\n");
+      DPRINTF(E_ERROR, L_WEB, "Missing query parameter 'uris' or 'expression'\n");
 
       return HTTP_BADREQUEST;
     }
@@ -2538,14 +2538,14 @@ update_pos(uint32_t item_id, const char *new, char shuffle)
 
   if (safe_atou32(new, &new_position) < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "No valid item new_position '%s'\n", new);
+      DPRINTF(E_ERROR, L_WEB, "No valid item new_position '%s'\n", new);
       return HTTP_BADREQUEST;
     }
 
   ret = db_queue_move_byitemid(item_id, new_position, shuffle);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Moving item '%d' to new position %d failed\n", item_id, new_position);
+      DPRINTF(E_ERROR, L_WEB, "Moving item '%d' to new position %d failed\n", item_id, new_position);
       return HTTP_INTERNAL;
     }
 
@@ -2577,7 +2577,7 @@ jsonapi_reply_queue_tracks_update(struct httpd_request *hreq)
       ret = safe_atou32(hreq->path_parts[3], &item_id);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_WEB, "No valid item id given: '%s'\n", hreq->path);
+	  DPRINTF(E_ERROR, L_WEB, "No valid item id given: '%s'\n", hreq->path);
 	  return HTTP_BADREQUEST;
 	}
     }
@@ -2587,7 +2587,7 @@ jsonapi_reply_queue_tracks_update(struct httpd_request *hreq)
   queue_item = db_queue_fetch_byitemid(item_id);
   if (!queue_item)
     {
-      DPRINTF(E_LOG, L_WEB, "No valid item id given, or now_playing given but not playing: '%s'\n", hreq->path);
+      DPRINTF(E_ERROR, L_WEB, "No valid item id given, or now_playing given but not playing: '%s'\n", hreq->path);
       return HTTP_BADREQUEST;
     }
 
@@ -2629,7 +2629,7 @@ jsonapi_reply_queue_tracks_delete(struct httpd_request *hreq)
   ret = safe_atou32(hreq->path_parts[3], &item_id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "No valid item id given '%s'\n", hreq->path);
+      DPRINTF(E_ERROR, L_WEB, "No valid item id given '%s'\n", hreq->path);
 
       return HTTP_BADREQUEST;
     }
@@ -2738,7 +2738,7 @@ jsonapi_reply_queue(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "outputs: Couldn't add outputs to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "outputs: Couldn't add outputs to response buffer.\n");
 
  error:
   db_queue_enum_end(&query_params);
@@ -2848,7 +2848,7 @@ output_volume_set(int volume, int step, uint64_t output_id)
       ret = player_speaker_get_byid(&speaker_info, output_id);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_WEB, "No output found for the given output id .\n");
+	  DPRINTF(E_ERROR, L_WEB, "No output found for the given output id .\n");
 	  return -1;
 	}
 
@@ -2897,7 +2897,7 @@ jsonapi_reply_player_volume(struct httpd_request *hreq)
   if ((!param_volume && !param_step)
       || (param_volume && param_step))
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid parameters for player/volume request. Either 'volume' or 'step' parameter required.\n");
+      DPRINTF(E_ERROR, L_WEB, "Invalid parameters for player/volume request. Either 'volume' or 'step' parameter required.\n");
       return HTTP_BADREQUEST;
     }
 
@@ -2908,7 +2908,7 @@ jsonapi_reply_player_volume(struct httpd_request *hreq)
       ret = safe_atou64(param, &output_id);
       if (ret < 0)
 	{
-	  DPRINTF(E_LOG, L_WEB, "Invalid value for parameter 'output_id'. Output id must be an integer (output_id='%s').\n", param);
+	  DPRINTF(E_ERROR, L_WEB, "Invalid value for parameter 'output_id'. Output id must be an integer (output_id='%s').\n", param);
 	  return HTTP_BADREQUEST;
 	}
       ret = output_volume_set(volume, step, output_id);
@@ -2946,7 +2946,7 @@ jsonapi_reply_library_artists(struct httpd_request *hreq)
       media_kind = db_media_kind_enum(param);
       if (!media_kind)
 	{
-	  DPRINTF(E_LOG, L_WEB, "Invalid media kind '%s'\n", param);
+	  DPRINTF(E_ERROR, L_WEB, "Invalid media kind '%s'\n", param);
 	  return HTTP_BADREQUEST;
 	}
     }
@@ -2977,7 +2977,7 @@ jsonapi_reply_library_artists(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "browse: Couldn't add artists to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "browse: Couldn't add artists to response buffer.\n");
 
  error:
   free_query_params(&query_params, 1);
@@ -3011,7 +3011,7 @@ jsonapi_reply_library_artist(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "browse: Couldn't add artists to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "browse: Couldn't add artists to response buffer.\n");
 
  error:
   jparse_free(reply);
@@ -3063,7 +3063,7 @@ jsonapi_reply_library_artist_albums(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "browse: Couldn't add albums to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "browse: Couldn't add albums to response buffer.\n");
 
  error:
   jparse_free(reply);
@@ -3095,7 +3095,7 @@ jsonapi_reply_library_albums(struct httpd_request *hreq)
       media_kind = db_media_kind_enum(param);
       if (!media_kind)
 	{
-	  DPRINTF(E_LOG, L_WEB, "Invalid media kind '%s'\n", param);
+	  DPRINTF(E_ERROR, L_WEB, "Invalid media kind '%s'\n", param);
 	  return HTTP_BADREQUEST;
 	}
     }
@@ -3126,7 +3126,7 @@ jsonapi_reply_library_albums(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "browse: Couldn't add albums to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "browse: Couldn't add albums to response buffer.\n");
 
  error:
   free_query_params(&query_params, 1);
@@ -3160,7 +3160,7 @@ jsonapi_reply_library_album(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "browse: Couldn't add artists to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "browse: Couldn't add artists to response buffer.\n");
 
  error:
   jparse_free(reply);
@@ -3212,7 +3212,7 @@ jsonapi_reply_library_album_tracks(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "browse: Couldn't add tracks to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "browse: Couldn't add tracks to response buffer.\n");
 
  error:
   jparse_free(reply);
@@ -3284,7 +3284,7 @@ jsonapi_reply_library_tracks_get_byid(struct httpd_request *hreq)
     goto error;
   else if (ret == 1)
     {
-      DPRINTF(E_LOG, L_WEB, "Track with id '%s' not found.\n", track_id);
+      DPRINTF(E_ERROR, L_WEB, "Track with id '%s' not found.\n", track_id);
       ret = -1;
       notfound = true;
       goto error;
@@ -3294,7 +3294,7 @@ jsonapi_reply_library_tracks_get_byid(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "browse: Couldn't add track to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "browse: Couldn't add track to response buffer.\n");
 
  error:
   db_query_end(&query_params);
@@ -3322,7 +3322,7 @@ jsonapi_reply_library_tracks_put(struct httpd_request *hreq)
   request = jparse_obj_from_evbuffer(hreq->in_body);
   if (!request)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to read json tracks request\n");
+      DPRINTF(E_ERROR, L_WEB, "Failed to read json tracks request\n");
       err = HTTP_BADREQUEST;
       goto error;
     }
@@ -3330,7 +3330,7 @@ jsonapi_reply_library_tracks_put(struct httpd_request *hreq)
   ret = jparse_array_from_obj(request, "tracks", &tracks);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Failed to parse json tracks request\n");
+      DPRINTF(E_ERROR, L_WEB, "Failed to parse json tracks request\n");
       err = HTTP_BADREQUEST;
       goto error;
     }
@@ -3342,14 +3342,14 @@ jsonapi_reply_library_tracks_put(struct httpd_request *hreq)
       track_id = jparse_int_from_obj(track, "id");
       if (track_id == 0)
 	{
-	  DPRINTF(E_LOG, L_WEB, "Invalid or missing track id in json tracks request\n");
+	  DPRINTF(E_ERROR, L_WEB, "Invalid or missing track id in json tracks request\n");
 	  err = HTTP_BADREQUEST;
 	  goto error;
 	}
 
       if (!db_file_id_exists(track_id))
 	{
-	  DPRINTF(E_LOG, L_WEB, "Unknown track_id %d in json tracks request\n", track_id);
+	  DPRINTF(E_ERROR, L_WEB, "Unknown track_id %d in json tracks request\n", track_id);
 	  err = HTTP_NOTFOUND;
 	  goto error;
 	}
@@ -3446,7 +3446,7 @@ jsonapi_reply_library_track_playlists(struct httpd_request *hreq)
   track_id = hreq->path_parts[3];
   if (safe_atoi32(track_id, &id) < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Error converting track id '%s' to int.\n", track_id);
+      DPRINTF(E_ERROR, L_WEB, "Error converting track id '%s' to int.\n", track_id);
       return HTTP_INTERNAL;
     }
 
@@ -3480,7 +3480,7 @@ jsonapi_reply_library_track_playlists(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "track playlists: Couldn't add playlists to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "track playlists: Couldn't add playlists to response buffer.\n");
 
  error:
   free_query_params(&query_params, 1);
@@ -3531,7 +3531,7 @@ jsonapi_reply_library_playlists(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "browse: Couldn't add playlists to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "browse: Couldn't add playlists to response buffer.\n");
 
  error:
   jparse_free(reply);
@@ -3556,7 +3556,7 @@ jsonapi_reply_library_playlist_get(struct httpd_request *hreq)
   ret = safe_atou32(hreq->path_parts[3], &playlist_id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Could not parse playlist id to integer\n");
+      DPRINTF(E_ERROR, L_WEB, "Could not parse playlist id to integer\n");
       goto error;
     }
 
@@ -3582,7 +3582,7 @@ jsonapi_reply_library_playlist_get(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "browse: Couldn't add playlist to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "browse: Couldn't add playlist to response buffer.\n");
 
  error:
   jparse_free(reply);
@@ -3627,7 +3627,7 @@ jsonapi_reply_library_playlist_put(struct httpd_request *hreq)
   ret = safe_atou32(hreq->path_parts[3], &playlist_id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Could not parse playlist id to integer\n");
+      DPRINTF(E_ERROR, L_WEB, "Could not parse playlist id to integer\n");
       return HTTP_BADREQUEST;
     }
 
@@ -3658,7 +3658,7 @@ jsonapi_reply_library_playlist_tracks(struct httpd_request *hreq)
   ret = safe_atoi32(hreq->path_parts[3], &playlist_id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "No valid playlist id given '%s'\n", hreq->path);
+      DPRINTF(E_ERROR, L_WEB, "No valid playlist id given '%s'\n", hreq->path);
 
       return HTTP_BADREQUEST;
     }
@@ -3686,7 +3686,7 @@ jsonapi_reply_library_playlist_tracks(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "playlist tracks: Couldn't add tracks to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "playlist tracks: Couldn't add tracks to response buffer.\n");
 
  error:
   free_query_params(&query_params, 1);
@@ -3707,7 +3707,7 @@ jsonapi_reply_library_playlist_delete(struct httpd_request *hreq)
   ret = safe_atou32(hreq->path_parts[3], &pl_id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "No valid playlist id given '%s'\n", hreq->path);
+      DPRINTF(E_ERROR, L_WEB, "No valid playlist id given '%s'\n", hreq->path);
 
       return HTTP_BADREQUEST;
     }
@@ -3734,7 +3734,7 @@ jsonapi_reply_library_playlist_playlists(struct httpd_request *hreq)
   ret = safe_atoi32(hreq->path_parts[3], &playlist_id);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "No valid playlist id given '%s'\n", hreq->path);
+      DPRINTF(E_ERROR, L_WEB, "No valid playlist id given '%s'\n", hreq->path);
 
       return HTTP_BADREQUEST;
     }
@@ -3764,7 +3764,7 @@ jsonapi_reply_library_playlist_playlists(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "playlist tracks: Couldn't add tracks to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "playlist tracks: Couldn't add tracks to response buffer.\n");
 
  error:
   free_query_params(&query_params, 1);
@@ -3818,19 +3818,19 @@ jsonapi_reply_queue_save(struct httpd_request *hreq)
 
   if ((param = httpd_query_value_find(hreq->query, "name")) == NULL)
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid argument, missing 'name'\n");
+      DPRINTF(E_ERROR, L_WEB, "Invalid argument, missing 'name'\n");
       return HTTP_BADREQUEST;
     }
 
   if (!allow_modifying_stored_playlists)
     {
-      DPRINTF(E_LOG, L_WEB, "Modifying stored playlists is not enabled in the config file\n");
+      DPRINTF(E_ERROR, L_WEB, "Modifying stored playlists is not enabled in the config file\n");
       return 403;
     }
 
   if (access(default_playlist_directory, W_OK) < 0)
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid playlist save directory '%s'\n", default_playlist_directory);
+      DPRINTF(E_ERROR, L_WEB, "Invalid playlist save directory '%s'\n", default_playlist_directory);
       return 403;
    }
 
@@ -3839,7 +3839,7 @@ jsonapi_reply_queue_save(struct httpd_request *hreq)
   if (strlen(playlist_name) < 1) {
       free(playlist_name);
 
-      DPRINTF(E_LOG, L_WEB, "Empty playlist name parameter is not allowed\n");
+      DPRINTF(E_ERROR, L_WEB, "Empty playlist name parameter is not allowed\n");
       return HTTP_BADREQUEST;
   }
 
@@ -3879,7 +3879,7 @@ jsonapi_reply_library_browse(struct httpd_request *hreq)
       media_kind = db_media_kind_enum(param);
       if (!media_kind)
 	{
-	  DPRINTF(E_LOG, L_WEB, "Invalid media kind '%s'\n", param);
+	  DPRINTF(E_ERROR, L_WEB, "Invalid media kind '%s'\n", param);
 	  return HTTP_BADREQUEST;
 	}
     }
@@ -3908,7 +3908,7 @@ jsonapi_reply_library_browse(struct httpd_request *hreq)
     }
   else
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid browse type '%s'\n", browse_type);
+      DPRINTF(E_ERROR, L_WEB, "Invalid browse type '%s'\n", browse_type);
       goto error;
     }
 
@@ -3925,7 +3925,7 @@ jsonapi_reply_library_browse(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "browse: Couldn't add browse items to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "browse: Couldn't add browse items to response buffer.\n");
 
  error:
   jparse_free(reply);
@@ -3978,7 +3978,7 @@ jsonapi_reply_library_browseitem(struct httpd_request *hreq)
     }
   else
     {
-      DPRINTF(E_LOG, L_WEB, "Invalid browse type '%s'\n", browse_type);
+      DPRINTF(E_ERROR, L_WEB, "Invalid browse type '%s'\n", browse_type);
       goto error;
     }
 
@@ -3998,7 +3998,7 @@ jsonapi_reply_library_browseitem(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "browse: Couldn't add browse item to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "browse: Couldn't add browse item to response buffer.\n");
 
  error:
   db_query_end(&query_params);
@@ -4056,7 +4056,7 @@ jsonapi_reply_library_count(struct httpd_request *hreq)
     }
   else
     {
-      DPRINTF(E_LOG, L_WEB, "library: failed to get count info\n");
+      DPRINTF(E_ERROR, L_WEB, "library: failed to get count info\n");
     }
 
   free(qp.filter);
@@ -4157,7 +4157,7 @@ jsonapi_reply_library_files(struct httpd_request *hreq)
   // Build JSON response
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "browse: Couldn't add directories to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "browse: Couldn't add directories to response buffer.\n");
 
  error:
   jparse_free(reply);
@@ -4177,7 +4177,7 @@ jsonapi_reply_library_add(struct httpd_request *hreq)
   url = httpd_query_value_find(hreq->query, "url");
   if (!url)
     {
-      DPRINTF(E_LOG, L_WEB, "Missing URL parameter for library add\n");
+      DPRINTF(E_ERROR, L_WEB, "Missing URL parameter for library add\n");
       return HTTP_BADREQUEST;
     }
 
@@ -4555,7 +4555,7 @@ jsonapi_reply_search(struct httpd_request *hreq)
 
   if (!param_type || (!param_query && !param_expression))
     {
-      DPRINTF(E_LOG, L_WEB, "Missing request parameter\n");
+      DPRINTF(E_ERROR, L_WEB, "Missing request parameter\n");
 
       return HTTP_BADREQUEST;
     }
@@ -4567,7 +4567,7 @@ jsonapi_reply_search(struct httpd_request *hreq)
       media_kind = db_media_kind_enum(param_media_kind);
       if (!media_kind)
       {
-	DPRINTF(E_LOG, L_WEB, "Invalid media kind '%s'\n", param_media_kind);
+	DPRINTF(E_ERROR, L_WEB, "Invalid media kind '%s'\n", param_media_kind);
 	return HTTP_BADREQUEST;
       }
     }
@@ -4631,7 +4631,7 @@ jsonapi_reply_search(struct httpd_request *hreq)
 
   ret = evbuffer_add_printf(hreq->out_body, "%s", json_object_to_json_string(reply));
   if (ret < 0)
-    DPRINTF(E_LOG, L_WEB, "playlist tracks: Couldn't add tracks to response buffer.\n");
+    DPRINTF(E_ERROR, L_WEB, "playlist tracks: Couldn't add tracks to response buffer.\n");
 
  error:
   jparse_free(reply);
@@ -4760,7 +4760,7 @@ jsonapi_request(struct httpd_request *hreq)
 
   if (!hreq->handler)
     {
-      DPRINTF(E_LOG, L_WEB, "Unrecognized JSON API request: '%s'\n", hreq->uri);
+      DPRINTF(E_ERROR, L_WEB, "Unrecognized JSON API request: '%s'\n", hreq->uri);
       httpd_send_error(hreq, HTTP_BADREQUEST, "Bad Request");
       return;
     }
@@ -4768,7 +4768,7 @@ jsonapi_request(struct httpd_request *hreq)
   status_code = hreq->handler(hreq);
 
   if (status_code >= 400)
-    DPRINTF(E_LOG, L_WEB, "JSON api request failed with error code %d (%s)\n", status_code, hreq->uri);
+    DPRINTF(E_ERROR, L_WEB, "JSON api request failed with error code %d (%s)\n", status_code, hreq->uri);
 
   switch (status_code)
     {
@@ -4824,7 +4824,7 @@ jsonapi_init(void)
 
       if (!default_playlist_directory)
 	{
-	  DPRINTF(E_LOG, L_WEB, "Invalid playlist save directory, disabling modifying stored playlists\n");
+	  DPRINTF(E_ERROR, L_WEB, "Invalid playlist save directory, disabling modifying stored playlists\n");
 	  allow_modifying_stored_playlists = false;
 	}
      }

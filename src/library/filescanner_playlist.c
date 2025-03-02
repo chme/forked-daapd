@@ -166,7 +166,7 @@ scan_metadata_stream(struct media_file_info *mfi, const char *path)
   ret = scan_metadata_ffmpeg(mfi, path);
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Playlist URL '%s' is unavailable for probe/metadata, assuming MP3 encoding\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "Playlist URL '%s' is unavailable for probe/metadata, assuming MP3 encoding\n", path);
       mfi->type = strdup("mp3");
       mfi->codectype = strdup("mpeg");
       mfi->description = strdup("MPEG audio file");
@@ -199,7 +199,7 @@ process_nested_playlist(int parent_id, const char *path)
   deref = realpath(path, NULL);
   if (!deref)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not dereference path '%s': %s\n", path, strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Could not dereference path '%s': %s\n", path, strerror(errno));
       return -1;
     }
 
@@ -232,7 +232,7 @@ process_nested_playlist(int parent_id, const char *path)
   return 0;
 
  error:
-  DPRINTF(E_LOG, L_SCAN, "Error processing nested playlist '%s' in playlist %d\n", path, parent_id);
+  DPRINTF(E_ERROR, L_SCAN, "Error processing nested playlist '%s' in playlist %d\n", path, parent_id);
   free_pli(pli, 0);
   free(deref);
 
@@ -305,7 +305,7 @@ process_regular_file(int pl_id, char *path)
   ret = db_snprintf(filter, sizeof(filter), "f.fname = '%q' COLLATE NOCASE", filename_from_path(path));
   if (ret < 0)
     {
-      DPRINTF(E_LOG, L_SCAN, "Path in playlist is too long: '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "Path in playlist is too long: '%s'\n", path);
       return -1;
     }
 
@@ -355,7 +355,7 @@ process_regular_file(int pl_id, char *path)
 
   if (!winner)
     {
-      DPRINTF(E_LOG, L_SCAN, "No file in the library matches playlist entry '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "No file in the library matches playlist entry '%s'\n", path);
       return -1;
     }
 
@@ -377,12 +377,12 @@ playlist_prepare(const char *path, time_t mtime)
   pli = db_pl_fetch_bypath(path);
   if (!pli)
     {
-      DPRINTF(E_LOG, L_SCAN, "New playlist found, processing '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "New playlist found, processing '%s'\n", path);
 
       pl_id = playlist_add(path);
       if (pl_id < 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Error adding playlist '%s'\n", path);
+	  DPRINTF(E_ERROR, L_SCAN, "Error adding playlist '%s'\n", path);
 	  return -1;
 	}
 
@@ -407,7 +407,7 @@ playlist_prepare(const char *path, time_t mtime)
   // is equal to the newly updated db_timestamp)
   if (mtime && (pli->db_timestamp > mtime))
     {
-      DPRINTF(E_LOG, L_SCAN, "Unchanged playlist found, not processing '%s'\n", path);
+      DPRINTF(E_ERROR, L_SCAN, "Unchanged playlist found, not processing '%s'\n", path);
 
       // Protect this playlist's radio stations from purge after scan
       db_pl_ping_items_bymatch("http://", pli->id);
@@ -416,7 +416,7 @@ playlist_prepare(const char *path, time_t mtime)
       return -1;
     }
 
-  DPRINTF(E_LOG, L_SCAN, "Modified playlist found, processing '%s'\n", path);
+  DPRINTF(E_ERROR, L_SCAN, "Modified playlist found, processing '%s'\n", path);
 
   pl_id = pli->id;
   free_pli(pli, 0);
@@ -452,7 +452,7 @@ scan_playlist(const char *file, time_t mtime, int dir_id)
   fp = fopen(file, "r");
   if (!fp)
     {
-      DPRINTF(E_LOG, L_SCAN, "Could not open playlist '%s': %s\n", file, strerror(errno));
+      DPRINTF(E_ERROR, L_SCAN, "Could not open playlist '%s': %s\n", file, strerror(errno));
       return;
     }
 
@@ -504,7 +504,7 @@ scan_playlist(const char *file, time_t mtime, int dir_id)
       ntracks++;
       if (ntracks % 200 == 0)
 	{
-	  DPRINTF(E_LOG, L_SCAN, "Processed %d items...\n", ntracks);
+	  DPRINTF(E_ERROR, L_SCAN, "Processed %d items...\n", ntracks);
 	  db_transaction_end();
 	  db_transaction_begin();
 	}
@@ -523,9 +523,9 @@ scan_playlist(const char *file, time_t mtime, int dir_id)
   free_mfi(&mfi, 1);
 
   if (!feof(fp))
-    DPRINTF(E_LOG, L_SCAN, "Error reading playlist '%s' (only added %d tracks): %s\n", file, nadded, strerror(errno));
+    DPRINTF(E_ERROR, L_SCAN, "Error reading playlist '%s' (only added %d tracks): %s\n", file, nadded, strerror(errno));
   else
-    DPRINTF(E_LOG, L_SCAN, "Done processing playlist, added/modified %d items\n", nadded);
+    DPRINTF(E_ERROR, L_SCAN, "Done processing playlist, added/modified %d items\n", nadded);
 
   fclose(fp);
 }

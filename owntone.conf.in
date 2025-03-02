@@ -22,7 +22,7 @@ general {
 #	db_backup_path = "@localstatedir@/cache/@PACKAGE@/songs3.bak"
 
 	# Log file and level
-	# Available levels: fatal, log, warning, info, debug, spam
+	# Available levels: fatal, error, log, warning, info, debug, spam
 	logfile = "@localstatedir@/log/@PACKAGE@.log"
 	loglevel = log
 

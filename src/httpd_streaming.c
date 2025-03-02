@@ -316,7 +316,7 @@ streaming_request(struct httpd_request *hreq)
 
   if (!hreq->handler)
     {
-      DPRINTF(E_LOG, L_STREAMING, "Unrecognized path in streaming request: '%s'\n", hreq->uri);
+      DPRINTF(E_ERROR, L_STREAMING, "Unrecognized path in streaming request: '%s'\n", hreq->uri);
 
       httpd_send_error(hreq, HTTP_NOTFOUND, NULL);
       return;
@@ -335,7 +335,7 @@ streaming_init(void)
   val = cfg_getint(cfg_getsec(cfg, "streaming"), "sample_rate");
   // Validate against the variations of libmp3lame's supported sample rates: 32000/44100/48000
   if (val % 11025 > 0 && val % 12000 > 0 && val % 8000 > 0)
-    DPRINTF(E_LOG, L_STREAMING, "Unsupported streaming sample_rate=%d, defaulting\n", val);
+    DPRINTF(E_ERROR, L_STREAMING, "Unsupported streaming sample_rate=%d, defaulting\n", val);
   else
     streaming_default_quality.sample_rate = val;
 
@@ -351,7 +351,7 @@ streaming_init(void)
       break;
 
     default:
-      DPRINTF(E_LOG, L_STREAMING, "Unsuppported streaming bit_rate=%d, supports: 64/96/128/192/320, defaulting\n", val);
+      DPRINTF(E_ERROR, L_STREAMING, "Unsuppported streaming bit_rate=%d, supports: 64/96/128/192/320, defaulting\n", val);
   }
 
   DPRINTF(E_INFO, L_STREAMING, "Streaming quality: %d/%d/%d @ %dkbps\n",
