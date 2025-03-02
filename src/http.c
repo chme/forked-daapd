@@ -61,7 +61,6 @@ struct http_client_session {
   const char *user_agent;
   long verifypeer;
   long timeout_sec;
-  pthread_mutex_t mutex;
 };
 
 struct http_client_session *
@@ -73,7 +72,6 @@ http_client_session_new(void)
   session->user_agent = cfg_getstr(cfg_getsec(cfg, "general"), "user_agent");
   session->verifypeer = cfg_getbool(cfg_getsec(cfg, "general"), "ssl_verifypeer");
   session->timeout_sec = HTTP_CLIENT_TIMEOUT;
-  pthread_mutex_init(&session->mutex, NULL);
   return session;
 }
 
@@ -81,7 +79,6 @@ void
 http_client_session_free(struct http_client_session *session)
 {
   curl_easy_cleanup(session->curl);
-  pthread_mutex_destroy(&session->mutex);
   free(session);
 }
 
@@ -176,8 +173,6 @@ http_client_request(struct http_client_ctx *ctx, struct http_client_session *cli
   else
     {
       session = client_session;
-
-      CHECK_ERR(L_HTTP, pthread_mutex_lock(&session->mutex));
       curl_easy_reset(session->curl);
     }
 
@@ -236,14 +231,8 @@ http_client_request(struct http_client_ctx *ctx, struct http_client_session *cli
   curl_headers_save(ctx->input_headers, session->curl);
 
 out:
-  if (client_session)
-    {
-      CHECK_ERR(L_HTTP, pthread_mutex_unlock(&session->mutex));
-    }
-  else
-    {
-      http_client_session_free(session);
-    }
+  if (!client_session)
+    http_client_session_free(session);
   curl_slist_free_all(headers);
 
   return res == CURLE_OK ? 0 : -1;
