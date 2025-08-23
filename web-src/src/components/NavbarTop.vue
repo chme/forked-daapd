@@ -5,7 +5,7 @@
         v-for="menu in menus.filter((menu) => menu.show && !menu.sub)"
         :key="menu.name"
         :to="{ name: menu.name }"
-        class="navbar-item is-hidden-mobile"
+        class="navbar-item"
       >
         <mdicon class="icon" :name="menu.icon" size="16" />
       </control-link>
